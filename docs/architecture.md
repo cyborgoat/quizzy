@@ -57,13 +57,14 @@ duplicate quiz IDs.
 `useQuizSession` owns one in-memory attempt:
 
 - Current question index
-- Current selection
-- Submission lock state
-- Submitted answer records
+- Per-question editable answer drafts
+- Independent per-question review flags
+- Final submitted answer records
 - Score and completion state
 
-The hook receives an already validated `Quiz` object. Scoring is delegated to
-pure functions in `src/lib/scoring.ts`.
+The reducer in `src/lib/quizSessionState.ts` makes navigation and attempt state
+transitions deterministic and testable. The hook receives an already validated
+`Quiz` object, while scoring remains delegated to pure functions.
 
 ### Presentation
 
@@ -72,11 +73,15 @@ Quiz components are split by responsibility:
 - Library list and states
 - Header and progress
 - Question content and answer rows
-- Submission action bar and feedback
+- shadcn `Sidebar` question navigator with its responsive mobile sheet
+- Previous/Next action bar and final-submit confirmation
 - Result summary and answer review
 
 The question page uses a wide reading layout. Cards are reserved for library
-items, results, and status content.
+items, results, and status content. Its navigation layout is composed with
+`SidebarProvider`, a left-side `Sidebar`, `SidebarInset`, and `SidebarTrigger`;
+the sidebar primitive owns desktop collapse state, the mobile sheet, keyboard
+toggle behavior, and focus management.
 
 ## Native layers
 
@@ -117,9 +122,11 @@ performed by custom Rust commands.
 ### Quiz attempt
 
 1. The route selects a validated quiz by ID.
-2. `useQuizSession` keeps an in-memory snapshot of the attempt.
-3. Pure scoring functions evaluate each submitted answer.
-4. The final submitted records drive the result and review screens.
+2. `useQuizSession` stores editable drafts and flags for every question.
+3. Direct, previous, and next navigation preserve those drafts.
+4. Final submission freezes one answer record per question.
+5. Pure scoring functions evaluate answered questions; blanks score as incorrect.
+6. The frozen records drive the result and review screens.
 
 ## Project structure
 

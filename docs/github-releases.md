@@ -1,7 +1,7 @@
 # GitHub Releases
 
 Quizzy uses `.github/workflows/release.yml` to build native installers on
-GitHub-hosted macOS and Windows machines.
+GitHub-hosted macOS, Windows, and Linux machines.
 
 ## Produced artifacts
 
@@ -9,11 +9,14 @@ Each release builds:
 
 - macOS Apple Silicon application and DMG
 - macOS Intel application and DMG
+- Windows x64 portable executable
 - Windows x64 NSIS setup executable
 - Windows x64 MSI installer
+- Linux x64 AppImage
+- Linux x64 DEB package
 
-The workflow creates a draft GitHub Release so its files can be inspected before
-publication.
+After every platform build succeeds, the workflow publishes the GitHub Release
+and attaches each platform-specific download to its assets.
 
 ## Prepare a version
 
@@ -48,18 +51,16 @@ git push origin v0.1.0
 
 GitHub runs the workflow automatically because the tag starts with `v`.
 
-## Publish the draft
+## Verify the release
 
 1. Open the repository on GitHub.
 2. Select **Actions** and wait for **Release Quizzy** to finish.
 3. Select **Releases**.
-4. Open the `Quizzy v0.1.0` draft.
-5. Confirm the macOS and Windows assets are attached.
-6. Edit the release notes if needed.
-7. Select **Publish release**.
+4. Open `Quizzy v0.1.0`.
+5. Confirm the macOS, Windows, and Linux assets are attached.
 
 If a build fails, do not reuse the tag after changing code. Delete the failed
-draft and tag, or increment the application version and create a new tag.
+release and tag, or increment the application version and create a new tag.
 
 ## Permissions
 
@@ -69,4 +70,3 @@ secret is required for unsigned builds.
 
 Signed public releases require additional Apple and Windows signing credentials
 stored as encrypted GitHub Actions secrets.
-

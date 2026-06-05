@@ -1,61 +1,97 @@
-import { useMemo } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
-import { QuizFeedback } from "@/components/quiz/QuizFeedback";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
+import { QuizQuestionSidebar } from "@/components/quiz/QuizQuestionSidebar";
 import { ResultSummary } from "@/components/quiz/ResultSummary";
 import { ReviewSummary } from "@/components/quiz/ReviewSummary";
+import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
 import type { Quiz } from "@/types/quiz";
 
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const session = useQuizSession(quiz);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
   if (session.isComplete) {
+    const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
     return (
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <ResultSummary quiz={quiz} score={session.score} onRestart={session.restart} />
+        <ResultSummary
+          quiz={quiz}
+          score={session.score}
+          unansweredCount={unansweredCount}
+          onRestart={session.restart}
+        />
         <ReviewSummary quiz={quiz} answers={session.answers} />
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <QuizHeader
-        title={quiz.title}
-        current={session.currentQuestionIndex + 1}
-        total={session.totalQuestions}
+    <SidebarProvider
+      defaultOpen
+      style={
+        {
+          "--sidebar-width": "18rem",
+          "--sidebar-width-mobile": "20rem",
+        } as CSSProperties
+      }
+    >
+      <QuizQuestionSidebar
+        quiz={quiz}
+        attempts={session.attempts}
+        currentIndex={session.currentQuestionIndex}
+        answeredCount={session.answeredCount}
+        flaggedCount={session.flaggedCount}
+        onSelectQuestion={session.goToQuestion}
+        onSubmitQuiz={() => setSubmitDialogOpen(true)}
       />
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 pb-32 sm:px-6 lg:px-8">
-        <QuestionContent
-          question={session.currentQuestion}
-          selectedSingle={session.selectedSingleChoiceIndex}
-          selectedMultiple={session.selectedMultipleChoiceIndices}
-          selectedTrueFalse={session.selectedTrueFalseAnswer}
-          locked={session.hasSubmittedAnswer}
-          onSingle={session.selectSingleChoiceAnswer}
-          onMultiple={session.toggleMultipleChoiceAnswer}
-          onTrueFalse={session.selectTrueFalseAnswer}
+      <SidebarInset className="min-h-svh bg-transparent">
+        <QuizHeader
+          title={quiz.title}
+          current={session.currentQuestionIndex + 1}
+          total={session.totalQuestions}
+          answered={session.answeredCount}
         />
-        {session.hasSubmittedAnswer && session.currentAnswerIsCorrect !== null && (
-          <QuizFeedback
-            isCorrect={session.currentAnswerIsCorrect}
-            explanation={session.currentQuestion.explanation}
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 pb-12 sm:px-6 lg:px-8">
+          <QuestionContent
+            question={session.currentQuestion}
+            answer={session.currentAnswer}
+            flagged={session.currentQuestionIsFlagged}
+            onToggleFlag={session.toggleCurrentQuestionFlag}
+            onSingle={session.selectSingleChoiceAnswer}
+            onMultiple={session.toggleMultipleChoiceAnswer}
+            onTrueFalse={session.selectTrueFalseAnswer}
           />
-        )}
-      </main>
-      <QuizActionBar
-        submitted={session.hasSubmittedAnswer}
-        isLast={session.currentQuestionIndex === session.totalQuestions - 1}
-        error={session.submissionError}
-        onSubmit={session.submitAnswer}
-        onNext={session.goToNextQuestion}
-      />
-    </div>
+        </main>
+        <QuizActionBar
+          currentIndex={session.currentQuestionIndex}
+          totalQuestions={session.totalQuestions}
+          onPrevious={session.goToPreviousQuestion}
+          onNext={session.goToNextQuestion}
+          onSubmitQuiz={() => setSubmitDialogOpen(true)}
+        />
+        <SubmitQuizDialog
+          open={submitDialogOpen}
+          answeredCount={session.answeredCount}
+          unansweredCount={session.unansweredCount}
+          flaggedCount={session.flaggedCount}
+          onCancel={() => setSubmitDialogOpen(false)}
+          onConfirm={() => {
+            setSubmitDialogOpen(false);
+            session.submitQuiz();
+          }}
+        />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

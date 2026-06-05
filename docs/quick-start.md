@@ -33,7 +33,9 @@ application, and opens the desktop window.
 1. Select an existing directory as the Quizzy working directory.
 2. Import one or more quiz JSON files.
 3. Select a quiz from the home screen.
-4. Submit each answer, review feedback, and finish the quiz.
+4. Answer in any order, use flags for questions to revisit, and submit the quiz
+   when ready.
+5. Review the final score, correct answers, and explanations.
 
 The selected working directory is remembered between launches. If it becomes
 unavailable, Quizzy keeps the configured path and asks the user to reconnect it

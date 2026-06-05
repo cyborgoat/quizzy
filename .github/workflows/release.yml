@@ -74,14 +74,22 @@ jobs:
             runner: macos-15
             rust-targets: aarch64-apple-darwin
             args: --target aarch64-apple-darwin --bundles app,dmg
+            upload-plain-binary: false
           - name: macOS Intel
             runner: macos-15-intel
             rust-targets: x86_64-apple-darwin
             args: --target x86_64-apple-darwin --bundles app,dmg
+            upload-plain-binary: false
           - name: Windows x64
             runner: windows-2025
             rust-targets: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
+            upload-plain-binary: true
+          - name: Linux x64
+            runner: ubuntu-22.04
+            rust-targets: x86_64-unknown-linux-gnu
+            args: --target x86_64-unknown-linux-gnu --bundles appimage,deb
+            upload-plain-binary: false
 
     steps:
       - name: Check out repository
@@ -104,11 +112,21 @@ jobs:
           workspaces: src-tauri -> target
           key: ${{ matrix.rust-targets }}
 
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
       - name: Install frontend dependencies
         run: npm ci
 
       - name: Build and upload release bundles
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -117,10 +135,22 @@ jobs:
           releaseBody: |
             Download the installer for your operating system from the assets below.
 
-            These builds are currently unsigned, so macOS Gatekeeper or Windows
-            SmartScreen may display a security warning.
+            These builds are currently unsigned, so your operating system may
+            display a security warning.
           releaseDraft: true
           prerelease: false
           generateReleaseNotes: true
+          uploadPlainBinary: ${{ matrix.upload-plain-binary }}
+          releaseAssetNamePattern: Quizzy_${{ github.ref_name }}_[platform]_[arch][setup][ext]
           args: ${{ matrix.args }}
 
+  release:
+    name: Publish release
+    needs: publish
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Publish completed release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --draft=false --repo "${{ github.repository }}"

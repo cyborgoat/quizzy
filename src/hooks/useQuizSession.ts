@@ -1,128 +1,88 @@
-import { useState } from "react";
-import { isAnswerCorrect } from "@/lib/scoring";
-import type { AnswerRecord, Quiz, SubmittedAnswer } from "@/types/quiz";
+import { useReducer } from "react";
+import {
+  initialQuizSessionState,
+  quizSessionReducer,
+} from "@/lib/quizSessionState";
+import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
 export function useQuizSession(quiz: Quiz) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedSingleChoiceIndex, setSelectedSingleChoiceIndex] = useState<
-    number | null
-  >(null);
-  const [selectedMultipleChoiceIndices, setSelectedMultipleChoiceIndices] =
-    useState<number[]>([]);
-  const [selectedTrueFalseAnswer, setSelectedTrueFalseAnswer] = useState<
-    boolean | null
-  >(null);
-  const [hasSubmittedAnswer, setHasSubmittedAnswer] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<AnswerRecord[]>([]);
-  const [isComplete, setIsComplete] = useState(false);
+  const [state, dispatch] = useReducer(
+    quizSessionReducer,
+    initialQuizSessionState,
+  );
 
-  const currentQuestion = quiz.questions[currentQuestionIndex];
-  const currentAnswerIsCorrect =
-    answers.find((answer) => answer.questionId === currentQuestion?.id)?.isCorrect ??
-    null;
-  const score = answers.filter((answer) => answer.isCorrect).length;
+  const currentQuestion = quiz.questions[state.currentQuestionIndex];
+  const currentAttempt = state.attempts[currentQuestion.id];
+  const currentAnswer = currentAttempt?.answer;
+  const answeredCount = quiz.questions.filter(
+    (question) => state.attempts[question.id]?.answer,
+  ).length;
+  const flaggedCount = quiz.questions.filter(
+    (question) => state.attempts[question.id]?.flagged,
+  ).length;
+  const score = state.answers.filter((answer) => answer.isCorrect).length;
 
-  function clearSelection() {
-    setSelectedSingleChoiceIndex(null);
-    setSelectedMultipleChoiceIndices([]);
-    setSelectedTrueFalseAnswer(null);
-    setHasSubmittedAnswer(false);
-    setSubmissionError(null);
+  function setCurrentAnswer(answer?: SubmittedAnswer) {
+    dispatch({
+      type: "set_answer",
+      questionId: currentQuestion.id,
+      answer,
+    });
   }
 
   function selectSingleChoiceAnswer(index: number) {
-    if (hasSubmittedAnswer) return;
-    setSelectedSingleChoiceIndex(index);
-    setSubmissionError(null);
+    setCurrentAnswer({ type: "single_choice", selectedIndex: index });
   }
 
   function toggleMultipleChoiceAnswer(index: number) {
-    if (hasSubmittedAnswer) return;
-    setSelectedMultipleChoiceIndices((selected) =>
-      selected.includes(index)
-        ? selected.filter((value) => value !== index)
-        : [...selected, index].sort((left, right) => left - right),
+    const selected =
+      currentAnswer?.type === "multiple_choice"
+        ? currentAnswer.selectedIndices
+        : [];
+    const next = selected.includes(index)
+      ? selected.filter((value) => value !== index)
+      : [...selected, index].sort((left, right) => left - right);
+    setCurrentAnswer(
+      next.length > 0
+        ? { type: "multiple_choice", selectedIndices: next }
+        : undefined,
     );
-    setSubmissionError(null);
   }
 
   function selectTrueFalseAnswer(answer: boolean) {
-    if (hasSubmittedAnswer) return;
-    setSelectedTrueFalseAnswer(answer);
-    setSubmissionError(null);
+    setCurrentAnswer({ type: "true_false", selectedAnswer: answer });
   }
 
-  function submitAnswer() {
-    if (hasSubmittedAnswer) return;
-
-    let answer: SubmittedAnswer | null = null;
-    if (currentQuestion.type === "single_choice" && selectedSingleChoiceIndex !== null) {
-      answer = { type: "single_choice", selectedIndex: selectedSingleChoiceIndex };
-    }
-    if (
-      currentQuestion.type === "multiple_choice" &&
-      selectedMultipleChoiceIndices.length > 0
-    ) {
-      answer = {
-        type: "multiple_choice",
-        selectedIndices: selectedMultipleChoiceIndices,
-      };
-    }
-    if (currentQuestion.type === "true_false" && selectedTrueFalseAnswer !== null) {
-      answer = { type: "true_false", selectedAnswer: selectedTrueFalseAnswer };
-    }
-
-    if (!answer) {
-      setSubmissionError("Select an answer before submitting.");
-      return;
-    }
-
-    const record: AnswerRecord = {
-      questionId: currentQuestion.id,
-      answer,
-      isCorrect: isAnswerCorrect(currentQuestion, answer),
-    };
-    setAnswers((existing) => [...existing, record]);
-    setHasSubmittedAnswer(true);
-    setSubmissionError(null);
-  }
-
-  function goToNextQuestion() {
-    if (!hasSubmittedAnswer) return;
-    if (currentQuestionIndex === quiz.questions.length - 1) {
-      setIsComplete(true);
-      return;
-    }
-    setCurrentQuestionIndex((index) => index + 1);
-    clearSelection();
-  }
-
-  function restart() {
-    setCurrentQuestionIndex(0);
-    setAnswers([]);
-    setIsComplete(false);
-    clearSelection();
+  function goToQuestion(index: number) {
+    dispatch({
+      type: "go_to_question",
+      index,
+      totalQuestions: quiz.questions.length,
+    });
   }
 
   return {
     currentQuestion,
-    currentQuestionIndex,
+    currentQuestionIndex: state.currentQuestionIndex,
     totalQuestions: quiz.questions.length,
-    selectedSingleChoiceIndex,
-    selectedMultipleChoiceIndices,
-    selectedTrueFalseAnswer,
-    hasSubmittedAnswer,
-    currentAnswerIsCorrect,
-    submissionError,
+    currentAnswer,
+    attempts: state.attempts,
+    answers: state.answers,
+    answeredCount,
+    unansweredCount: quiz.questions.length - answeredCount,
+    flaggedCount,
+    currentQuestionIsFlagged: currentAttempt?.flagged ?? false,
     score,
-    answers,
-    isComplete,
+    isComplete: state.isComplete,
     selectSingleChoiceAnswer,
     toggleMultipleChoiceAnswer,
     selectTrueFalseAnswer,
-    submitAnswer,
-    goToNextQuestion,
-    restart,
+    toggleCurrentQuestionFlag: () =>
+      dispatch({ type: "toggle_flag", questionId: currentQuestion.id }),
+    goToQuestion,
+    goToPreviousQuestion: () => goToQuestion(state.currentQuestionIndex - 1),
+    goToNextQuestion: () => goToQuestion(state.currentQuestionIndex + 1),
+    submitQuiz: () => dispatch({ type: "submit_quiz", quiz }),
+    restart: () => dispatch({ type: "restart" }),
   };
 }

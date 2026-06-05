@@ -24,6 +24,10 @@ Tests currently cover:
 - Unreadable-file diagnostics
 - Exact-set multiple-choice scoring
 - No partial credit
+- Answer and flag persistence across direct navigation
+- Navigation boundary handling
+- Early submission with unanswered questions
+- Frozen submitted results and complete restart behavior
 
 Run them with:
 

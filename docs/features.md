@@ -53,26 +53,36 @@ Quizzy presents one question at a time and supports:
 
 Behavior:
 
-- An answer is required before submission.
-- Submitted selections are locked.
+- Answers are saved as editable drafts as soon as they are selected.
+- Users can jump directly to any question from the question navigator.
+- Previous and Next controls remain available for sequential navigation.
+- Questions can be flagged for review whether or not they have an answer.
+- The navigator identifies current, answered, unanswered, and flagged questions.
 - Each question is worth one point.
 - Multiple-choice answers require an exact set match; there is no partial credit.
-- Feedback identifies correct and incorrect results using text and styling.
-- Explanations appear after submission when provided by the quiz file.
+- Correctness and explanations remain hidden during the attempt.
+- The quiz can be submitted at any time after confirming answered, unanswered,
+  and flagged counts.
+- Unanswered questions are scored as incorrect.
+
+On desktop, question navigation is displayed in a collapsible left sidebar. On
+narrow screens, the same shadcn sidebar opens as an accessible off-canvas sheet.
+The sidebar can also be toggled with `Cmd+B` on macOS or `Ctrl+B` on Windows.
 
 ## Results and review
 
-After the last submitted question, the result screen shows:
+After final quiz submission, the result screen shows:
 
 - Score and total question count
 - Percentage
 - Incorrect count
+- Unanswered count
 - Restart action
 - Return-home action
 - Per-question answer review
 
-The review includes the user's answer, the correct answer when necessary, and
-the explanation when available.
+The review includes every question, the user's answer or unanswered status, the
+correct answer, the explanation when available, and whether it was flagged.
 
 ## Data lifetime
 

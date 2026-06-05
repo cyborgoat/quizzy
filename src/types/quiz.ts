@@ -69,6 +69,13 @@ export type SubmittedAnswer =
 
 export type AnswerRecord = {
   questionId: string;
-  answer: SubmittedAnswer;
+  answer?: SubmittedAnswer;
   isCorrect: boolean;
+  flagged: boolean;
+};
+
+export type QuestionAttempt = {
+  questionId: string;
+  answer?: SubmittedAnswer;
+  flagged: boolean;
 };
