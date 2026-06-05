@@ -1,0 +1,126 @@
+name: Release Quizzy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Verify release versions
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const expected = process.env.RELEASE_TAG.replace(/^v/, "");
+          const packageVersion = JSON.parse(
+            fs.readFileSync("package.json", "utf8"),
+          ).version;
+          const tauriVersion = JSON.parse(
+            fs.readFileSync("src-tauri/tauri.conf.json", "utf8"),
+          ).version;
+          const cargoContents = fs.readFileSync("src-tauri/Cargo.toml", "utf8");
+          const cargoVersion = cargoContents.match(
+            /^\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m,
+          )?.[1];
+
+          const versions = { tag: expected, packageVersion, tauriVersion, cargoVersion };
+          if (new Set(Object.values(versions)).size !== 1) {
+            console.error("Release versions do not match:", versions);
+            process.exit(1);
+          }
+          console.log(`Validated Quizzy ${expected}`);
+          NODE
+
+      - name: Run frontend tests
+        run: npm test
+
+      - name: Run frontend lint
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+  publish:
+    name: Build ${{ matrix.name }}
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            runner: macos-15
+            rust-targets: aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --bundles app,dmg
+          - name: macOS Intel
+            runner: macos-15-intel
+            rust-targets: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin --bundles app,dmg
+          - name: Windows x64
+            runner: windows-2025
+            rust-targets: x86_64-pc-windows-msvc
+            args: --target x86_64-pc-windows-msvc --bundles nsis,msi
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Cache Rust build output
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.rust-targets }}
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and upload release bundles
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Quizzy ${{ github.ref_name }}
+          releaseBody: |
+            Download the installer for your operating system from the assets below.
+
+            These builds are currently unsigned, so macOS Gatekeeper or Windows
+            SmartScreen may display a security warning.
+          releaseDraft: true
+          prerelease: false
+          generateReleaseNotes: true
+          args: ${{ matrix.args }}
+

@@ -1,0 +1,72 @@
+# GitHub Releases
+
+Quizzy uses `.github/workflows/release.yml` to build native installers on
+GitHub-hosted macOS and Windows machines.
+
+## Produced artifacts
+
+Each release builds:
+
+- macOS Apple Silicon application and DMG
+- macOS Intel application and DMG
+- Windows x64 NSIS setup executable
+- Windows x64 MSI installer
+
+The workflow creates a draft GitHub Release so its files can be inspected before
+publication.
+
+## Prepare a version
+
+Set the same version in:
+
+- `package.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+
+The release workflow verifies these versions against the pushed tag and fails
+before building if they differ.
+
+For example, all three files should contain `0.1.0` before releasing tag
+`v0.1.0`.
+
+## Trigger a release
+
+Commit and push the version:
+
+```bash
+git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+git commit -m "Prepare v0.1.0 release"
+git push origin main
+```
+
+Create and push the tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub runs the workflow automatically because the tag starts with `v`.
+
+## Publish the draft
+
+1. Open the repository on GitHub.
+2. Select **Actions** and wait for **Release Quizzy** to finish.
+3. Select **Releases**.
+4. Open the `Quizzy v0.1.0` draft.
+5. Confirm the macOS and Windows assets are attached.
+6. Edit the release notes if needed.
+7. Select **Publish release**.
+
+If a build fails, do not reuse the tag after changing code. Delete the failed
+draft and tag, or increment the application version and create a new tag.
+
+## Permissions
+
+The workflow uses GitHub's automatically provided `GITHUB_TOKEN` and requests
+`contents: write` permission to create the release and upload assets. No custom
+secret is required for unsigned builds.
+
+Signed public releases require additional Apple and Windows signing credentials
+stored as encrypted GitHub Actions secrets.
+

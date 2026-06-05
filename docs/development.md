@@ -103,3 +103,6 @@ Before packaging a release:
 
 The files under `sample-quizzes/` can be selected through the normal import
 dialog when manual test data is needed. They are not production resources.
+
+Cross-platform release builds are handled by `.github/workflows/release.yml`.
+See [GitHub releases](github-releases.md) for the version and tag workflow.
