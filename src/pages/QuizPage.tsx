@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ErrorState } from "@/components/quiz/ErrorState";
+import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
@@ -17,8 +18,10 @@ import { useQuizSession } from "@/hooks/useQuizSession";
 import type { Quiz } from "@/types/quiz";
 
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
+  const navigate = useNavigate();
   const session = useQuizSession(quiz);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
 
   if (session.isComplete) {
     const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
@@ -52,7 +55,6 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
         answeredCount={session.answeredCount}
         flaggedCount={session.flaggedCount}
         onSelectQuestion={session.goToQuestion}
-        onSubmitQuiz={() => setSubmitDialogOpen(true)}
       />
       <SidebarInset className="flex min-h-svh flex-col bg-transparent">
         <QuizHeader
@@ -60,6 +62,9 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           current={session.currentQuestionIndex + 1}
           total={session.totalQuestions}
           answered={session.answeredCount}
+          currentIndex={session.currentQuestionIndex}
+          onPrevious={session.goToPreviousQuestion}
+          onNext={session.goToNextQuestion}
         />
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5 pb-10 sm:px-6 lg:px-8">
           <QuestionContent
@@ -73,11 +78,18 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           />
         </main>
         <QuizActionBar
-          currentIndex={session.currentQuestionIndex}
-          totalQuestions={session.totalQuestions}
-          onPrevious={session.goToPreviousQuestion}
-          onNext={session.goToNextQuestion}
           onSubmitQuiz={() => setSubmitDialogOpen(true)}
+          onExitQuiz={() => setExitDialogOpen(true)}
+        />
+        <ExitQuizDialog
+          open={exitDialogOpen}
+          answeredCount={session.answeredCount}
+          totalQuestions={session.totalQuestions}
+          onCancel={() => setExitDialogOpen(false)}
+          onConfirm={() => {
+            setExitDialogOpen(false);
+            navigate("/");
+          }}
         />
         <SubmitQuizDialog
           open={submitDialogOpen}
