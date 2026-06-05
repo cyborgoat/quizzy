@@ -1,4 +1,5 @@
-import { useReducer } from "react";
+import { useMemo, useReducer } from "react";
+import { orderQuestionsByType } from "@/lib/questionOrder";
 import {
   initialQuizSessionState,
   quizSessionReducer,
@@ -6,18 +7,22 @@ import {
 import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
 export function useQuizSession(quiz: Quiz) {
+  const questions = useMemo(
+    () => orderQuestionsByType(quiz.questions),
+    [quiz.questions],
+  );
   const [state, dispatch] = useReducer(
     quizSessionReducer,
     initialQuizSessionState,
   );
 
-  const currentQuestion = quiz.questions[state.currentQuestionIndex];
+  const currentQuestion = questions[state.currentQuestionIndex];
   const currentAttempt = state.attempts[currentQuestion.id];
   const currentAnswer = currentAttempt?.answer;
-  const answeredCount = quiz.questions.filter(
+  const answeredCount = questions.filter(
     (question) => state.attempts[question.id]?.answer,
   ).length;
-  const flaggedCount = quiz.questions.filter(
+  const flaggedCount = questions.filter(
     (question) => state.attempts[question.id]?.flagged,
   ).length;
   const score = state.answers.filter((answer) => answer.isCorrect).length;
@@ -57,19 +62,20 @@ export function useQuizSession(quiz: Quiz) {
     dispatch({
       type: "go_to_question",
       index,
-      totalQuestions: quiz.questions.length,
+      totalQuestions: questions.length,
     });
   }
 
   return {
+    questions,
     currentQuestion,
     currentQuestionIndex: state.currentQuestionIndex,
-    totalQuestions: quiz.questions.length,
+    totalQuestions: questions.length,
     currentAnswer,
     attempts: state.attempts,
     answers: state.answers,
     answeredCount,
-    unansweredCount: quiz.questions.length - answeredCount,
+    unansweredCount: questions.length - answeredCount,
     flaggedCount,
     currentQuestionIsFlagged: currentAttempt?.flagged ?? false,
     score,
@@ -82,7 +88,7 @@ export function useQuizSession(quiz: Quiz) {
     goToQuestion,
     goToPreviousQuestion: () => goToQuestion(state.currentQuestionIndex - 1),
     goToNextQuestion: () => goToQuestion(state.currentQuestionIndex + 1),
-    submitQuiz: () => dispatch({ type: "submit_quiz", quiz }),
+    submitQuiz: () => dispatch({ type: "submit_quiz", questions }),
     restart: () => dispatch({ type: "restart" }),
   };
 }

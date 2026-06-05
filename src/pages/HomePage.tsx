@@ -15,15 +15,15 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-zinc-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-zinc-900 text-white">
-              <GraduationCap className="size-5" />
+      <header className="border-b border-zinc-200 bg-white">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
+              <GraduationCap className="size-4" />
             </span>
             <div>
-              <h1 className="text-xl font-semibold text-zinc-950">Quizzy</h1>
-              <p className="max-w-md truncate text-sm text-zinc-500">
+              <h1 className="text-base font-semibold text-zinc-950">Quizzy</h1>
+              <p className="max-w-md truncate text-xs text-zinc-500">
                 {library.directoryPath ?? "Choose a local quiz directory"}
               </p>
             </div>
@@ -44,7 +44,7 @@ export function HomePage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
         {library.notice && (
           <Alert
             className="mb-6"
@@ -78,14 +78,14 @@ export function HomePage() {
           />
         ) : (
           <>
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-500">Local quiz library</p>
-                <h2 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-950">
+                <p className="text-xs font-medium text-zinc-500">Local quiz library</p>
+                <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950">
                   Choose a quiz
                 </h2>
               </div>
-              <p className="text-sm text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 {library.quizzes.length} valid quiz{library.quizzes.length === 1 ? "" : "zes"}
               </p>
             </div>

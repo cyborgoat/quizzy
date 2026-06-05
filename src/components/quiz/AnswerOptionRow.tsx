@@ -43,7 +43,7 @@ export function AnswerOptionRow({
       disabled={locked}
       aria-pressed={selected}
       className={cn(
-        "flex w-full items-start gap-4 rounded-xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-100",
+        "flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-100",
         !locked && "hover:border-zinc-400 hover:bg-white",
         selected && !locked && "border-zinc-900 bg-white",
         !selected && !locked && "border-zinc-200 bg-zinc-50",
@@ -52,23 +52,25 @@ export function AnswerOptionRow({
         locked && !isCorrectAnswer && !isIncorrectSelection && "border-zinc-200 bg-zinc-50",
       )}
     >
-      {multiple ? (
-        <Checkbox checked={selected} disabled={locked} className="mt-0.5" />
-      ) : (
-        <span
-          aria-hidden="true"
-          className={cn(
-            "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
-            selected ? "border-zinc-900" : "border-zinc-400",
-          )}
-        >
-          {selected && <span className="size-2.5 rounded-full bg-zinc-900" />}
-        </span>
-      )}
-      <span className="flex min-w-0 flex-1 gap-3">
-        <span className="shrink-0 font-semibold text-zinc-500">{optionLabel(index)}</span>
-        <span className="min-w-0 text-base leading-6 text-zinc-900">{text}</span>
+      <span className="flex h-5 shrink-0 items-center self-start">
+        {multiple ? (
+          <Checkbox checked={selected} disabled={locked} className="size-4" />
+        ) : (
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-4 items-center justify-center rounded-full border",
+              selected ? "border-zinc-900" : "border-zinc-400",
+            )}
+          >
+            {selected && <span className="size-2 rounded-full bg-zinc-900" />}
+          </span>
+        )}
       </span>
+      <p className="min-w-0 flex-1 text-sm leading-5 text-zinc-900">
+        <span className="mr-1.5 font-medium text-zinc-500">{optionLabel(index)}</span>
+        {text}
+      </p>
       {status && (
         <span className="shrink-0 rounded-full bg-white/80 px-2 py-1 text-xs font-semibold text-zinc-700">
           {status}

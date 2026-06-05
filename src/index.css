@@ -35,6 +35,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
+  font-size: 14px;
   background: #fafafa;
 }
 
@@ -42,9 +43,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(244, 244, 245, 0.9), transparent 32rem),
-    #fafafa;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: #fafafa;
 }
 
 button,

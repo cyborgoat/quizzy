@@ -3,6 +3,7 @@ import {
   initialQuizSessionState,
   quizSessionReducer,
 } from "@/lib/quizSessionState";
+import { orderQuestionsByType } from "@/lib/questionOrder";
 import type { Quiz } from "@/types/quiz";
 
 const quiz: Quiz = {
@@ -32,6 +33,8 @@ const quiz: Quiz = {
     },
   ],
 };
+
+const orderedQuestions = orderQuestionsByType(quiz.questions);
 
 describe("quizSessionReducer", () => {
   it("preserves answer drafts and flags while navigating", () => {
@@ -83,7 +86,10 @@ describe("quizSessionReducer", () => {
       type: "toggle_flag",
       questionId: "q2",
     });
-    state = quizSessionReducer(state, { type: "submit_quiz", quiz });
+    state = quizSessionReducer(state, {
+      type: "submit_quiz",
+      questions: orderedQuestions,
+    });
 
     expect(state.isComplete).toBe(true);
     expect(state.answers).toEqual([
@@ -94,16 +100,16 @@ describe("quizSessionReducer", () => {
         flagged: false,
       },
       {
-        questionId: "q2",
-        answer: undefined,
-        isCorrect: false,
-        flagged: true,
-      },
-      {
         questionId: "q3",
         answer: undefined,
         isCorrect: false,
         flagged: false,
+      },
+      {
+        questionId: "q2",
+        answer: undefined,
+        isCorrect: false,
+        flagged: true,
       },
     ]);
 
@@ -121,7 +127,7 @@ describe("quizSessionReducer", () => {
         type: "toggle_flag",
         questionId: "q1",
       }),
-      { type: "submit_quiz", quiz },
+      { type: "submit_quiz", questions: orderedQuestions },
     );
     expect(quizSessionReducer(completed, { type: "restart" })).toEqual(
       initialQuizSessionState,

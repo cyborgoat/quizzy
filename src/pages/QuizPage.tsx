@@ -23,14 +23,14 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   if (session.isComplete) {
     const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
     return (
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
         <ResultSummary
           quiz={quiz}
           score={session.score}
           unansweredCount={unansweredCount}
           onRestart={session.restart}
         />
-        <ReviewSummary quiz={quiz} answers={session.answers} />
+        <ReviewSummary questions={session.questions} answers={session.answers} />
       </main>
     );
   }
@@ -40,13 +40,13 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
       defaultOpen
       style={
         {
-          "--sidebar-width": "18rem",
-          "--sidebar-width-mobile": "20rem",
+          "--sidebar-width": "15rem",
+          "--sidebar-width-mobile": "17rem",
         } as CSSProperties
       }
     >
       <QuizQuestionSidebar
-        quiz={quiz}
+        questions={session.questions}
         attempts={session.attempts}
         currentIndex={session.currentQuestionIndex}
         answeredCount={session.answeredCount}
@@ -54,14 +54,14 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
         onSelectQuestion={session.goToQuestion}
         onSubmitQuiz={() => setSubmitDialogOpen(true)}
       />
-      <SidebarInset className="min-h-svh bg-transparent">
+      <SidebarInset className="flex min-h-svh flex-col bg-transparent">
         <QuizHeader
           title={quiz.title}
           current={session.currentQuestionIndex + 1}
           total={session.totalQuestions}
           answered={session.answeredCount}
         />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 pb-12 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5 pb-10 sm:px-6 lg:px-8">
           <QuestionContent
             question={session.currentQuestion}
             answer={session.currentAnswer}

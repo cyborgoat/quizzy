@@ -36,8 +36,8 @@ export function QuestionContent({
 
   return (
     <section aria-labelledby="question-prompt">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           {question.type === "multiple_choice"
             ? "Select all answers that apply"
             : question.type === "true_false"
@@ -56,11 +56,11 @@ export function QuestionContent({
       </div>
       <h1
         id="question-prompt"
-        className="mt-3 text-2xl font-semibold leading-tight text-zinc-950 sm:text-3xl"
+        className="mt-2 text-base font-medium leading-snug text-zinc-950 sm:text-lg"
       >
         {question.prompt}
       </h1>
-      <div className="mt-8 space-y-3" role="group" aria-labelledby="question-prompt">
+      <div className="mt-5 space-y-2" role="group" aria-labelledby="question-prompt">
         {options.map((option, index) => (
           <AnswerOptionRow
             key={`${index}-${option}`}

@@ -1,8 +1,8 @@
 import { isAnswerCorrect } from "@/lib/scoring";
 import type {
   AnswerRecord,
-  Quiz,
   QuestionAttempt,
+  QuizQuestion,
   SubmittedAnswer,
 } from "@/types/quiz";
 
@@ -17,7 +17,7 @@ export type QuizSessionAction =
   | { type: "go_to_question"; index: number; totalQuestions: number }
   | { type: "set_answer"; questionId: string; answer?: SubmittedAnswer }
   | { type: "toggle_flag"; questionId: string }
-  | { type: "submit_quiz"; quiz: Quiz }
+  | { type: "submit_quiz"; questions: QuizQuestion[] }
   | { type: "restart" };
 
 export const initialQuizSessionState: QuizSessionState = {
@@ -79,7 +79,7 @@ export function quizSessionReducer(
       return {
         ...state,
         isComplete: true,
-        answers: action.quiz.questions.map((question) => {
+        answers: action.questions.map((question) => {
           const attempt = getAttempt(state.attempts, question.id);
           return {
             questionId: question.id,
