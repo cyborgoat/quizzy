@@ -4,9 +4,18 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to build, for example v0.1.0
+        required: true
+        type: string
 
 permissions:
   contents: write
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
 
 jobs:
   validate:
@@ -16,6 +25,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -27,8 +38,6 @@ jobs:
         run: npm ci
 
       - name: Verify release versions
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           node <<'NODE'
           const fs = require("node:fs");
@@ -74,26 +83,28 @@ jobs:
             runner: macos-15
             rust-targets: aarch64-apple-darwin
             args: --target aarch64-apple-darwin --bundles app,dmg
-            upload-plain-binary: false
+            upload_plain_binary: false
           - name: macOS Intel
             runner: macos-15-intel
             rust-targets: x86_64-apple-darwin
             args: --target x86_64-apple-darwin --bundles app,dmg
-            upload-plain-binary: false
+            upload_plain_binary: false
           - name: Windows x64
             runner: windows-2025
             rust-targets: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
-            upload-plain-binary: true
+            upload_plain_binary: true
           - name: Linux x64
             runner: ubuntu-22.04
             rust-targets: x86_64-unknown-linux-gnu
             args: --target x86_64-unknown-linux-gnu --bundles appimage,deb
-            upload-plain-binary: false
+            upload_plain_binary: false
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -130,8 +141,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Quizzy ${{ github.ref_name }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: Quizzy ${{ env.RELEASE_TAG }}
           releaseBody: |
             Download the installer for your operating system from the assets below.
 
@@ -140,8 +151,8 @@ jobs:
           releaseDraft: true
           prerelease: false
           generateReleaseNotes: true
-          uploadPlainBinary: ${{ matrix.upload-plain-binary }}
-          releaseAssetNamePattern: Quizzy_${{ github.ref_name }}_[platform]_[arch][setup][ext]
+          uploadPlainBinary: ${{ matrix.upload_plain_binary }}
+          releaseAssetNamePattern: Quizzy_${{ env.RELEASE_TAG }}_[platform]_[arch][setup][ext]
           args: ${{ matrix.args }}
 
   release:
@@ -153,4 +164,4 @@ jobs:
       - name: Publish completed release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ github.ref_name }}" --draft=false --repo "${{ github.repository }}"
+        run: gh release edit "${{ env.RELEASE_TAG }}" --draft=false --repo "${{ github.repository }}"
