@@ -1,0 +1,47 @@
+{
+  "id": "css-basics",
+  "title": "CSS Basics",
+  "description": "Selectors, layout, and responsive styling fundamentals.",
+  "tags": ["css", "frontend"],
+  "questions": [
+    {
+      "id": "css-q1",
+      "type": "single_choice",
+      "prompt": "Which property changes an element's text color?",
+      "options": ["font-color", "text-color", "color", "foreground"],
+      "answerIndex": 2,
+      "explanation": "The color property sets the foreground text color."
+    },
+    {
+      "id": "css-q2",
+      "type": "true_false",
+      "prompt": "The box-sizing: border-box rule includes padding and border in the declared width.",
+      "answer": true,
+      "explanation": "border-box makes the declared size include content, padding, and border."
+    },
+    {
+      "id": "css-q3",
+      "type": "multiple_choice",
+      "prompt": "Which are valid flex container alignment properties?",
+      "options": ["justify-content", "align-items", "place-text", "align-content"],
+      "answerIndices": [0, 1, 3],
+      "explanation": "justify-content, align-items, and align-content are flex alignment properties."
+    },
+    {
+      "id": "css-q4",
+      "type": "single_choice",
+      "prompt": "Which unit is relative to the root element's font size?",
+      "options": ["em", "rem", "px", "vw"],
+      "answerIndex": 1,
+      "explanation": "rem units are based on the root element's font size."
+    },
+    {
+      "id": "css-q5",
+      "type": "multiple_choice",
+      "prompt": "Which techniques can create a responsive layout?",
+      "options": ["Media queries", "CSS Grid", "Flexible widths", "Fixed desktop-only widths"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "Media queries, Grid, and flexible dimensions all support responsive layouts."
+    }
+  ]
+}

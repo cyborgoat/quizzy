@@ -1,0 +1,47 @@
+{
+  "id": "javascript-basics",
+  "title": "JavaScript Basics",
+  "description": "Core language behavior, values, and everyday syntax.",
+  "tags": ["javascript", "programming"],
+  "questions": [
+    {
+      "id": "js-q1",
+      "type": "multiple_choice",
+      "prompt": "Which are JavaScript primitive types?",
+      "options": ["string", "number", "boolean", "array"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "Arrays are objects rather than primitive values."
+    },
+    {
+      "id": "js-q2",
+      "type": "true_false",
+      "prompt": "A const binding prevents the properties of an assigned object from changing.",
+      "answer": false,
+      "explanation": "const prevents reassignment of the binding, not mutation of the object."
+    },
+    {
+      "id": "js-q3",
+      "type": "single_choice",
+      "prompt": "Which operator checks value and type equality?",
+      "options": ["==", "===", "=", "!="],
+      "answerIndex": 1,
+      "explanation": "Strict equality, ===, compares without type coercion."
+    },
+    {
+      "id": "js-q4",
+      "type": "single_choice",
+      "prompt": "What does Array.prototype.map return?",
+      "options": ["The original array", "A new transformed array", "A boolean", "The final accumulated value"],
+      "answerIndex": 1,
+      "explanation": "map creates a new array from the callback result for each element."
+    },
+    {
+      "id": "js-q5",
+      "type": "multiple_choice",
+      "prompt": "Which values are falsy in JavaScript?",
+      "options": ["0", "An empty array", "An empty string", "null"],
+      "answerIndices": [0, 2, 3],
+      "explanation": "Empty arrays are truthy; 0, empty strings, and null are falsy."
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { confirm, open } from "@tauri-apps/plugin-dialog";
+import {
+  QuizLibraryContext,
+  type Notice,
+} from "@/contexts/quiz-library-context";
+import { parseQuizFiles } from "@/data/quizRepository";
+import { errorMessage, nativeApi } from "@/lib/native";
+import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
+
+export function QuizLibraryProvider({ children }: { children: ReactNode }) {
+  const [directoryPath, setDirectoryPath] = useState<string | null>(null);
+  const [directoryAvailable, setDirectoryAvailable] = useState(false);
+  const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
+  const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const state = await nativeApi.getWorkingDirectory();
+      setDirectoryPath(state.path);
+      setDirectoryAvailable(state.available);
+      if (!state.available) {
+        setQuizzes([]);
+        setInvalidReports([]);
+        return;
+      }
+      const files = await nativeApi.readWorkingDirectory();
+      const library = parseQuizFiles(files);
+      setQuizzes(library.quizzes);
+      setInvalidReports(library.invalidReports);
+      if (import.meta.env.DEV && library.invalidReports.length > 0) {
+        console.warn("Quizzy skipped invalid quiz files:", library.invalidReports);
+      }
+    } catch (error) {
+      setDirectoryAvailable(false);
+      setNotice({ kind: "error", text: errorMessage(error) });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void refresh(), 0);
+    return () => window.clearTimeout(timer);
+  }, [refresh]);
+
+  useEffect(() => {
+    function handleFocus() {
+      void refresh();
+    }
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refresh]);
+
+  async function chooseWorkingDirectory() {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        defaultPath: directoryPath ?? undefined,
+        title: "Choose Quizzy working directory",
+      });
+      if (!selected || Array.isArray(selected)) return;
+      await nativeApi.setWorkingDirectory(selected);
+      setNotice({ kind: "success", text: "Working directory updated." });
+      await refresh();
+    } catch (error) {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    }
+  }
+
+  async function importQuizzes() {
+    try {
+      const selected = await open({
+        multiple: true,
+        directory: false,
+        title: "Import quiz JSON files",
+        filters: [{ name: "Quiz JSON", extensions: ["json"] }],
+      });
+      if (!selected) return;
+      const paths = Array.isArray(selected) ? selected : [selected];
+      const files = await nativeApi.readImportFiles(paths);
+      const parsed = parseQuizFiles(files);
+      if (parsed.quizzes.length === 0) {
+        setNotice({
+          kind: "error",
+          text: `${parsed.invalidReports.length || files.length} file(s) were invalid. Nothing was imported.`,
+        });
+        return;
+      }
+
+      const conflicts = parsed.quizzes
+        .map((candidate) => {
+          const fileConflict = quizzes.find(
+            (existing) => existing.fileName === candidate.fileName,
+          );
+          const invalidFileConflict = invalidReports.some(
+            (report) => report.fileName === candidate.fileName,
+          );
+          const idConflict = quizzes.find(
+            (existing) => existing.quiz.id === candidate.quiz.id,
+          );
+          return { candidate, fileConflict, invalidFileConflict, idConflict };
+        })
+        .filter(
+          ({ fileConflict, invalidFileConflict, idConflict }) =>
+            fileConflict || invalidFileConflict || idConflict,
+        );
+
+      if (conflicts.length > 0) {
+        const approved = await confirm(
+          `${conflicts.length} imported quiz file(s) conflict with existing quizzes. Replace the existing quizzes?`,
+          { title: "Replace existing quizzes?", kind: "warning" },
+        );
+        if (!approved) {
+          setNotice({ kind: "error", text: "Import cancelled." });
+          return;
+        }
+      }
+
+      for (const candidate of parsed.quizzes) {
+        const fileConflict = quizzes.find(
+          (existing) => existing.fileName === candidate.fileName,
+        );
+        const invalidFileConflict = invalidReports.some(
+          (report) => report.fileName === candidate.fileName,
+        );
+        const idConflict = quizzes.find(
+          (existing) => existing.quiz.id === candidate.quiz.id,
+        );
+        await nativeApi.writeImportedQuiz({
+          fileName: candidate.fileName,
+          contents: files.find((file) => file.fileName === candidate.fileName)!.contents,
+          overwrite: Boolean(fileConflict || invalidFileConflict),
+          removeFileName:
+            idConflict && idConflict.fileName !== candidate.fileName
+              ? idConflict.fileName
+              : undefined,
+        });
+      }
+
+      const replaced = conflicts.length;
+      const invalid = parsed.invalidReports.length;
+      setNotice({
+        kind: "success",
+        text: `Imported ${parsed.quizzes.length} quiz file(s)${replaced ? `, replacing ${replaced}` : ""}${invalid ? `; skipped ${invalid} invalid file(s)` : ""}.`,
+      });
+      await refresh();
+    } catch (error) {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    }
+  }
+
+  async function deleteQuiz(source: QuizSource) {
+    const approved = await confirm(
+      `Delete "${source.quiz.title}" from the working directory? This cannot be undone.`,
+      { title: "Delete quiz?", kind: "warning" },
+    );
+    if (!approved) return;
+    try {
+      await nativeApi.deleteQuizFile(source.fileName);
+      setNotice({ kind: "success", text: `"${source.quiz.title}" was deleted.` });
+      await refresh();
+    } catch (error) {
+      setNotice({ kind: "error", text: errorMessage(error) });
+    }
+  }
+
+  const value = {
+    directoryPath,
+    directoryAvailable,
+    quizzes,
+    invalidReports,
+    notice,
+    isLoading,
+    chooseWorkingDirectory,
+    refresh,
+    importQuizzes,
+    deleteQuiz,
+    clearNotice: () => setNotice(null),
+  };
+
+  return (
+    <QuizLibraryContext.Provider value={value}>
+      {children}
+    </QuizLibraryContext.Provider>
+  );
+}

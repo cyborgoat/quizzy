@@ -1,0 +1,47 @@
+{
+  "id": "react-basics",
+  "title": "React Basics",
+  "description": "Fundamental React concepts for building component-based interfaces.",
+  "tags": ["react", "frontend"],
+  "questions": [
+    {
+      "id": "react-q1",
+      "type": "single_choice",
+      "prompt": "Which hook is commonly used for local component state?",
+      "options": ["useMemo", "useState", "useRef", "useCallback"],
+      "answerIndex": 1,
+      "explanation": "useState stores local component state and provides a setter."
+    },
+    {
+      "id": "react-q2",
+      "type": "multiple_choice",
+      "prompt": "Which values can cause a component to render again?",
+      "options": ["A state update", "New props", "Changing a plain local variable", "A consumed context update"],
+      "answerIndices": [0, 1, 3],
+      "explanation": "State, props, and consumed context participate in React rendering. A plain local variable does not."
+    },
+    {
+      "id": "react-q3",
+      "type": "true_false",
+      "prompt": "React components can return null.",
+      "answer": true,
+      "explanation": "Returning null tells React to render nothing for that component."
+    },
+    {
+      "id": "react-q4",
+      "type": "single_choice",
+      "prompt": "What identifies list items so React can match them between renders?",
+      "options": ["The className prop", "The key prop", "The id attribute", "The ref prop"],
+      "answerIndex": 1,
+      "explanation": "A stable key lets React identify items when a list changes."
+    },
+    {
+      "id": "react-q5",
+      "type": "multiple_choice",
+      "prompt": "Which statements about props are correct?",
+      "options": ["They are inputs to a component", "They should be mutated by the child", "They may contain functions", "They may contain React nodes"],
+      "answerIndices": [0, 2, 3],
+      "explanation": "Props are read-only inputs and can contain values such as callbacks and React nodes."
+    }
+  ]
+}
