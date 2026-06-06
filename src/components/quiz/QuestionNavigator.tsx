@@ -61,8 +61,7 @@ export function QuestionNavigator({
                       type="button"
                       size="default"
                       isActive={current}
-                      className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium"
-                      tooltip={question.prompt}
+                      className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
                       aria-label={status}
                       aria-current={current ? "step" : undefined}
                       onClick={() => onSelectQuestion(index)}

@@ -32,9 +32,7 @@ export function AnswerOptionRow({
         : selected
           ? "Your answer"
           : null
-    : selected
-      ? "Selected"
-      : null;
+    : null;
 
   return (
     <button

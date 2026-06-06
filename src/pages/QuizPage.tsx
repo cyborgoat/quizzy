@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ErrorState } from "@/components/quiz/ErrorState";
@@ -9,6 +10,7 @@ import { QuizQuestionSidebar } from "@/components/quiz/QuizQuestionSidebar";
 import { ResultSummary } from "@/components/quiz/ResultSummary";
 import { ReviewSummary } from "@/components/quiz/ReviewSummary";
 import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
+import { Button } from "@/components/ui/button";
 import {
   SidebarInset,
   SidebarProvider,
@@ -62,11 +64,8 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           current={session.currentQuestionIndex + 1}
           total={session.totalQuestions}
           answered={session.answeredCount}
-          currentIndex={session.currentQuestionIndex}
-          onPrevious={session.goToPreviousQuestion}
-          onNext={session.goToNextQuestion}
         />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5 pb-10 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5 sm:px-6 lg:px-8">
           <QuestionContent
             question={session.currentQuestion}
             answer={session.currentAnswer}
@@ -76,10 +75,28 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
             onMultiple={session.toggleMultipleChoiceAnswer}
             onTrueFalse={session.selectTrueFalseAnswer}
           />
+          <div className="mt-6 flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={session.goToPreviousQuestion}
+              disabled={session.currentQuestionIndex === 0}
+            >
+              <ChevronLeft className="size-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              onClick={session.goToNextQuestion}
+              disabled={session.currentQuestionIndex === session.totalQuestions - 1}
+            >
+              Next
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </main>
         <QuizActionBar
-          onSubmitQuiz={() => setSubmitDialogOpen(true)}
           onExitQuiz={() => setExitDialogOpen(true)}
+          onSubmitQuiz={() => setSubmitDialogOpen(true)}
         />
         <ExitQuizDialog
           open={exitDialogOpen}
