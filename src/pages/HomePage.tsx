@@ -1,16 +1,29 @@
-import { Download, RefreshCw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowRight, Download, RefreshCw, Target } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { QuizList } from "@/components/quiz/QuizList";
+import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function HomePage() {
   const library = useQuizLibrary();
   const { userName } = useUserProfile();
+  const { goals } = useGoals();
   const navigate = useNavigate();
+  const activeGoals = goals.filter((g) => !g.completed);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    setIsRefreshing(true);
+    await Promise.all([library.refresh(), new Promise((r) => setTimeout(r, 500))]);
+    setIsRefreshing(false);
+    toast.success("Library refreshed.");
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
@@ -22,6 +35,35 @@ export function HomePage() {
           Ready to practice? Pick a quiz below and get started.
         </p>
       </div>
+
+      {activeGoals.length > 0 && (
+        <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+              <Target className="size-4 shrink-0 text-zinc-500" />
+              Your goals
+            </div>
+            <Link
+              to="/goals"
+              className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900"
+            >
+              View all <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+          <ul className="mt-3 space-y-1.5">
+            {activeGoals.slice(0, 3).map((goal) => (
+              <li key={goal.id} className="flex items-center gap-2 text-xs text-zinc-600">
+                <span className="size-1.5 shrink-0 rounded-full bg-zinc-400" />
+                <span className="truncate">
+                  <span className="font-medium text-zinc-800">{goal.quizTitle}</span>
+                  {" — "}
+                  {goal.description}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {library.isLoading && !library.directoryPath ? (
         <p className="py-20 text-center text-sm text-zinc-500">Loading Quizzy…</p>
@@ -46,8 +88,8 @@ export function HomePage() {
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => void library.refresh()}>
-                <RefreshCw className="size-4" />
+              <Button variant="outline" size="sm" onClick={() => void handleRefresh()} disabled={isRefreshing}>
+                <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
               <Button size="sm" onClick={() => void library.importQuizzes()}>

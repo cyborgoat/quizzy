@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { Goal } from "@/types/goal";
 
 export type WorkingDirectoryState = {
   path: string | null;
@@ -31,6 +32,10 @@ export const nativeApi = {
     invoke<void>("write_imported_quiz", { request }),
   deleteQuizFile: (fileName: string) =>
     invoke<void>("delete_quiz_file", { fileName }),
+  getGoals: () =>
+    invoke<Goal[]>("get_goals"),
+  saveGoals: (goals: Goal[]) =>
+    invoke<void>("save_goals", { goals }),
 };
 
 export function errorMessage(error: unknown) {

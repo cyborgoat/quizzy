@@ -1,4 +1,4 @@
-import { Home, Settings } from "lucide-react";
+import { Home, Settings, Target } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -11,9 +11,12 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { useGoals } from "@/hooks/useGoals";
 
 export function AppSidebar() {
   const location = useLocation();
+  const { goals } = useGoals();
+  const activeGoalCount = goals.filter((g) => !g.completed).length;
 
   return (
     <Sidebar collapsible="icon">
@@ -35,6 +38,24 @@ export function AppSidebar() {
               <NavLink to="/">
                 <Home className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Home</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={location.pathname === "/goals"}
+              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+            >
+              <NavLink to="/goals" className="flex items-center gap-2">
+                <Target className="size-4 shrink-0" />
+                <span className="flex-1 group-data-[collapsible=icon]:hidden">Goals</span>
+                {activeGoalCount > 0 && (
+                  <span className="ml-auto flex size-4 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-semibold text-white group-data-[collapsible=icon]:hidden">
+                    {activeGoalCount}
+                  </span>
+                )}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
