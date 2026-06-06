@@ -1,125 +1,91 @@
-import {
-  Download,
-  FolderCog,
-  GraduationCap,
-  RefreshCw,
-} from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { QuizList } from "@/components/quiz/QuizList";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function HomePage() {
   const library = useQuizLibrary();
+  const { userName } = useUserProfile();
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
-              <GraduationCap className="size-4" />
-            </span>
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
+          Hello, {userName || "there"}
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Ready to practice? Pick a quiz below and get started.
+        </p>
+      </div>
+
+      {library.isLoading && !library.directoryPath ? (
+        <p className="py-20 text-center text-sm text-zinc-500">Loading Quizzy…</p>
+      ) : !library.directoryAvailable ? (
+        <EmptyState
+          title={library.directoryPath ? "Working directory unavailable" : "No quiz directory set"}
+          description={
+            library.directoryPath
+              ? "Quizzy could not access the configured directory. You can update it in Settings."
+              : "Choose a working directory in Settings to get started."
+          }
+          actionLabel="Open Settings"
+          onAction={() => navigate("/settings")}
+        />
+      ) : (
+        <>
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-base font-semibold text-zinc-950">Quizzy</h1>
-              <p className="max-w-md truncate text-xs text-zinc-500">
-                {library.directoryPath ?? "Choose a local quiz directory"}
-              </p>
+              <p className="text-xs font-medium text-zinc-500">Local quiz library</p>
+              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950">
+                Choose a quiz
+              </h2>
             </div>
-          </div>
-          {library.directoryAvailable && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => void library.refresh()}>
-                <RefreshCw className="size-4" /> Refresh
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => void library.chooseWorkingDirectory()}>
-                <FolderCog className="size-4" /> Change folder
+                <RefreshCw className="size-4" />
+                Refresh
               </Button>
               <Button size="sm" onClick={() => void library.importQuizzes()}>
-                <Download className="size-4" /> Import JSON
+                <Download className="size-4" />
+                Import JSON
               </Button>
             </div>
+          </div>
+
+          {library.invalidReports.length > 0 && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>
+                {library.invalidReports.length} invalid quiz file(s) were skipped
+              </AlertTitle>
+              <AlertDescription>
+                <ul className="mt-2 space-y-2">
+                  {library.invalidReports.map((report) => (
+                    <li key={report.fileName}>
+                      <strong>{report.fileName}:</strong> {report.issues.join(" ")}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
-      </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        {library.notice && (
-          <Alert
-            className="mb-6"
-            variant={library.notice.kind === "error" ? "destructive" : "success"}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <AlertDescription>{library.notice.text}</AlertDescription>
-              <button
-                type="button"
-                className="text-xs font-semibold underline"
-                onClick={library.clearNotice}
-              >
-                Dismiss
-              </button>
-            </div>
-          </Alert>
-        )}
-
-        {library.isLoading && !library.directoryPath ? (
-          <p className="py-20 text-center text-sm text-zinc-500">Loading Quizzy…</p>
-        ) : !library.directoryAvailable ? (
-          <EmptyState
-            title={library.directoryPath ? "Working directory unavailable" : "Choose a working directory"}
-            description={
-              library.directoryPath
-                ? `Quizzy could not access ${library.directoryPath}. Reconnect the drive or choose another folder.`
-                : "Quizzy stores no quiz database. Select a folder containing top-level quiz JSON files, or choose an empty folder and import your quizzes."
-            }
-            actionLabel="Choose directory"
-            onAction={() => void library.chooseWorkingDirectory()}
-          />
-        ) : (
-          <>
-            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-medium text-zinc-500">Local quiz library</p>
-                <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950">
-                  Choose a quiz
-                </h2>
-              </div>
-              <p className="text-xs text-zinc-500">
-                {library.quizzes.length} valid quiz{library.quizzes.length === 1 ? "" : "zes"}
-              </p>
-            </div>
-
-            {library.invalidReports.length > 0 && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertTitle>
-                  {library.invalidReports.length} invalid quiz file(s) were skipped
-                </AlertTitle>
-                <AlertDescription>
-                  <ul className="mt-2 space-y-2">
-                    {library.invalidReports.map((report) => (
-                      <li key={report.fileName}>
-                        <strong>{report.fileName}:</strong> {report.issues.join(" ")}
-                      </li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {library.quizzes.length > 0 ? (
-              <QuizList quizzes={library.quizzes} onDelete={(quiz) => void library.deleteQuiz(quiz)} />
-            ) : (
-              <EmptyState
-                title="No valid quizzes yet"
-                description="Import one or more quiz JSON files into this working directory."
-                actionLabel="Import JSON files"
-                onAction={() => void library.importQuizzes()}
-              />
-            )}
-          </>
-        )}
-      </main>
-    </div>
+          {library.quizzes.length > 0 ? (
+            <QuizList quizzes={library.quizzes} onDelete={(quiz) => void library.deleteQuiz(quiz)} />
+          ) : (
+            <EmptyState
+              title="No valid quizzes yet"
+              description="Import one or more quiz JSON files into this working directory."
+              actionLabel="Import JSON files"
+              onAction={() => void library.importQuizzes()}
+            />
+          )}
+        </>
+      )}
+    </main>
   );
 }

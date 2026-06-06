@@ -5,6 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import { confirm, open } from "@tauri-apps/plugin-dialog";
+import { toast } from "sonner";
 import {
   QuizLibraryContext,
   type Notice,
@@ -18,7 +19,6 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const [directoryAvailable, setDirectoryAvailable] = useState(false);
   const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
-  const [notice, setNotice] = useState<Notice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -60,23 +60,6 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("focus", handleFocus);
   }, [refresh]);
 
-  async function chooseWorkingDirectory() {
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        defaultPath: directoryPath ?? undefined,
-        title: "Choose Quizzy working directory",
-      });
-      if (!selected || Array.isArray(selected)) return;
-      await nativeApi.setWorkingDirectory(selected);
-      setNotice({ kind: "success", text: "Working directory updated." });
-      await refresh();
-    } catch (error) {
-      setNotice({ kind: "error", text: errorMessage(error) });
-    }
-  }
-
   async function importQuizzes() {
     try {
       const selected = await open({
@@ -90,10 +73,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
       const files = await nativeApi.readImportFiles(paths);
       const parsed = parseQuizFiles(files);
       if (parsed.quizzes.length === 0) {
-        setNotice({
-          kind: "error",
-          text: `${parsed.invalidReports.length || files.length} file(s) were invalid. Nothing was imported.`,
-        });
+        toast.error(`${parsed.invalidReports.length || files.length} file(s) were invalid. Nothing was imported.`);
         return;
       }
 
@@ -120,10 +100,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
           `${conflicts.length} imported quiz file(s) conflict with existing quizzes. Replace the existing quizzes?`,
           { title: "Replace existing quizzes?", kind: "warning" },
         );
-        if (!approved) {
-          setNotice({ kind: "error", text: "Import cancelled." });
-          return;
-        }
+        if (!approved) return;
       }
 
       for (const candidate of parsed.quizzes) {
@@ -149,13 +126,12 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
 
       const replaced = conflicts.length;
       const invalid = parsed.invalidReports.length;
-      setNotice({
-        kind: "success",
-        text: `Imported ${parsed.quizzes.length} quiz file(s)${replaced ? `, replacing ${replaced}` : ""}${invalid ? `; skipped ${invalid} invalid file(s)` : ""}.`,
-      });
+      toast.success(
+        `Imported ${parsed.quizzes.length} quiz file(s)${replaced ? `, replacing ${replaced}` : ""}${invalid ? `; skipped ${invalid} invalid file(s)` : ""}.`,
+      );
       await refresh();
     } catch (error) {
-      setNotice({ kind: "error", text: errorMessage(error) });
+      toast.error(errorMessage(error));
     }
   }
 
@@ -167,10 +143,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     if (!approved) return;
     try {
       await nativeApi.deleteQuizFile(source.fileName);
-      setNotice({ kind: "success", text: `"${source.quiz.title}" was deleted.` });
+      toast.success(`"${source.quiz.title}" was deleted.`);
       await refresh();
     } catch (error) {
-      setNotice({ kind: "error", text: errorMessage(error) });
+      toast.error(errorMessage(error));
     }
   }
 
@@ -179,13 +155,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     directoryAvailable,
     quizzes,
     invalidReports,
-    notice,
     isLoading,
-    chooseWorkingDirectory,
     refresh,
     importQuizzes,
     deleteQuiz,
-    clearNotice: () => setNotice(null),
   };
 
   return (
