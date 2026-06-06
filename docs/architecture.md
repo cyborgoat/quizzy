@@ -10,7 +10,7 @@ User
   |
 React pages and components
   |
-QuizLibraryProvider / useQuizSession
+UserProfileProvider / QuizLibraryProvider / useQuizSession
   |
 Zod validation and scoring
   |
@@ -28,15 +28,31 @@ Instead, it calls a small set of quiz-specific Rust commands.
 
 ### Application and routing
 
-`src/main.tsx` mounts the library provider and router. Routes are defined in
+`src/main.tsx` mounts the provider tree and router. Routes are defined in
 `src/app/routes.tsx`:
 
 | Route | Page |
 | --- | --- |
-| `/` | Quiz library and working-directory management |
+| `/` | Quiz library (home page) |
+| `/settings` | User profile and working-directory configuration |
 | `/quiz/:quizId` | Active quiz or final results |
 
 Unknown routes redirect to the home page.
+
+`/` and `/settings` share `AppLayout`, which wraps both pages in a
+`SidebarProvider`, renders `AppSidebar` (the persistent navigation sidebar), and
+exposes the page content area via React Router's `<Outlet />`. The
+`/quiz/:quizId` route uses its own layout and its own `SidebarProvider` for the
+question navigator.
+
+### User profile state
+
+`UserProfileProvider` stores the user's display name in `localStorage` under the
+key `quizzy:profile:name`. It exposes `userName` and `setUserName` through the
+`UserProfileContext`. No Tauri backend is involved; the value is read
+synchronously on mount via a lazy `useState` initializer.
+
+`useUserProfile` is the hook consumers call to read or update the name.
 
 ### Library state
 
@@ -45,8 +61,12 @@ Unknown routes redirect to the home page.
 - Working-directory path and availability
 - Valid quiz sources
 - Invalid-file reports
-- Loading and notification state
-- Directory selection, refresh, import, and deletion workflows
+- Loading state
+- Refresh, import, and deletion workflows
+
+Operations that complete asynchronously — import, deletion, refresh, and
+directory application — call `toast.success` or `toast.error` from Sonner
+directly rather than updating a local notice state.
 
 `parseQuizFiles` is the boundary between raw file contents and trusted quiz
 objects. It parses JSON, applies the Zod schema, sorts files, and rejects
@@ -68,20 +88,27 @@ transitions deterministic and testable. The hook receives an already validated
 
 ### Presentation
 
-Quiz components are split by responsibility:
+The app uses two independent sidebar contexts:
+
+**App layout** (`AppLayout` + `AppSidebar`): wraps the home and settings pages.
+The sidebar is collapsible to icon-only mode and contains Home navigation in the
+content area and Settings navigation pinned to the footer.
+
+**Quiz page** (`QuizPage`): wraps the active quiz in its own `SidebarProvider`.
+The left sidebar (`QuizQuestionSidebar`) shows the question navigator; on mobile
+it opens as an off-canvas sheet. The header shows the quiz title, question
+counter, and answered-count progress bar. Previous and Next buttons appear inline
+below each question. The sticky footer holds Home (exit) and Submit quiz.
+
+Both sidebars use the same shadcn `Sidebar` primitive. The primitive owns desktop
+collapse state, the mobile sheet, keyboard toggle (`Cmd+B` / `Ctrl+B`), and focus
+management.
+
+Other quiz components are split by responsibility:
 
 - Library list and states
-- Header and progress
 - Question content and answer rows
-- shadcn `Sidebar` question navigator with its responsive mobile sheet
-- Previous/Next action bar and final-submit confirmation
 - Result summary and answer review
-
-The question page uses a wide reading layout. Cards are reserved for library
-items, results, and status content. Its navigation layout is composed with
-`SidebarProvider`, a left-side `Sidebar`, `SidebarInset`, and `SidebarTrigger`;
-the sidebar primitive owns desktop collapse state, the mobile sheet, keyboard
-toggle behavior, and focus management.
 
 ## Native layers
 
@@ -109,6 +136,15 @@ performed by custom Rust commands.
 4. React parses and validates every file.
 5. Valid quizzes are listed; invalid files become diagnostics.
 
+### Settings save
+
+1. The user edits their name and/or picks a new directory in `SettingsPage`.
+2. Changes are staged in local component state; nothing is written yet.
+3. Clicking Save commits the name to `localStorage` via `UserProfileProvider`.
+4. If a new directory was staged, React calls `nativeApi.setWorkingDirectory`,
+   then rescans the working directory.
+5. A success toast confirms the save.
+
 ### Import
 
 1. The dialog plugin returns selected source paths.
@@ -133,12 +169,15 @@ performed by custom Rust commands.
 ```text
 src/
   app/            Router configuration
-  components/     Quiz UI and local UI primitives
-  contexts/       Quiz library provider and context type
+  components/
+    layout/       AppLayout and AppSidebar (persistent navigation)
+    quiz/         Quiz UI components
+    ui/           shadcn-style local primitives
+  contexts/       QuizLibraryProvider, UserProfileProvider, and context types
   data/           Zod schema, repository parser, and tests
-  hooks/          Library and quiz-session hooks
+  hooks/          useQuizLibrary, useQuizSession, useUserProfile
   lib/            Native adapter, scoring, and utility functions
-  pages/          Home and quiz routes
+  pages/          HomePage, SettingsPage, QuizPage
   types/          Quiz and answer domain types
 
 src-tauri/

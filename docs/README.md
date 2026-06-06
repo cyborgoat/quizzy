@@ -2,12 +2,14 @@
 
 Quizzy is a local-first desktop quiz application built with Tauri v2, React,
 TypeScript, and Rust. It reads quiz files from a user-selected directory rather
-than storing quiz content in a database.
+than storing quiz content in a database. A persistent sidebar provides navigation
+between the home page and the Settings page, where users configure their display
+name and working directory.
 
 ## Documentation map
 
 - [Quick start](quick-start.md): prerequisites, local development, and desktop builds
-- [Features and workflows](features.md): working directories, imports, quiz sessions, and review
+- [Features and workflows](features.md): sidebar, settings, working directories, imports, quiz sessions, and review
 - [Software architecture](architecture.md): frontend, native layer, data flow, and project structure
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
 - [Native storage and security](native-storage.md): settings, filesystem boundaries, and atomic writes
@@ -29,6 +31,7 @@ Reference quiz files for development and manual import testing are kept in
 | UI primitives | shadcn-style local components |
 | Routing | React Router |
 | Validation | Zod |
+| Toast notifications | Sonner |
 | Frontend tests | Vitest |
 
 ## Design principles

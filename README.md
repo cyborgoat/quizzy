@@ -35,6 +35,12 @@ Create desktop installers with:
 npm run tauri build
 ```
 
+## First launch
+
+On first launch, open **Settings** from the sidebar to enter your name and select
+a working directory. Click **Save**, then return to the home page to import quiz
+files and get started.
+
 ## Quiz files
 
 The configured working directory uses a flat layout. Each top-level `.json` file
