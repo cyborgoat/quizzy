@@ -12,7 +12,8 @@ export type GoalsContextValue = {
   isLoading: boolean;
   addGoal: (goal: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) => Promise<void>;
   recordAttempt: (quizId: string, attempt: AttemptInput) => Promise<void>;
-  finishGoal: (id: string) => Promise<void>;
+  completeGoal: (id: string) => Promise<void>;
+  reopenGoal: (id: string) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
 };
 

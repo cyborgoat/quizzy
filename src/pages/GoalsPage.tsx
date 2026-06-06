@@ -178,7 +178,7 @@ export function GoalsPage() {
           {completedGoals.length > 0 && (
             <section>
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Completed · {completedGoals.length}
+                Complete · {completedGoals.length}
               </h2>
               <div className="grid gap-3 opacity-60 md:grid-cols-2 xl:grid-cols-3">
                 {completedGoals.map((goal) => (

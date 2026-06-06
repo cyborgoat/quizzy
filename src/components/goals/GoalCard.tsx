@@ -1,5 +1,5 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { ArrowRight, CheckCircle2, CheckCircle, ChevronDown, ChevronUp, Trash2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, CheckCircle, ChevronDown, ChevronUp, RotateCcw, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -56,18 +56,22 @@ function AttemptRow({ attempt }: { attempt: GoalAttempt }) {
 }
 
 export function GoalCard({ goal }: { goal: Goal }) {
-  const { finishGoal, deleteGoal } = useGoals();
+  const { completeGoal, reopenGoal, deleteGoal } = useGoals();
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const latestAttempt = goal.attempts.at(-1);
   const attempts = [...goal.attempts].reverse();
 
-  async function handleFinish() {
-    const ok = await confirm("Mark this goal as finished?", {
-      title: "Finish goal",
+  async function handleComplete() {
+    const ok = await confirm("Mark this goal as complete?", {
+      title: "Complete goal",
       kind: "info",
     });
-    if (ok) await finishGoal(goal.id);
+    if (ok) await completeGoal(goal.id);
+  }
+
+  async function handleReopen() {
+    await reopenGoal(goal.id);
   }
 
   async function handleDelete() {
@@ -85,7 +89,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
           <h3 className="truncate text-sm font-semibold text-zinc-950">{goal.quizTitle}</h3>
           {goal.completed && goal.completedAt && (
             <p className="mt-0.5 text-xs text-zinc-400">
-              Finished {new Date(goal.completedAt).toLocaleDateString()}
+              Completed {new Date(goal.completedAt).toLocaleDateString()}
             </p>
           )}
         </div>
@@ -152,15 +156,25 @@ export function GoalCard({ goal }: { goal: Goal }) {
         >
           Start quiz <ArrowRight className="size-3.5" />
         </Link>
-        {!goal.completed && (
+        {goal.completed ? (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => void handleFinish()}
+            onClick={() => void handleReopen()}
+            className="gap-1.5 text-zinc-500"
+          >
+            <RotateCcw className="size-3.5" />
+            Reopen
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void handleComplete()}
             className="gap-1.5"
           >
             <CheckCircle2 className="size-3.5" />
-            Finish
+            Complete
           </Button>
         )}
       </div>

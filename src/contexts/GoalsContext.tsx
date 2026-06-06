@@ -71,15 +71,27 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function finishGoal(id: string) {
+  async function completeGoal(id: string) {
     try {
-      const updated = goals.map((g) =>
-        g.id === id
-          ? { ...g, completed: true, completedAt: new Date().toISOString() }
-          : g,
+      await persist(
+        goals.map((g) =>
+          g.id === id ? { ...g, completed: true, completedAt: new Date().toISOString() } : g,
+        ),
       );
-      await persist(updated);
-      toast.success("Goal marked as finished.");
+      toast.success("Goal marked as complete.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  async function reopenGoal(id: string) {
+    try {
+      await persist(
+        goals.map((g) =>
+          g.id === id ? { ...g, completed: false, completedAt: undefined } : g,
+        ),
+      );
+      toast.success("Goal moved back to active.");
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -95,7 +107,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <GoalsContext.Provider value={{ goals, isLoading, addGoal, recordAttempt, finishGoal, deleteGoal }}>
+    <GoalsContext.Provider value={{ goals, isLoading, addGoal, recordAttempt, completeGoal, reopenGoal, deleteGoal }}>
       {children}
     </GoalsContext.Provider>
   );
