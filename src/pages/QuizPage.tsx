@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
@@ -15,6 +15,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
 import type { Quiz } from "@/types/quiz";
@@ -22,8 +23,27 @@ import type { Quiz } from "@/types/quiz";
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const navigate = useNavigate();
   const session = useQuizSession(quiz);
+  const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const recordedRef = useRef(false);
+
+  useEffect(() => {
+    if (session.isComplete && !recordedRef.current) {
+      recordedRef.current = true;
+      void recordAttempt(quiz.id, {
+        score: session.score,
+        total: session.totalQuestions,
+        questionResults: session.questions.map((q, i) => ({
+          questionId: q.id,
+          prompt: q.prompt,
+          correct: session.answers[i]?.isCorrect ?? false,
+        })),
+      });
+    } else if (!session.isComplete) {
+      recordedRef.current = false;
+    }
+  }, [session.isComplete]);
 
   if (session.isComplete) {
     const unansweredCount = session.answers.filter((answer) => !answer.answer).length;

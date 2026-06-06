@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { GoalsContext } from "@/contexts/goals-context";
+import { type AttemptInput, GoalsContext } from "@/contexts/goals-context";
 import { errorMessage, nativeApi } from "@/lib/native";
-import type { Goal } from "@/types/goal";
+import type { Goal, GoalAttempt } from "@/types/goal";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -16,7 +16,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const loaded = await nativeApi.getGoals();
-      setGoals(loaded);
+      setGoals(loaded.map((g) => ({ attempts: [], ...g })));
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -33,16 +33,39 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     setGoals(updated);
   }
 
-  async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed">) {
+  async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
     try {
       const newGoal: Goal = {
         ...data,
         id: generateId(),
         createdAt: new Date().toISOString(),
         completed: false,
+        attempts: [],
       };
       await persist([...goals, newGoal]);
       toast.success("Goal created.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
+  async function recordAttempt(quizId: string, input: AttemptInput) {
+    const matching = goals.filter((g) => g.quizId === quizId);
+    if (matching.length === 0) return;
+    const attempt: GoalAttempt = {
+      id: generateId(),
+      takenAt: new Date().toISOString(),
+      score: input.score,
+      total: input.total,
+      percentage: input.total > 0 ? Math.round((input.score / input.total) * 100) : 0,
+      questionResults: input.questionResults,
+    };
+    try {
+      await persist(
+        goals.map((g) =>
+          g.quizId === quizId ? { ...g, attempts: [...g.attempts, attempt] } : g,
+        ),
+      );
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -72,7 +95,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <GoalsContext.Provider value={{ goals, isLoading, addGoal, finishGoal, deleteGoal }}>
+    <GoalsContext.Provider value={{ goals, isLoading, addGoal, recordAttempt, finishGoal, deleteGoal }}>
       {children}
     </GoalsContext.Provider>
   );
