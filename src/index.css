@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@utility grid-center {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

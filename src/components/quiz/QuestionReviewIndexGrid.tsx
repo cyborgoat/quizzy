@@ -20,7 +20,7 @@ export function QuestionReviewIndexGrid({
           role="listitem"
           aria-label={`Question ${index + 1}, ${item.isCorrect ? "correct" : "incorrect"}`}
           className={cn(
-            "flex size-8 items-center justify-center rounded-md text-xs font-semibold transition-colors",
+            "grid-center size-8 rounded-md text-xs font-semibold tabular-nums transition-colors",
             item.isCorrect
               ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
               : "bg-red-100 text-red-800 hover:bg-red-200",

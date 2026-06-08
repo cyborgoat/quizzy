@@ -53,18 +53,20 @@ export function AnswerOptionRow({
         locked && !isCorrectAnswer && !isIncorrectSelection && "border-zinc-200 bg-zinc-50",
       )}
     >
-      <span className="flex h-5 shrink-0 items-center self-start">
+      <span className="grid-center h-5 shrink-0">
         {multiple ? (
           <Checkbox checked={selected} disabled={locked} className="size-4" />
         ) : (
           <span
             aria-hidden="true"
             className={cn(
-              "flex size-4 items-center justify-center rounded-full border",
+              "grid-center size-4 shrink-0 rounded-full border",
               selected ? "border-zinc-900" : "border-zinc-400",
             )}
           >
-            {selected && <span className="size-2 rounded-full bg-zinc-900" />}
+            {selected ? (
+              <span className="block size-2 shrink-0 rounded-full bg-zinc-900" />
+            ) : null}
           </span>
         )}
       </span>

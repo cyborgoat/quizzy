@@ -69,8 +69,8 @@ export function QuestionNavigator({
                       <span
                         className={
                           answered
-                            ? "flex size-5 shrink-0 items-center justify-center rounded-md bg-zinc-900 text-xs font-semibold text-white"
-                            : "flex size-5 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-100 text-xs font-medium text-zinc-400"
+                            ? "grid-center size-5 shrink-0 rounded-md bg-zinc-900 text-xs font-semibold tabular-nums text-white"
+                            : "grid-center size-5 shrink-0 rounded-md border border-zinc-200 bg-zinc-100 text-xs font-medium tabular-nums text-zinc-400"
                         }
                       >
                         {index + 1}

@@ -52,7 +52,7 @@ export function AppSidebar() {
                 <Target className="size-4 shrink-0" />
                 <span className="flex-1 group-data-[collapsible=icon]:hidden">Goals</span>
                 {activeGoalCount > 0 && (
-                  <span className="ml-auto flex size-4 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-semibold text-white group-data-[collapsible=icon]:hidden">
+                  <span className="ml-auto grid-center size-4 shrink-0 rounded-full bg-zinc-900 text-[10px] font-semibold tabular-nums text-white group-data-[collapsible=icon]:hidden">
                     {activeGoalCount}
                   </span>
                 )}
