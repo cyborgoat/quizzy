@@ -14,6 +14,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as QuizQuizIdRouteImport } from './routes/quiz_.$quizId'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppMistakesIndexRouteImport } from './routes/_app/mistakes/index'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
 import { Route as AppGoalsGoalIdAttemptsAttemptIdRouteImport } from './routes/_app/goals/$goalId/attempts/$attemptId'
 
@@ -41,6 +42,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMistakesIndexRoute = AppMistakesIndexRouteImport.update({
+  id: '/mistakes/',
+  path: '/mistakes/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   id: '/goals/',
   path: '/goals/',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
   '/goals/': typeof AppGoalsIndexRoute
+  '/mistakes/': typeof AppMistakesIndexRoute
   '/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
 export interface FileRoutesByTo {
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/quiz/$quizId': typeof QuizQuizIdRoute
   '/': typeof AppIndexRoute
   '/goals': typeof AppGoalsIndexRoute
+  '/mistakes': typeof AppMistakesIndexRoute
   '/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
 export interface FileRoutesById {
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/quiz_/$quizId': typeof QuizQuizIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
+  '/_app/mistakes/': typeof AppMistakesIndexRoute
   '/_app/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
 export interface FileRouteTypes {
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/quiz/$quizId'
     | '/goals/'
+    | '/mistakes/'
     | '/goals/$goalId/attempts/$attemptId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
     | '/quiz/$quizId'
     | '/'
     | '/goals'
+    | '/mistakes'
     | '/goals/$goalId/attempts/$attemptId'
   id:
     | '__root__'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '/quiz_/$quizId'
     | '/_app/'
     | '/_app/goals/'
+    | '/_app/mistakes/'
     | '/_app/goals/$goalId/attempts/$attemptId'
   fileRoutesById: FileRoutesById
 }
@@ -150,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/mistakes/': {
+      id: '/_app/mistakes/'
+      path: '/mistakes'
+      fullPath: '/mistakes/'
+      preLoaderRoute: typeof AppMistakesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/goals/': {
       id: '/_app/goals/'
       path: '/goals'
@@ -171,6 +190,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppGoalsIndexRoute: typeof AppGoalsIndexRoute
+  AppMistakesIndexRoute: typeof AppMistakesIndexRoute
   AppGoalsGoalIdAttemptsAttemptIdRoute: typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
 
@@ -178,6 +198,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppGoalsIndexRoute: AppGoalsIndexRoute,
+  AppMistakesIndexRoute: AppMistakesIndexRoute,
   AppGoalsGoalIdAttemptsAttemptIdRoute: AppGoalsGoalIdAttemptsAttemptIdRoute,
 }
 

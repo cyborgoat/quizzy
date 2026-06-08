@@ -36,18 +36,27 @@ export function QuizListItem({
           <Badge key={tag}>{tag}</Badge>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-zinc-100 pt-3">
         <span className="text-xs text-zinc-500">
           {source.quiz.questions.length} questions
         </span>
-        <Link
-          className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
-          to="/quiz/$quizId"
-          params={{ quizId: source.quiz.id }}
-          search={{ from: "home" }}
-        >
-          Start quiz <ArrowRight className="size-4" />
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+            to="/mistakes"
+            search={{ quizId: source.quiz.id }}
+          >
+            Mistakes Log
+          </Link>
+          <Link
+            className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+            to="/quiz/$quizId"
+            params={{ quizId: source.quiz.id }}
+            search={{ from: "home" }}
+          >
+            Start quiz <ArrowRight className="size-4" />
+          </Link>
+        </div>
       </div>
     </article>
   );

@@ -28,6 +28,7 @@ Tests currently cover:
 - Navigation boundary handling
 - Early submission with unanswered questions
 - Frozen submitted results and complete restart behavior
+- Mistake Log aggregation, threshold filtering, sorting, and empty-state detection
 
 Run them with:
 
@@ -88,6 +89,8 @@ Use the narrowest appropriate layer:
   `src/types/quizSession.ts`
 - Library workflow: `QuizLibraryProvider`
 - Goals workflow: `GoalsProvider` and `src/components/goals`
+- Mistake Log workflow: `useMistakeLog`, `src/lib/mistakeLog.ts`, and
+  `src/pages/MistakeLogPage.tsx`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
 - Filesystem behavior: typed native adapter plus a Rust command
 - Presentation: a focused component under `src/components`
@@ -110,8 +113,9 @@ Before packaging a release:
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
 7. Test directory selection, imports, replacement, deletion, practice and scored
-   quiz completion, goal creation, attempt recording, attempt deletion, and
-   attempt review in the packaged application.
+   quiz completion, goal creation, attempt recording, attempt deletion, attempt
+   review, and Mistake Log threshold filtering and question review in the packaged
+   application.
 
 The files under `sample-quizzes/` can be selected through the normal import
 dialog when manual test data is needed. They are not production resources.

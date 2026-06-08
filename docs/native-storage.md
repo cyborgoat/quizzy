@@ -16,8 +16,9 @@ Quizzy stores application data in the Tauri app-config directory:
       <attempt-id>.json
 ```
 
-`settings.json` holds the working-directory path, profile name, and quiz
-preferences (such as shuffle mode).
+`settings.json` holds the working-directory path, profile name, quiz preferences
+(such as shuffle mode), and Mistake Log thresholds (`mistakeLogMinMistakes` and
+`mistakeLogMaxCorrectnessPercentage`).
 
 Each goal is stored in its own directory. `goal.json` contains goal
 metadata. Attempt summaries live in `attempts/index.json`, and each full

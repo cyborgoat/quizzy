@@ -1,7 +1,7 @@
 # GitHub Releases
 
 Quizzy uses `.github/workflows/release.yml` to build native installers on
-GitHub-hosted macOS, Windows, and Linux machines.
+GitHub-hosted macOS and Windows machines.
 
 ## Produced artifacts
 
@@ -12,8 +12,6 @@ Each release builds:
 - Windows x64 portable executable
 - Windows x64 NSIS setup executable
 - Windows x64 MSI installer
-- Linux x64 AppImage
-- Linux x64 DEB package
 
 After every platform build succeeds, the workflow publishes the GitHub Release
 and attaches each platform-specific download to its assets.
@@ -57,7 +55,7 @@ GitHub runs the workflow automatically because the tag starts with `v`.
 2. Select **Actions** and wait for **Release Quizzy** to finish.
 3. Select **Releases**.
 4. Open `Quizzy v0.1.3`.
-5. Confirm the macOS, Windows, and Linux assets are attached.
+5. Confirm the macOS and Windows assets are attached.
 
 If a build fails, do not reuse the tag after changing code. Delete the failed
 release and tag, or increment the application version and create a new tag.

@@ -10,7 +10,8 @@ User
   |
 React pages and components
   |
-UserProfileProvider / QuizLibraryProvider / GoalsProvider / useQuizSession
+UserProfileProvider / QuizPreferencesProvider / MistakeLogSettingsProvider /
+QuizLibraryProvider / GoalsProvider / useQuizSession
   |
 Zod validation and scoring
   |
@@ -37,7 +38,8 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/` | Quiz library (home page) |
 | `/goals` | Goal tracking |
 | `/goals/:goalId/attempts/:attemptId` | Attempt review |
-| `/settings` | User profile and working-directory configuration |
+| `/mistakes` | Mistake Log (`?quizId=` scopes to one quiz) |
+| `/settings` | User profile, preferences, and working-directory configuration |
 | `/quiz/:quizId` | Active quiz or final results (`?mode=practice&count=N` or `?mode=scored`) |
 
 Unknown routes redirect to the home page.
@@ -48,14 +50,16 @@ exposes the page content area via TanStack Router's `<Outlet />`. The
 `/quiz/:quizId` route is non-nested at the root so it renders full-screen with
 its own `SidebarProvider` for the question navigator.
 
-### User profile state
+### User profile and preferences state
 
-`UserProfileProvider` stores the user's display name in `localStorage` under the
-key `quizzy:profile:name`. It exposes `userName` and `setUserName` through the
-`UserProfileContext`. No Tauri backend is involved; the value is read
-synchronously on mount via a lazy `useState` initializer.
+`UserProfileProvider` and `QuizPreferencesProvider` load profile name and shuffle
+mode from `settings.json` via `loadAppSettings`. `MistakeLogSettingsProvider`
+loads Mistake Log threshold settings from the same file. Settings changes are
+committed through `nativeApi.saveSettings` on the Settings page; providers update
+their in-memory state after a successful save.
 
-`useUserProfile` is the hook consumers call to read or update the name.
+`useUserProfile`, `useQuizPreferences`, and `useMistakeLogSettings` are the hooks
+consumers call to read or update these values.
 
 ### Library state
 
@@ -93,9 +97,10 @@ transitions deterministic and testable. The hook receives an already validated
 
 The app uses two independent sidebar contexts:
 
-**App layout** (`AppLayout` + `AppSidebar`): wraps the home, goals, and settings
-pages. The sidebar is collapsible to icon-only mode and contains Home and Goals
-navigation in the content area and Settings navigation pinned to the footer.
+**App layout** (`AppLayout` + `AppSidebar`): wraps the home, goals, Mistake Log,
+and settings pages. The sidebar is collapsible to icon-only mode and contains
+Home, Goals, and Mistake Log navigation in the content area and Settings
+navigation pinned to the footer.
 
 **Quiz page** (`QuizPage`): wraps the active quiz in its own `SidebarProvider`.
 The left sidebar (`QuizQuestionSidebar`) shows the question navigator; on mobile
@@ -119,9 +124,15 @@ and the dedicated attempt review page layout.
 ### Goals state
 
 `GoalsProvider` loads goals and attempt summaries from the native layer on
-startup. It exposes CRUD operations for goals and persists completed attempts
-when a quiz submission matches one or more goals. Full attempt payloads (including
-per-question results) are loaded on demand for the attempt review page.
+startup and refreshes them in the background when the window regains focus. It
+exposes CRUD operations for goals and persists completed attempts when a quiz
+submission matches one or more goals. Full attempt payloads (including
+per-question results) are loaded on demand for the attempt review page and the
+Mistake Log.
+
+`useMistakeLog` aggregates scored attempt question results across goals,
+applies Mistake Log thresholds, and sorts mistakes by frequency. It reloads
+automatically when goals change.
 
 `useGoals` is the hook consumers call to read or update goals.
 
@@ -153,12 +164,14 @@ performed by custom Rust commands.
 
 ### Settings save
 
-1. The user edits their name and/or picks a new directory in `SettingsPage`.
+1. The user edits profile, preferences, Mistake Log thresholds, and/or picks a
+   new directory in `SettingsPage`.
 2. Changes are staged in local component state; nothing is written yet.
-3. Clicking Save commits the name to `localStorage` via `UserProfileProvider`.
-4. If a new directory was staged, React calls `nativeApi.setWorkingDirectory`,
-   then rescans the working directory.
-5. A success toast confirms the save.
+3. Clicking Save validates inputs and calls `nativeApi.saveSettings`.
+4. Providers update in-memory state for profile, shuffle mode, and Mistake Log
+   thresholds.
+5. If a new directory was staged, React rescans the working directory.
+6. A success toast confirms the save.
 
 ### Import
 
@@ -198,6 +211,17 @@ performed by custom Rust commands.
 2. React calls `delete_goal_attempt` via the native adapter.
 3. Rust removes the attempt file and updates `attempts/index.json`.
 4. `GoalsProvider` updates in-memory goal state.
+5. The Mistake Log recomputes from the updated goals.
+
+### Mistake Log review
+
+1. The user opens `/mistakes` or `/mistakes?quizId=...`.
+2. `useMistakeLog` loads full attempt payloads for all scored attempts linked to
+   goals, deduplicating shared attempts across goals for the same quiz.
+3. Entries are filtered by configured thresholds and sorted by mistake frequency.
+4. Clicking a row opens `MistakeReviewDrawer`, which loads the live question
+   definition from the quiz library and shows review UI with the most recent
+   incorrect answer.
 
 ## Project structure
 
@@ -208,14 +232,15 @@ src/
   components/
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
+    mistakes/     Mistake Log review drawer
     quiz/         Quiz UI components (including QuizStartScreen)
-    ui/           shadcn-style local primitives (including Slider)
-  contexts/       QuizLibraryProvider, GoalsProvider, UserProfileProvider
+    ui/           shadcn-style local primitives (including Drawer and Slider)
+  contexts/       QuizLibraryProvider, GoalsProvider, preferences providers
   data/           Zod schema, repository parser, and tests
-  hooks/          useGoals, useQuizLibrary, useQuizSession, useUserProfile
-  lib/            Native adapter, scoring, and utility functions
-  pages/          HomePage, GoalsPage, AttemptReviewPage, SettingsPage, QuizPage
-  types/          Quiz, goal, and quiz session domain types
+  hooks/          useGoals, useMistakeLog, useQuizLibrary, useQuizSession, etc.
+  lib/            Native adapter, scoring, mistake aggregation, and utilities
+  pages/          HomePage, GoalsPage, MistakeLogPage, AttemptReviewPage, etc.
+  types/          Quiz, goal, mistake log, and quiz session domain types
 
 src-tauri/
   capabilities/   Tauri permissions

@@ -12,7 +12,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { background?: boolean }) => {
+    const background = options?.background ?? false;
+    if (!background) {
+      setIsLoading(true);
+    }
     try {
       const loaded = await nativeApi.listGoals();
       setGoals(
@@ -24,13 +28,23 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
-      setIsLoading(false);
+      if (!background) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
+  }, [load]);
+
+  useEffect(() => {
+    function handleFocus() {
+      void load({ background: true });
+    }
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [load]);
 
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {

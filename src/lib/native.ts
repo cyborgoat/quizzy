@@ -6,12 +6,16 @@ export type AppSettings = {
   workingDirectoryAvailable: boolean;
   profileName: string;
   shuffleMode: boolean;
+  mistakeLogMinMistakes: number;
+  mistakeLogMaxCorrectnessPercentage: number;
 };
 
 export type SaveSettingsRequest = {
   workingDirectory?: string;
   profileName?: string;
   shuffleMode?: boolean;
+  mistakeLogMinMistakes?: number;
+  mistakeLogMaxCorrectnessPercentage?: number;
 };
 
 export type NativeQuizFile = {

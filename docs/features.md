@@ -7,7 +7,8 @@ screen. It contains:
 
 - **Home** — the quiz library
 - **Goals** — study goals and attempt history
-- **Settings** — user profile and working directory (pinned to the bottom)
+- **Mistake Log** — threshold-filtered mistakes from scored attempts
+- **Settings** — profile, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
 collapses to icon-only mode. On desktop the trigger button sits in the sidebar
@@ -70,6 +71,34 @@ Each saved attempt opens on a dedicated page at
 **Back to goals** returns to the Goals page and expands the relevant goal row.
 **Retake quiz** opens the quiz start screen with **Scored attempt** pre-selected.
 
+## Mistake Log
+
+The Mistake Log aggregates incorrect answers from **scored attempts only**.
+Practice runs are not included.
+
+Entry points:
+
+- **Mistake Log** in the sidebar opens the global view at `/mistakes`.
+- **Mistakes Log** on each quiz card opens the same page scoped to that quiz
+  (`/mistakes?quizId=...`).
+
+The list shows only questions that meet both configured thresholds:
+
+- Minimum mistakes per question
+- Maximum correctness percentage per question (calculated across all scored attempts
+  for that quiz)
+
+Mistakes are sorted from most frequent to least frequent. Summary statistics
+show qualifying mistake count, total mistake events, and quizzes represented.
+The global view includes a quiz filter.
+
+Click a mistake to open a right-side drawer with the full question, your most
+recent incorrect answer, the correct answer, and the explanation when available.
+The Mistake Log refreshes automatically when goals change (for example after a
+scored quiz), when attempts are deleted, and when the app window regains focus.
+
+Configure thresholds under **Settings → Mistake Log**.
+
 ## Settings
 
 The Settings page lets users configure their profile and quiz directory. Changes
@@ -79,6 +108,20 @@ with unsaved changes opens a confirmation dialog.
 ### Profile
 
 The **Full name** field sets the name displayed in the home page greeting.
+
+### Quiz preferences
+
+**Shuffle mode** randomizes question order within each question type group during
+quiz sessions.
+
+### Mistake Log
+
+Configure when a question appears in the Mistake Log:
+
+- **Minimum mistakes per question** — integer of at least 1
+- **Maximum correctness percentage per question** — 0 through 100
+
+A question must satisfy both thresholds to appear in the log.
 
 ### Quiz directory
 
@@ -95,7 +138,8 @@ working directory. Each quiz entry includes:
 - Tags
 - Question count
 - Source filename
-- Start and delete actions
+- **Mistakes Log** and **Start quiz** actions
+- Delete action
 
 Nested directories and non-JSON files are ignored.
 

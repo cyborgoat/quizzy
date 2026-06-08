@@ -11,6 +11,14 @@ use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
 
 const SETTINGS_FILE: &str = "settings.json";
 
+fn default_mistake_log_min_mistakes() -> u32 {
+    1
+}
+
+fn default_mistake_log_max_correctness_percentage() -> u32 {
+    100
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Settings {
@@ -19,6 +27,10 @@ struct Settings {
     profile_name: String,
     #[serde(default)]
     shuffle_mode: bool,
+    #[serde(default = "default_mistake_log_min_mistakes")]
+    mistake_log_min_mistakes: u32,
+    #[serde(default = "default_mistake_log_max_correctness_percentage")]
+    mistake_log_max_correctness_percentage: u32,
 }
 
 #[derive(Serialize)]
@@ -28,6 +40,8 @@ struct AppSettings {
     working_directory_available: bool,
     profile_name: String,
     shuffle_mode: bool,
+    mistake_log_min_mistakes: u32,
+    mistake_log_max_correctness_percentage: u32,
 }
 
 #[derive(Deserialize)]
@@ -36,6 +50,8 @@ struct SaveSettingsRequest {
     working_directory: Option<String>,
     profile_name: Option<String>,
     shuffle_mode: Option<bool>,
+    mistake_log_min_mistakes: Option<u32>,
+    mistake_log_max_correctness_percentage: Option<u32>,
 }
 
 #[derive(Serialize)]
@@ -238,6 +254,8 @@ fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         working_directory_available,
         profile_name: settings.profile_name,
         shuffle_mode: settings.shuffle_mode,
+        mistake_log_min_mistakes: settings.mistake_log_min_mistakes,
+        mistake_log_max_correctness_percentage: settings.mistake_log_max_correctness_percentage,
     })
 }
 
@@ -251,6 +269,20 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
 
     if let Some(shuffle_mode) = request.shuffle_mode {
         settings.shuffle_mode = shuffle_mode;
+    }
+
+    if let Some(min_mistakes) = request.mistake_log_min_mistakes {
+        if min_mistakes < 1 {
+            return Err("Minimum mistakes per question must be at least 1.".to_string());
+        }
+        settings.mistake_log_min_mistakes = min_mistakes;
+    }
+
+    if let Some(max_correctness) = request.mistake_log_max_correctness_percentage {
+        if max_correctness > 100 {
+            return Err("Maximum correctness percentage must be between 0 and 100.".to_string());
+        }
+        settings.mistake_log_max_correctness_percentage = max_correctness;
     }
 
     if let Some(path) = request.working_directory {

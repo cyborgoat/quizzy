@@ -1,4 +1,4 @@
-import { Home, Settings, Target } from "lucide-react";
+import { Home, Settings, Target, ClipboardList } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar,
@@ -56,6 +56,19 @@ export function AppSidebar() {
                     {activeGoalCount}
                   </span>
                 )}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/mistakes"}
+              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+            >
+              <Link to="/mistakes">
+                <ClipboardList className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Mistake Log</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

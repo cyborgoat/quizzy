@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { FolderCog, Shuffle, User } from "lucide-react";
+import { FolderCog, Shuffle, User, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -9,18 +9,31 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
+import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { errorMessage, nativeApi } from "@/lib/native";
 
 export function SettingsPage() {
   const { userName, setUserName } = useUserProfile();
   const { shuffleMode, setShuffleMode } = useQuizPreferences();
+  const {
+    minMistakes,
+    maxCorrectnessPercentage,
+    setMinMistakes,
+    setMaxCorrectnessPercentage,
+  } = useMistakeLogSettings();
   const library = useQuizLibrary();
   const [nameInput, setNameInput] = useState(userName);
   const [shuffleInput, setShuffleInput] = useState(shuffleMode);
+  const [minMistakesInput, setMinMistakesInput] = useState(String(minMistakes));
+  const [maxCorrectnessInput, setMaxCorrectnessInput] = useState(String(maxCorrectnessPercentage));
   const [pendingDir, setPendingDir] = useState<string | null>(null);
   const [savedUserName, setSavedUserName] = useState(userName);
   const [savedShuffleMode, setSavedShuffleMode] = useState(shuffleMode);
+  const [savedMinMistakes, setSavedMinMistakes] = useState(minMistakes);
+  const [savedMaxCorrectness, setSavedMaxCorrectness] = useState(maxCorrectnessPercentage);
+  const [minMistakesError, setMinMistakesError] = useState<string | null>(null);
+  const [maxCorrectnessError, setMaxCorrectnessError] = useState<string | null>(null);
 
   if (userName !== savedUserName) {
     setSavedUserName(userName);
@@ -32,11 +45,23 @@ export function SettingsPage() {
     setShuffleInput(shuffleMode);
   }
 
+  if (minMistakes !== savedMinMistakes) {
+    setSavedMinMistakes(minMistakes);
+    setMinMistakesInput(String(minMistakes));
+  }
+
+  if (maxCorrectnessPercentage !== savedMaxCorrectness) {
+    setSavedMaxCorrectness(maxCorrectnessPercentage);
+    setMaxCorrectnessInput(String(maxCorrectnessPercentage));
+  }
+
   const displayDir = pendingDir ?? library.directoryPath;
   const hasChanges =
     nameInput.trim() !== userName ||
     pendingDir !== null ||
-    shuffleInput !== shuffleMode;
+    shuffleInput !== shuffleMode ||
+    minMistakesInput !== String(minMistakes) ||
+    maxCorrectnessInput !== String(maxCorrectnessPercentage);
 
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => hasChanges,
@@ -72,11 +97,36 @@ export function SettingsPage() {
 
   async function handleSave() {
     const trimmed = nameInput.trim();
+    const parsedMinMistakes = Number(minMistakesInput);
+    const parsedMaxCorrectness = Number(maxCorrectnessInput);
+
+    let hasValidationError = false;
+    if (!Number.isInteger(parsedMinMistakes) || parsedMinMistakes < 1) {
+      setMinMistakesError("Enter a whole number of at least 1.");
+      hasValidationError = true;
+    } else {
+      setMinMistakesError(null);
+    }
+
+    if (
+      !Number.isFinite(parsedMaxCorrectness) ||
+      parsedMaxCorrectness < 0 ||
+      parsedMaxCorrectness > 100
+    ) {
+      setMaxCorrectnessError("Enter a number between 0 and 100.");
+      hasValidationError = true;
+    } else {
+      setMaxCorrectnessError(null);
+    }
+
+    if (hasValidationError) return;
 
     try {
       await nativeApi.saveSettings({
         profileName: trimmed,
         shuffleMode: shuffleInput,
+        mistakeLogMinMistakes: parsedMinMistakes,
+        mistakeLogMaxCorrectnessPercentage: parsedMaxCorrectness,
         ...(pendingDir !== null ? { workingDirectory: pendingDir } : {}),
       });
     } catch (error) {
@@ -87,6 +137,10 @@ export function SettingsPage() {
     setUserName(trimmed);
     setNameInput(trimmed);
     setShuffleMode(shuffleInput);
+    setMinMistakes(parsedMinMistakes);
+    setMaxCorrectnessPercentage(parsedMaxCorrectness);
+    setSavedMinMistakes(parsedMinMistakes);
+    setSavedMaxCorrectness(parsedMaxCorrectness);
 
     if (pendingDir !== null) {
       await library.refresh();
@@ -144,6 +198,66 @@ export function SettingsPage() {
                 aria-labelledby="shuffle-mode-label"
                 className="mt-0.5"
               />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+            <ClipboardList className="size-4" />
+            Mistake Log
+          </h2>
+          <div className="mt-3 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-700" htmlFor="min-mistakes">
+                Minimum mistakes per question
+              </label>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                A question appears in the Mistake Log only when it has at least this many mistakes
+                and its per-question correctness is at or below the maximum percentage below.
+              </p>
+              <Input
+                id="min-mistakes"
+                type="number"
+                min={1}
+                step={1}
+                value={minMistakesInput}
+                onChange={(e) => {
+                  setMinMistakesInput(e.target.value);
+                  setMinMistakesError(null);
+                }}
+                className="mt-3 max-w-xs"
+              />
+              {minMistakesError && (
+                <p className="mt-1.5 text-xs text-red-600">{minMistakesError}</p>
+              )}
+            </div>
+            <div>
+              <label
+                className="block text-xs font-medium text-zinc-700"
+                htmlFor="max-correctness"
+              >
+                Maximum correctness percentage per question
+              </label>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Per-question correctness is calculated across all scored attempts for that quiz.
+              </p>
+              <Input
+                id="max-correctness"
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={maxCorrectnessInput}
+                onChange={(e) => {
+                  setMaxCorrectnessInput(e.target.value);
+                  setMaxCorrectnessError(null);
+                }}
+                className="mt-3 max-w-xs"
+              />
+              {maxCorrectnessError && (
+                <p className="mt-1.5 text-xs text-red-600">{maxCorrectnessError}</p>
+              )}
             </div>
           </div>
         </section>

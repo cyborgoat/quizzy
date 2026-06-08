@@ -41,6 +41,9 @@ application, and opens the desktop window.
 7. Review the final score, correct answers, and explanations.
 8. Optionally create a **Goal** on the Goals page to track target scores and
    review saved attempts later. Only **Scored attempt** completions are saved.
+9. Open **Mistake Log** from the sidebar (or **Mistakes Log** on a quiz card) to
+   review questions missed in scored attempts. Adjust thresholds in **Settings** if
+   needed.
 
 The selected working directory and your name are remembered between launches. If
 the directory becomes unavailable, Quizzy keeps the configured path and prompts
