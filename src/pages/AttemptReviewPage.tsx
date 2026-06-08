@@ -1,5 +1,6 @@
+import { Route } from "@/routes/_app/goals/$goalId/attempts/$attemptId";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
 import { AttemptReviewContent } from "@/components/goals/AttemptReviewContent";
 import { AttemptReviewHeader } from "@/components/goals/AttemptReviewHeader";
@@ -82,7 +83,7 @@ function AttemptReviewLoader({
 }
 
 export function AttemptReviewPage() {
-  const { goalId, attemptId } = useParams<{ goalId: string; attemptId: string }>();
+  const { goalId, attemptId } = Route.useParams();
   const navigate = useNavigate();
   const { goals } = useGoals();
 
@@ -96,7 +97,7 @@ export function AttemptReviewPage() {
           title="Invalid review link"
           description="This attempt review link is missing required information."
           actionLabel="Back to goals"
-          onAction={() => navigate("/goals")}
+          onAction={() => navigate({ to: "/goals" })}
         />
       </main>
     );
@@ -109,7 +110,7 @@ export function AttemptReviewPage() {
           title="Goal or attempt not found"
           description="This goal or attempt may have been deleted or is no longer available."
           actionLabel="Back to goals"
-          onAction={() => navigate("/goals")}
+          onAction={() => navigate({ to: "/goals" })}
         />
       </main>
     );

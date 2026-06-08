@@ -1,5 +1,5 @@
 import { ArrowRight, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { QuizSource } from "@/types/quiz";
@@ -42,7 +42,8 @@ export function QuizListItem({
         </span>
         <Link
           className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
-          to={`/quiz/${source.quiz.id}`}
+          to="/quiz/$quizId"
+          params={{ quizId: source.quiz.id }}
         >
           Start quiz <ArrowRight className="size-4" />
         </Link>

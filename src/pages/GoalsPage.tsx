@@ -1,6 +1,6 @@
+import { Route } from "@/routes/_app/goals/index";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
@@ -19,12 +19,10 @@ const DEFAULT_FORM = {
 export function GoalsPage() {
   const { goals, addGoal } = useGoals();
   const { quizzes } = useQuizLibrary();
-  const [searchParams] = useSearchParams();
+  const { expand: expandParam } = Route.useSearch();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
-
-  const expandParam = searchParams.get("expand");
   const defaultExpandedGoalId =
     expandParam && goals.some((goal) => goal.id === expandParam) ? expandParam : "";
 

@@ -29,7 +29,7 @@ Reference quiz files for development and manual import testing are kept in
 | Build tooling | Vite |
 | Styling | Tailwind CSS v4 |
 | UI primitives | shadcn-style local components |
-| Routing | React Router |
+| Routing | TanStack Router (file-based) |
 | Validation | Zod |
 | Toast notifications | Sonner |
 | Frontend tests | Vitest |

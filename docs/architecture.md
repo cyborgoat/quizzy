@@ -28,22 +28,25 @@ Instead, it calls a small set of quiz-specific Rust commands.
 
 ### Application and routing
 
-`src/main.tsx` mounts the provider tree and router. Routes are defined in
-`src/app/routes.tsx`:
+`src/main.tsx` mounts the provider tree and `RouterProvider`. Routes are
+file-based under `src/routes/` and compiled into `src/routeTree.gen.ts` by the
+TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 
 | Route | Page |
 | --- | --- |
 | `/` | Quiz library (home page) |
+| `/goals` | Goal tracking |
+| `/goals/:goalId/attempts/:attemptId` | Attempt review |
 | `/settings` | User profile and working-directory configuration |
 | `/quiz/:quizId` | Active quiz or final results |
 
 Unknown routes redirect to the home page.
 
-`/` and `/settings` share `AppLayout`, which wraps both pages in a
+`/` through `/settings` share `AppLayout`, which wraps those pages in a
 `SidebarProvider`, renders `AppSidebar` (the persistent navigation sidebar), and
-exposes the page content area via React Router's `<Outlet />`. The
-`/quiz/:quizId` route uses its own layout and its own `SidebarProvider` for the
-question navigator.
+exposes the page content area via TanStack Router's `<Outlet />`. The
+`/quiz/:quizId` route is non-nested at the root so it renders full-screen with
+its own `SidebarProvider` for the question navigator.
 
 ### User profile state
 
@@ -168,7 +171,8 @@ performed by custom Rust commands.
 
 ```text
 src/
-  app/            Router configuration
+  app/            Router bootstrap (`createRouter`)
+  routes/         File-based TanStack Router route definitions
   components/
     layout/       AppLayout and AppSidebar (persistent navigation)
     quiz/         Quiz UI components
@@ -177,7 +181,7 @@ src/
   data/           Zod schema, repository parser, and tests
   hooks/          useQuizLibrary, useQuizSession, useUserProfile
   lib/            Native adapter, scoring, and utility functions
-  pages/          HomePage, SettingsPage, QuizPage
+  pages/          HomePage, GoalsPage, AttemptReviewPage, SettingsPage, QuizPage
   types/          Quiz and answer domain types
 
 src-tauri/

@@ -1,5 +1,5 @@
 import { Home, Settings, Target } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,7 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 
 export function AppSidebar() {
-  const location = useLocation();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { goals } = useGoals();
   const activeGoalCount = goals.filter((g) => !g.completed).length;
 
@@ -32,23 +32,23 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={location.pathname === "/"}
+              isActive={pathname === "/"}
               className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
-              <NavLink to="/">
+              <Link to="/">
                 <Home className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Home</span>
-              </NavLink>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={location.pathname === "/goals"}
+              isActive={pathname === "/goals"}
               className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
-              <NavLink to="/goals" className="flex items-center gap-2">
+              <Link to="/goals" className="flex items-center gap-2">
                 <Target className="size-4 shrink-0" />
                 <span className="flex-1 group-data-[collapsible=icon]:hidden">Goals</span>
                 {activeGoalCount > 0 && (
@@ -56,7 +56,7 @@ export function AppSidebar() {
                     {activeGoalCount}
                   </span>
                 )}
-              </NavLink>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -67,13 +67,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={location.pathname === "/settings"}
+              isActive={pathname === "/settings"}
               className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
-              <NavLink to="/settings">
+              <Link to="/settings">
                 <Settings className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-              </NavLink>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

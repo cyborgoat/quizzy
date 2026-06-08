@@ -1,6 +1,6 @@
 import { ArrowRight, Download, RefreshCw, Target } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ export function HomePage() {
               : "Choose a working directory in Settings to get started."
           }
           actionLabel="Open Settings"
-          onAction={() => navigate("/settings")}
+          onAction={() => navigate({ to: "/settings" })}
         />
       ) : (
         <>

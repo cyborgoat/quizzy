@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
 
@@ -27,7 +27,8 @@ function AttemptHistoryList({
         return (
           <li key={attempt.id}>
             <Link
-              to={`/goals/${goalId}/attempts/${attempt.id}`}
+              to="/goals/$goalId/attempts/$attemptId"
+              params={{ goalId, attemptId: attempt.id }}
               className={cn(
                 "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
                 isCurrent
@@ -76,7 +77,10 @@ export function AttemptHistoryCard({
             onChange={(event) => {
               const nextId = event.target.value;
               if (nextId !== currentAttemptId) {
-                navigate(`/goals/${goalId}/attempts/${nextId}`);
+                navigate({
+                  to: "/goals/$goalId/attempts/$attemptId",
+                  params: { goalId, attemptId: nextId },
+                });
               }
             }}
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500"

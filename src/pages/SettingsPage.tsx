@@ -2,7 +2,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { FolderCog, Shuffle, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useBlocker } from "react-router-dom";
+import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,18 +38,22 @@ export function SettingsPage() {
     pendingDir !== null ||
     shuffleInput !== shuffleMode;
 
-  const blocker = useBlocker(hasChanges);
+  const { proceed, reset, status } = useBlocker({
+    shouldBlockFn: () => hasChanges,
+    withResolver: true,
+    enableBeforeUnload: hasChanges,
+  });
 
   useEffect(() => {
-    if (blocker.state !== "blocked") return;
+    if (status !== "blocked") return;
     confirm("You have unsaved changes. Leave without saving?", {
       title: "Unsaved changes",
       kind: "warning",
     }).then((ok) => {
-      if (ok) blocker.proceed();
-      else blocker.reset();
+      if (ok) proceed();
+      else reset();
     });
-  }, [blocker]);
+  }, [status, proceed, reset]);
 
   async function handlePickDirectory() {
     try {

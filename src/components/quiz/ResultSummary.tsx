@@ -1,5 +1,5 @@
 import { Home, RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
@@ -41,7 +41,7 @@ export function ResultSummary({
           <RotateCcw className="size-4" />
           Restart quiz
         </Button>
-        <Button variant="outline" onClick={() => navigate("/")}>
+        <Button variant="outline" onClick={() => navigate({ to: "/" })}>
           <Home className="size-4" />
           Return home
         </Button>

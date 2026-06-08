@@ -5,7 +5,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
 import {
   AccordionContent,
@@ -77,7 +77,8 @@ function AttemptRow({
           {attempt.score}/{attempt.total} · {attempt.percentage}%
         </span>
         <Link
-          to={`/goals/${goalId}/attempts/${attempt.id}`}
+          to="/goals/$goalId/attempts/$attemptId"
+          params={{ goalId, attemptId: attempt.id }}
           className="inline-flex h-7 shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-white px-2.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-100"
           onClick={(event) => event.stopPropagation()}
         >
@@ -139,7 +140,8 @@ export function GoalCard({ goal }: { goal: Goal }) {
           </span>
           <Link
             className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md bg-zinc-900 px-2.5 text-xs font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
-            to={`/quiz/${goal.quizId}`}
+            to="/quiz/$quizId"
+            params={{ quizId: goal.quizId }}
             onClick={(event) => event.stopPropagation()}
           >
             Start

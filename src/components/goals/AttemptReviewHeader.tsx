@@ -1,14 +1,13 @@
 import { ArrowLeft, RotateCcw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import type { Goal } from "@/types/goal";
 
 export function AttemptReviewHeader({ goal }: { goal: Goal }) {
-  const backHref = `/goals?expand=${goal.id}`;
-
   return (
     <header className="space-y-4">
       <Link
-        to={backHref}
+        to="/goals"
+        search={{ expand: goal.id }}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
       >
         <ArrowLeft className="size-4" />
@@ -25,7 +24,8 @@ export function AttemptReviewHeader({ goal }: { goal: Goal }) {
         </div>
 
         <Link
-          to={`/quiz/${goal.quizId}`}
+          to="/quiz/$quizId"
+          params={{ quizId: goal.quizId }}
           className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-md bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
         >
           <RotateCcw className="size-4" />

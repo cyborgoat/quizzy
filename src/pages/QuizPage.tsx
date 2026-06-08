@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
+import { Route } from "@/routes/quiz_.$quizId";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
@@ -129,7 +130,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           onCancel={() => setExitDialogOpen(false)}
           onConfirm={() => {
             setExitDialogOpen(false);
-            navigate("/");
+            navigate({ to: "/" });
           }}
         />
         <SubmitQuizDialog
@@ -149,7 +150,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
 }
 
 export function QuizPage() {
-  const { quizId } = useParams();
+  const { quizId } = Route.useParams();
   const navigate = useNavigate();
   const library = useQuizLibrary();
   const quiz = useMemo(
@@ -167,7 +168,7 @@ export function QuizPage() {
           title="Quiz not found"
           description="This quiz is unavailable or its file is no longer valid."
           actionLabel="Return home"
-          onAction={() => navigate("/")}
+          onAction={() => navigate({ to: "/" })}
         />
       </main>
     );
