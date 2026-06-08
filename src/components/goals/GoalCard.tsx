@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGoals } from "@/hooks/useGoals";
-import type { Goal, GoalAttempt } from "@/types/goal";
+import type { AttemptSummary, Goal } from "@/types/goal";
 
 function isPastDeadline(deadline: string) {
   return new Date(deadline) < new Date();
@@ -16,11 +16,10 @@ function AttemptRow({
   onReview,
   isActive,
 }: {
-  attempt: GoalAttempt;
-  onReview: (attempt: GoalAttempt) => void;
+  attempt: AttemptSummary;
+  onReview: (attempt: AttemptSummary) => void;
   isActive: boolean;
 }) {
-  const incorrectCount = attempt.questionResults.filter((r) => !r.correct).length;
   const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
     month: "short", day: "numeric", year: "numeric",
   });
@@ -29,8 +28,8 @@ function AttemptRow({
     <div className="flex items-center justify-between gap-2 rounded border border-zinc-100 bg-zinc-50 px-3 py-2">
       <div className="min-w-0">
         <p className="text-xs text-zinc-500">{date}</p>
-        {incorrectCount > 0 && (
-          <p className="text-xs text-red-600">{incorrectCount} incorrect</p>
+        {attempt.incorrectCount > 0 && (
+          <p className="text-xs text-red-600">{attempt.incorrectCount} incorrect</p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -55,7 +54,7 @@ export function GoalCard({
   activeReviewAttemptId,
 }: {
   goal: Goal;
-  onReviewAttempt?: (attempt: GoalAttempt, quizId: string, quizTitle: string) => void;
+  onReviewAttempt?: (attempt: AttemptSummary, goalId: string, quizId: string, quizTitle: string) => void;
   activeReviewAttemptId?: string;
 }) {
   const { completeGoal, reopenGoal, deleteGoal } = useGoals();
@@ -147,7 +146,9 @@ export function GoalCard({
                 <AttemptRow
                   key={attempt.id}
                   attempt={attempt}
-                  onReview={(selected) => onReviewAttempt?.(selected, goal.quizId, goal.quizTitle)}
+                  onReview={(selected) =>
+                    onReviewAttempt?.(selected, goal.id, goal.quizId, goal.quizTitle)
+                  }
                   isActive={activeReviewAttemptId === attempt.id}
                 />
               ))}

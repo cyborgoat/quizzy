@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Goal } from "@/types/goal";
+import type { Goal, GoalAttempt } from "@/types/goal";
 
 export type WorkingDirectoryState = {
   path: string | null;
@@ -19,6 +19,8 @@ export type WriteImportedQuizRequest = {
   removeFileName?: string;
 };
 
+export type GoalMeta = Omit<Goal, "attempts">;
+
 export const nativeApi = {
   getWorkingDirectory: () =>
     invoke<WorkingDirectoryState>("get_working_directory"),
@@ -32,10 +34,16 @@ export const nativeApi = {
     invoke<void>("write_imported_quiz", { request }),
   deleteQuizFile: (fileName: string) =>
     invoke<void>("delete_quiz_file", { fileName }),
-  getGoals: () =>
-    invoke<Goal[]>("get_goals"),
-  saveGoals: (goals: Goal[]) =>
-    invoke<void>("save_goals", { goals }),
+  listGoals: () =>
+    invoke<Goal[]>("list_goals"),
+  upsertGoal: (goal: GoalMeta) =>
+    invoke<void>("upsert_goal", { goal }),
+  deleteGoal: (goalId: string) =>
+    invoke<void>("delete_goal", { goalId }),
+  saveGoalAttempt: (goalId: string, attempt: GoalAttempt) =>
+    invoke<void>("save_goal_attempt", { goalId, attempt }),
+  getGoalAttempt: (goalId: string, attemptId: string) =>
+    invoke<GoalAttempt>("get_goal_attempt", { goalId, attemptId }),
 };
 
 export function errorMessage(error: unknown) {

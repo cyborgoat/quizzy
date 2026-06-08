@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # Tauri / Rust
 src-tauri/target/
+
+# MacOS
+.DS_Store

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { type AttemptInput, GoalsContext } from "@/contexts/goals-context";
 import { errorMessage, nativeApi } from "@/lib/native";
-import type { Goal, GoalAttempt } from "@/types/goal";
+import { goalMeta, toAttemptSummary, type Goal, type GoalAttempt } from "@/types/goal";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -15,8 +15,13 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const loaded = await nativeApi.getGoals();
-      setGoals(loaded.map((g) => ({ attempts: [], ...g })));
+      const loaded = await nativeApi.listGoals();
+      setGoals(
+        loaded.map((goal) => ({
+          ...goal,
+          attempts: goal.attempts ?? [],
+        })),
+      );
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -28,21 +33,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     void load();
   }, [load]);
 
-  async function persist(updated: Goal[]) {
-    await nativeApi.saveGoals(updated);
-    setGoals(updated);
-  }
-
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
+    const newGoal: Goal = {
+      ...data,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      completed: false,
+      attempts: [],
+    };
     try {
-      const newGoal: Goal = {
-        ...data,
-        id: generateId(),
-        createdAt: new Date().toISOString(),
-        completed: false,
-        attempts: [],
-      };
-      await persist([...goals, newGoal]);
+      await nativeApi.upsertGoal(goalMeta(newGoal));
+      setGoals((current) => [...current, newGoal]);
       toast.success("Goal created.");
     } catch (error) {
       toast.error(errorMessage(error));
@@ -50,8 +51,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   async function recordAttempt(quizId: string, input: AttemptInput) {
-    const matching = goals.filter((g) => g.quizId === quizId);
+    const matching = goals.filter((goal) => goal.quizId === quizId);
     if (matching.length === 0) return;
+
     const attempt: GoalAttempt = {
       id: generateId(),
       takenAt: new Date().toISOString(),
@@ -59,11 +61,19 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       total: input.total,
       percentage: input.total > 0 ? Math.round((input.score / input.total) * 100) : 0,
       questionResults: input.questionResults,
+      incorrectCount: input.questionResults.filter((result) => !result.correct).length,
     };
+
     try {
-      await persist(
-        goals.map((g) =>
-          g.quizId === quizId ? { ...g, attempts: [...g.attempts, attempt] } : g,
+      await Promise.all(
+        matching.map((goal) => nativeApi.saveGoalAttempt(goal.id, attempt)),
+      );
+      const summary = toAttemptSummary(attempt);
+      setGoals((current) =>
+        current.map((goal) =>
+          goal.quizId === quizId
+            ? { ...goal, attempts: [...goal.attempts, summary] }
+            : goal,
         ),
       );
     } catch (error) {
@@ -72,11 +82,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   async function completeGoal(id: string) {
+    const goal = goals.find((item) => item.id === id);
+    if (!goal) return;
+    const updated: Goal = {
+      ...goal,
+      completed: true,
+      completedAt: new Date().toISOString(),
+    };
     try {
-      await persist(
-        goals.map((g) =>
-          g.id === id ? { ...g, completed: true, completedAt: new Date().toISOString() } : g,
-        ),
+      await nativeApi.upsertGoal(goalMeta(updated));
+      setGoals((current) =>
+        current.map((item) => (item.id === id ? updated : item)),
       );
       toast.success("Goal marked as complete.");
     } catch (error) {
@@ -85,11 +101,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   async function reopenGoal(id: string) {
+    const goal = goals.find((item) => item.id === id);
+    if (!goal) return;
+    const updated: Goal = {
+      ...goal,
+      completed: false,
+      completedAt: undefined,
+    };
     try {
-      await persist(
-        goals.map((g) =>
-          g.id === id ? { ...g, completed: false, completedAt: undefined } : g,
-        ),
+      await nativeApi.upsertGoal(goalMeta(updated));
+      setGoals((current) =>
+        current.map((item) => (item.id === id ? updated : item)),
       );
       toast.success("Goal moved back to active.");
     } catch (error) {
@@ -99,15 +121,35 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   async function deleteGoal(id: string) {
     try {
-      await persist(goals.filter((g) => g.id !== id));
+      await nativeApi.deleteGoal(id);
+      setGoals((current) => current.filter((goal) => goal.id !== id));
       toast.success("Goal deleted.");
     } catch (error) {
       toast.error(errorMessage(error));
     }
   }
 
+  async function loadGoalAttempt(goalId: string, attemptId: string) {
+    const attempt = await nativeApi.getGoalAttempt(goalId, attemptId);
+    return {
+      ...attempt,
+      incorrectCount: attempt.questionResults.filter((result) => !result.correct).length,
+    };
+  }
+
   return (
-    <GoalsContext.Provider value={{ goals, isLoading, addGoal, recordAttempt, completeGoal, reopenGoal, deleteGoal }}>
+    <GoalsContext.Provider
+      value={{
+        goals,
+        isLoading,
+        addGoal,
+        recordAttempt,
+        completeGoal,
+        reopenGoal,
+        deleteGoal,
+        loadGoalAttempt,
+      }}
+    >
       {children}
     </GoalsContext.Provider>
   );

@@ -31,11 +31,11 @@ function questionResultToAnswerRecord(result: QuestionResult): AnswerRecord {
 }
 
 export function useAttemptReviewItems(
-  attempt: GoalAttempt,
+  attempt: GoalAttempt | undefined,
   questions: QuizQuestion[] | undefined,
 ) {
   return useMemo(
-    () => (questions ? buildAttemptReviewItems(attempt, questions) : []),
+    () => (attempt && questions ? buildAttemptReviewItems(attempt, questions) : []),
     [attempt, questions],
   );
 }

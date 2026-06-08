@@ -9,23 +9,29 @@ export function AttemptReviewPanel({
   attempt,
   quizId,
   quizTitle,
+  loading = false,
+  error = null,
   onClose,
 }: {
-  attempt: GoalAttempt;
+  attempt: GoalAttempt | null;
   quizId: string;
   quizTitle: string;
+  loading?: boolean;
+  error?: string | null;
   onClose: () => void;
 }) {
   const { quizzes } = useQuizLibrary();
   const quiz = quizzes.find((source) => source.quiz.id === quizId)?.quiz;
-  const items = useAttemptReviewItems(attempt, quiz?.questions);
+  const items = useAttemptReviewItems(attempt ?? undefined, quiz?.questions);
 
-  const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = attempt
+    ? new Date(attempt.takenAt).toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <aside
@@ -38,7 +44,9 @@ export function AttemptReviewPanel({
           <p className="truncate text-sm font-medium text-zinc-700">{quizTitle}</p>
           <p className="text-sm text-zinc-500">{date}</p>
           <p className="text-sm font-semibold text-zinc-900">
-            {attempt.score}/{attempt.total} · {attempt.percentage}%
+            {attempt
+              ? `${attempt.score}/${attempt.total} · ${attempt.percentage}%`
+              : "—"}
           </p>
         </div>
         <Button
@@ -53,7 +61,19 @@ export function AttemptReviewPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        {!quiz ? (
+        {loading ? (
+          <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+            Loading attempt…
+          </p>
+        ) : error ? (
+          <p className="rounded-md border border-dashed border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-600">
+            {error}
+          </p>
+        ) : !attempt ? (
+          <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+            Attempt details are unavailable.
+          </p>
+        ) : !quiz ? (
           <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
             This quiz is unavailable, so question details cannot be shown.
           </p>

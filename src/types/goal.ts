@@ -8,12 +8,16 @@ export type QuestionResult = {
   flagged?: boolean;
 };
 
-export type GoalAttempt = {
+export type AttemptSummary = {
   id: string;
   takenAt: string;
   score: number;
   total: number;
   percentage: number;
+  incorrectCount: number;
+};
+
+export type GoalAttempt = AttemptSummary & {
   questionResults: QuestionResult[];
 };
 
@@ -27,5 +31,21 @@ export type Goal = {
   createdAt: string;
   completed: boolean;
   completedAt?: string;
-  attempts: GoalAttempt[];
+  attempts: AttemptSummary[];
 };
+
+export function toAttemptSummary(attempt: GoalAttempt): AttemptSummary {
+  return {
+    id: attempt.id,
+    takenAt: attempt.takenAt,
+    score: attempt.score,
+    total: attempt.total,
+    percentage: attempt.percentage,
+    incorrectCount: attempt.questionResults.filter((result) => !result.correct).length,
+  };
+}
+
+export function goalMeta(goal: Goal) {
+  const { attempts: _attempts, ...meta } = goal;
+  return meta;
+}

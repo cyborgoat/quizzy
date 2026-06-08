@@ -5,8 +5,11 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
+mod goals_storage;
+
+use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
+
 const SETTINGS_FILE: &str = "settings.json";
-const GOALS_FILE: &str = "goals.json";
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,23 +40,6 @@ struct WriteImportedQuizRequest {
     contents: String,
     overwrite: bool,
     remove_file_name: Option<String>,
-}
-
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Goal {
-    id: String,
-    quiz_id: String,
-    quiz_title: String,
-    description: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    target_score: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    deadline: Option<String>,
-    created_at: String,
-    completed: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    completed_at: Option<String>,
 }
 
 fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -261,33 +247,29 @@ fn write_imported_quiz(app: AppHandle, request: WriteImportedQuizRequest) -> Res
     Ok(())
 }
 
-fn goals_path(app: &AppHandle) -> Result<PathBuf, String> {
-    let directory = app
-        .path()
-        .app_config_dir()
-        .map_err(|error| format!("Unable to locate the app configuration directory: {error}"))?;
-    fs::create_dir_all(&directory)
-        .map_err(|error| format!("Unable to create the app configuration directory: {error}"))?;
-    Ok(directory.join(GOALS_FILE))
+#[tauri::command]
+fn list_goals(app: AppHandle) -> Result<Vec<GoalListItem>, String> {
+    goals_storage::list_goals(&app)
 }
 
 #[tauri::command]
-fn get_goals(app: AppHandle) -> Result<Vec<Goal>, String> {
-    let path = goals_path(&app)?;
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-    let contents = fs::read_to_string(&path)
-        .map_err(|error| format!("Unable to read goals: {error}"))?;
-    serde_json::from_str(&contents).map_err(|error| format!("Goals file is invalid: {error}"))
+fn upsert_goal(app: AppHandle, goal: GoalMeta) -> Result<(), String> {
+    goals_storage::upsert_goal(&app, goal)
 }
 
 #[tauri::command]
-fn save_goals(app: AppHandle, goals: Vec<Goal>) -> Result<(), String> {
-    let path = goals_path(&app)?;
-    let contents = serde_json::to_vec_pretty(&goals)
-        .map_err(|error| format!("Unable to serialize goals: {error}"))?;
-    atomic_write(&path, &contents, true)
+fn delete_goal(app: AppHandle, goal_id: String) -> Result<(), String> {
+    goals_storage::delete_goal(&app, goal_id)
+}
+
+#[tauri::command]
+fn save_goal_attempt(app: AppHandle, goal_id: String, attempt: GoalAttempt) -> Result<(), String> {
+    goals_storage::save_goal_attempt(&app, goal_id, attempt)
+}
+
+#[tauri::command]
+fn get_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> Result<GoalAttempt, String> {
+    goals_storage::get_goal_attempt(&app, goal_id, attempt_id)
 }
 
 #[tauri::command]
@@ -311,8 +293,11 @@ pub fn run() {
             read_import_files,
             write_imported_quiz,
             delete_quiz_file,
-            get_goals,
-            save_goals
+            list_goals,
+            upsert_goal,
+            delete_goal,
+            save_goal_attempt,
+            get_goal_attempt
         ])
         .run(tauri::generate_context!())
         .expect("error while running Quizzy");

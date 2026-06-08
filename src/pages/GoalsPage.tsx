@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AttemptReviewPanel } from "@/components/goals/AttemptReviewPanel";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { EmptyState } from "@/components/quiz/EmptyState";
@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import type { GoalAttempt } from "@/types/goal";
+import { errorMessage } from "@/lib/native";
+import type { AttemptSummary, GoalAttempt } from "@/types/goal";
 
 type ReviewSelection = {
-  attempt: GoalAttempt;
+  goalId: string;
+  attemptId: string;
   quizId: string;
   quizTitle: string;
 } | null;
@@ -23,14 +25,45 @@ const DEFAULT_FORM = {
 };
 
 export function GoalsPage() {
-  const { goals, addGoal } = useGoals();
+  const { goals, addGoal, loadGoalAttempt } = useGoals();
   const { quizzes } = useQuizLibrary();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [review, setReview] = useState<ReviewSelection>(null);
+  const [reviewAttempt, setReviewAttempt] = useState<GoalAttempt | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const activeGoals = goals.filter((g) => !g.completed);
   const completedGoals = goals.filter((g) => g.completed);
+
+  useEffect(() => {
+    if (!review) {
+      setReviewAttempt(null);
+      setReviewError(null);
+      setReviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReviewLoading(true);
+    setReviewError(null);
+
+    void loadGoalAttempt(review.goalId, review.attemptId)
+      .then((attempt) => {
+        if (!cancelled) setReviewAttempt(attempt);
+      })
+      .catch((error) => {
+        if (!cancelled) setReviewError(errorMessage(error));
+      })
+      .finally(() => {
+        if (!cancelled) setReviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [review, loadGoalAttempt]);
 
   function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -51,9 +84,16 @@ export function GoalsPage() {
     setShowForm(false);
   }
 
-  function handleReviewAttempt(attempt: GoalAttempt, quizId: string, quizTitle: string) {
+  function handleReviewAttempt(
+    attempt: AttemptSummary,
+    goalId: string,
+    quizId: string,
+    quizTitle: string,
+  ) {
     setReview((current) =>
-      current?.attempt.id === attempt.id ? null : { attempt, quizId, quizTitle },
+      current?.goalId === goalId && current.attemptId === attempt.id
+        ? null
+        : { goalId, attemptId: attempt.id, quizId, quizTitle },
     );
   }
 
@@ -190,7 +230,7 @@ export function GoalsPage() {
                     key={goal.id}
                     goal={goal}
                     onReviewAttempt={handleReviewAttempt}
-                    activeReviewAttemptId={review?.attempt.id}
+                    activeReviewAttemptId={review?.attemptId}
                   />
                 ))}
               </div>
@@ -208,7 +248,7 @@ export function GoalsPage() {
                     key={goal.id}
                     goal={goal}
                     onReviewAttempt={handleReviewAttempt}
-                    activeReviewAttemptId={review?.attempt.id}
+                    activeReviewAttemptId={review?.attemptId}
                   />
                 ))}
               </div>
@@ -221,9 +261,11 @@ export function GoalsPage() {
 
       {review && (
         <AttemptReviewPanel
-          attempt={review.attempt}
+          attempt={reviewAttempt}
           quizId={review.quizId}
           quizTitle={review.quizTitle}
+          loading={reviewLoading}
+          error={reviewError}
           onClose={() => setReview(null)}
         />
       )}

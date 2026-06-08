@@ -4,12 +4,27 @@
 
 Quiz content remains in the user-selected working directory.
 
-Quizzy stores only one application setting: the canonical working-directory
-path. It is written to:
+Quizzy stores application data in the Tauri app-config directory:
 
 ```text
 <Tauri app config directory>/settings.json
+<Tauri app config directory>/goals/
+  <goal-id>/
+    goal.json
+    attempts/
+      index.json
+      <attempt-id>.json
 ```
+
+`settings.json` holds the canonical working-directory path.
+
+Each goal is stored in its own directory. `goal.json` contains goal
+metadata. Attempt summaries live in `attempts/index.json`, and each full
+attempt (including per-question results) is stored separately as
+`attempts/<attempt-id>.json`.
+
+Legacy single-file `goals.json` data is migrated into this layout on first
+load and archived as `goals.json.bak`.
 
 The exact app-config location is platform-dependent and is resolved through
 Tauri's path API.
@@ -26,6 +41,11 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `read_import_files` | Read files selected by the native dialog |
 | `write_imported_quiz` | Write or replace a validated quiz file |
 | `delete_quiz_file` | Delete one named quiz file |
+| `list_goals` | Load saved goals with attempt summaries |
+| `upsert_goal` | Create or update one goal's metadata |
+| `delete_goal` | Delete a goal and its attempt files |
+| `save_goal_attempt` | Persist one attempt and update its summary index |
+| `get_goal_attempt` | Load one full attempt with question results |
 
 ## Filesystem boundaries
 
