@@ -19,19 +19,86 @@ fn default_mistake_log_max_correctness_percentage() -> u32 {
     100
 }
 
-fn default_ui_font_size() -> String {
-    "default".to_string()
+fn default_ui_font_size() -> u32 {
+    100
 }
 
 fn default_ui_density() -> String {
     "default".to_string()
 }
 
-fn validate_ui_font_size(value: &str) -> Result<(), String> {
+const UI_FONT_SIZE_MIN: u32 = 75;
+const UI_FONT_SIZE_MAX: u32 = 150;
+
+fn clamp_ui_font_size(value: u32) -> u32 {
+    value.clamp(UI_FONT_SIZE_MIN, UI_FONT_SIZE_MAX)
+}
+
+fn normalize_ui_font_size_raw(value: &str) -> u32 {
     match value {
-        "small" | "default" | "large" | "extra-large" => Ok(()),
-        _ => Err("Font size must be small, default, large, or extra-large.".to_string()),
+        "small" => 88,
+        "default" => 100,
+        "large" => 113,
+        "extra-large" => 125,
+        _ => value
+            .parse::<u32>()
+            .map(clamp_ui_font_size)
+            .unwrap_or(100),
     }
+}
+
+fn validate_ui_font_size(value: u32) -> Result<(), String> {
+    if (UI_FONT_SIZE_MIN..=UI_FONT_SIZE_MAX).contains(&value) {
+        Ok(())
+    } else {
+        Err(format!(
+            "Font size must be between {UI_FONT_SIZE_MIN} and {UI_FONT_SIZE_MAX} percent."
+        ))
+    }
+}
+
+fn deserialize_ui_font_size<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct UiFontSizeVisitor;
+
+    impl<'de> Visitor<'de> for UiFontSizeVisitor {
+        type Value = u32;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a font size percentage or legacy label")
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<u32, E>
+        where
+            E: de::Error,
+        {
+            Ok(clamp_ui_font_size(value as u32))
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<u32, E>
+        where
+            E: de::Error,
+        {
+            if value < 0 {
+                return Ok(100);
+            }
+            Ok(clamp_ui_font_size(value as u32))
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<u32, E>
+        where
+            E: de::Error,
+        {
+            Ok(normalize_ui_font_size_raw(value))
+        }
+    }
+
+    deserializer.deserialize_any(UiFontSizeVisitor)
 }
 
 fn validate_ui_density(value: &str) -> Result<(), String> {
@@ -53,8 +120,8 @@ struct Settings {
     mistake_log_min_mistakes: u32,
     #[serde(default = "default_mistake_log_max_correctness_percentage")]
     mistake_log_max_correctness_percentage: u32,
-    #[serde(default = "default_ui_font_size")]
-    ui_font_size: String,
+    #[serde(default = "default_ui_font_size", deserialize_with = "deserialize_ui_font_size")]
+    ui_font_size: u32,
     #[serde(default = "default_ui_density")]
     ui_density: String,
 }
@@ -68,7 +135,7 @@ struct AppSettings {
     shuffle_mode: bool,
     mistake_log_min_mistakes: u32,
     mistake_log_max_correctness_percentage: u32,
-    ui_font_size: String,
+    ui_font_size: u32,
     ui_density: String,
 }
 
@@ -80,7 +147,7 @@ struct SaveSettingsRequest {
     shuffle_mode: Option<bool>,
     mistake_log_min_mistakes: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
-    ui_font_size: Option<String>,
+    ui_font_size: Option<u32>,
     ui_density: Option<String>,
 }
 
@@ -318,7 +385,7 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
     }
 
     if let Some(font_size) = request.ui_font_size {
-        validate_ui_font_size(&font_size)?;
+        validate_ui_font_size(font_size)?;
         settings.ui_font_size = font_size;
     }
 

@@ -24,9 +24,10 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { errorMessage, nativeApi } from "@/lib/native";
 import {
   UI_DENSITY_OPTIONS,
-  UI_FONT_SIZE_OPTIONS,
+  UI_FONT_SIZE_MAX,
+  UI_FONT_SIZE_MIN,
+  validateFontSizeInput,
   type UiDensity,
-  type UiFontSize,
 } from "@/lib/uiPreferences";
 
 export function SettingsPage() {
@@ -42,17 +43,18 @@ export function SettingsPage() {
   const library = useQuizLibrary();
   const [nameInput, setNameInput] = useState(userName);
   const [shuffleInput, setShuffleInput] = useState(shuffleMode);
-  const [fontSizeInput, setFontSizeInput] = useState<UiFontSize>(fontSize);
+  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
   const [densityInput, setDensityInput] = useState<UiDensity>(density);
   const [minMistakesInput, setMinMistakesInput] = useState(String(minMistakes));
   const [maxCorrectnessInput, setMaxCorrectnessInput] = useState(String(maxCorrectnessPercentage));
   const [pendingDir, setPendingDir] = useState<string | null>(null);
   const [savedUserName, setSavedUserName] = useState(userName);
   const [savedShuffleMode, setSavedShuffleMode] = useState(shuffleMode);
-  const [savedFontSize, setSavedFontSize] = useState<UiFontSize>(fontSize);
+  const [savedFontSize, setSavedFontSize] = useState(fontSize);
   const [savedDensity, setSavedDensity] = useState<UiDensity>(density);
   const [savedMinMistakes, setSavedMinMistakes] = useState(minMistakes);
   const [savedMaxCorrectness, setSavedMaxCorrectness] = useState(maxCorrectnessPercentage);
+  const [fontSizeError, setFontSizeError] = useState<string | null>(null);
   const [minMistakesError, setMinMistakesError] = useState<string | null>(null);
   const [maxCorrectnessError, setMaxCorrectnessError] = useState<string | null>(null);
 
@@ -68,7 +70,7 @@ export function SettingsPage() {
 
   if (fontSize !== savedFontSize) {
     setSavedFontSize(fontSize);
-    setFontSizeInput(fontSize);
+    setFontSizeInput(String(fontSize));
   }
 
   if (density !== savedDensity) {
@@ -91,7 +93,7 @@ export function SettingsPage() {
     nameInput.trim() !== userName ||
     pendingDir !== null ||
     shuffleInput !== shuffleMode ||
-    fontSizeInput !== fontSize ||
+    fontSizeInput !== String(fontSize) ||
     densityInput !== density ||
     minMistakesInput !== String(minMistakes) ||
     maxCorrectnessInput !== String(maxCorrectnessPercentage);
@@ -132,8 +134,18 @@ export function SettingsPage() {
     const trimmed = nameInput.trim();
     const parsedMinMistakes = Number(minMistakesInput);
     const parsedMaxCorrectness = Number(maxCorrectnessInput);
+    const parsedFontSize = Number(fontSizeInput);
 
     let hasValidationError = false;
+
+    const nextFontSizeError = validateFontSizeInput(fontSizeInput);
+    if (nextFontSizeError) {
+      setFontSizeError(nextFontSizeError);
+      hasValidationError = true;
+    } else {
+      setFontSizeError(null);
+    }
+
     if (!Number.isInteger(parsedMinMistakes) || parsedMinMistakes < 1) {
       setMinMistakesError("Enter a whole number of at least 1.");
       hasValidationError = true;
@@ -158,7 +170,7 @@ export function SettingsPage() {
       await nativeApi.saveSettings({
         profileName: trimmed,
         shuffleMode: shuffleInput,
-        uiFontSize: fontSizeInput,
+        uiFontSize: parsedFontSize,
         uiDensity: densityInput,
         mistakeLogMinMistakes: parsedMinMistakes,
         mistakeLogMaxCorrectnessPercentage: parsedMaxCorrectness,
@@ -172,11 +184,11 @@ export function SettingsPage() {
     setUserName(trimmed);
     setNameInput(trimmed);
     setShuffleMode(shuffleInput);
-    setFontSize(fontSizeInput);
+    setFontSize(parsedFontSize);
     setDensity(densityInput);
     setMinMistakes(parsedMinMistakes);
     setMaxCorrectnessPercentage(parsedMaxCorrectness);
-    setSavedFontSize(fontSizeInput);
+    setSavedFontSize(parsedFontSize);
     setSavedDensity(densityInput);
     setSavedMinMistakes(parsedMinMistakes);
     setSavedMaxCorrectness(parsedMaxCorrectness);
@@ -223,25 +235,27 @@ export function SettingsPage() {
           </h2>
           <div className="mt-3 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
             <div>
-              <Label htmlFor="font-size">Font size</Label>
+              <Label htmlFor="font-size">Font size (%)</Label>
               <p className="mt-0.5 text-sm text-zinc-500">
-                Increase text size for easier reading on large screens.
+                Scale text size from {UI_FONT_SIZE_MIN}% to {UI_FONT_SIZE_MAX}%. Use Ctrl/Cmd + or
+                − to adjust in steps of 5.
               </p>
-              <Select
+              <Input
+                id="font-size"
+                type="number"
+                min={UI_FONT_SIZE_MIN}
+                max={UI_FONT_SIZE_MAX}
+                step={5}
                 value={fontSizeInput}
-                onValueChange={(value) => setFontSizeInput(value as UiFontSize)}
-              >
-                <SelectTrigger id="font-size" className="mt-3 max-w-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {UI_FONT_SIZE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => {
+                  setFontSizeInput(e.target.value);
+                  setFontSizeError(null);
+                }}
+                className="mt-3 max-w-xs"
+              />
+              {fontSizeError && (
+                <p className="mt-1.5 text-sm text-red-600">{fontSizeError}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="layout-density">Layout density</Label>

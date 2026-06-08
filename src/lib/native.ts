@@ -8,7 +8,7 @@ export type AppSettings = {
   shuffleMode: boolean;
   mistakeLogMinMistakes: number;
   mistakeLogMaxCorrectnessPercentage: number;
-  uiFontSize: string;
+  uiFontSize: number;
   uiDensity: string;
 };
 
@@ -18,7 +18,7 @@ export type SaveSettingsRequest = {
   shuffleMode?: boolean;
   mistakeLogMinMistakes?: number;
   mistakeLogMaxCorrectnessPercentage?: number;
-  uiFontSize?: string;
+  uiFontSize?: number;
   uiDensity?: string;
 };
 

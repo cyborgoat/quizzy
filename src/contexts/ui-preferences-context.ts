@@ -1,10 +1,10 @@
 import { createContext } from "react";
-import type { UiDensity, UiFontSize } from "@/lib/uiPreferences";
+import type { UiDensity } from "@/lib/uiPreferences";
 
 export type UiPreferencesContextValue = {
-  fontSize: UiFontSize;
+  fontSize: number;
   density: UiDensity;
-  setFontSize: (value: UiFontSize) => void;
+  setFontSize: (value: number) => void;
   setDensity: (value: UiDensity) => void;
 };
 
