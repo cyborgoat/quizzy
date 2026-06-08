@@ -45,6 +45,8 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
     } else if (!session.isComplete) {
       recordedRef.current = false;
     }
+    // Record once when the session completes; avoid re-firing on unrelated session updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional completion gate
   }, [session.isComplete]);
 
   if (session.isComplete) {

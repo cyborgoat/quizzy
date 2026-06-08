@@ -12,6 +12,8 @@ export function useQuizSession(quiz: Quiz) {
   const [orderGeneration, setOrderGeneration] = useState(0);
   const questions = useMemo(
     () => orderQuizQuestions(quiz.questions, shuffleMode),
+    // orderGeneration remounts question order when restarting the quiz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional shuffle seed
     [quiz.questions, shuffleMode, orderGeneration],
   );
   const [state, dispatch] = useReducer(

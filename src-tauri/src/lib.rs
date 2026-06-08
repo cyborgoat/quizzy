@@ -82,7 +82,10 @@ fn is_json_extension(extension: &str) -> bool {
 }
 
 fn strip_utf8_bom(contents: String) -> String {
-    contents.strip_prefix('\u{feff}').unwrap_or(&contents).to_string()
+    contents
+        .strip_prefix('\u{feff}')
+        .unwrap_or(&contents)
+        .to_string()
 }
 
 fn normalize_stored_path(path: PathBuf) -> String {
@@ -98,7 +101,10 @@ fn normalize_stored_path(path: PathBuf) -> String {
 
 fn validate_portable_file_stem(stem: &str) -> Result<(), String> {
     const INVALID_CHARS: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
-    if stem.chars().any(|character| INVALID_CHARS.contains(&character)) {
+    if stem
+        .chars()
+        .any(|character| INVALID_CHARS.contains(&character))
+    {
         return Err(
             "The filename contains characters that are not supported on all platforms.".to_string(),
         );
@@ -369,7 +375,11 @@ fn save_goal_attempt(app: AppHandle, goal_id: String, attempt: GoalAttempt) -> R
 }
 
 #[tauri::command]
-fn get_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> Result<GoalAttempt, String> {
+fn get_goal_attempt(
+    app: AppHandle,
+    goal_id: String,
+    attempt_id: String,
+) -> Result<GoalAttempt, String> {
     goals_storage::get_goal_attempt(&app, goal_id, attempt_id)
 }
 
@@ -426,7 +436,10 @@ mod tests {
 
     #[test]
     fn strips_utf8_bom_from_text() {
-        assert_eq!(strip_utf8_bom("\u{feff}{\"id\":\"quiz\"}".to_string()), "{\"id\":\"quiz\"}");
+        assert_eq!(
+            strip_utf8_bom("\u{feff}{\"id\":\"quiz\"}".to_string()),
+            "{\"id\":\"quiz\"}"
+        );
         assert_eq!(strip_utf8_bom("plain".to_string()), "plain");
     }
 

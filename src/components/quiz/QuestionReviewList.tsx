@@ -1,5 +1,5 @@
 import { CheckCircle, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { QuestionReviewIndexGrid } from "@/components/quiz/QuestionReviewIndexGrid";
 import { ReviewQuestionDialog } from "@/components/quiz/ReviewQuestionDialog";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,22 @@ export function QuestionReviewList({
   resetKey?: string;
   listClassName?: string;
 }) {
+  return (
+    <QuestionReviewListBody
+      key={resetKey ?? String(items.length)}
+      items={items}
+      listClassName={listClassName}
+    />
+  );
+}
+
+function QuestionReviewListBody({
+  items,
+  listClassName,
+}: {
+  items: QuestionReviewItem[];
+  listClassName?: string;
+}) {
   const incorrectCount = items.filter((item) => !item.record.isCorrect).length;
   const correctCount = items.length - incorrectCount;
 
@@ -69,11 +85,6 @@ export function QuestionReviewList({
     incorrectCount > 0 ? "incorrect" : "all",
   );
   const [dialogIndex, setDialogIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    setFilter(incorrectCount > 0 ? "incorrect" : "all");
-    setDialogIndex(null);
-  }, [resetKey, incorrectCount]);
 
   const filteredItems = useMemo(
     () => items.filter((item) => matchesFilter(item.record, filter)),

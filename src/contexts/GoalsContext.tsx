@@ -13,7 +13,6 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
-    setIsLoading(true);
     try {
       const loaded = await nativeApi.listGoals();
       setGoals(
@@ -30,7 +29,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {

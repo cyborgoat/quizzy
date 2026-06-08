@@ -257,11 +257,8 @@ fn migrate_legacy_goals(app: &AppHandle) -> Result<(), String> {
 
     let backup_path = legacy_path.with_extension("json.bak");
     if backup_path.exists() {
-        fs::remove_file(&backup_path).map_err(|error| {
-            format!(
-                "Unable to remove an existing goals backup file: {error}"
-            )
-        })?;
+        fs::remove_file(&backup_path)
+            .map_err(|error| format!("Unable to remove an existing goals backup file: {error}"))?;
     }
     fs::rename(&legacy_path, &backup_path)
         .map_err(|error| format!("Unable to archive legacy goals.json: {error}"))
@@ -275,12 +272,16 @@ pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
     }
 
     let mut goals = Vec::new();
-    for entry in fs::read_dir(&root)
-        .map_err(|error| format!("Unable to read goals directory: {error}"))?
+    for entry in
+        fs::read_dir(&root).map_err(|error| format!("Unable to read goals directory: {error}"))?
     {
         let entry =
             entry.map_err(|error| format!("Unable to inspect a goals directory entry: {error}"))?;
-        if !entry.file_type().map_err(|error| error.to_string())?.is_dir() {
+        if !entry
+            .file_type()
+            .map_err(|error| error.to_string())?
+            .is_dir()
+        {
             continue;
         }
 
@@ -320,7 +321,11 @@ pub fn delete_goal(app: &AppHandle, goal_id: String) -> Result<(), String> {
         .map_err(|error| format!("Unable to delete goal {}: {error}", goal_id))
 }
 
-pub fn save_goal_attempt(app: &AppHandle, goal_id: String, attempt: GoalAttempt) -> Result<(), String> {
+pub fn save_goal_attempt(
+    app: &AppHandle,
+    goal_id: String,
+    attempt: GoalAttempt,
+) -> Result<(), String> {
     validate_storage_id(&goal_id)?;
     let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
     if !goal_dir.join(GOAL_META_FILE).exists() {

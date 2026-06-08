@@ -1,8 +1,10 @@
 import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { QuestionReviewList } from "@/components/quiz/QuestionReviewList";
 import { useAttemptReviewItems } from "@/lib/attemptReview";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { errorMessage } from "@/lib/native";
 import type { GoalAttempt } from "@/types/goal";
 
 export function AttemptReviewPanel({
@@ -90,5 +92,54 @@ export function AttemptReviewPanel({
         )}
       </div>
     </aside>
+  );
+}
+
+export function AttemptReviewPanelLoader({
+  goalId,
+  attemptId,
+  quizId,
+  quizTitle,
+  loadGoalAttempt,
+  onClose,
+}: {
+  goalId: string;
+  attemptId: string;
+  quizId: string;
+  quizTitle: string;
+  loadGoalAttempt: (goalId: string, attemptId: string) => Promise<GoalAttempt>;
+  onClose: () => void;
+}) {
+  const [attempt, setAttempt] = useState<GoalAttempt | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadGoalAttempt(goalId, attemptId)
+      .then((loaded) => {
+        if (!cancelled) setAttempt(loaded);
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(errorMessage(loadError));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [goalId, attemptId, loadGoalAttempt]);
+
+  return (
+    <AttemptReviewPanel
+      attempt={attempt}
+      quizId={quizId}
+      quizTitle={quizTitle}
+      loading={loading}
+      error={error}
+      onClose={onClose}
+    />
   );
 }

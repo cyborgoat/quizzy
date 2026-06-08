@@ -45,9 +45,18 @@ export function toAttemptSummary(attempt: GoalAttempt): AttemptSummary {
   };
 }
 
-export function goalMeta(goal: Goal) {
-  const { attempts: _attempts, ...meta } = goal;
-  return meta;
+export function goalMeta(goal: Goal): Omit<Goal, "attempts"> {
+  return {
+    id: goal.id,
+    quizId: goal.quizId,
+    quizTitle: goal.quizTitle,
+    description: goal.description,
+    targetScore: goal.targetScore,
+    deadline: goal.deadline,
+    createdAt: goal.createdAt,
+    completed: goal.completed,
+    completedAt: goal.completedAt,
+  };
 }
 
 export function anyAttemptMetTarget(goal: Goal): boolean {

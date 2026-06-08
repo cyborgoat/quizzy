@@ -19,6 +19,18 @@ export function SettingsPage() {
   const [nameInput, setNameInput] = useState(userName);
   const [shuffleInput, setShuffleInput] = useState(shuffleMode);
   const [pendingDir, setPendingDir] = useState<string | null>(null);
+  const [savedUserName, setSavedUserName] = useState(userName);
+  const [savedShuffleMode, setSavedShuffleMode] = useState(shuffleMode);
+
+  if (userName !== savedUserName) {
+    setSavedUserName(userName);
+    setNameInput(userName);
+  }
+
+  if (shuffleMode !== savedShuffleMode) {
+    setSavedShuffleMode(shuffleMode);
+    setShuffleInput(shuffleMode);
+  }
 
   const displayDir = pendingDir ?? library.directoryPath;
   const hasChanges =
@@ -27,14 +39,6 @@ export function SettingsPage() {
     shuffleInput !== shuffleMode;
 
   const blocker = useBlocker(hasChanges);
-
-  useEffect(() => {
-    setNameInput(userName);
-  }, [userName]);
-
-  useEffect(() => {
-    setShuffleInput(shuffleMode);
-  }, [shuffleMode]);
 
   useEffect(() => {
     if (blocker.state !== "blocked") return;
