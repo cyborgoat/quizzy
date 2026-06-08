@@ -19,8 +19,11 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
+  const refresh = useCallback(async (options?: { background?: boolean }) => {
+    const background = options?.background ?? false;
+    if (!background) {
+      setIsLoading(true);
+    }
     try {
       const settings = await nativeApi.getSettings();
       setDirectoryPath(settings.workingDirectory);
@@ -41,7 +44,9 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
       setDirectoryAvailable(false);
       toast.error(errorMessage(error));
     } finally {
-      setIsLoading(false);
+      if (!background) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -52,7 +57,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function handleFocus() {
-      void refresh();
+      void refresh({ background: true });
     }
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);

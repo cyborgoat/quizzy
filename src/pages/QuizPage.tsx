@@ -197,7 +197,7 @@ export function QuizPage() {
     [library.quizzes, quizId],
   );
 
-  if (library.isLoading) {
+  if (library.isLoading && !quiz) {
     return <p className="py-20 text-center text-sm text-zinc-500">Loading quiz…</p>;
   }
   if (!quiz) {
