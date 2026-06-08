@@ -3,9 +3,18 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
+import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { detailsFormToGoalInput, type GoalDetailsFormValues } from "@/types/goal";
@@ -58,11 +67,11 @@ export function GoalsPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <PageShell>
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Goals</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">Goals</h1>
+          <p className="mt-1 text-sm text-zinc-500 lg:text-base">
             Set quiz goals to track your progress and stay motivated.
           </p>
         </div>
@@ -77,7 +86,7 @@ export function GoalsPage() {
       {showForm && (
         <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-950">New goal</h2>
+            <h2 className="text-base font-semibold text-zinc-950">New goal</h2>
             <Button
               size="icon"
               variant="ghost"
@@ -93,21 +102,24 @@ export function GoalsPage() {
 
           <div className="space-y-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-zinc-700">
+              <Label htmlFor="new-goal-quiz">
                 Quiz <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.quizId}
-                onChange={(e) => handleField("quizId", e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500 sm:max-w-xs"
+              </Label>
+              <Select
+                value={form.quizId || undefined}
+                onValueChange={(value) => handleField("quizId", value)}
               >
-                <option value="">Select a quiz…</option>
-                {quizzes.map((q) => (
-                  <option key={q.quiz.id} value={q.quiz.id}>
-                    {q.quiz.title}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="new-goal-quiz" className="mt-1.5 sm:max-w-xs">
+                  <SelectValue placeholder="Select a quiz…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {quizzes.map((q) => (
+                    <SelectItem key={q.quiz.id} value={q.quiz.id}>
+                      {q.quiz.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <GoalDetailsFields
@@ -173,6 +185,6 @@ export function GoalsPage() {
           )}
         </div>
       )}
-    </main>
+    </PageShell>
   );
 }

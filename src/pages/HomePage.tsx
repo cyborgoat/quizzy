@@ -2,6 +2,7 @@ import { ArrowRight, Download, RefreshCw, Target } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { PageShell } from "@/components/layout/PageShell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
@@ -27,12 +28,12 @@ export function HomePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <PageShell>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">
           Hello, {userName || "there"}
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-zinc-500 lg:text-base">
           Ready to practice? Pick a quiz below and get started.
         </p>
       </div>
@@ -77,7 +78,7 @@ export function HomePage() {
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-medium text-zinc-500">Local quiz library</p>
-              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950">
+              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-zinc-950 lg:text-xl">
                 Choose a quiz
               </h2>
             </div>
@@ -122,7 +123,7 @@ export function HomePage() {
           )}
         </>
       )}
-    </main>
+    </PageShell>
   );
 }
 

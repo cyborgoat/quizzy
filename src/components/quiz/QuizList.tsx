@@ -9,7 +9,7 @@ export function QuizList({
   onDelete: (source: QuizSource) => void;
 }) {
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Available quizzes">
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-label="Available quizzes">
       {quizzes.map((source) => (
         <QuizListItem
           key={source.quiz.id}

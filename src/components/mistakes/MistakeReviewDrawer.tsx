@@ -37,7 +37,7 @@ export function MistakeReviewDrawer({
       direction="right"
       shouldScaleBackground={false}
     >
-      <DrawerContent className="flex h-full max-w-xl flex-col">
+      <DrawerContent className="flex h-full max-w-xl flex-col lg:max-w-2xl">
         <DrawerHeader className="shrink-0 border-b border-zinc-100">
           <DrawerTitle>Review mistake</DrawerTitle>
           <DrawerDescription>

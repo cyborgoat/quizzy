@@ -8,7 +8,7 @@ screen. It contains:
 - **Home** — the quiz library
 - **Goals** — study goals and attempt history
 - **Mistake Log** — threshold-filtered mistakes from scored attempts
-- **Settings** — profile, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
+- **Settings** — profile, appearance, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
 collapses to icon-only mode. On desktop the trigger button sits in the sidebar
@@ -37,7 +37,7 @@ includes:
 - Linked quiz
 - Description
 - Optional target score percentage
-- Optional deadline
+- Optional deadline (calendar picker with month/year dropdown; clear to remove)
 - Attempt history with scores
 
 Goals are shown in accordion rows. Each row displays target, latest, and highest
@@ -108,6 +108,15 @@ with unsaved changes opens a confirmation dialog.
 ### Profile
 
 The **Full name** field sets the name displayed in the home page greeting.
+
+### Appearance
+
+Customize readability and layout:
+
+- **Font size** — Small, Default, Large, or Extra large (scales text app-wide on top of responsive viewport sizing)
+- **Layout density** — Default, Comfortable, or Spacious (widens content areas and increases page padding on larger displays)
+
+Preferences are saved to `settings.json` and applied immediately after Save.
 
 ### Quiz preferences
 

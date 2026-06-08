@@ -2,10 +2,19 @@ import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MistakeReviewDrawer } from "@/components/mistakes/MistakeReviewDrawer";
+import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { detectEmptyReason, entryKey, formatMistakeDate } from "@/lib/mistakeLog";
@@ -15,7 +24,7 @@ function SummaryCard({ label, value }: { label: string; value: string | number }
   return (
     <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
       <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-950">{value}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-950 xl:text-3xl">{value}</p>
     </div>
   );
 }
@@ -134,10 +143,10 @@ export function MistakeLogPage() {
   }, [activeEntry, quizzes]);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <PageShell>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Mistake Log</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">Mistake Log</h1>
+        <p className="mt-1 text-sm text-zinc-500 lg:text-base">
           Threshold-filtered mistakes from scored attempts, sorted by frequency. Click a question
           to review the correct answer and explanation.
         </p>
@@ -169,22 +178,20 @@ export function MistakeLogPage() {
       <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4">
         {!isQuizScoped && (
           <div className="min-w-0 flex-1">
-            <label htmlFor="quiz-filter" className="block text-xs font-medium text-zinc-700">
-              Quiz
-            </label>
-            <select
-              id="quiz-filter"
-              value={quizFilter}
-              onChange={(e) => setQuizFilter(e.target.value)}
-              className="mt-1.5 h-9 w-full max-w-xs rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
-            >
-              <option value="all">All quizzes</option>
-              {quizzesWithMistakes.map((quiz) => (
-                <option key={quiz.quizId} value={quiz.quizId}>
-                  {quiz.quizTitle}
-                </option>
-              ))}
-            </select>
+            <Label htmlFor="quiz-filter">Quiz</Label>
+            <Select value={quizFilter} onValueChange={setQuizFilter}>
+              <SelectTrigger id="quiz-filter" className="mt-1.5 max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All quizzes</SelectItem>
+                {quizzesWithMistakes.map((quiz) => (
+                  <SelectItem key={quiz.quizId} value={quiz.quizId}>
+                    {quiz.quizTitle}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
         <div className="text-xs text-zinc-500">
@@ -218,7 +225,7 @@ export function MistakeLogPage() {
                     className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-950">{entry.prompt}</p>
+                      <p className="text-sm font-medium text-zinc-950 lg:text-base">{entry.prompt}</p>
                       {!isQuizScoped && (
                         <p className="mt-0.5 text-xs text-zinc-500">{entry.quizTitle}</p>
                       )}
@@ -257,6 +264,6 @@ export function MistakeLogPage() {
           if (!open) setActiveEntry(null);
         }}
       />
-    </main>
+    </PageShell>
   );
 }

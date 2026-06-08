@@ -1,7 +1,9 @@
 import { quizChromeHeaderClass } from "@/components/quiz/quiz-chrome";
+import { quizChromeInnerClass } from "@/components/layout/pageShellClasses";
 import { Progress } from "@/components/ui/progress";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export function QuizHeader({
   title,
@@ -20,7 +22,7 @@ export function QuizHeader({
 
   return (
     <header className={`${quizChromeHeaderClass} bg-white`}>
-      <div className="mx-auto flex h-full max-w-3xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <div className={cn(quizChromeInnerClass, "flex h-full items-center gap-3")}>
         {isMobile && (
           <SidebarTrigger
             className="size-9 shrink-0 border border-zinc-200 bg-white hover:bg-zinc-100"

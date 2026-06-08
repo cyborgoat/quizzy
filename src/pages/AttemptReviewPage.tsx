@@ -5,6 +5,7 @@ import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
 import { AttemptReviewContent } from "@/components/goals/AttemptReviewContent";
 import { AttemptReviewHeader } from "@/components/goals/AttemptReviewHeader";
 import { AttemptScoreSummary } from "@/components/goals/AttemptScoreSummary";
+import { PageShell } from "@/components/layout/PageShell";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { useGoals } from "@/hooks/useGoals";
 import { errorMessage } from "@/lib/native";
@@ -44,7 +45,7 @@ function AttemptReviewLoader({
   const hasMultipleAttempts = goal.attempts.length > 1;
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <PageShell className="space-y-6">
       <AttemptReviewHeader goal={goal} />
 
       <div
@@ -78,7 +79,7 @@ function AttemptReviewLoader({
           error={error}
         />
       </section>
-    </main>
+    </PageShell>
   );
 }
 
@@ -92,27 +93,27 @@ export function AttemptReviewPage() {
 
   if (!goalId || !attemptId) {
     return (
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+      <PageShell>
         <ErrorState
           title="Invalid review link"
           description="This attempt review link is missing required information."
           actionLabel="Back to goals"
           onAction={() => navigate({ to: "/goals" })}
         />
-      </main>
+      </PageShell>
     );
   }
 
   if (!goal || !attemptSummary) {
     return (
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+      <PageShell>
         <ErrorState
           title="Goal or attempt not found"
           description="This goal or attempt may have been deleted or is no longer available."
           actionLabel="Back to goals"
           onAction={() => navigate({ to: "/goals" })}
         />
-      </main>
+      </PageShell>
     );
   }
 

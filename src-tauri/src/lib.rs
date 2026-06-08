@@ -19,6 +19,28 @@ fn default_mistake_log_max_correctness_percentage() -> u32 {
     100
 }
 
+fn default_ui_font_size() -> String {
+    "default".to_string()
+}
+
+fn default_ui_density() -> String {
+    "default".to_string()
+}
+
+fn validate_ui_font_size(value: &str) -> Result<(), String> {
+    match value {
+        "small" | "default" | "large" | "extra-large" => Ok(()),
+        _ => Err("Font size must be small, default, large, or extra-large.".to_string()),
+    }
+}
+
+fn validate_ui_density(value: &str) -> Result<(), String> {
+    match value {
+        "default" | "comfortable" | "spacious" => Ok(()),
+        _ => Err("Layout density must be default, comfortable, or spacious.".to_string()),
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Settings {
@@ -31,6 +53,10 @@ struct Settings {
     mistake_log_min_mistakes: u32,
     #[serde(default = "default_mistake_log_max_correctness_percentage")]
     mistake_log_max_correctness_percentage: u32,
+    #[serde(default = "default_ui_font_size")]
+    ui_font_size: String,
+    #[serde(default = "default_ui_density")]
+    ui_density: String,
 }
 
 #[derive(Serialize)]
@@ -42,6 +68,8 @@ struct AppSettings {
     shuffle_mode: bool,
     mistake_log_min_mistakes: u32,
     mistake_log_max_correctness_percentage: u32,
+    ui_font_size: String,
+    ui_density: String,
 }
 
 #[derive(Deserialize)]
@@ -52,6 +80,8 @@ struct SaveSettingsRequest {
     shuffle_mode: Option<bool>,
     mistake_log_min_mistakes: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
+    ui_font_size: Option<String>,
+    ui_density: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -256,6 +286,8 @@ fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         shuffle_mode: settings.shuffle_mode,
         mistake_log_min_mistakes: settings.mistake_log_min_mistakes,
         mistake_log_max_correctness_percentage: settings.mistake_log_max_correctness_percentage,
+        ui_font_size: settings.ui_font_size,
+        ui_density: settings.ui_density,
     })
 }
 
@@ -283,6 +315,16 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
             return Err("Maximum correctness percentage must be between 0 and 100.".to_string());
         }
         settings.mistake_log_max_correctness_percentage = max_correctness;
+    }
+
+    if let Some(font_size) = request.ui_font_size {
+        validate_ui_font_size(&font_size)?;
+        settings.ui_font_size = font_size;
+    }
+
+    if let Some(density) = request.ui_density {
+        validate_ui_density(&density)?;
+        settings.ui_density = density;
     }
 
     if let Some(path) = request.working_directory {

@@ -1,4 +1,6 @@
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { GoalDeadlinePicker } from "@/components/goals/GoalDeadlinePicker";
 import type { GoalDetailsFormValues } from "@/types/goal";
 
 export function GoalDetailsFields({
@@ -48,18 +50,13 @@ export function GoalDetailsFields({
           />
         </div>
         <div>
-          <label
-            className="mb-1.5 block text-xs font-medium text-zinc-700"
-            htmlFor={`${idPrefix}-deadline`}
-          >
+          <Label className="mb-1.5 block" htmlFor={`${idPrefix}-deadline`}>
             Deadline
-          </label>
-          <Input
+          </Label>
+          <GoalDeadlinePicker
             id={`${idPrefix}-deadline`}
-            type="date"
             value={values.deadline}
-            onChange={(e) => onChange("deadline", e.target.value)}
-            className="w-40"
+            onChange={(value) => onChange("deadline", value)}
           />
         </div>
       </div>

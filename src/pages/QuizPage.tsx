@@ -12,6 +12,8 @@ import { QuizStartScreen } from "@/components/quiz/QuizStartScreen";
 import { ResultSummary } from "@/components/quiz/ResultSummary";
 import { ReviewSummary } from "@/components/quiz/ReviewSummary";
 import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
+import { PageShell } from "@/components/layout/PageShell";
+import { quizChromeInnerClass } from "@/components/layout/pageShellClasses";
 import { Button } from "@/components/ui/button";
 import {
   SidebarInset,
@@ -20,6 +22,7 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
+import { cn } from "@/lib/utils";
 import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
 
@@ -88,7 +91,7 @@ function QuizSessionPage({
   if (session.isComplete) {
     const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+      <PageShell width="quiz">
         <ResultSummary
           quiz={quiz}
           score={session.score}
@@ -98,7 +101,7 @@ function QuizSessionPage({
           onRestart={session.restart}
         />
         <ReviewSummary questions={session.questions} answers={session.answers} />
-      </main>
+      </PageShell>
     );
   }
 
@@ -128,7 +131,7 @@ function QuizSessionPage({
           total={session.totalQuestions}
           answered={session.answeredCount}
         />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5 sm:px-6 lg:px-8">
+        <main className={cn(quizChromeInnerClass, "flex-1 py-5")}>
           <QuestionContent
             question={session.currentQuestion}
             answer={session.currentAnswer}
@@ -202,14 +205,14 @@ export function QuizPage() {
   }
   if (!quiz) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+      <PageShell width="quiz">
         <ErrorState
           title="Quiz not found"
           description="This quiz is unavailable or its file is no longer valid."
           actionLabel="Return home"
           onAction={() => navigate({ to: "/" })}
         />
-      </main>
+      </PageShell>
     );
   }
 

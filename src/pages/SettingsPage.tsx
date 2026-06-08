@@ -1,21 +1,38 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { FolderCog, Shuffle, User, ClipboardList } from "lucide-react";
+import { FolderCog, Palette, Shuffle, User, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
+import { useUiPreferences } from "@/hooks/useUiPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { errorMessage, nativeApi } from "@/lib/native";
+import {
+  UI_DENSITY_OPTIONS,
+  UI_FONT_SIZE_OPTIONS,
+  type UiDensity,
+  type UiFontSize,
+} from "@/lib/uiPreferences";
 
 export function SettingsPage() {
   const { userName, setUserName } = useUserProfile();
   const { shuffleMode, setShuffleMode } = useQuizPreferences();
+  const { fontSize, density, setFontSize, setDensity } = useUiPreferences();
   const {
     minMistakes,
     maxCorrectnessPercentage,
@@ -25,11 +42,15 @@ export function SettingsPage() {
   const library = useQuizLibrary();
   const [nameInput, setNameInput] = useState(userName);
   const [shuffleInput, setShuffleInput] = useState(shuffleMode);
+  const [fontSizeInput, setFontSizeInput] = useState<UiFontSize>(fontSize);
+  const [densityInput, setDensityInput] = useState<UiDensity>(density);
   const [minMistakesInput, setMinMistakesInput] = useState(String(minMistakes));
   const [maxCorrectnessInput, setMaxCorrectnessInput] = useState(String(maxCorrectnessPercentage));
   const [pendingDir, setPendingDir] = useState<string | null>(null);
   const [savedUserName, setSavedUserName] = useState(userName);
   const [savedShuffleMode, setSavedShuffleMode] = useState(shuffleMode);
+  const [savedFontSize, setSavedFontSize] = useState<UiFontSize>(fontSize);
+  const [savedDensity, setSavedDensity] = useState<UiDensity>(density);
   const [savedMinMistakes, setSavedMinMistakes] = useState(minMistakes);
   const [savedMaxCorrectness, setSavedMaxCorrectness] = useState(maxCorrectnessPercentage);
   const [minMistakesError, setMinMistakesError] = useState<string | null>(null);
@@ -43,6 +64,16 @@ export function SettingsPage() {
   if (shuffleMode !== savedShuffleMode) {
     setSavedShuffleMode(shuffleMode);
     setShuffleInput(shuffleMode);
+  }
+
+  if (fontSize !== savedFontSize) {
+    setSavedFontSize(fontSize);
+    setFontSizeInput(fontSize);
+  }
+
+  if (density !== savedDensity) {
+    setSavedDensity(density);
+    setDensityInput(density);
   }
 
   if (minMistakes !== savedMinMistakes) {
@@ -60,6 +91,8 @@ export function SettingsPage() {
     nameInput.trim() !== userName ||
     pendingDir !== null ||
     shuffleInput !== shuffleMode ||
+    fontSizeInput !== fontSize ||
+    densityInput !== density ||
     minMistakesInput !== String(minMistakes) ||
     maxCorrectnessInput !== String(maxCorrectnessPercentage);
 
@@ -125,6 +158,8 @@ export function SettingsPage() {
       await nativeApi.saveSettings({
         profileName: trimmed,
         shuffleMode: shuffleInput,
+        uiFontSize: fontSizeInput,
+        uiDensity: densityInput,
         mistakeLogMinMistakes: parsedMinMistakes,
         mistakeLogMaxCorrectnessPercentage: parsedMaxCorrectness,
         ...(pendingDir !== null ? { workingDirectory: pendingDir } : {}),
@@ -137,8 +172,12 @@ export function SettingsPage() {
     setUserName(trimmed);
     setNameInput(trimmed);
     setShuffleMode(shuffleInput);
+    setFontSize(fontSizeInput);
+    setDensity(densityInput);
     setMinMistakes(parsedMinMistakes);
     setMaxCorrectnessPercentage(parsedMaxCorrectness);
+    setSavedFontSize(fontSizeInput);
+    setSavedDensity(densityInput);
     setSavedMinMistakes(parsedMinMistakes);
     setSavedMaxCorrectness(parsedMaxCorrectness);
 
@@ -151,21 +190,21 @@ export function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-zinc-950">Settings</h1>
-      <p className="mt-1 text-sm text-zinc-500">Configure your profile, quiz preferences, and directory.</p>
+    <PageShell width="narrow">
+      <h1 className="text-2xl font-semibold text-zinc-950 xl:text-3xl">Settings</h1>
+      <p className="mt-1 text-sm text-zinc-500 lg:text-base">
+        Configure your profile, appearance, quiz preferences, and directory.
+      </p>
 
       <div className="mt-8 space-y-8">
         <section>
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
             <User className="size-4" />
             Profile
           </h2>
           <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-4">
-            <label className="block text-xs font-medium text-zinc-700" htmlFor="full-name">
-              Full name
-            </label>
-            <p className="mt-0.5 text-xs text-zinc-500">Shown on the home page.</p>
+            <Label htmlFor="full-name">Full name</Label>
+            <p className="mt-0.5 text-sm text-zinc-500">Shown on the home page.</p>
             <Input
               id="full-name"
               value={nameInput}
@@ -178,17 +217,68 @@ export function SettingsPage() {
         </section>
 
         <section>
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
+            <Palette className="size-4" />
+            Appearance
+          </h2>
+          <div className="mt-3 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+            <div>
+              <Label htmlFor="font-size">Font size</Label>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                Increase text size for easier reading on large screens.
+              </p>
+              <Select
+                value={fontSizeInput}
+                onValueChange={(value) => setFontSizeInput(value as UiFontSize)}
+              >
+                <SelectTrigger id="font-size" className="mt-3 max-w-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UI_FONT_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="layout-density">Layout density</Label>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                Widen content areas and add breathing room on larger displays.
+              </p>
+              <Select
+                value={densityInput}
+                onValueChange={(value) => setDensityInput(value as UiDensity)}
+              >
+                <SelectTrigger id="layout-density" className="mt-3 max-w-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UI_DENSITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
             <Shuffle className="size-4" />
             Quiz preferences
           </h2>
           <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p id="shuffle-mode-label" className="text-xs font-medium text-zinc-700">
+                <p id="shuffle-mode-label" className="text-sm font-medium text-zinc-700">
                   Shuffle mode
                 </p>
-                <p className="mt-0.5 text-xs text-zinc-500">
+                <p className="mt-0.5 text-sm text-zinc-500">
                   Randomize question order within each question type group.
                 </p>
               </div>
@@ -203,16 +293,14 @@ export function SettingsPage() {
         </section>
 
         <section>
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
             <ClipboardList className="size-4" />
             Mistake Log
           </h2>
           <div className="mt-3 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700" htmlFor="min-mistakes">
-                Minimum mistakes per question
-              </label>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <Label htmlFor="min-mistakes">Minimum mistakes per question</Label>
+              <p className="mt-0.5 text-sm text-zinc-500">
                 A question appears in the Mistake Log only when it has at least this many mistakes
                 and its per-question correctness is at or below the maximum percentage below.
               </p>
@@ -229,17 +317,12 @@ export function SettingsPage() {
                 className="mt-3 max-w-xs"
               />
               {minMistakesError && (
-                <p className="mt-1.5 text-xs text-red-600">{minMistakesError}</p>
+                <p className="mt-1.5 text-sm text-red-600">{minMistakesError}</p>
               )}
             </div>
             <div>
-              <label
-                className="block text-xs font-medium text-zinc-700"
-                htmlFor="max-correctness"
-              >
-                Maximum correctness percentage per question
-              </label>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <Label htmlFor="max-correctness">Maximum correctness percentage per question</Label>
+              <p className="mt-0.5 text-sm text-zinc-500">
                 Per-question correctness is calculated across all scored attempts for that quiz.
               </p>
               <Input
@@ -256,25 +339,25 @@ export function SettingsPage() {
                 className="mt-3 max-w-xs"
               />
               {maxCorrectnessError && (
-                <p className="mt-1.5 text-xs text-red-600">{maxCorrectnessError}</p>
+                <p className="mt-1.5 text-sm text-red-600">{maxCorrectnessError}</p>
               )}
             </div>
           </div>
         </section>
 
         <section>
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
             <FolderCog className="size-4" />
             Quiz directory
           </h2>
           <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-4">
-            <p className="text-xs font-medium text-zinc-700">Working directory</p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <Label>Working directory</Label>
+            <p className="mt-0.5 text-sm text-zinc-500">
               Quizzy loads quiz JSON files from this folder.
             </p>
             <div className="mt-3 flex items-center gap-2">
               <code
-                className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1.5 text-xs text-zinc-700"
+                className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1.5 text-sm text-zinc-700"
                 title={displayDir ?? undefined}
               >
                 {displayDir ?? "No directory selected"}
@@ -289,7 +372,7 @@ export function SettingsPage() {
               </Button>
             </div>
             {library.directoryPath && !library.directoryAvailable && !pendingDir && (
-              <p className="mt-2 text-xs text-red-600">
+              <p className="mt-2 text-sm text-red-600">
                 This directory is currently unavailable.
               </p>
             )}
@@ -302,6 +385,6 @@ export function SettingsPage() {
           Save
         </Button>
       </div>
-    </main>
+    </PageShell>
   );
 }

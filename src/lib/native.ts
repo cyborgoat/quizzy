@@ -8,6 +8,8 @@ export type AppSettings = {
   shuffleMode: boolean;
   mistakeLogMinMistakes: number;
   mistakeLogMaxCorrectnessPercentage: number;
+  uiFontSize: string;
+  uiDensity: string;
 };
 
 export type SaveSettingsRequest = {
@@ -16,6 +18,8 @@ export type SaveSettingsRequest = {
   shuffleMode?: boolean;
   mistakeLogMinMistakes?: number;
   mistakeLogMaxCorrectnessPercentage?: number;
+  uiFontSize?: string;
+  uiDensity?: string;
 };
 
 export type NativeQuizFile = {

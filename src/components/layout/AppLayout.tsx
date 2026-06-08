@@ -9,7 +9,7 @@ export function AppLayout() {
       defaultOpen
       style={
         {
-          "--sidebar-width": "14rem",
+          "--sidebar-width": "var(--app-sidebar-width)",
           "--sidebar-width-icon": "3rem",
         } as CSSProperties
       }
