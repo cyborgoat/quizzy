@@ -51,6 +51,43 @@ export function orderQuizQuestions(
   return orderQuestionsByType(questions);
 }
 
+export function selectPracticeQuestions(
+  questions: QuizQuestion[],
+  count: number,
+): QuizQuestion[] {
+  const total = questions.length;
+  if (total === 0) return [];
+  const limit = Math.min(count, total);
+  if (limit >= total) return [...questions];
+
+  const typeOrder: QuizQuestion["type"][] = [];
+  const pools = new Map<QuizQuestion["type"], QuizQuestion[]>();
+
+  for (const question of questions) {
+    if (!pools.has(question.type)) {
+      pools.set(question.type, []);
+      typeOrder.push(question.type);
+    }
+    pools.get(question.type)!.push(question);
+  }
+
+  const selected: QuizQuestion[] = [];
+  while (selected.length < limit) {
+    let picked = false;
+    for (const type of typeOrder) {
+      if (selected.length >= limit) break;
+      const pool = pools.get(type);
+      if (pool && pool.length > 0) {
+        selected.push(pool.shift()!);
+        picked = true;
+      }
+    }
+    if (!picked) break;
+  }
+
+  return selected;
+}
+
 export type QuestionTypeGroup = {
   type: QuizQuestion["type"];
   questions: QuizQuestion[];

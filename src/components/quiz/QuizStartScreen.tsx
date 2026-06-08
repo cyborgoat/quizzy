@@ -83,8 +83,8 @@ export function QuizStartScreen({
               aria-label="Number of practice questions"
             />
             <p className="mt-2 text-xs leading-5 text-zinc-500">
-              Uses the first {questionCount} question{questionCount !== 1 ? "s" : ""}{" "}
-              after your current order and shuffle settings.
+              Includes a mix of question types when possible, then applies your
+              shuffle setting.
             </p>
           </div>
         )}

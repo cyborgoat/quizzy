@@ -1,6 +1,9 @@
 import { useMemo, useReducer, useState } from "react";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
-import { orderQuizQuestions } from "@/lib/questionOrder";
+import {
+  orderQuizQuestions,
+  selectPracticeQuestions,
+} from "@/lib/questionOrder";
 import {
   initialQuizSessionState,
   quizSessionReducer,
@@ -12,11 +15,11 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
   const { shuffleMode } = useQuizPreferences();
   const [orderGeneration, setOrderGeneration] = useState(0);
   const questions = useMemo(() => {
-    const ordered = orderQuizQuestions(quiz.questions, shuffleMode);
-    if (config.mode === "practice" && config.questionCount != null) {
-      return ordered.slice(0, Math.min(config.questionCount, ordered.length));
-    }
-    return ordered;
+    const pool =
+      config.mode === "practice" && config.questionCount != null
+        ? selectPracticeQuestions(quiz.questions, config.questionCount)
+        : quiz.questions;
+    return orderQuizQuestions(pool, shuffleMode);
     // orderGeneration remounts question order when restarting the quiz.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional shuffle seed
   }, [quiz.questions, shuffleMode, orderGeneration, config.mode, config.questionCount]);

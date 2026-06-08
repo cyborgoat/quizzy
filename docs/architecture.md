@@ -175,8 +175,8 @@ performed by custom Rust commands.
 1. The user opens `/quiz/:quizId` and picks **Practice** or **Scored attempt** on
    `QuizStartScreen`. Practice passes `?mode=practice&count=N`; scored passes
    `?mode=scored`.
-2. `useQuizSession` loads the ordered question list (first N for practice, all
-   for scored).
+2. `useQuizSession` selects a type-balanced subset for practice (or all questions
+   for scored), then applies order/shuffle settings.
 3. Editable drafts and flags are stored per question.
 4. Direct, previous, and next navigation preserve those drafts.
 5. Final submission freezes one answer record per question in the session.

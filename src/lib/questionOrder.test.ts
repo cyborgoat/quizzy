@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   groupQuestionsByType,
   orderQuestionsByType,
+  selectPracticeQuestions,
   shuffleQuestionsWithinGroups,
 } from "@/lib/questionOrder";
 import type { QuizQuestion } from "@/types/quiz";
@@ -71,5 +72,17 @@ describe("shuffleQuestionsWithinGroups", () => {
     expect(
       shuffleQuestionsWithinGroups(questions, () => 0).map((question) => question.id),
     ).toEqual(["sc-2", "sc-1", "mc-1", "tf-1"]);
+  });
+});
+
+describe("selectPracticeQuestions", () => {
+  it("round-robins across question types instead of taking one type first", () => {
+    expect(
+      selectPracticeQuestions(questions, 3).map((question) => question.id),
+    ).toEqual(["tf-1", "sc-1", "mc-1"]);
+  });
+
+  it("returns every question when the count covers the full quiz", () => {
+    expect(selectPracticeQuestions(questions, 10)).toEqual(questions);
   });
 });

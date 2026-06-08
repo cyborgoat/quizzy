@@ -141,7 +141,8 @@ bottom-right corner of the screen:
 Starting a quiz opens a mode picker:
 
 - **Practice** — choose how many questions to take (1 through the full quiz count)
-  using a slider. Uses the first N questions after your order/shuffle settings.
+  using a slider. Picks a balanced mix of question types when possible, then
+  applies your order/shuffle settings.
   Practice runs do not count toward goals. Pre-selected when starting from the
   home page.
 - **Scored attempt** — answer every question in the quiz. Results are saved to
