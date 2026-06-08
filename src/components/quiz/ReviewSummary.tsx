@@ -67,7 +67,7 @@ function ReviewQuestionCard({
           </Badge>
         </div>
       </div>
-      <dl className="mt-4 grid gap-3 text-sm">
+      <dl className="mt-4 flex flex-col gap-3 text-sm">
         <div>
           <dt className="font-medium text-zinc-500">Your answer</dt>
           <dd className="mt-1 leading-6 text-zinc-900">
@@ -104,13 +104,13 @@ export function ReviewSummary({
   return (
     <section className="mt-8">
       <h2 className="text-2xl font-semibold text-zinc-950">Answer review</h2>
-      <div className="mt-4 space-y-6">
+      <div className="mt-4 flex flex-col gap-6">
         {groups.map((group) => (
-          <section key={group.type} className="space-y-3">
-            <h3 className="text-sm font-medium text-zinc-500">
+          <section key={group.type} className="flex flex-col gap-3">
+            <p className="select-none text-sm font-medium text-zinc-500">
               {QUESTION_TYPE_LABELS[group.type]}
-            </h3>
-            <div className="space-y-4">
+            </p>
+            <div className="flex flex-col gap-4">
               {group.questions.map((question) => {
                 const record = answers.find(
                   (answer) => answer.questionId === question.id,
