@@ -34,6 +34,35 @@ export type Goal = {
   attempts: AttemptSummary[];
 };
 
+export type GoalDetailsFormValues = {
+  description: string;
+  targetScore: string;
+  deadline: string;
+};
+
+export type GoalDetailsInput = {
+  description: string;
+  targetScore?: number;
+  deadline?: string;
+};
+
+export function goalToDetailsForm(goal: Goal): GoalDetailsFormValues {
+  return {
+    description: goal.description,
+    targetScore: goal.targetScore !== undefined ? String(goal.targetScore) : "",
+    deadline: goal.deadline ?? "",
+  };
+}
+
+export function detailsFormToGoalInput(values: GoalDetailsFormValues): GoalDetailsInput {
+  const targetScore = values.targetScore.trim();
+  return {
+    description: values.description.trim(),
+    targetScore: targetScore ? Number(targetScore) : undefined,
+    deadline: values.deadline || undefined,
+  };
+}
+
 export function toAttemptSummary(attempt: GoalAttempt): AttemptSummary {
   return {
     id: attempt.id,
@@ -62,4 +91,8 @@ export function goalMeta(goal: Goal): Omit<Goal, "attempts"> {
 export function anyAttemptMetTarget(goal: Goal): boolean {
   if (goal.targetScore === undefined) return true;
   return goal.attempts.some((attempt) => attempt.percentage >= goal.targetScore!);
+}
+
+export function latestAttempt(goal: Goal): AttemptSummary | undefined {
+  return goal.attempts.at(-1);
 }

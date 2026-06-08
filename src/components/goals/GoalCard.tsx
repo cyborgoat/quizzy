@@ -2,11 +2,13 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 import {
   CheckCircle2,
   ChevronDown,
+  Pencil,
   RotateCcw,
   Trash2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
+import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import {
   AccordionContent,
   AccordionItem,
@@ -15,7 +17,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGoals } from "@/hooks/useGoals";
-import { anyAttemptMetTarget, type AttemptSummary, type Goal } from "@/types/goal";
+import {
+  anyAttemptMetTarget,
+  detailsFormToGoalInput,
+  goalToDetailsForm,
+  type AttemptSummary,
+  type Goal,
+  type GoalDetailsFormValues,
+} from "@/types/goal";
 
 function scoreBadgeClass(percentage: number, targetScore: number | undefined) {
   const base = "whitespace-nowrap";
@@ -110,9 +119,50 @@ function AttemptRow({
 }
 
 export function GoalCard({ goal }: { goal: Goal }) {
-  const { completeGoal, reopenGoal, deleteGoal } = useGoals();
+  const { completeGoal, reopenGoal, deleteGoal, updateGoal } = useGoals();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<GoalDetailsFormValues>(() =>
+    goalToDetailsForm(goal),
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   const attempts = [...goal.attempts].reverse();
+
+  function handleEditField(field: keyof GoalDetailsFormValues, value: string) {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function startEditing(event: MouseEvent) {
+    event.stopPropagation();
+    setEditForm(goalToDetailsForm(goal));
+    setIsEditing(true);
+  }
+
+  function cancelEditing(event: MouseEvent) {
+    event.stopPropagation();
+    setEditForm(goalToDetailsForm(goal));
+    setIsEditing(false);
+  }
+
+  async function handleSave(event: MouseEvent) {
+    event.stopPropagation();
+    const input = detailsFormToGoalInput(editForm);
+    if (
+      input.targetScore !== undefined &&
+      (!Number.isFinite(input.targetScore) ||
+        input.targetScore < 0 ||
+        input.targetScore > 100)
+    ) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await updateGoal(goal.id, input);
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   async function handleComplete(event: MouseEvent) {
     event.stopPropagation();
@@ -170,13 +220,51 @@ export function GoalCard({ goal }: { goal: Goal }) {
         </div>
       </div>
 
-      <AccordionContent className="border-t border-zinc-100 pt-3">
-        <p className="text-xs leading-5 text-zinc-600">{goal.description}</p>
+      <AccordionContent className="border-t border-zinc-100 px-4 pt-3 pb-4">
+        {isEditing ? (
+          <div className="space-y-4">
+            <p className="text-xs font-medium text-zinc-500">Edit goal</p>
+            <GoalDetailsFields
+              idPrefix={`goal-${goal.id}`}
+              values={editForm}
+              onChange={handleEditField}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={isSaving}
+                onClick={(event) => void handleSave(event)}
+              >
+                Save changes
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isSaving}
+                onClick={cancelEditing}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {goal.description.trim() && (
+              <p className="text-xs leading-5 text-zinc-600">{goal.description.trim()}</p>
+            )}
 
-        {goal.completed && goal.completedAt && (
-          <p className="mt-2 text-xs text-zinc-400">
-            Completed {new Date(goal.completedAt).toLocaleDateString()}
-          </p>
+            {goal.deadline && (
+              <p className={`text-xs text-zinc-500 ${goal.description.trim() ? "mt-2" : ""}`}>
+                Deadline: {new Date(goal.deadline).toLocaleDateString()}
+              </p>
+            )}
+
+            {goal.completed && goal.completedAt && (
+              <p className="mt-2 text-xs text-zinc-400">
+                Completed {new Date(goal.completedAt).toLocaleDateString()}
+              </p>
+            )}
+          </>
         )}
 
         <div className="mt-4">
@@ -194,41 +282,55 @@ export function GoalCard({ goal }: { goal: Goal }) {
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="gap-1.5 text-zinc-500 hover:text-red-700"
-            onClick={(event) => void handleDelete(event)}
-          >
-            <Trash2 className="size-3.5" />
-            Delete
-          </Button>
-          {goal.completed ? (
+        {!isEditing && (
+          <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
             <Button
               type="button"
               size="sm"
-              variant="outline"
-              onClick={(event) => void handleReopen(event)}
-              className="gap-1.5 text-zinc-500"
+              variant="ghost"
+              className="gap-1.5 text-zinc-500 hover:text-red-700"
+              onClick={(event) => void handleDelete(event)}
             >
-              <RotateCcw className="size-3.5" />
-              Reopen
+              <Trash2 className="size-3.5" />
+              Delete
             </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={(event) => void handleComplete(event)}
-              className="gap-1.5"
-            >
-              <CheckCircle2 className="size-3.5" />
-              Complete
-            </Button>
-          )}
-        </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={startEditing}
+              >
+                <Pencil className="size-3.5" />
+                Edit
+              </Button>
+              {goal.completed ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => void handleReopen(event)}
+                  className="gap-1.5 text-zinc-500"
+                >
+                  <RotateCcw className="size-3.5" />
+                  Reopen
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(event) => void handleComplete(event)}
+                  className="gap-1.5"
+                >
+                  <CheckCircle2 className="size-3.5" />
+                  Complete
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </AccordionContent>
     </AccordionItem>
   );

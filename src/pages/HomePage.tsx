@@ -9,6 +9,7 @@ import { QuizList } from "@/components/quiz/QuizList";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { latestAttempt, type Goal } from "@/types/goal";
 
 export function HomePage() {
   const library = useQuizLibrary();
@@ -50,16 +51,9 @@ export function HomePage() {
               View all <ArrowRight className="size-3.5" />
             </Link>
           </div>
-          <ul className="mt-3 space-y-1.5">
+          <ul className="mt-3 space-y-2">
             {activeGoals.slice(0, 3).map((goal) => (
-              <li key={goal.id} className="flex items-center gap-2 text-xs text-zinc-600">
-                <span className="size-1.5 shrink-0 rounded-full bg-zinc-400" />
-                <span className="truncate">
-                  <span className="font-medium text-zinc-800">{goal.quizTitle}</span>
-                  {" — "}
-                  {goal.description}
-                </span>
-              </li>
+              <HomeGoalSummary key={goal.id} goal={goal} />
             ))}
           </ul>
         </div>
@@ -129,5 +123,32 @@ export function HomePage() {
         </>
       )}
     </main>
+  );
+}
+
+function HomeGoalSummary({ goal }: { goal: Goal }) {
+  const latest = latestAttempt(goal);
+  const description = goal.description.trim();
+
+  return (
+    <li className="flex items-start gap-2 text-xs">
+      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-zinc-400" />
+      <div className="min-w-0">
+        <p className="truncate">
+          <span className="font-medium text-zinc-950">{goal.quizTitle}</span>
+          {goal.targetScore !== undefined && (
+            <span className="text-zinc-500">{` · Target: ${goal.targetScore}%`}</span>
+          )}
+          {latest && (
+            <span className="text-zinc-500">
+              {` · Latest: ${latest.percentage}% (${latest.score}/${latest.total})`}
+            </span>
+          )}
+        </p>
+        {description && (
+          <p className="mt-0.5 truncate text-zinc-500">{description}</p>
+        )}
+      </div>
+    </li>
   );
 }

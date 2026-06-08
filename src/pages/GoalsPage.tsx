@@ -2,14 +2,15 @@ import { Route } from "@/routes/_app/goals/index";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
+import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { detailsFormToGoalInput, type GoalDetailsFormValues } from "@/types/goal";
 
-const DEFAULT_FORM = {
+const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
   quizId: "",
   description: "",
   targetScore: "",
@@ -37,15 +38,13 @@ export function GoalsPage() {
   }
 
   async function handleCreate() {
-    if (!form.quizId || !form.description.trim()) return;
+    if (!form.quizId) return;
     const quiz = quizzes.find((q) => q.quiz.id === form.quizId);
     if (!quiz) return;
     await addGoal({
       quizId: form.quizId,
       quizTitle: quiz.quiz.title,
-      description: form.description.trim(),
-      targetScore: form.targetScore ? Number(form.targetScore) : undefined,
-      deadline: form.deadline || undefined,
+      ...detailsFormToGoalInput(form),
     });
     setForm(DEFAULT_FORM);
     setShowForm(false);
@@ -111,63 +110,17 @@ export function GoalsPage() {
               </select>
             </div>
 
-            <div>
-              <label
-                className="mb-1.5 block text-xs font-medium text-zinc-700"
-                htmlFor="goal-description"
-              >
-                What do you want to achieve? <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="goal-description"
-                value={form.description}
-                onChange={(e) => handleField("description", e.target.value)}
-                placeholder="e.g. Score at least 80% without hints"
-                className="sm:max-w-md"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <div>
-                <label
-                  className="mb-1.5 block text-xs font-medium text-zinc-700"
-                  htmlFor="goal-score"
-                >
-                  Target score (%)
-                </label>
-                <Input
-                  id="goal-score"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={form.targetScore}
-                  onChange={(e) => handleField("targetScore", e.target.value)}
-                  placeholder="e.g. 80"
-                  className="w-32"
-                />
-              </div>
-              <div>
-                <label
-                  className="mb-1.5 block text-xs font-medium text-zinc-700"
-                  htmlFor="goal-deadline"
-                >
-                  Deadline
-                </label>
-                <Input
-                  id="goal-deadline"
-                  type="date"
-                  value={form.deadline}
-                  onChange={(e) => handleField("deadline", e.target.value)}
-                  className="w-40"
-                />
-              </div>
-            </div>
+            <GoalDetailsFields
+              idPrefix="new-goal"
+              values={form}
+              onChange={handleField}
+            />
           </div>
 
           <div className="mt-5 flex gap-2">
             <Button
               onClick={() => void handleCreate()}
-              disabled={!form.quizId || !form.description.trim()}
+              disabled={!form.quizId}
             >
               Create goal
             </Button>

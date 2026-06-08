@@ -50,6 +50,26 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updateGoal(id: string, data: GoalDetailsInput) {
+    const goal = goals.find((item) => item.id === id);
+    if (!goal) return;
+    const updated: Goal = {
+      ...goal,
+      description: data.description,
+      targetScore: data.targetScore,
+      deadline: data.deadline,
+    };
+    try {
+      await nativeApi.upsertGoal(goalMeta(updated));
+      setGoals((current) =>
+        current.map((item) => (item.id === id ? updated : item)),
+      );
+      toast.success("Goal updated.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
   async function recordAttempt(quizId: string, input: AttemptInput) {
     const matching = goals.filter((goal) => goal.quizId === quizId);
     if (matching.length === 0) return;
@@ -162,6 +182,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         goals,
         isLoading,
         addGoal,
+        updateGoal,
         recordAttempt,
         completeGoal,
         reopenGoal,
