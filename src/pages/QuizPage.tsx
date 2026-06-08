@@ -1,13 +1,14 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Route } from "@/routes/quiz_.$quizId";
+import { Route, type QuizSearch } from "@/routes/quiz_.$quizId";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
 import { QuizQuestionSidebar } from "@/components/quiz/QuizQuestionSidebar";
+import { QuizStartScreen } from "@/components/quiz/QuizStartScreen";
 import { ResultSummary } from "@/components/quiz/ResultSummary";
 import { ReviewSummary } from "@/components/quiz/ReviewSummary";
 import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
@@ -19,18 +20,52 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
+import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
 
-function QuizSessionPage({ quiz }: { quiz: Quiz }) {
+function resolveSessionConfig(
+  quiz: Quiz,
+  search: QuizSearch,
+): QuizSessionConfig | null {
+  if (search.mode === "scored") {
+    return { mode: "scored" };
+  }
+  if (search.mode === "practice") {
+    const count = search.count;
+    if (
+      count == null ||
+      count < 1 ||
+      count > quiz.questions.length ||
+      !Number.isInteger(count)
+    ) {
+      return null;
+    }
+    return { mode: "practice", questionCount: count };
+  }
+  return null;
+}
+
+function sessionModeLabel(config: QuizSessionConfig, totalQuestions: number) {
+  if (config.mode === "scored") return "Scored attempt";
+  return `Practice · ${totalQuestions} question${totalQuestions !== 1 ? "s" : ""}`;
+}
+
+function QuizSessionPage({
+  quiz,
+  config,
+}: {
+  quiz: Quiz;
+  config: QuizSessionConfig;
+}) {
   const navigate = useNavigate();
-  const session = useQuizSession(quiz);
+  const session = useQuizSession(quiz, config);
   const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const recordedRef = useRef(false);
 
   useEffect(() => {
-    if (session.isComplete && !recordedRef.current) {
+    if (session.isComplete && config.mode === "scored" && !recordedRef.current) {
       recordedRef.current = true;
       void recordAttempt(quiz.id, {
         score: session.score,
@@ -48,7 +83,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
     }
     // Record once when the session completes; avoid re-firing on unrelated session updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional completion gate
-  }, [session.isComplete]);
+  }, [session.isComplete, config.mode]);
 
   if (session.isComplete) {
     const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
@@ -57,6 +92,8 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
         <ResultSummary
           quiz={quiz}
           score={session.score}
+          total={session.totalQuestions}
+          modeLabel={sessionModeLabel(config, session.totalQuestions)}
           unansweredCount={unansweredCount}
           onRestart={session.restart}
         />
@@ -86,6 +123,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
       <SidebarInset className="flex min-h-svh flex-col bg-transparent">
         <QuizHeader
           title={quiz.title}
+          modeLabel={sessionModeLabel(config, session.totalQuestions)}
           current={session.currentQuestionIndex + 1}
           total={session.totalQuestions}
           answered={session.answeredCount}
@@ -151,6 +189,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
 
 export function QuizPage() {
   const { quizId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const library = useQuizLibrary();
   const quiz = useMemo(
@@ -174,5 +213,18 @@ export function QuizPage() {
     );
   }
 
-  return <QuizSessionPage key={quiz.id} quiz={quiz} />;
+  const sessionConfig = resolveSessionConfig(quiz, search);
+  if (!sessionConfig) {
+    const defaultMode = search.from === "goals" ? "scored" : "practice";
+    return <QuizStartScreen quiz={quiz} defaultMode={defaultMode} />;
+  }
+
+  const sessionKey =
+    sessionConfig.mode === "practice"
+      ? `${quiz.id}-practice-${sessionConfig.questionCount}`
+      : `${quiz.id}-scored`;
+
+  return (
+    <QuizSessionPage key={sessionKey} quiz={quiz} config={sessionConfig} />
+  );
 }

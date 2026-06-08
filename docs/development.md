@@ -84,13 +84,20 @@ Use the narrowest appropriate layer:
 
 - Quiz data shape or validation: `src/types` and `src/data`
 - Pure scoring behavior: `src/lib/scoring.ts`
-- Attempt state: `src/hooks/useQuizSession.ts`
+- Attempt state and session modes: `src/hooks/useQuizSession.ts` and
+  `src/types/quizSession.ts`
 - Library workflow: `QuizLibraryProvider`
+- Goals workflow: `GoalsProvider` and `src/components/goals`
+- Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
 - Filesystem behavior: typed native adapter plus a Rust command
 - Presentation: a focused component under `src/components`
 
 Add tests at the domain boundary affected by the change. Filesystem changes
 should have Rust tests; validation and scoring changes should have Vitest tests.
+
+When adding a route, create a file under `src/routes/` following TanStack Router
+file-based conventions. The Vite plugin regenerates `src/routeTree.gen.ts`
+automatically; do not edit that file by hand.
 
 ## Release checklist
 
@@ -102,8 +109,9 @@ Before packaging a release:
 4. Run Rust tests and formatting checks.
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
-7. Test directory selection, imports, replacement, deletion, and quiz completion
-   in the packaged application.
+7. Test directory selection, imports, replacement, deletion, practice and scored
+   quiz completion, goal creation, attempt recording, attempt deletion, and
+   attempt review in the packaged application.
 
 The files under `sample-quizzes/` can be selected through the normal import
 dialog when manual test data is needed. They are not production resources.

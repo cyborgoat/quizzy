@@ -26,6 +26,7 @@ export function AttemptReviewHeader({ goal }: { goal: Goal }) {
         <Link
           to="/quiz/$quizId"
           params={{ quizId: goal.quizId }}
+          search={{ from: "goals" }}
           className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-md bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
         >
           <RotateCcw className="size-4" />

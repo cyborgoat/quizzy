@@ -34,10 +34,13 @@ application, and opens the desktop window.
 2. Enter your full name and click **Select folder** to choose a working directory.
 3. Click **Save** to apply both settings.
 4. Return to the home page and import one or more quiz JSON files.
-5. Select a quiz from the library.
+5. Click **Start quiz** and choose **Practice** or **Scored attempt** on the
+   mode picker. In Practice, use the slider to set how many questions to take.
 6. Answer in any order, use flags for questions to revisit, and submit the quiz
    when ready.
 7. Review the final score, correct answers, and explanations.
+8. Optionally create a **Goal** on the Goals page to track target scores and
+   review saved attempts later. Only **Scored attempt** completions are saved.
 
 The selected working directory and your name are remembered between launches. If
 the directory becomes unavailable, Quizzy keeps the configured path and prompts

@@ -5,17 +5,21 @@ import {
   initialQuizSessionState,
   quizSessionReducer,
 } from "@/lib/quizSessionState";
+import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
-export function useQuizSession(quiz: Quiz) {
+export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
   const { shuffleMode } = useQuizPreferences();
   const [orderGeneration, setOrderGeneration] = useState(0);
-  const questions = useMemo(
-    () => orderQuizQuestions(quiz.questions, shuffleMode),
+  const questions = useMemo(() => {
+    const ordered = orderQuizQuestions(quiz.questions, shuffleMode);
+    if (config.mode === "practice" && config.questionCount != null) {
+      return ordered.slice(0, Math.min(config.questionCount, ordered.length));
+    }
+    return ordered;
     // orderGeneration remounts question order when restarting the quiz.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional shuffle seed
-    [quiz.questions, shuffleMode, orderGeneration],
-  );
+  }, [quiz.questions, shuffleMode, orderGeneration, config.mode, config.questionCount]);
   const [state, dispatch] = useReducer(
     quizSessionReducer,
     initialQuizSessionState,
@@ -72,6 +76,7 @@ export function useQuizSession(quiz: Quiz) {
   }
 
   return {
+    mode: config.mode,
     questions,
     currentQuestion,
     currentQuestionIndex: state.currentQuestionIndex,

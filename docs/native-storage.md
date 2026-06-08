@@ -47,6 +47,7 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `delete_goal` | Delete a goal and its attempt files |
 | `save_goal_attempt` | Persist one attempt and update its summary index |
 | `get_goal_attempt` | Load one full attempt with question results |
+| `delete_goal_attempt` | Delete one attempt file and remove it from the summary index |
 
 ## Filesystem boundaries
 

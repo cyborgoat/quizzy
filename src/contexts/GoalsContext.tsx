@@ -129,6 +129,25 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function deleteAttempt(goalId: string, attemptId: string) {
+    try {
+      await nativeApi.deleteGoalAttempt(goalId, attemptId);
+      setGoals((current) =>
+        current.map((goal) =>
+          goal.id === goalId
+            ? {
+                ...goal,
+                attempts: goal.attempts.filter((attempt) => attempt.id !== attemptId),
+              }
+            : goal,
+        ),
+      );
+      toast.success("Attempt deleted.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
   async function loadGoalAttempt(goalId: string, attemptId: string) {
     const attempt = await nativeApi.getGoalAttempt(goalId, attemptId);
     return {
@@ -147,6 +166,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         completeGoal,
         reopenGoal,
         deleteGoal,
+        deleteAttempt,
         loadGoalAttempt,
       }}
     >

@@ -5,11 +5,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export function QuizHeader({
   title,
+  modeLabel,
   current,
   total,
   answered,
 }: {
   title: string;
+  modeLabel?: string;
   current: number;
   total: number;
   answered: number;
@@ -27,7 +29,14 @@ export function QuizHeader({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="truncate text-xs font-medium text-zinc-950">{title}</p>
+            <div className="min-w-0">
+              {modeLabel && (
+                <p className="truncate text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                  {modeLabel}
+                </p>
+              )}
+              <p className="truncate text-xs font-medium text-zinc-950">{title}</p>
+            </div>
             <p className="shrink-0 text-xs text-zinc-500">{current} / {total}</p>
           </div>
           <div className="mt-1.5 flex items-center gap-2">

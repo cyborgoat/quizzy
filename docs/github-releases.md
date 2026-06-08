@@ -29,8 +29,8 @@ Set the same version in:
 The release workflow verifies these versions against the pushed tag and fails
 before building if they differ.
 
-For example, all three files should contain `0.1.0` before releasing tag
-`v0.1.0`.
+For example, all three files should contain `0.1.3` before releasing tag
+`v0.1.3`.
 
 ## Trigger a release
 
@@ -38,15 +38,15 @@ Commit and push the version:
 
 ```bash
 git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
-git commit -m "Prepare v0.1.0 release"
+git commit -m "Prepare v0.1.3 release"
 git push origin main
 ```
 
 Create and push the tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 GitHub runs the workflow automatically because the tag starts with `v`.
@@ -56,7 +56,7 @@ GitHub runs the workflow automatically because the tag starts with `v`.
 1. Open the repository on GitHub.
 2. Select **Actions** and wait for **Release Quizzy** to finish.
 3. Select **Releases**.
-4. Open `Quizzy v0.1.0`.
+4. Open `Quizzy v0.1.3`.
 5. Confirm the macOS, Windows, and Linux assets are attached.
 
 If a build fails, do not reuse the tag after changing code. Delete the failed

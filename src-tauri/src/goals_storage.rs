@@ -351,9 +351,51 @@ pub fn get_goal_attempt(
     read_json(&attempt_path)
 }
 
+pub fn delete_goal_attempt(
+    app: &AppHandle,
+    goal_id: String,
+    attempt_id: String,
+) -> Result<(), String> {
+    validate_storage_id(&goal_id)?;
+    validate_storage_id(&attempt_id)?;
+    let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
+    if !goal_dir.join(GOAL_META_FILE).exists() {
+        return Err(format!("Goal {goal_id} was not found."));
+    }
+    delete_attempt_from_goal_dir(&goal_dir, &attempt_id)
+}
+
+fn delete_attempt_from_goal_dir(goal_dir: &Path, attempt_id: &str) -> Result<(), String> {
+    validate_storage_id(attempt_id)?;
+
+    let attempt_path = attempts_directory(goal_dir).join(format!("{attempt_id}.json"));
+    if attempt_path.exists() {
+        fs::remove_file(&attempt_path).map_err(|error| {
+            format!(
+                "Unable to delete attempt {}: {error}",
+                attempt_path.display()
+            )
+        })?;
+    }
+
+    let mut summaries = read_attempt_summaries(goal_dir)?;
+    let original_len = summaries.len();
+    summaries.retain(|summary| summary.id != attempt_id);
+    if summaries.len() != original_len {
+        write_attempt_summaries(goal_dir, &summaries)?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{attempt_summary, AttemptSummary, GoalAttempt, QuestionResult};
+    use super::{
+        attempt_summary, attempts_directory, delete_attempt_from_goal_dir,
+        persist_attempt, read_attempt_summaries, AttemptSummary, GoalAttempt,
+        QuestionResult,
+    };
+    use std::fs;
 
     #[test]
     fn attempt_summary_counts_incorrect_answers() {
@@ -397,5 +439,38 @@ mod tests {
         let json = serde_json::to_string(&summary).expect("serialize summary");
         let parsed: AttemptSummary = serde_json::from_str(&json).expect("parse summary");
         assert_eq!(parsed.id, "attempt-1");
+    }
+
+    #[test]
+    fn delete_attempt_from_goal_dir_removes_file_and_index_entry() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-goals-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        fs::create_dir_all(&temp).expect("create temp goal dir");
+
+        let attempt = GoalAttempt {
+            id: "attempt-1".into(),
+            taken_at: "2026-06-08T01:00:00.000Z".into(),
+            score: 1,
+            total: 1,
+            percentage: 100,
+            question_results: vec![],
+        };
+        persist_attempt(&temp, &attempt).expect("persist attempt");
+        assert!(attempts_directory(&temp)
+            .join("attempt-1.json")
+            .exists());
+
+        delete_attempt_from_goal_dir(&temp, "attempt-1").expect("delete attempt");
+
+        assert!(!attempts_directory(&temp)
+            .join("attempt-1.json")
+            .exists());
+        let summaries = read_attempt_summaries(&temp).expect("read summaries");
+        assert!(summaries.is_empty());
+
+        let _ = fs::remove_dir_all(&temp);
     }
 }

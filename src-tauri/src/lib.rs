@@ -384,6 +384,11 @@ fn get_goal_attempt(
 }
 
 #[tauri::command]
+fn delete_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> Result<(), String> {
+    goals_storage::delete_goal_attempt(&app, goal_id, attempt_id)
+}
+
+#[tauri::command]
 fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), String> {
     validate_json_file_name(&file_name)?;
     let path = configured_directory(&app)?.join(file_name);
@@ -408,7 +413,8 @@ pub fn run() {
             upsert_goal,
             delete_goal,
             save_goal_attempt,
-            get_goal_attempt
+            get_goal_attempt,
+            delete_goal_attempt
         ])
         .run(tauri::generate_context!())
         .expect("error while running Quizzy");

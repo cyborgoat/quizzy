@@ -58,11 +58,21 @@ function AttemptRow({
   attempt: AttemptSummary;
   goalId: string;
 }) {
+  const { deleteAttempt } = useGoals();
   const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+
+  async function handleDelete(event: MouseEvent) {
+    event.stopPropagation();
+    const ok = await confirm(
+      "Delete this attempt? This cannot be undone.",
+      { title: "Delete attempt?", kind: "warning" },
+    );
+    if (ok) await deleteAttempt(goalId, attempt.id);
+  }
 
   return (
     <div className="flex items-center justify-between gap-2 rounded border border-zinc-100 bg-zinc-50 px-3 py-2">
@@ -84,6 +94,16 @@ function AttemptRow({
         >
           Review
         </Link>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-7 shrink-0 text-zinc-500 hover:text-red-700"
+          aria-label={`Delete attempt from ${date}`}
+          onClick={(event) => void handleDelete(event)}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
       </div>
     </div>
   );
@@ -142,6 +162,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
             className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md bg-zinc-900 px-2.5 text-xs font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
             to="/quiz/$quizId"
             params={{ quizId: goal.quizId }}
+            search={{ from: "goals" }}
             onClick={(event) => event.stopPropagation()}
           >
             Start

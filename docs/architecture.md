@@ -10,7 +10,7 @@ User
   |
 React pages and components
   |
-UserProfileProvider / QuizLibraryProvider / useQuizSession
+UserProfileProvider / QuizLibraryProvider / GoalsProvider / useQuizSession
   |
 Zod validation and scoring
   |
@@ -38,7 +38,7 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/goals` | Goal tracking |
 | `/goals/:goalId/attempts/:attemptId` | Attempt review |
 | `/settings` | User profile and working-directory configuration |
-| `/quiz/:quizId` | Active quiz or final results |
+| `/quiz/:quizId` | Active quiz or final results (`?mode=practice&count=N` or `?mode=scored`) |
 
 Unknown routes redirect to the home page.
 
@@ -93,9 +93,9 @@ transitions deterministic and testable. The hook receives an already validated
 
 The app uses two independent sidebar contexts:
 
-**App layout** (`AppLayout` + `AppSidebar`): wraps the home and settings pages.
-The sidebar is collapsible to icon-only mode and contains Home navigation in the
-content area and Settings navigation pinned to the footer.
+**App layout** (`AppLayout` + `AppSidebar`): wraps the home, goals, and settings
+pages. The sidebar is collapsible to icon-only mode and contains Home and Goals
+navigation in the content area and Settings navigation pinned to the footer.
 
 **Quiz page** (`QuizPage`): wraps the active quiz in its own `SidebarProvider`.
 The left sidebar (`QuizQuestionSidebar`) shows the question navigator; on mobile
@@ -112,6 +112,18 @@ Other quiz components are split by responsibility:
 - Library list and states
 - Question content and answer rows
 - Result summary and answer review
+
+Goal components cover accordion goal cards, attempt history, score summaries,
+and the dedicated attempt review page layout.
+
+### Goals state
+
+`GoalsProvider` loads goals and attempt summaries from the native layer on
+startup. It exposes CRUD operations for goals and persists completed attempts
+when a quiz submission matches one or more goals. Full attempt payloads (including
+per-question results) are loaded on demand for the attempt review page.
+
+`useGoals` is the hook consumers call to read or update goals.
 
 ## Native layers
 
@@ -160,12 +172,32 @@ performed by custom Rust commands.
 
 ### Quiz attempt
 
-1. The route selects a validated quiz by ID.
-2. `useQuizSession` stores editable drafts and flags for every question.
-3. Direct, previous, and next navigation preserve those drafts.
-4. Final submission freezes one answer record per question.
-5. Pure scoring functions evaluate answered questions; blanks score as incorrect.
-6. The frozen records drive the result and review screens.
+1. The user opens `/quiz/:quizId` and picks **Practice** or **Scored attempt** on
+   `QuizStartScreen`. Practice passes `?mode=practice&count=N`; scored passes
+   `?mode=scored`.
+2. `useQuizSession` loads the ordered question list (first N for practice, all
+   for scored).
+3. Editable drafts and flags are stored per question.
+4. Direct, previous, and next navigation preserve those drafts.
+5. Final submission freezes one answer record per question in the session.
+6. Pure scoring functions evaluate answered questions; blanks score as incorrect.
+7. The frozen records drive the result and review screens.
+8. If the session mode is **scored** and the quiz matches any goals,
+   `GoalsProvider` saves an attempt for each.
+
+### Attempt review
+
+1. The user opens `/goals/:goalId/attempts/:attemptId`.
+2. React loads the goal metadata from context and fetches the full attempt from
+   Rust via `get_goal_attempt`.
+3. The page renders score summary, attempt history, and inline question review.
+
+### Delete attempt
+
+1. The user deletes an attempt from a goal row on the Goals page.
+2. React calls `delete_goal_attempt` via the native adapter.
+3. Rust removes the attempt file and updates `attempts/index.json`.
+4. `GoalsProvider` updates in-memory goal state.
 
 ## Project structure
 
@@ -175,14 +207,15 @@ src/
   routes/         File-based TanStack Router route definitions
   components/
     layout/       AppLayout and AppSidebar (persistent navigation)
-    quiz/         Quiz UI components
-    ui/           shadcn-style local primitives
-  contexts/       QuizLibraryProvider, UserProfileProvider, and context types
+    goals/        Goal cards, attempt review, and history panels
+    quiz/         Quiz UI components (including QuizStartScreen)
+    ui/           shadcn-style local primitives (including Slider)
+  contexts/       QuizLibraryProvider, GoalsProvider, UserProfileProvider
   data/           Zod schema, repository parser, and tests
-  hooks/          useQuizLibrary, useQuizSession, useUserProfile
+  hooks/          useGoals, useQuizLibrary, useQuizSession, useUserProfile
   lib/            Native adapter, scoring, and utility functions
   pages/          HomePage, GoalsPage, AttemptReviewPage, SettingsPage, QuizPage
-  types/          Quiz and answer domain types
+  types/          Quiz, goal, and quiz session domain types
 
 src-tauri/
   capabilities/   Tauri permissions

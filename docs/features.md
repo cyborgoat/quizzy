@@ -6,10 +6,12 @@ A persistent collapsible sidebar runs along the left edge of every non-quiz
 screen. It contains:
 
 - **Home** — the quiz library
+- **Goals** — study goals and attempt history
 - **Settings** — user profile and working directory (pinned to the bottom)
 
-The sidebar collapses to icon-only mode. On desktop the trigger button sits in
-the sidebar header; on mobile it moves to the quiz-page header.
+The sidebar shows a badge with the count of active (incomplete) goals. It
+collapses to icon-only mode. On desktop the trigger button sits in the sidebar
+header; on mobile it moves to the quiz-page header.
 
 ## Home page
 
@@ -22,6 +24,51 @@ Available actions on the home page:
 - **Refresh** rescans the working directory. The button spins during the
   operation and a toast confirms completion.
 - **Import JSON** opens the import dialog.
+
+When the user has active goals, a summary card lists up to three of them with a
+link to the full Goals page.
+
+## Goals
+
+The Goals page lets users track progress against specific quizzes. Each goal
+includes:
+
+- Linked quiz
+- Description
+- Optional target score percentage
+- Optional deadline
+- Attempt history with scores
+
+Goals are shown in accordion rows. Each row displays target, latest, and highest
+scores as pills (green when at or above target, red when below). **Start** on a
+row opens the linked quiz; expanding the accordion shows past attempts with
+**Review** links.
+
+Available actions:
+
+- **Add goal** creates a goal for any quiz in the library.
+- **Complete** / **Reopen** toggles goal completion. Completing without reaching
+  the target score requires confirmation.
+- **Delete** removes the goal and all saved attempts after confirmation.
+- **Delete attempt** removes one saved attempt from a goal's history after
+  confirmation.
+
+Completing a **scored attempt** for a quiz that matches one or more goals
+automatically records an attempt for each matching goal. **Practice** runs never
+create goal attempts.
+
+## Attempt review
+
+Each saved attempt opens on a dedicated page at
+`/goals/:goalId/attempts/:attemptId`. The page shows:
+
+- Score summary with target, latest, and highest metrics
+- Question index grid for quick navigation
+- Attempt history panel for switching between attempts
+- Inline per-question answer review (correct answer, explanation, flagged state)
+
+**Back to goals** returns to the Goals page and expands the relevant goal row.
+**Retake quiz** opens the quiz start screen with **Scored attempt** pre-selected.
 
 ## Settings
 
@@ -85,10 +132,21 @@ reported.
 Operations that complete asynchronously surface as toast notifications in the
 bottom-right corner of the screen:
 
-- Successful import, deletion, refresh, directory change, and settings save
+- Successful import, deletion, refresh, directory change, settings save, and
+  goal or attempt changes
 - Error conditions from any of the above
 
 ## Quiz sessions
+
+Starting a quiz opens a mode picker:
+
+- **Practice** — choose how many questions to take (1 through the full quiz count)
+  using a slider. Uses the first N questions after your order/shuffle settings.
+  Practice runs do not count toward goals. Pre-selected when starting from the
+  home page.
+- **Scored attempt** — answer every question in the quiz. Results are saved to
+  any matching goals when you submit. Pre-selected when starting from a goal or
+  retaking from attempt review.
 
 Quizzy presents one question at a time and supports:
 
@@ -137,13 +195,15 @@ correct answer, the explanation when available, and whether it was flagged.
 
 ## Data lifetime
 
-Quiz files, the configured directory, and the user's name survive application
-restarts. Quiz session state does not:
+Quiz files, the configured directory, the user's name, and goal attempt history
+survive application restarts. In-progress quiz session state does not:
 
-- No score history is stored.
-- No answer progress is stored.
+- No answer progress is stored while a quiz is in progress.
 - Restarting or leaving a quiz clears the current session.
 - No backend, accounts, database, or cloud synchronization is used.
+
+Goal metadata and completed attempt records are persisted under the Tauri app
+config directory. See [Native storage and security](native-storage.md).
 
 ## Example data
 

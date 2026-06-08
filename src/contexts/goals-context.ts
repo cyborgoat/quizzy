@@ -15,6 +15,7 @@ export type GoalsContextValue = {
   completeGoal: (id: string) => Promise<void>;
   reopenGoal: (id: string) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  deleteAttempt: (goalId: string, attemptId: string) => Promise<void>;
   loadGoalAttempt: (goalId: string, attemptId: string) => Promise<GoalAttempt>;
 };
 

@@ -1,7 +1,8 @@
 # Quizzy
 
 Quizzy is a Tauri v2 desktop quiz application. It reads validated quiz JSON files
-from a user-selected working directory and keeps quiz data entirely local.
+from a user-selected working directory, tracks study goals with saved attempt
+history, and keeps quiz data entirely local.
 
 Detailed documentation is available in [docs/README.md](docs/README.md).
 
@@ -39,7 +40,11 @@ npm run tauri build
 
 On first launch, open **Settings** from the sidebar to enter your name and select
 a working directory. Click **Save**, then return to the home page to import quiz
-files and get started.
+files and get started. Use **Goals** in the sidebar to set target scores and
+review past attempts.
+
+When you start a quiz, choose **Practice** (subset of questions, not saved to
+goals) or **Scored attempt** (full quiz, counts toward goals).
 
 ## Quiz files
 

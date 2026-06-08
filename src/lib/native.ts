@@ -51,6 +51,8 @@ export const nativeApi = {
     invoke<void>("save_goal_attempt", { goalId, attempt }),
   getGoalAttempt: (goalId: string, attemptId: string) =>
     invoke<GoalAttempt>("get_goal_attempt", { goalId, attemptId }),
+  deleteGoalAttempt: (goalId: string, attemptId: string) =>
+    invoke<void>("delete_goal_attempt", { goalId, attemptId }),
 };
 
 export function errorMessage(error: unknown) {

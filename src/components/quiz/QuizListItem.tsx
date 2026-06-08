@@ -44,6 +44,7 @@ export function QuizListItem({
           className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
           to="/quiz/$quizId"
           params={{ quizId: source.quiz.id }}
+          search={{ from: "home" }}
         >
           Start quiz <ArrowRight className="size-4" />
         </Link>

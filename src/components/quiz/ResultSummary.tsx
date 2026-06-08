@@ -7,25 +7,39 @@ import type { Quiz } from "@/types/quiz";
 export function ResultSummary({
   quiz,
   score,
+  total,
+  modeLabel,
   unansweredCount,
   onRestart,
 }: {
   quiz: Quiz;
   score: number;
+  total: number;
+  modeLabel?: string;
   unansweredCount: number;
   onRestart: () => void;
 }) {
   const navigate = useNavigate();
-  const total = quiz.questions.length;
-  const percentage = Math.round((score / total) * 100);
+  const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
   const incorrect = total - score - unansweredCount;
 
   return (
     <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="px-5 py-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Quiz complete
-        </p>
+        {modeLabel ? (
+          <>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              {modeLabel}
+            </p>
+            <p className="mt-1 text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Quiz complete
+            </p>
+          </>
+        ) : (
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Quiz complete
+          </p>
+        )}
         <h1 className="mt-1 text-lg font-semibold text-zinc-950">{quiz.title}</h1>
       </div>
 
