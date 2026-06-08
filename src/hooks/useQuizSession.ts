@@ -1,5 +1,6 @@
-import { useMemo, useReducer } from "react";
-import { orderQuestionsByType } from "@/lib/questionOrder";
+import { useMemo, useReducer, useState } from "react";
+import { useQuizPreferences } from "@/hooks/useQuizPreferences";
+import { orderQuizQuestions } from "@/lib/questionOrder";
 import {
   initialQuizSessionState,
   quizSessionReducer,
@@ -7,9 +8,11 @@ import {
 import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
 export function useQuizSession(quiz: Quiz) {
+  const { shuffleMode } = useQuizPreferences();
+  const [orderGeneration, setOrderGeneration] = useState(0);
   const questions = useMemo(
-    () => orderQuestionsByType(quiz.questions),
-    [quiz.questions],
+    () => orderQuizQuestions(quiz.questions, shuffleMode),
+    [quiz.questions, shuffleMode, orderGeneration],
   );
   const [state, dispatch] = useReducer(
     quizSessionReducer,
@@ -89,6 +92,9 @@ export function useQuizSession(quiz: Quiz) {
     goToPreviousQuestion: () => goToQuestion(state.currentQuestionIndex - 1),
     goToNextQuestion: () => goToQuestion(state.currentQuestionIndex + 1),
     submitQuiz: () => dispatch({ type: "submit_quiz", questions }),
-    restart: () => dispatch({ type: "restart" }),
+    restart: () => {
+      setOrderGeneration((value) => value + 1);
+      dispatch({ type: "restart" });
+    },
   };
 }

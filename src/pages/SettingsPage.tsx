@@ -1,23 +1,30 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { FolderCog, User } from "lucide-react";
+import { FolderCog, Shuffle, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useBlocker } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { errorMessage, nativeApi } from "@/lib/native";
 
 export function SettingsPage() {
   const { userName, setUserName } = useUserProfile();
+  const { shuffleMode, setShuffleMode } = useQuizPreferences();
   const library = useQuizLibrary();
   const [nameInput, setNameInput] = useState(userName);
+  const [shuffleInput, setShuffleInput] = useState(shuffleMode);
   const [pendingDir, setPendingDir] = useState<string | null>(null);
 
   const displayDir = pendingDir ?? library.directoryPath;
-  const hasChanges = nameInput.trim() !== userName || pendingDir !== null;
+  const hasChanges =
+    nameInput.trim() !== userName ||
+    pendingDir !== null ||
+    shuffleInput !== shuffleMode;
 
   const blocker = useBlocker(hasChanges);
 
@@ -51,6 +58,7 @@ export function SettingsPage() {
     const trimmed = nameInput.trim();
     setUserName(trimmed);
     setNameInput(trimmed);
+    setShuffleMode(shuffleInput);
 
     if (pendingDir !== null) {
       try {
@@ -69,7 +77,7 @@ export function SettingsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-xl font-semibold text-zinc-950">Settings</h1>
-      <p className="mt-1 text-sm text-zinc-500">Configure your profile and quiz directory.</p>
+      <p className="mt-1 text-sm text-zinc-500">Configure your profile, quiz preferences, and directory.</p>
 
       <div className="mt-8 space-y-8">
         <section>
@@ -90,6 +98,31 @@ export function SettingsPage() {
               placeholder="Your full name"
               className="mt-3 max-w-xs"
             />
+          </div>
+        </section>
+
+        <section>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+            <Shuffle className="size-4" />
+            Quiz preferences
+          </h2>
+          <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p id="shuffle-mode-label" className="text-xs font-medium text-zinc-700">
+                  Shuffle mode
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Randomize question order within each question type group.
+                </p>
+              </div>
+              <Switch
+                checked={shuffleInput}
+                onCheckedChange={setShuffleInput}
+                aria-labelledby="shuffle-mode-label"
+                className="mt-0.5"
+              />
+            </div>
           </div>
         </section>
 

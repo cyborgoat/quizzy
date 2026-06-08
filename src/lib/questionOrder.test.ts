@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   groupQuestionsByType,
   orderQuestionsByType,
+  shuffleQuestionsWithinGroups,
 } from "@/lib/questionOrder";
 import type { QuizQuestion } from "@/types/quiz";
 
@@ -62,5 +63,13 @@ describe("groupQuestionsByType", () => {
         questions: [questions[0]],
       },
     ]);
+  });
+});
+
+describe("shuffleQuestionsWithinGroups", () => {
+  it("keeps question type groups while shuffling within each group", () => {
+    expect(
+      shuffleQuestionsWithinGroups(questions, () => 0).map((question) => question.id),
+    ).toEqual(["sc-2", "sc-1", "mc-1", "tf-1"]);
   });
 });
