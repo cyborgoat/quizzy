@@ -1,7 +1,11 @@
+import type { SubmittedAnswer } from "@/types/quiz";
+
 export type QuestionResult = {
   questionId: string;
   prompt: string;
   correct: boolean;
+  answer?: SubmittedAnswer;
+  flagged?: boolean;
 };
 
 export type GoalAttempt = {

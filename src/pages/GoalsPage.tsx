@@ -1,11 +1,19 @@
-import { Plus, Target, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useState } from "react";
+import { AttemptReviewPanel } from "@/components/goals/AttemptReviewPanel";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import type { GoalAttempt } from "@/types/goal";
+
+type ReviewSelection = {
+  attempt: GoalAttempt;
+  quizId: string;
+  quizTitle: string;
+} | null;
 
 const DEFAULT_FORM = {
   quizId: "",
@@ -19,6 +27,7 @@ export function GoalsPage() {
   const { quizzes } = useQuizLibrary();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
+  const [review, setReview] = useState<ReviewSelection>(null);
 
   const activeGoals = goals.filter((g) => !g.completed);
   const completedGoals = goals.filter((g) => g.completed);
@@ -42,8 +51,16 @@ export function GoalsPage() {
     setShowForm(false);
   }
 
+  function handleReviewAttempt(attempt: GoalAttempt, quizId: string, quizTitle: string) {
+    setReview((current) =>
+      current?.attempt.id === attempt.id ? null : { attempt, quizId, quizTitle },
+    );
+  }
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="flex min-h-svh">
+      <div className="min-w-0 flex-1">
+        <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Goals</h1>
@@ -169,7 +186,12 @@ export function GoalsPage() {
               </h2>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {activeGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onReviewAttempt={handleReviewAttempt}
+                    activeReviewAttemptId={review?.attempt.id}
+                  />
                 ))}
               </div>
             </section>
@@ -182,13 +204,29 @@ export function GoalsPage() {
               </h2>
               <div className="grid gap-3 opacity-60 md:grid-cols-2 xl:grid-cols-3">
                 {completedGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onReviewAttempt={handleReviewAttempt}
+                    activeReviewAttemptId={review?.attempt.id}
+                  />
                 ))}
               </div>
             </section>
           )}
         </div>
       )}
-    </main>
+        </main>
+      </div>
+
+      {review && (
+        <AttemptReviewPanel
+          attempt={review.attempt}
+          quizId={review.quizId}
+          quizTitle={review.quizTitle}
+          onClose={() => setReview(null)}
+        />
+      )}
+    </div>
   );
 }

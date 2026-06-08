@@ -24,15 +24,17 @@ export function AnswerOptionRow({
   isIncorrectSelection: boolean;
   onSelect: () => void;
 }) {
-  const status = locked
-    ? isCorrectAnswer
-      ? "Correct answer"
-      : isIncorrectSelection
-        ? "Your answer · Incorrect"
-        : selected
-          ? "Your answer"
-          : null
-    : null;
+  const ariaLabel = locked
+    ? [
+        `Option ${optionLabel(index)} ${text}`,
+        isCorrectAnswer && "correct answer",
+        isIncorrectSelection && "your incorrect selection",
+        selected && !isIncorrectSelection && !isCorrectAnswer && "your selection",
+        selected && isCorrectAnswer && "your correct selection",
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : undefined;
 
   return (
     <button
@@ -40,6 +42,7 @@ export function AnswerOptionRow({
       onClick={onSelect}
       disabled={locked}
       aria-pressed={selected}
+      aria-label={ariaLabel}
       className={cn(
         "flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-100",
         !locked && "hover:border-zinc-400 hover:bg-white",
@@ -69,11 +72,6 @@ export function AnswerOptionRow({
         <span className="mr-1.5 font-medium text-zinc-500">{optionLabel(index)}</span>
         {text}
       </p>
-      {status && (
-        <span className="shrink-0 rounded-full bg-white/80 px-2 py-1 text-xs font-semibold text-zinc-700">
-          {status}
-        </span>
-      )}
     </button>
   );
 }

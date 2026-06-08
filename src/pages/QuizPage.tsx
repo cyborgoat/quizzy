@@ -38,6 +38,8 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           questionId: q.id,
           prompt: q.prompt,
           correct: session.answers[i]?.isCorrect ?? false,
+          answer: session.answers[i]?.answer,
+          flagged: session.answers[i]?.flagged ?? false,
         })),
       });
     } else if (!session.isComplete) {

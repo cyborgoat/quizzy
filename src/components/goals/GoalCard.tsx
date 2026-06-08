@@ -1,5 +1,5 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { ArrowRight, CheckCircle2, CheckCircle, ChevronDown, ChevronUp, RotateCcw, Trash2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -11,51 +11,53 @@ function isPastDeadline(deadline: string) {
   return new Date(deadline) < new Date();
 }
 
-function AttemptRow({ attempt }: { attempt: GoalAttempt }) {
-  const [open, setOpen] = useState(false);
+function AttemptRow({
+  attempt,
+  onReview,
+  isActive,
+}: {
+  attempt: GoalAttempt;
+  onReview: (attempt: GoalAttempt) => void;
+  isActive: boolean;
+}) {
+  const incorrectCount = attempt.questionResults.filter((r) => !r.correct).length;
   const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
     month: "short", day: "numeric", year: "numeric",
   });
 
   return (
-    <div className="rounded border border-zinc-100 bg-zinc-50">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-3 py-2 text-left"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="text-xs text-zinc-500">{date}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-900">
-            {attempt.score}/{attempt.total} · {attempt.percentage}%
-          </span>
-          {open ? (
-            <ChevronUp className="size-3.5 text-zinc-400" />
-          ) : (
-            <ChevronDown className="size-3.5 text-zinc-400" />
-          )}
-        </div>
-      </button>
-
-      {open && (
-        <ul className="border-t border-zinc-100 px-3 py-2 space-y-1.5">
-          {attempt.questionResults.map((r) => (
-            <li key={r.questionId} className="flex items-start gap-2 text-xs text-zinc-700">
-              {r.correct ? (
-                <CheckCircle className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />
-              ) : (
-                <XCircle className="mt-0.5 size-3.5 shrink-0 text-red-500" />
-              )}
-              <span className="leading-5">{r.prompt}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="flex items-center justify-between gap-2 rounded border border-zinc-100 bg-zinc-50 px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-xs text-zinc-500">{date}</p>
+        {incorrectCount > 0 && (
+          <p className="text-xs text-red-600">{incorrectCount} incorrect</p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs font-semibold text-zinc-900">
+          {attempt.score}/{attempt.total} · {attempt.percentage}%
+        </span>
+        <Button
+          size="sm"
+          variant={isActive ? "default" : "outline"}
+          onClick={() => onReview(attempt)}
+        >
+          Review
+        </Button>
+      </div>
     </div>
   );
 }
 
-export function GoalCard({ goal }: { goal: Goal }) {
+export function GoalCard({
+  goal,
+  onReviewAttempt,
+  activeReviewAttemptId,
+}: {
+  goal: Goal;
+  onReviewAttempt?: (attempt: GoalAttempt, quizId: string, quizTitle: string) => void;
+  activeReviewAttemptId?: string;
+}) {
   const { completeGoal, reopenGoal, deleteGoal } = useGoals();
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -142,7 +144,12 @@ export function GoalCard({ goal }: { goal: Goal }) {
           {historyOpen && (
             <div className="mt-2 space-y-1.5">
               {attempts.map((attempt) => (
-                <AttemptRow key={attempt.id} attempt={attempt} />
+                <AttemptRow
+                  key={attempt.id}
+                  attempt={attempt}
+                  onReview={(selected) => onReviewAttempt?.(selected, goal.quizId, goal.quizTitle)}
+                  isActive={activeReviewAttemptId === attempt.id}
+                />
               ))}
             </div>
           )}
