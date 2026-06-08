@@ -14,7 +14,6 @@ their display name, quiz preferences, Mistake Log thresholds, and working direct
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
 - [Native storage and security](native-storage.md): settings, filesystem boundaries, and atomic writes
 - [Development and testing](development.md): scripts, tests, formatting, and packaging
-- [GitHub releases](github-releases.md): automatic cross-platform release publishing
 
 Reference quiz files for development and manual import testing are kept in
 `sample-quizzes/`. They are not bundled with the desktop application.
