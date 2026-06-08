@@ -15,13 +15,27 @@ const SETTINGS_FILE: &str = "settings.json";
 #[serde(rename_all = "camelCase")]
 struct Settings {
     working_directory: Option<String>,
+    #[serde(default)]
+    profile_name: String,
+    #[serde(default)]
+    shuffle_mode: bool,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct WorkingDirectoryState {
-    path: Option<String>,
-    available: bool,
+struct AppSettings {
+    working_directory: Option<String>,
+    working_directory_available: bool,
+    profile_name: String,
+    shuffle_mode: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveSettingsRequest {
+    working_directory: Option<String>,
+    profile_name: Option<String>,
+    shuffle_mode: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -59,7 +73,60 @@ fn read_settings(app: &AppHandle) -> Result<Settings, String> {
     }
     let contents = fs::read_to_string(path)
         .map_err(|error| format!("Unable to read Quizzy settings: {error}"))?;
-    serde_json::from_str(&contents).map_err(|error| format!("Quizzy settings are invalid: {error}"))
+    serde_json::from_str(&strip_utf8_bom(contents))
+        .map_err(|error| format!("Quizzy settings are invalid: {error}"))
+}
+
+fn is_json_extension(extension: &str) -> bool {
+    extension.eq_ignore_ascii_case("json")
+}
+
+fn strip_utf8_bom(contents: String) -> String {
+    contents.strip_prefix('\u{feff}').unwrap_or(&contents).to_string()
+}
+
+fn normalize_stored_path(path: PathBuf) -> String {
+    let stored = path.to_string_lossy().into_owned();
+    #[cfg(windows)]
+    {
+        if let Some(stripped) = stored.strip_prefix(r"\\?\") {
+            return stripped.to_string();
+        }
+    }
+    stored
+}
+
+fn validate_portable_file_stem(stem: &str) -> Result<(), String> {
+    const INVALID_CHARS: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+    if stem.chars().any(|character| INVALID_CHARS.contains(&character)) {
+        return Err(
+            "The filename contains characters that are not supported on all platforms.".to_string(),
+        );
+    }
+    if stem.ends_with('.') || stem.ends_with(' ') {
+        return Err("Filenames cannot end with a dot or space.".to_string());
+    }
+    validate_windows_reserved_name(stem)
+}
+
+fn validate_windows_reserved_name(stem: &str) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        let upper = stem.to_ascii_uppercase();
+        let base = upper.split('.').next().unwrap_or(&upper);
+        const RESERVED: &[&str] = &[
+            "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
+            "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        ];
+        if RESERVED.contains(&base) {
+            return Err(format!(
+                "\"{stem}\" is a reserved filename on Windows and cannot be used."
+            ));
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = stem;
+    Ok(())
 }
 
 fn write_settings(app: &AppHandle, settings: &Settings) -> Result<(), String> {
@@ -88,10 +155,24 @@ fn validate_json_file_name(file_name: &str) -> Result<(), String> {
     {
         return Err("The destination filename is invalid.".to_string());
     }
-    if path.extension().and_then(|value| value.to_str()) != Some("json") {
+    if path
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_none_or(|extension| !is_json_extension(extension))
+    {
         return Err("Quiz files must use the .json extension.".to_string());
     }
-    Ok(())
+    let stem = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "The destination filename is invalid.".to_string())?;
+    validate_portable_file_stem(stem)
+}
+
+fn read_text_file(path: &Path) -> Result<String, String> {
+    let contents = fs::read_to_string(path)
+        .map_err(|error| format!("Unable to read {}: {error}", path.display()))?;
+    Ok(strip_utf8_bom(contents))
 }
 
 fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), String> {
@@ -139,34 +220,45 @@ fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), Str
 }
 
 #[tauri::command]
-fn get_working_directory(app: AppHandle) -> Result<WorkingDirectoryState, String> {
+fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
     let settings = read_settings(&app)?;
-    let available = settings
+    let working_directory_available = settings
         .working_directory
         .as_ref()
         .map(|path| Path::new(path).is_dir())
         .unwrap_or(false);
-    Ok(WorkingDirectoryState {
-        path: settings.working_directory,
-        available,
+    Ok(AppSettings {
+        working_directory: settings.working_directory,
+        working_directory_available,
+        profile_name: settings.profile_name,
+        shuffle_mode: settings.shuffle_mode,
     })
 }
 
 #[tauri::command]
-fn set_working_directory(app: AppHandle, path: String) -> Result<(), String> {
-    let directory = PathBuf::from(&path);
-    if !directory.is_dir() {
-        return Err("Select an existing directory.".to_string());
+fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), String> {
+    let mut settings = read_settings(&app)?;
+
+    if let Some(profile_name) = request.profile_name {
+        settings.profile_name = profile_name;
     }
-    let canonical = directory
-        .canonicalize()
-        .map_err(|error| format!("Unable to access the selected directory: {error}"))?;
-    write_settings(
-        &app,
-        &Settings {
-            working_directory: Some(canonical.to_string_lossy().into_owned()),
-        },
-    )
+
+    if let Some(shuffle_mode) = request.shuffle_mode {
+        settings.shuffle_mode = shuffle_mode;
+    }
+
+    if let Some(path) = request.working_directory {
+        let directory = PathBuf::from(&path);
+        if !directory.is_dir() {
+            return Err("Select an existing directory.".to_string());
+        }
+        let canonical = directory
+            .canonicalize()
+            .map_err(|error| format!("Unable to access the selected directory: {error}"))?;
+        settings.working_directory = Some(normalize_stored_path(canonical));
+    }
+
+    write_settings(&app, &settings)
 }
 
 #[tauri::command]
@@ -179,11 +271,16 @@ fn read_working_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
         let entry =
             entry.map_err(|error| format!("Unable to inspect a directory entry: {error}"))?;
         let path = entry.path();
-        if !path.is_file() || path.extension().and_then(|value| value.to_str()) != Some("json") {
+        if !path.is_file()
+            || path
+                .extension()
+                .and_then(|value| value.to_str())
+                .is_none_or(|extension| !is_json_extension(extension))
+        {
             continue;
         }
         let file_name = entry.file_name().to_string_lossy().into_owned();
-        match fs::read_to_string(&path) {
+        match read_text_file(&path) {
             Ok(contents) => files.push(QuizFile {
                 file_name,
                 contents,
@@ -205,7 +302,12 @@ fn read_import_files(paths: Vec<String>) -> Result<Vec<QuizFile>, String> {
     let mut files = Vec::new();
     for raw_path in paths {
         let path = PathBuf::from(&raw_path);
-        if !path.is_file() || path.extension().and_then(|value| value.to_str()) != Some("json") {
+        if !path.is_file()
+            || path
+                .extension()
+                .and_then(|value| value.to_str())
+                .is_none_or(|extension| !is_json_extension(extension))
+        {
             return Err(format!("{} is not a JSON file.", path.display()));
         }
         let file_name = path
@@ -213,8 +315,7 @@ fn read_import_files(paths: Vec<String>) -> Result<Vec<QuizFile>, String> {
             .and_then(|value| value.to_str())
             .ok_or_else(|| format!("{} has an invalid filename.", path.display()))?
             .to_string();
-        let contents = fs::read_to_string(&path)
-            .map_err(|error| format!("Unable to read {}: {error}", path.display()))?;
+        let contents = read_text_file(&path)?;
         files.push(QuizFile {
             file_name,
             contents,
@@ -287,8 +388,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            get_working_directory,
-            set_working_directory,
+            get_settings,
+            save_settings,
             read_working_directory,
             read_import_files,
             write_imported_quiz,
@@ -305,11 +406,28 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{atomic_write, validate_json_file_name};
+    use super::{
+        atomic_write, is_json_extension, strip_utf8_bom, validate_json_file_name,
+        validate_portable_file_stem,
+    };
     use std::{fs, path::PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
         std::env::temp_dir().join(format!("quizzy-{name}-{}", std::process::id()))
+    }
+
+    #[test]
+    fn accepts_json_extension_case_insensitively() {
+        assert!(is_json_extension("json"));
+        assert!(is_json_extension("JSON"));
+        assert!(is_json_extension("Json"));
+        assert!(!is_json_extension("txt"));
+    }
+
+    #[test]
+    fn strips_utf8_bom_from_text() {
+        assert_eq!(strip_utf8_bom("\u{feff}{\"id\":\"quiz\"}".to_string()), "{\"id\":\"quiz\"}");
+        assert_eq!(strip_utf8_bom("plain".to_string()), "plain");
     }
 
     #[test]
@@ -318,6 +436,14 @@ mod tests {
         assert!(validate_json_file_name("nested/quiz.json").is_err());
         assert!(validate_json_file_name("quiz.txt").is_err());
         assert!(validate_json_file_name("quiz.json").is_ok());
+        assert!(validate_json_file_name("quiz.JSON").is_ok());
+    }
+
+    #[test]
+    fn rejects_cross_platform_invalid_filename_characters() {
+        assert!(validate_json_file_name("quiz:1.json").is_err());
+        assert!(validate_json_file_name("quiz?.json").is_err());
+        assert!(validate_portable_file_stem("valid-name").is_ok());
     }
 
     #[test]

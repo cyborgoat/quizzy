@@ -49,3 +49,8 @@ export function goalMeta(goal: Goal) {
   const { attempts: _attempts, ...meta } = goal;
   return meta;
 }
+
+export function anyAttemptMetTarget(goal: Goal): boolean {
+  if (goal.targetScore === undefined) return true;
+  return goal.attempts.some((attempt) => attempt.percentage >= goal.targetScore!);
+}

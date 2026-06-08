@@ -1,15 +1,17 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { UserProfileContext } from "@/contexts/user-profile-context";
-
-const NAME_KEY = "quizzy:profile:name";
+import { loadAppSettings } from "@/lib/appSettings";
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
-  const [userName, setUserNameState] = useState<string>(
-    () => localStorage.getItem(NAME_KEY) ?? "",
-  );
+  const [userName, setUserNameState] = useState("");
+
+  useEffect(() => {
+    void loadAppSettings().then((settings) => {
+      setUserNameState(settings.profileName);
+    });
+  }, []);
 
   function setUserName(name: string) {
-    localStorage.setItem(NAME_KEY, name);
     setUserNameState(name);
   }
 

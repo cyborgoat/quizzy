@@ -29,6 +29,14 @@ export function SettingsPage() {
   const blocker = useBlocker(hasChanges);
 
   useEffect(() => {
+    setNameInput(userName);
+  }, [userName]);
+
+  useEffect(() => {
+    setShuffleInput(shuffleMode);
+  }, [shuffleMode]);
+
+  useEffect(() => {
     if (blocker.state !== "blocked") return;
     confirm("You have unsaved changes. Leave without saving?", {
       title: "Unsaved changes",
@@ -56,19 +64,25 @@ export function SettingsPage() {
 
   async function handleSave() {
     const trimmed = nameInput.trim();
+
+    try {
+      await nativeApi.saveSettings({
+        profileName: trimmed,
+        shuffleMode: shuffleInput,
+        ...(pendingDir !== null ? { workingDirectory: pendingDir } : {}),
+      });
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return;
+    }
+
     setUserName(trimmed);
     setNameInput(trimmed);
     setShuffleMode(shuffleInput);
 
     if (pendingDir !== null) {
-      try {
-        await nativeApi.setWorkingDirectory(pendingDir);
-        await library.refresh();
-        setPendingDir(null);
-      } catch (error) {
-        toast.error(errorMessage(error));
-        return;
-      }
+      await library.refresh();
+      setPendingDir(null);
     }
 
     toast.success("Settings saved.");
@@ -137,7 +151,10 @@ export function SettingsPage() {
               Quizzy loads quiz JSON files from this folder.
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1.5 text-xs text-zinc-700">
+              <code
+                className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1.5 text-xs text-zinc-700"
+                title={displayDir ?? undefined}
+              >
                 {displayDir ?? "No directory selected"}
               </code>
               <Button

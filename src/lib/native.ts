@@ -1,9 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Goal, GoalAttempt } from "@/types/goal";
 
-export type WorkingDirectoryState = {
-  path: string | null;
-  available: boolean;
+export type AppSettings = {
+  workingDirectory: string | null;
+  workingDirectoryAvailable: boolean;
+  profileName: string;
+  shuffleMode: boolean;
+};
+
+export type SaveSettingsRequest = {
+  workingDirectory?: string;
+  profileName?: string;
+  shuffleMode?: boolean;
 };
 
 export type NativeQuizFile = {
@@ -22,10 +30,9 @@ export type WriteImportedQuizRequest = {
 export type GoalMeta = Omit<Goal, "attempts">;
 
 export const nativeApi = {
-  getWorkingDirectory: () =>
-    invoke<WorkingDirectoryState>("get_working_directory"),
-  setWorkingDirectory: (path: string) =>
-    invoke<void>("set_working_directory", { path }),
+  getSettings: () => invoke<AppSettings>("get_settings"),
+  saveSettings: (request: SaveSettingsRequest) =>
+    invoke<void>("save_settings", { request }),
   readWorkingDirectory: () =>
     invoke<NativeQuizFile[]>("read_working_directory"),
   readImportFiles: (paths: string[]) =>

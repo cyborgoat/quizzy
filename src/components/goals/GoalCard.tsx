@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGoals } from "@/hooks/useGoals";
-import type { AttemptSummary, Goal } from "@/types/goal";
+import { anyAttemptMetTarget, type AttemptSummary, type Goal } from "@/types/goal";
 
 function isPastDeadline(deadline: string) {
   return new Date(deadline) < new Date();
@@ -64,11 +64,14 @@ export function GoalCard({
   const attempts = [...goal.attempts].reverse();
 
   async function handleComplete() {
-    const ok = await confirm("Mark this goal as complete?", {
-      title: "Complete goal",
-      kind: "info",
-    });
-    if (ok) await completeGoal(goal.id);
+    if (!anyAttemptMetTarget(goal)) {
+      const ok = await confirm(
+        `You haven't had any attempt that achieved the target score of ${goal.targetScore}%. Mark this goal as complete anyway?`,
+        { title: "Target score not reached", kind: "warning" },
+      );
+      if (!ok) return;
+    }
+    await completeGoal(goal.id);
   }
 
   async function handleReopen() {

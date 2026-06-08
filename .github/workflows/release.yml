@@ -62,6 +62,13 @@ jobs:
           console.log(`Validated Quizzy ${expected}`);
           NODE
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Rust tests
+        run: cargo test
+        working-directory: src-tauri
+
       - name: Run frontend tests
         run: npm test
 

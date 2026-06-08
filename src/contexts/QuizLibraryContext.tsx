@@ -6,11 +6,9 @@ import {
 } from "react";
 import { confirm, open } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
-import {
-  QuizLibraryContext,
-  type Notice,
-} from "@/contexts/quiz-library-context";
+import { QuizLibraryContext } from "@/contexts/quiz-library-context";
 import { parseQuizFiles } from "@/data/quizRepository";
+import { sameFileName } from "@/lib/fileName";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
 
@@ -24,10 +22,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const state = await nativeApi.getWorkingDirectory();
-      setDirectoryPath(state.path);
-      setDirectoryAvailable(state.available);
-      if (!state.available) {
+      const settings = await nativeApi.getSettings();
+      setDirectoryPath(settings.workingDirectory);
+      setDirectoryAvailable(settings.workingDirectoryAvailable);
+      if (!settings.workingDirectoryAvailable) {
         setQuizzes([]);
         setInvalidReports([]);
         return;
@@ -41,7 +39,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       setDirectoryAvailable(false);
-      setNotice({ kind: "error", text: errorMessage(error) });
+      toast.error(errorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -79,11 +77,11 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
 
       const conflicts = parsed.quizzes
         .map((candidate) => {
-          const fileConflict = quizzes.find(
-            (existing) => existing.fileName === candidate.fileName,
+          const fileConflict = quizzes.find((existing) =>
+            sameFileName(existing.fileName, candidate.fileName),
           );
-          const invalidFileConflict = invalidReports.some(
-            (report) => report.fileName === candidate.fileName,
+          const invalidFileConflict = invalidReports.some((report) =>
+            sameFileName(report.fileName, candidate.fileName),
           );
           const idConflict = quizzes.find(
             (existing) => existing.quiz.id === candidate.quiz.id,
@@ -104,21 +102,21 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
       }
 
       for (const candidate of parsed.quizzes) {
-        const fileConflict = quizzes.find(
-          (existing) => existing.fileName === candidate.fileName,
+        const fileConflict = quizzes.find((existing) =>
+          sameFileName(existing.fileName, candidate.fileName),
         );
-        const invalidFileConflict = invalidReports.some(
-          (report) => report.fileName === candidate.fileName,
+        const invalidFileConflict = invalidReports.some((report) =>
+          sameFileName(report.fileName, candidate.fileName),
         );
         const idConflict = quizzes.find(
           (existing) => existing.quiz.id === candidate.quiz.id,
         );
         await nativeApi.writeImportedQuiz({
           fileName: candidate.fileName,
-          contents: files.find((file) => file.fileName === candidate.fileName)!.contents,
+          contents: files.find((file) => sameFileName(file.fileName, candidate.fileName))!.contents,
           overwrite: Boolean(fileConflict || invalidFileConflict),
           removeFileName:
-            idConflict && idConflict.fileName !== candidate.fileName
+            idConflict && !sameFileName(idConflict.fileName, candidate.fileName)
               ? idConflict.fileName
               : undefined,
         });

@@ -1,17 +1,17 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
-
-const SHUFFLE_MODE_KEY = "quizzy:preferences:shuffle-mode";
-
-function readShuffleMode() {
-  return localStorage.getItem(SHUFFLE_MODE_KEY) === "true";
-}
+import { loadAppSettings } from "@/lib/appSettings";
 
 export function QuizPreferencesProvider({ children }: { children: ReactNode }) {
-  const [shuffleMode, setShuffleModeState] = useState(readShuffleMode);
+  const [shuffleMode, setShuffleModeState] = useState(false);
+
+  useEffect(() => {
+    void loadAppSettings().then((settings) => {
+      setShuffleModeState(settings.shuffleMode);
+    });
+  }, []);
 
   function setShuffleMode(enabled: boolean) {
-    localStorage.setItem(SHUFFLE_MODE_KEY, String(enabled));
     setShuffleModeState(enabled);
   }
 

@@ -16,7 +16,8 @@ Quizzy stores application data in the Tauri app-config directory:
       <attempt-id>.json
 ```
 
-`settings.json` holds the canonical working-directory path.
+`settings.json` holds the working-directory path, profile name, and quiz
+preferences (such as shuffle mode).
 
 Each goal is stored in its own directory. `goal.json` contains goal
 metadata. Attempt summaries live in `attempts/index.json`, and each full
@@ -35,8 +36,8 @@ The frontend exposes these operations through `src/lib/native.ts`:
 
 | Command | Purpose |
 | --- | --- |
-| `get_working_directory` | Return the configured path and availability |
-| `set_working_directory` | Validate, canonicalize, and persist a path |
+| `get_settings` | Load app settings (directory, profile, preferences) |
+| `save_settings` | Persist profile, preferences, and/or working directory |
 | `read_working_directory` | Read top-level JSON files |
 | `read_import_files` | Read files selected by the native dialog |
 | `write_imported_quiz` | Write or replace a validated quiz file |
@@ -52,11 +53,16 @@ The frontend exposes these operations through `src/lib/native.ts`:
 Destination filenames are accepted only when:
 
 - They contain exactly one path component
-- They end with `.json`
+- They end with `.json` (case-insensitive)
 - They do not contain parent-directory traversal
+- They do not contain characters invalid on Windows (`<>:"/\|?*`) or reserved
+  Windows device names
 
 The working-directory scanner reads only regular top-level files whose extension
-is exactly `.json`. It does not recursively scan subdirectories.
+is `.json` (case-insensitive). It does not recursively scan subdirectories.
+
+Imported and scanned JSON files have a UTF-8 byte-order mark stripped before
+parsing when present.
 
 Tauri capabilities enable the core APIs and native dialogs. General-purpose
 filesystem plugin permissions are not granted to the webview.
