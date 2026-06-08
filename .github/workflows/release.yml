@@ -110,11 +110,6 @@ jobs:
             rust-targets: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
             upload_plain_binary: true
-          - name: Linux x64
-            runner: ubuntu-22.04
-            rust-targets: x86_64-unknown-linux-gnu
-            args: --target x86_64-unknown-linux-gnu --bundles appimage,deb
-            upload_plain_binary: false
 
     steps:
       - name: Check out repository
@@ -138,16 +133,6 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.rust-targets }}
-
-      - name: Install Linux build dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf
 
       - name: Install frontend dependencies
         run: npm ci
