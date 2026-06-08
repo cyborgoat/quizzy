@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { type AttemptInput, GoalsContext } from "@/contexts/goals-context";
 import { errorMessage, nativeApi } from "@/lib/native";
-import { goalMeta, toAttemptSummary, type Goal, type GoalAttempt } from "@/types/goal";
+import { goalMeta, toAttemptSummary, type Goal, type GoalAttempt, type GoalDetailsInput } from "@/types/goal";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
