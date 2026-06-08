@@ -1,0 +1,385 @@
+{
+  "id": "comprehensive-stress-test",
+  "title": "Comprehensive Stress Test",
+  "description": "A long mixed-format quiz with lengthy prompts, many options, Unicode text (中文), and tricky distractors. Use for manual testing of practice mode, scrolling, refocus, and review flows.",
+  "tags": ["testing", "stress-test", "mixed-format", "中文"],
+  "questions": [
+    {
+      "id": "stress-sc-01",
+      "type": "single_choice",
+      "prompt": "Given the following snippet, what is logged to the console?\n\nconst values = [1, 2, 3];\nconst result = values.map((n) => n * 2).filter((n) => n > 3);\nconsole.log(result);",
+      "options": ["[2, 4, 6]", "[4, 6]", "[1, 2, 3]", "undefined", "An empty array because map mutates the source"],
+      "answerIndex": 1,
+      "explanation": "map produces [2, 4, 6]; filter keeps values strictly greater than 3, leaving [4, 6]."
+    },
+    {
+      "id": "stress-mc-01",
+      "type": "multiple_choice",
+      "prompt": "Which of the following are valid ways to declare a block-scoped binding in modern JavaScript? Select every answer that applies.",
+      "options": ["var count = 0;", "let count = 0;", "const count = 0;", "block count = 0;", "using count = 0;"],
+      "answerIndices": [1, 2],
+      "explanation": "let and const are block-scoped. var is function-scoped, and the other forms are not valid JavaScript declarations."
+    },
+    {
+      "id": "stress-tf-01",
+      "type": "true_false",
+      "prompt": "In JavaScript, the expression [] == ![] evaluates to true because both sides coerce to the same value during abstract equality comparison.",
+      "answer": true,
+      "explanation": "This is a notorious coercion edge case: ![] is false, and [] == false is true after type coercion."
+    },
+    {
+      "id": "stress-sc-02",
+      "type": "single_choice",
+      "prompt": "A product team asks you to cache expensive derived data in a React function component without triggering unnecessary re-renders of child components that consume unrelated props. Which hook is the most appropriate primary tool?",
+      "options": ["useState", "useMemo", "useEffect", "useId", "useDeferredValue"],
+      "answerIndex": 1,
+      "explanation": "useMemo memoizes a computed value between renders when dependencies are unchanged."
+    },
+    {
+      "id": "stress-mc-02",
+      "type": "multiple_choice",
+      "prompt": "Which HTTP response status codes indicate a successful request? Choose all that apply.",
+      "options": ["200 OK", "201 Created", "204 No Content", "301 Moved Permanently", "404 Not Found", "500 Internal Server Error"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "2xx codes indicate success. 301 is a redirect, while 404 and 500 are client and server errors."
+    },
+    {
+      "id": "stress-tf-02",
+      "type": "true_false",
+      "prompt": "CSS Grid can simultaneously define rows and columns on a container, and grid items can span multiple tracks using line-based placement.",
+      "answer": true,
+      "explanation": "Grid is a two-dimensional layout system with explicit row/column tracks and spanning support."
+    },
+    {
+      "id": "stress-sc-03",
+      "type": "single_choice",
+      "prompt": "下面这段 TypeScript 代码中，变量 message 推断的类型是什么？\n\nconst message = \"Quizzy 支持中文题目\";",
+      "options": ["any", "string", "literal \"Quizzy 支持中文题目\"", "unknown", "object"],
+      "answerIndex": 2,
+      "explanation": "Without an explicit annotation, a const string initializer is inferred as a string literal type in TypeScript."
+    },
+    {
+      "id": "stress-mc-03",
+      "type": "multiple_choice",
+      "prompt": "Which statements about JSON are correct?",
+      "options": ["Keys must be double-quoted strings", "Trailing commas are allowed in arrays", "Unicode characters are allowed in string values", "Single-quoted strings are valid", "Numbers may be negative", "Comments using // are permitted"],
+      "answerIndices": [0, 2, 4],
+      "explanation": "Standard JSON requires double-quoted keys and strings, allows Unicode, and supports numeric values including negatives."
+    },
+    {
+      "id": "stress-tf-03",
+      "type": "true_false",
+      "prompt": "A React key prop is forwarded to the DOM as a standard HTML attribute on the rendered element.",
+      "answer": false,
+      "explanation": "key is reserved for React reconciliation and is not passed through to DOM nodes."
+    },
+    {
+      "id": "stress-sc-04",
+      "type": "single_choice",
+      "prompt": "Consider this async function:\n\nasync function load() {\n  return Promise.resolve(42);\n}\n\nWhat is the type of the expression await load() in TypeScript when load's return type is inferred?",
+      "options": ["Promise<number>", "number", "unknown", "42", "void"],
+      "answerIndex": 1,
+      "explanation": "await unwraps the resolved value of a Promise, so the expression evaluates to number."
+    },
+    {
+      "id": "stress-mc-04",
+      "type": "multiple_choice",
+      "prompt": "Which array methods return a new array and do not mutate the original? Select all that apply.",
+      "options": ["map", "filter", "sort", "slice", "splice", "concat"],
+      "answerIndices": [0, 1, 3, 5],
+      "explanation": "sort and splice mutate the original array. map, filter, slice, and concat return new arrays."
+    },
+    {
+      "id": "stress-tf-04",
+      "type": "true_false",
+      "prompt": "In CSS, margin collapse can occur between adjacent vertical margins of block-level elements in normal document flow.",
+      "answer": true,
+      "explanation": "Vertical margins of adjacent block boxes can collapse into a single margin."
+    },
+    {
+      "id": "stress-sc-05",
+      "type": "single_choice",
+      "prompt": "You need to store quiz session progress only for the duration of a browser tab and clear it when the tab closes, without sending it to a server. Which web API is the best fit?",
+      "options": ["localStorage", "sessionStorage", "IndexedDB", "Cookies with HttpOnly", "The Cache API"],
+      "answerIndex": 1,
+      "explanation": "sessionStorage persists for the lifetime of the page session and is cleared when the tab closes."
+    },
+    {
+      "id": "stress-mc-05",
+      "type": "multiple_choice",
+      "prompt": "Which of the following are React 18+ concurrent features or related APIs? Choose every correct answer.",
+      "options": ["useTransition", "useDeferredValue", "componentDidMount", "Suspense for data fetching in supported setups", "flushSync", "getDerivedStateFromProps"],
+      "answerIndices": [0, 1, 3, 4],
+      "explanation": "useTransition, useDeferredValue, Suspense, and flushSync relate to concurrent rendering. The lifecycle methods listed are class-era APIs."
+    },
+    {
+      "id": "stress-tf-05",
+      "type": "true_false",
+      "prompt": "The CSS property z-index applies to all elements regardless of their position or display value.",
+      "answer": false,
+      "explanation": "z-index only affects positioned elements and flex/grid items that create a stacking context."
+    },
+    {
+      "id": "stress-sc-06",
+      "type": "single_choice",
+      "prompt": "What is the output?\n\nconsole.log(typeof null);\nconsole.log(typeof []);\nconsole.log(typeof NaN);",
+      "options": ["\"null\", \"array\", \"NaN\"", "\"object\", \"object\", \"number\"", "\"undefined\", \"array\", \"number\"", "\"object\", \"object\", \"NaN\"", "\"null\", \"object\", \"number\""],
+      "answerIndex": 1,
+      "explanation": "typeof null is \"object\" (a historical bug), typeof [] is \"object\", and typeof NaN is \"number\"."
+    },
+    {
+      "id": "stress-mc-06",
+      "type": "multiple_choice",
+      "prompt": "Which accessibility practices improve a custom multiple-choice quiz interface? Select all that apply.",
+      "options": ["Associate labels with radio/checkbox inputs", "Use aria-pressed or native selection semantics appropriately", "Rely on color alone to indicate correctness", "Ensure keyboard navigation between options", "Remove focus outlines for a cleaner design", "Provide text alternatives for icon-only controls"],
+      "answerIndices": [0, 1, 3, 5],
+      "explanation": "Color-only cues, and removing focus outlines harm accessibility. Proper labeling, semantics, keyboard support, and text alternatives help."
+    },
+    {
+      "id": "stress-tf-06",
+      "type": "true_false",
+      "prompt": "UTF-8 encoded JSON files can safely contain emoji, CJK characters, and combining diacritical marks in string values.",
+      "answer": true,
+      "explanation": "JSON strings are Unicode sequences; UTF-8 is the expected encoding for international text."
+    },
+    {
+      "id": "stress-sc-07",
+      "type": "single_choice",
+      "prompt": "Given object const config = { mode: \"practice\", count: 5 }; which destructuring assignment extracts mode into sessionMode and keeps the rest in remaining?",
+      "options": [
+        "const { sessionMode, remaining } = config;",
+        "const { mode: sessionMode, ...remaining } = config;",
+        "const [sessionMode, ...remaining] = config;",
+        "const sessionMode = config.mode; const remaining = config;",
+        "const { mode, remaining } = config;"
+      ],
+      "answerIndex": 1,
+      "explanation": "Renaming uses mode: sessionMode, and the rest operator collects remaining own enumerable properties."
+    },
+    {
+      "id": "stress-mc-07",
+      "type": "multiple_choice",
+      "prompt": "Which values are falsy in JavaScript?",
+      "options": ["0", "-0", "0n", "[]", "document.all in browsers", "NaN", "\"0\""],
+      "answerIndices": [0, 1, 2, 5],
+      "explanation": "Falsy values include 0, -0, 0n, \"\", null, undefined, NaN, and false. Empty arrays and non-empty strings are truthy."
+    },
+    {
+      "id": "stress-tf-07",
+      "type": "true_false",
+      "prompt": "Promise.finally runs its callback whether the promise fulfills or rejects, and its return value replaces the settled value if it returns a non-throwing value.",
+      "answer": false,
+      "explanation": "finally runs in both cases, but unless it throws or returns a rejected promise, the original settlement value is preserved."
+    },
+    {
+      "id": "stress-sc-08",
+      "type": "single_choice",
+      "prompt": "In TanStack Router, search params such as ?mode=practice&count=12 are validated and typed closest to which layer in a typical file-based route setup?",
+      "options": ["The Vite config", "The route definition via validateSearch", "The global CSS theme", "The Rust Tauri command layer", "package.json scripts"],
+      "answerIndex": 1,
+      "explanation": "validateSearch on a route defines how URL search params are parsed and typed for that route."
+    },
+    {
+      "id": "stress-mc-08",
+      "type": "multiple_choice",
+      "prompt": "Which CSS units are relative to the element's font size?",
+      "options": ["em", "rem", "ch", "px", "vw", "ex"],
+      "answerIndices": [0, 2, 5],
+      "explanation": "em, ch, and ex are font-relative. rem is relative to the root font size, px is absolute, and vw is viewport-relative."
+    },
+    {
+      "id": "stress-tf-08",
+      "type": "true_false",
+      "prompt": "Rust's fs::read_to_string returns an error if the file bytes are not valid UTF-8.",
+      "answer": true,
+      "explanation": "read_to_string requires valid UTF-8; invalid sequences cause an error rather than lossy conversion."
+    },
+    {
+      "id": "stress-sc-09",
+      "type": "single_choice",
+      "prompt": "This question intentionally includes a very long prompt to test wrapping, sidebar truncation, and review layout. A team maintains a desktop quiz app where users may edit JSON externally while a session is open; the library refresh on window focus should not reset in-progress answers. Which implementation strategy best preserves session state during that refresh?",
+      "options": [
+        "Set isLoading true on every focus event and unmount the quiz page",
+        "Use a background refresh that avoids toggling the global loading gate",
+        "Force a full page reload on focus",
+        "Clear local component state before reading files",
+        "Disable reading the working directory entirely"
+      ],
+      "answerIndex": 1,
+      "explanation": "A background refresh reloads library data without unmounting the active quiz session."
+    },
+    {
+      "id": "stress-mc-09",
+      "type": "multiple_choice",
+      "prompt": "Which techniques help prevent race conditions when multiple async refreshes can overlap?",
+      "options": ["Ignore overlapping requests and always apply the latest completion", "Use a request id or generation counter and discard stale results", "Serialize refreshes with a mutex/queue", "Always call setIsLoading(false) in a background refresh's finally block", "Abort in-flight fetches when starting a new foreground refresh", "Mutate shared arrays in place without copying"],
+      "answerIndices": [1, 2, 4],
+      "explanation": "Stale-result guards, serialization, and aborting in-flight work reduce races. Blindly clearing loading state or mutating shared state in place is risky."
+    },
+    {
+      "id": "stress-tf-09",
+      "type": "true_false",
+      "prompt": "When practice mode selects fewer questions than exist in the quiz, choosing a balanced mix across question types prevents the subset from containing only single-choice items.",
+      "answer": true,
+      "explanation": "Round-robin selection across types avoids bias introduced by sorting all single-choice questions first."
+    },
+    {
+      "id": "stress-sc-10",
+      "type": "single_choice",
+      "prompt": "What does the following print?\n\nfor (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+      "options": ["0, 1, 2 on separate lines", "3, 3, 3 on separate lines", "undefined three times", "Nothing; it throws", "0, 0, 0 on separate lines"],
+      "answerIndex": 1,
+      "explanation": "var is function-scoped, so the callbacks share one binding that equals 3 after the loop finishes."
+    },
+    {
+      "id": "stress-mc-10",
+      "type": "multiple_choice",
+      "prompt": "Select every statement that is true about Zod's safeParse compared to parse.",
+      "options": ["safeParse returns a discriminated result object", "safeParse throws on validation failure", "parse throws on validation failure", "safeParse can be used to collect multiple issues", "safeParse automatically coerces strings to numbers without schemas", "Both require a schema definition"],
+      "answerIndices": [0, 2, 3, 5],
+      "explanation": "safeParse never throws for validation errors; parse throws. Coercion requires explicit schema helpers like z.coerce.number()."
+    },
+    {
+      "id": "stress-tf-10",
+      "type": "true_false",
+      "prompt": "In a multiple-choice question, partial credit is awarded when the user selects some but not all correct options.",
+      "answer": false,
+      "explanation": "Quizzy requires the exact correct set; partial selections are marked incorrect."
+    },
+    {
+      "id": "stress-sc-11",
+      "type": "single_choice",
+      "prompt": "Which option describes the event loop output order?\n\nconsole.log('A');\nqueueMicrotask(() => console.log('B'));\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');",
+      "options": ["A, B, C, D", "A, D, B, C", "A, D, C, B", "A, B, D, C", "C, B, A, D"],
+      "answerIndex": 1,
+      "explanation": "Synchronous logs run first (A, D). Microtasks drain next in enqueue order: B from queueMicrotask, then C from the Promise callback."
+    },
+    {
+      "id": "stress-mc-11",
+      "type": "multiple_choice",
+      "prompt": "Which Git operations rewrite commit history on a branch? Select all that apply.",
+      "options": ["git commit --amend", "git rebase -i", "git merge --no-ff", "git reset --soft HEAD~1", "git cherry-pick", "git fetch origin"],
+      "answerIndices": [0, 1, 3],
+      "explanation": "Amend, interactive rebase, and soft reset change local history. Merge, cherry-pick, and fetch do not rewrite existing commits in the same way."
+    },
+    {
+      "id": "stress-tf-11",
+      "type": "true_false",
+      "prompt": "In Rust, Result<T, E> forces callers to explicitly handle or propagate errors instead of relying on unchecked exceptions.",
+      "answer": true,
+      "explanation": "Result is the idiomatic explicit error-handling type in Rust."
+    },
+    {
+      "id": "stress-sc-12",
+      "type": "single_choice",
+      "prompt": "This option text is intentionally long to test horizontal wrapping and alignment in answer rows: When building accessible form controls, which attribute pair most directly connects a visible label element to its control for assistive technologies?",
+      "options": [
+        "class and id",
+        "for on the label and matching id on the input",
+        "role=\"label\" on the input",
+        "tabindex on the label only",
+        "aria-hidden=\"true\" on the label"
+      ],
+      "answerIndex": 1,
+      "explanation": "Explicit label association uses htmlFor/for on the label and a matching id on the control."
+    },
+    {
+      "id": "stress-mc-12",
+      "type": "multiple_choice",
+      "prompt": "Which characters must be escaped inside a standard JSON string value? Choose every correct answer.",
+      "options": ["Double quote (\")", "Backslash (\\)", "Forward slash (/) always", "Newline", "Tab", "Unicode letters such as 中"],
+      "answerIndices": [0, 1, 3, 4],
+      "explanation": "JSON strings must escape quotes, backslashes, and control characters. Unicode letters are allowed unescaped in UTF-8 JSON."
+    },
+    {
+      "id": "stress-tf-12",
+      "type": "true_false",
+      "prompt": "A scored quiz attempt in Quizzy is recorded to goals, while a practice session with a reduced question count is not.",
+      "answer": true,
+      "explanation": "Only scored mode persists attempts to matching goals after submission."
+    },
+    {
+      "id": "stress-sc-13",
+      "type": "single_choice",
+      "prompt": "What is 0.1 + 0.2 === 0.3 in JavaScript?",
+      "options": ["true", "false", "undefined", "Throws TypeError", "Depends on strict mode"],
+      "answerIndex": 1,
+      "explanation": "Binary floating-point representation makes 0.1 + 0.2 slightly greater than 0.3."
+    },
+    {
+      "id": "stress-mc-13",
+      "type": "multiple_choice",
+      "prompt": "Which layout modes create a flex formatting context on a container?",
+      "options": ["display: flex", "display: inline-flex", "display: grid", "display: block", "display: inline-block", "display: contents"],
+      "answerIndices": [0, 1],
+      "explanation": "flex and inline-flex establish flex containers. grid creates a grid formatting context instead."
+    },
+    {
+      "id": "stress-tf-13",
+      "type": "true_false",
+      "prompt": "Deleting a goal attempt removes both the summary entry and the stored attempt detail file.",
+      "answer": true,
+      "explanation": "delete_goal_attempt removes the attempt JSON and updates the summary index."
+    },
+    {
+      "id": "stress-sc-14",
+      "type": "single_choice",
+      "prompt": "Given const items = [{ id: 2 }, { id: 1 }, { id: 3 }]; what is items.sort((a, b) => a.id - b.id)[0].id?",
+      "options": ["2", "1", "3", "undefined", "The sort throws because objects are not comparable"],
+      "answerIndex": 1,
+      "explanation": "sort mutates the array in place and orders by ascending id, so the first item becomes id 1."
+    },
+    {
+      "id": "stress-mc-14",
+      "type": "multiple_choice",
+      "prompt": "Which are valid ways to immutably update a nested field in React state shaped as { user: { profile: { name: string } } }?",
+      "options": [
+        "state.user.profile.name = next; setState(state);",
+        "setState((prev) => ({ ...prev, user: { ...prev.user, profile: { ...prev.user.profile, name: next } } }));",
+        "structuredClone(prev) then mutate clone then setState(clone)",
+        "Use a state library reducer that returns a new root object",
+        "Delete prev.user.profile and rely on implicit recreation",
+        "JSON.parse(JSON.stringify(prev)) then mutate"
+      ],
+      "answerIndices": [1, 2, 3],
+      "explanation": "React state updates should replace objects immutably. Direct mutation of the current state object is unsafe."
+    },
+    {
+      "id": "stress-tf-14",
+      "type": "true_false",
+      "prompt": "The QuizStartScreen practice slider maximum equals the total number of questions in the selected quiz file.",
+      "answer": true,
+      "explanation": "Practice count is bounded from 1 through the full quiz length."
+    },
+    {
+      "id": "stress-sc-15",
+      "type": "single_choice",
+      "prompt": "Which regular expression flag makes ^ and $ match the start and end of each line rather than the whole string?",
+      "options": ["g", "i", "m", "s", "u"],
+      "answerIndex": 2,
+      "explanation": "The m (multiline) flag changes ^/$ line anchor behavior."
+    },
+    {
+      "id": "stress-mc-15",
+      "type": "multiple_choice",
+      "prompt": "Which statements about Tauri compared with a plain browser app are true for Quizzy?",
+      "options": [
+        "Native filesystem access is mediated by Rust commands",
+        "The UI runs in a WebView",
+        "All quiz files are bundled inside the app binary by default",
+        "A working directory on disk holds imported quiz JSON",
+        "localStorage is unavailable in the webview",
+        "Release builds can target macOS, Windows, and Linux"
+      ],
+      "answerIndices": [0, 1, 3, 5],
+      "explanation": "Quizzy reads user-selected JSON from disk via Tauri commands; sample files in the repo are not bundled by default."
+    },
+    {
+      "id": "stress-tf-15",
+      "type": "true_false",
+      "prompt": "Flagging a question during a quiz attempt stores a per-question flag that survives navigation between questions in the same session.",
+      "answer": true,
+      "explanation": "Question attempts track flagged state until the session is submitted or restarted."
+    }
+  ]
+}

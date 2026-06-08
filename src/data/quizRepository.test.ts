@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseQuizFiles } from "@/data/quizRepository";
 
@@ -39,5 +41,19 @@ describe("parseQuizFiles", () => {
       "locked.json",
       "same.json",
     ]);
+  });
+
+  it("parses the comprehensive stress-test sample quiz", () => {
+    const contents = fs.readFileSync(
+      path.join(process.cwd(), "sample-quizzes/comprehensive-stress-test.json"),
+      "utf8",
+    );
+    const result = parseQuizFiles([
+      { fileName: "comprehensive-stress-test.json", contents },
+    ]);
+    expect(result.invalidReports).toEqual([]);
+    expect(result.quizzes).toHaveLength(1);
+    expect(result.quizzes[0].quiz.id).toBe("comprehensive-stress-test");
+    expect(result.quizzes[0].quiz.questions).toHaveLength(45);
   });
 });
