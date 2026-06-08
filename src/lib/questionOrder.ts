@@ -88,6 +88,22 @@ export function selectPracticeQuestions(
   return selected;
 }
 
+export function buildQuizSessionQuestions(
+  questions: QuizQuestion[],
+  options: {
+    mode: "practice" | "scored";
+    questionCount?: number;
+    shuffle: boolean;
+  },
+  random: () => number = Math.random,
+): QuizQuestion[] {
+  const pool =
+    options.mode === "practice" && options.questionCount != null
+      ? selectPracticeQuestions(questions, options.questionCount)
+      : questions;
+  return orderQuizQuestions(pool, options.shuffle, random);
+}
+
 export type QuestionTypeGroup = {
   type: QuizQuestion["type"];
   questions: QuizQuestion[];

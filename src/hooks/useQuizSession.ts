@@ -1,9 +1,6 @@
-import { useMemo, useReducer, useState } from "react";
+import { useReducer, useState } from "react";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
-import {
-  orderQuizQuestions,
-  selectPracticeQuestions,
-} from "@/lib/questionOrder";
+import { buildQuizSessionQuestions } from "@/lib/questionOrder";
 import {
   initialQuizSessionState,
   quizSessionReducer,
@@ -11,18 +8,25 @@ import {
 import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
+function sessionQuestionOptions(
+  config: QuizSessionConfig,
+  shuffleMode: boolean,
+) {
+  return {
+    mode: config.mode,
+    questionCount: config.questionCount,
+    shuffle: shuffleMode,
+  };
+}
+
 export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
   const { shuffleMode } = useQuizPreferences();
-  const [orderGeneration, setOrderGeneration] = useState(0);
-  const questions = useMemo(() => {
-    const pool =
-      config.mode === "practice" && config.questionCount != null
-        ? selectPracticeQuestions(quiz.questions, config.questionCount)
-        : quiz.questions;
-    return orderQuizQuestions(pool, shuffleMode);
-    // orderGeneration remounts question order when restarting the quiz.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional shuffle seed
-  }, [quiz.questions, shuffleMode, orderGeneration, config.mode, config.questionCount]);
+  const [questions, setQuestions] = useState(() =>
+    buildQuizSessionQuestions(
+      quiz.questions,
+      sessionQuestionOptions(config, shuffleMode),
+    ),
+  );
   const [state, dispatch] = useReducer(
     quizSessionReducer,
     initialQuizSessionState,
@@ -103,7 +107,12 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
     goToNextQuestion: () => goToQuestion(state.currentQuestionIndex + 1),
     submitQuiz: () => dispatch({ type: "submit_quiz", questions }),
     restart: () => {
-      setOrderGeneration((value) => value + 1);
+      setQuestions(
+        buildQuizSessionQuestions(
+          quiz.questions,
+          sessionQuestionOptions(config, shuffleMode),
+        ),
+      );
       dispatch({ type: "restart" });
     },
   };

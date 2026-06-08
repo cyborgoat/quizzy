@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildQuizSessionQuestions,
   groupQuestionsByType,
   orderQuestionsByType,
   selectPracticeQuestions,
@@ -84,5 +85,24 @@ describe("selectPracticeQuestions", () => {
 
   it("returns every question when the count covers the full quiz", () => {
     expect(selectPracticeQuestions(questions, 10)).toEqual(questions);
+  });
+});
+
+describe("buildQuizSessionQuestions", () => {
+  it("keeps a stable order for the same inputs and random seed", () => {
+    const random = () => 0;
+    const first = buildQuizSessionQuestions(
+      questions,
+      { mode: "scored", shuffle: true },
+      random,
+    );
+    const second = buildQuizSessionQuestions(
+      questions,
+      { mode: "scored", shuffle: true },
+      random,
+    );
+    expect(first.map((question) => question.id)).toEqual(
+      second.map((question) => question.id),
+    );
   });
 });
