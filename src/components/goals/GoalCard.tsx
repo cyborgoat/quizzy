@@ -53,12 +53,10 @@ function GoalMetaBadges({ goal }: { goal: Goal }) {
 
 function AttemptRow({
   attempt,
-  onReview,
-  isActive,
+  goalId,
 }: {
   attempt: AttemptSummary;
-  onReview: (attempt: AttemptSummary) => void;
-  isActive: boolean;
+  goalId: string;
 }) {
   const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
     month: "short",
@@ -78,36 +76,19 @@ function AttemptRow({
         <span className="text-xs font-semibold text-zinc-900">
           {attempt.score}/{attempt.total} · {attempt.percentage}%
         </span>
-        <Button
-          type="button"
-          size="sm"
-          variant={isActive ? "default" : "outline"}
-          onClick={(event) => {
-            event.stopPropagation();
-            onReview(attempt);
-          }}
+        <Link
+          to={`/goals/${goalId}/attempts/${attempt.id}`}
+          className="inline-flex h-7 shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-white px-2.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-100"
+          onClick={(event) => event.stopPropagation()}
         >
           Review
-        </Button>
+        </Link>
       </div>
     </div>
   );
 }
 
-export function GoalCard({
-  goal,
-  onReviewAttempt,
-  activeReviewAttemptId,
-}: {
-  goal: Goal;
-  onReviewAttempt?: (
-    attempt: AttemptSummary,
-    goalId: string,
-    quizId: string,
-    quizTitle: string,
-  ) => void;
-  activeReviewAttemptId?: string;
-}) {
+export function GoalCard({ goal }: { goal: Goal }) {
   const { completeGoal, reopenGoal, deleteGoal } = useGoals();
 
   const attempts = [...goal.attempts].reverse();
@@ -184,14 +165,7 @@ export function GoalCard({
           ) : (
             <div className="mt-2 space-y-1.5">
               {attempts.map((attempt) => (
-                <AttemptRow
-                  key={attempt.id}
-                  attempt={attempt}
-                  onReview={(selected) =>
-                    onReviewAttempt?.(selected, goal.id, goal.quizId, goal.quizTitle)
-                  }
-                  isActive={activeReviewAttemptId === attempt.id}
-                />
+                <AttemptRow key={attempt.id} attempt={attempt} goalId={goal.id} />
               ))}
             </div>
           )}
