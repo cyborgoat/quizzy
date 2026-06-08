@@ -1,26 +1,31 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { QuestionReviewList } from "@/components/quiz/QuestionReviewList";
 import { useAttemptReviewItems } from "@/lib/attemptReview";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { errorMessage } from "@/lib/native";
 import type { GoalAttempt } from "@/types/goal";
 
-export function AttemptReviewPanel({
+function AttemptReviewBody({
   attempt,
   quizId,
   quizTitle,
   loading = false,
   error = null,
-  onClose,
 }: {
   attempt: GoalAttempt | null;
   quizId: string;
   quizTitle: string;
   loading?: boolean;
   error?: string | null;
-  onClose: () => void;
 }) {
   const { quizzes } = useQuizLibrary();
   const quiz = quizzes.find((source) => source.quiz.id === quizId)?.quiz;
@@ -36,31 +41,23 @@ export function AttemptReviewPanel({
     : null;
 
   return (
-    <aside
-      className="sticky top-0 flex h-svh w-full max-w-md shrink-0 flex-col border-l border-zinc-200 bg-white"
-      aria-label="Attempt review"
-    >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4">
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-lg font-semibold text-zinc-950">Attempt review</h2>
-          <p className="truncate text-sm font-medium text-zinc-700">{quizTitle}</p>
-          <p className="text-sm text-zinc-500">{date}</p>
-          <p className="text-sm font-semibold text-zinc-900">
-            {attempt
-              ? `${attempt.score}/${attempt.total} · ${attempt.percentage}%`
-              : "—"}
-          </p>
+    <>
+      <DrawerHeader className="shrink-0 border-b border-zinc-100 px-5 py-4">
+        <div className="flex items-start justify-between gap-3 pr-8">
+          <div className="min-w-0 space-y-1">
+            <DrawerTitle>Attempt review</DrawerTitle>
+            <DrawerDescription className="truncate font-medium text-zinc-700">
+              {quizTitle}
+            </DrawerDescription>
+            {date && <DrawerDescription>{date}</DrawerDescription>}
+            <p className="text-sm font-semibold text-zinc-900">
+              {attempt
+                ? `${attempt.score}/${attempt.total} · ${attempt.percentage}%`
+                : "—"}
+            </p>
+          </div>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8 shrink-0 text-zinc-500"
-          onClick={onClose}
-          aria-label="Close review panel"
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
+      </DrawerHeader>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {loading ? (
@@ -91,31 +88,36 @@ export function AttemptReviewPanel({
           />
         )}
       </div>
-    </aside>
+    </>
   );
 }
 
-export function AttemptReviewPanelLoader({
+export function AttemptReviewDrawer({
+  open,
+  onOpenChange,
   goalId,
   attemptId,
   quizId,
   quizTitle,
   loadGoalAttempt,
-  onClose,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   goalId: string;
   attemptId: string;
   quizId: string;
   quizTitle: string;
   loadGoalAttempt: (goalId: string, attemptId: string) => Promise<GoalAttempt>;
-  onClose: () => void;
 }) {
   const [attempt, setAttempt] = useState<GoalAttempt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!open) return;
+
     let cancelled = false;
+
     void loadGoalAttempt(goalId, attemptId)
       .then((loaded) => {
         if (!cancelled) setAttempt(loaded);
@@ -130,16 +132,28 @@ export function AttemptReviewPanelLoader({
     return () => {
       cancelled = true;
     };
-  }, [goalId, attemptId, loadGoalAttempt]);
+  }, [open, goalId, attemptId, loadGoalAttempt]);
 
   return (
-    <AttemptReviewPanel
-      attempt={attempt}
-      quizId={quizId}
-      quizTitle={quizTitle}
-      loading={loading}
-      error={error}
-      onClose={onClose}
-    />
+    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
+      <DrawerContent className="flex h-full flex-col p-0">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="absolute right-3 top-3 z-10 size-8 shrink-0 text-zinc-500"
+          onClick={() => onOpenChange(false)}
+          aria-label="Close review drawer"
+        >
+          <X className="size-4" />
+        </Button>
+        <AttemptReviewBody
+          attempt={attempt}
+          quizId={quizId}
+          quizTitle={quizTitle}
+          loading={loading}
+          error={error}
+        />
+      </DrawerContent>
+    </Drawer>
   );
 }
