@@ -144,7 +144,7 @@ export function MistakeLogPage() {
   const [sorting, setSorting] = useState<SortingState>([{ id: "mistakeCount", desc: true }]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 12,
+    pageSize: 10,
   });
   const [pageJumpValue, setPageJumpValue] = useState("1");
   const [activeEntry, setActiveEntry] = useState<MistakeEntry | null>(null);
