@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="app-icon-shape">
+      <rect x="48" y="48" width="928" height="928" rx="202"/>
+    </clipPath>
+  </defs>
+  <image
+    href="../../public/quizzy-logo.png"
+    x="48"
+    y="48"
+    width="928"
+    height="928"
+    preserveAspectRatio="xMidYMid slice"
+    clip-path="url(#app-icon-shape)"
+  />
+</svg>
