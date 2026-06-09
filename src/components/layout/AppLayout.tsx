@@ -8,6 +8,7 @@ export function AppLayout() {
     <SidebarProvider
       defaultOpen={false}
       storageKey="app_sidebar_open"
+      className="min-w-0 overflow-x-hidden"
       style={
         {
           "--sidebar-width": "var(--app-sidebar-width)",
@@ -16,7 +17,7 @@ export function AppLayout() {
       }
     >
       <AppSidebar />
-      <SidebarInset className="min-h-svh bg-zinc-50">
+      <SidebarInset className="min-h-svh min-w-0 overflow-x-hidden bg-zinc-50">
         <Outlet />
       </SidebarInset>
     </SidebarProvider>

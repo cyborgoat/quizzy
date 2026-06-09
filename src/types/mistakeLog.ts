@@ -13,6 +13,8 @@ export type MistakeEntry = {
   lastMistakenAt: string | null;
   lastFlaggedAt: string | null;
   lastIncorrectAnswer?: SubmittedAnswer;
+  /** Options order from the attempt that produced `lastIncorrectAnswer`. */
+  lastIncorrectOptions?: string[];
 };
 
 export type MistakeLogThresholds = {

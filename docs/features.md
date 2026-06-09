@@ -8,6 +8,7 @@ screen. It contains:
 - **Home** — the quiz library
 - **Goals** — study goals and attempt history
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
+- **Knowledge Base** — markdown notes linked to quiz questions
 - **Settings** — profile, appearance, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
@@ -103,14 +104,37 @@ Threshold values:
 
 Mistakes are sorted from most frequent to least frequent. Summary statistics
 show qualifying mistake count, total mistake events, and quizzes represented.
-The global view includes a quiz filter.
+The global view includes a quiz filter. The table lists each question as
+**quiz title · question number** (for example `React Basics · Q3`) with sortable
+columns for notes, flags, mistakes, correctness, and last mistaken date.
 
 Click a row to open a right-side drawer with the full question, your most
 recent incorrect answer (if any), the correct answer, and the explanation when available.
+Mistake Log review always uses the original quiz file order; shuffle settings
+from **Settings → Quiz preferences** do not apply here.
 The Mistake Log refreshes automatically when goals change (for example after a
 scored quiz), when attempts are deleted, and when the app window regains focus.
 
 Configure thresholds under **Settings → Mistake Log**.
+
+## Knowledge Base
+
+The Knowledge Base stores markdown notes in a `knowledge-base` subfolder inside the configured working directory. Quizzy auto-creates this folder on first use. Each note includes title, tags, linked quiz questions, and a markdown body. See [Knowledge file format](knowledge-format.md).
+
+Available actions:
+
+- **Knowledge Base** in the sidebar opens the browse view at `/knowledge`
+- **New note** opens an in-memory draft in edit mode; the file is written only when you **Save**
+- **Open folder** opens the `knowledge-base` folder in the system file manager
+- **Refresh** rescans knowledge files from disk
+- Note detail pages default to a read-only markdown viewer; click **Edit** to change title, tags, links, or content
+- The Mistake Log drawer lists linked note titles only; use the link or add icons to attach an existing note or create a new one for the question
+
+Mistake Log integration:
+
+- The table shows a sortable **Notes** count for each qualifying mistake
+- Clicking a row opens the review drawer with the question review plus linked knowledge notes below
+- Creating or linking a note from the drawer keeps the question pre-linked and returns to view mode after save
 
 ## Settings
 
@@ -133,8 +157,8 @@ Preferences are saved to `settings.json` and applied immediately after Save.
 
 ### Quiz preferences
 
-- **Shuffle questions** randomizes question order within each question type group.
-- **Shuffle options** randomizes answer option order while keeping correct-answer mapping accurate.
+- **Shuffle questions** randomizes question order within each question type group (quiz sessions only).
+- **Shuffle options** randomizes answer option order while keeping correct-answer mapping accurate (quiz sessions only).
 
 ### Mistake Log thresholds
 
@@ -163,7 +187,7 @@ working directory. Each quiz entry includes:
 - Source filename
 - Goal target icon and **Start quiz** action
 
-Nested directories and non-JSON files are ignored.
+Nested directories and non-JSON files are ignored at the quiz-library level. Knowledge notes use `.md` files in the `knowledge-base` subfolder.
 
 ## Working directory
 

@@ -147,3 +147,6 @@ src-tauri/target/
 
 # MacOS
 .DS_Store
+
+# Local knowledge notes (user working directory)
+**/knowledge-base/

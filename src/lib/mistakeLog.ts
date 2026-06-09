@@ -56,6 +56,7 @@ export function aggregateQuestionResults(
       lastFlaggedAt: string | null;
       lastPromptAt: string;
       lastIncorrectAnswer?: SubmittedAnswer;
+      lastIncorrectOptions?: string[];
     }
   >();
 
@@ -89,6 +90,7 @@ export function aggregateQuestionResults(
         if (!row.lastMistakenAt || attempt.takenAt > row.lastMistakenAt) {
           row.lastMistakenAt = attempt.takenAt;
           row.lastIncorrectAnswer = result.answer;
+          row.lastIncorrectOptions = result.options;
         }
       }
 
@@ -117,6 +119,7 @@ export function aggregateQuestionResults(
     lastMistakenAt: row.lastMistakenAt,
     lastFlaggedAt: row.lastFlaggedAt,
     lastIncorrectAnswer: row.lastIncorrectAnswer,
+    lastIncorrectOptions: row.lastIncorrectOptions,
   }));
 }
 
@@ -146,15 +149,6 @@ export function detectEmptyReason(
   if (!hasAnyMistakes) return "no_mistakes";
   if (qualifyingCount === 0) return "thresholds_exclude_all";
   return null;
-}
-
-export function formatMistakeDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 export function entryKey(entry: Pick<MistakeEntry, "quizId" | "questionId">): string {

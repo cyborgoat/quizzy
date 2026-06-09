@@ -29,6 +29,7 @@ Tests currently cover:
 - Early submission with unanswered questions
 - Frozen submitted results and complete restart behavior
 - Mistake Log aggregation, threshold filtering, sorting, and empty-state detection
+- Knowledge note drafts, front matter parsing, link validation, and question label formatting
 
 Run them with:
 

@@ -332,7 +332,8 @@ export function SettingsPage() {
                   Shuffle questions
                 </p>
                 <p className="mt-0.5 text-sm text-zinc-500">
-                  Randomize question order within each question type group.
+                  Randomize question order within each question type group. Does not apply to
+                  Mistake Log review, which always uses the original quiz file order.
                 </p>
               </div>
               <Switch
@@ -348,7 +349,8 @@ export function SettingsPage() {
                   Shuffle options
                 </p>
                 <p className="mt-0.5 text-sm text-zinc-500">
-                  Randomize answer option order while keeping correct answers mapped.
+                  Randomize answer option order while keeping correct answers mapped. Mistake Log
+                  review always shows options in the original quiz file order.
                 </p>
               </div>
               <Switch

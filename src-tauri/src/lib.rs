@@ -11,6 +11,7 @@ mod goals_storage;
 use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
 
 const SETTINGS_FILE: &str = "settings.json";
+const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
 
 fn default_mistake_log_min_mistakes() -> u32 {
     1
@@ -45,10 +46,7 @@ fn normalize_ui_font_size_raw(value: &str) -> u32 {
         "default" => 100,
         "large" => 113,
         "extra-large" => 125,
-        _ => value
-            .parse::<u32>()
-            .map(clamp_ui_font_size)
-            .unwrap_or(100),
+        _ => value.parse::<u32>().map(clamp_ui_font_size).unwrap_or(100),
     }
 }
 
@@ -131,7 +129,10 @@ struct Settings {
     mistake_log_min_flags: u32,
     #[serde(default = "default_mistake_log_max_correctness_percentage")]
     mistake_log_max_correctness_percentage: u32,
-    #[serde(default = "default_ui_font_size", deserialize_with = "deserialize_ui_font_size")]
+    #[serde(
+        default = "default_ui_font_size",
+        deserialize_with = "deserialize_ui_font_size"
+    )]
     ui_font_size: u32,
     #[serde(default = "default_ui_density")]
     ui_density: String,
@@ -209,6 +210,54 @@ fn read_settings(app: &AppHandle) -> Result<Settings, String> {
 
 fn is_json_extension(extension: &str) -> bool {
     extension.eq_ignore_ascii_case("json")
+}
+
+fn is_md_extension(extension: &str) -> bool {
+    extension.eq_ignore_ascii_case("md")
+}
+
+fn is_safe_knowledge_file_name(file_name: &str) -> bool {
+    let path = Path::new(file_name);
+    let Some(stem) = path.file_stem().and_then(|value| value.to_str()) else {
+        return false;
+    };
+    if stem.is_empty() {
+        return false;
+    }
+    if !path
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(is_md_extension)
+    {
+        return false;
+    }
+    stem.chars().all(|character| {
+        character.is_ascii_alphanumeric()
+            || character == '.'
+            || character == '_'
+            || character == '-'
+    })
+}
+
+fn knowledge_base_directory(app: &AppHandle) -> Result<PathBuf, String> {
+    let root = configured_directory(app)?;
+    let path = root.join(KNOWLEDGE_BASE_FOLDER);
+    if !path.exists() {
+        fs::create_dir_all(&path)
+            .map_err(|error| format!("Unable to create the knowledge-base folder: {error}"))?;
+    }
+    Ok(path)
+}
+
+fn resolve_knowledge_path(directory: &Path, file_name: &str) -> Result<PathBuf, String> {
+    if !is_safe_knowledge_file_name(file_name) {
+        return Err("Knowledge file names must use only letters, numbers, dots, underscores, or hyphens and end with .md.".to_string());
+    }
+    let path = directory.join(file_name);
+    if !path.starts_with(directory) {
+        return Err("Knowledge file path is invalid.".to_string());
+    }
+    Ok(path)
 }
 
 fn strip_utf8_bom(contents: String) -> String {
@@ -419,9 +468,67 @@ fn read_working_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
 }
 
 #[tauri::command]
-fn open_quiz_folder(app: AppHandle) -> Result<(), String> {
-    let directory = configured_directory(&app)?;
+fn read_knowledge_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
+    let directory = knowledge_base_directory(&app)?;
+    let mut files = Vec::new();
+    for entry in fs::read_dir(&directory)
+        .map_err(|error| format!("Unable to read the knowledge-base folder: {error}"))?
+    {
+        let entry =
+            entry.map_err(|error| format!("Unable to inspect a directory entry: {error}"))?;
+        let path = entry.path();
+        if !path.is_file()
+            || path
+                .extension()
+                .and_then(|value| value.to_str())
+                .is_none_or(|extension| !is_md_extension(extension))
+        {
+            continue;
+        }
+        let file_name = entry.file_name().to_string_lossy().into_owned();
+        match read_text_file(&path) {
+            Ok(contents) => files.push(QuizFile {
+                file_name,
+                contents,
+                read_error: None,
+            }),
+            Err(error) => files.push(QuizFile {
+                file_name,
+                contents: String::new(),
+                read_error: Some(error.to_string()),
+            }),
+        }
+    }
+    files.sort_by(|left, right| left.file_name.cmp(&right.file_name));
+    Ok(files)
+}
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WriteKnowledgeFileRequest {
+    file_name: String,
+    contents: String,
+    overwrite: bool,
+}
+
+#[tauri::command]
+fn write_knowledge_file(app: AppHandle, request: WriteKnowledgeFileRequest) -> Result<(), String> {
+    let directory = knowledge_base_directory(&app)?;
+    let path = resolve_knowledge_path(&directory, &request.file_name)?;
+    atomic_write(&path, request.contents.as_bytes(), request.overwrite)
+}
+
+#[tauri::command]
+fn delete_knowledge_file(app: AppHandle, file_name: String) -> Result<(), String> {
+    let directory = knowledge_base_directory(&app)?;
+    let path = resolve_knowledge_path(&directory, &file_name)?;
+    if !path.exists() {
+        return Err(format!("{} does not exist.", path.display()));
+    }
+    fs::remove_file(&path).map_err(|error| format!("Unable to delete {}: {error}", path.display()))
+}
+
+fn open_directory_in_file_manager(directory: PathBuf, label: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     let mut command = Command::new("open");
     #[cfg(target_os = "windows")]
@@ -433,7 +540,17 @@ fn open_quiz_folder(app: AppHandle) -> Result<(), String> {
         .arg(directory)
         .spawn()
         .map(|_| ())
-        .map_err(|error| format!("Unable to open the quiz folder: {error}"))
+        .map_err(|error| format!("Unable to open the {label}: {error}"))
+}
+
+#[tauri::command]
+fn open_quiz_folder(app: AppHandle) -> Result<(), String> {
+    open_directory_in_file_manager(configured_directory(&app)?, "quiz folder")
+}
+
+#[tauri::command]
+fn open_knowledge_folder(app: AppHandle) -> Result<(), String> {
+    open_directory_in_file_manager(knowledge_base_directory(&app)?, "knowledge-base folder")
 }
 
 #[tauri::command]
@@ -478,7 +595,11 @@ pub fn run() {
             get_settings,
             save_settings,
             read_working_directory,
+            read_knowledge_directory,
+            write_knowledge_file,
+            delete_knowledge_file,
             open_quiz_folder,
+            open_knowledge_folder,
             list_goals,
             upsert_goal,
             delete_goal,
@@ -492,7 +613,10 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{atomic_write, is_json_extension, strip_utf8_bom};
+    use super::{
+        atomic_write, is_json_extension, resolve_knowledge_path, strip_utf8_bom,
+        KNOWLEDGE_BASE_FOLDER,
+    };
     use std::{fs, path::PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -531,5 +655,17 @@ mod tests {
         );
 
         fs::remove_dir_all(directory).expect("remove test directory");
+    }
+
+    #[test]
+    fn resolve_knowledge_path_targets_knowledge_base_subfolder() {
+        let root = test_directory("knowledge-path");
+        let knowledge_base = root.join(KNOWLEDGE_BASE_FOLDER);
+        fs::create_dir_all(&knowledge_base).expect("create knowledge base directory");
+
+        let path = resolve_knowledge_path(&knowledge_base, "note-one.md").expect("resolve path");
+        assert_eq!(path, knowledge_base.join("note-one.md"));
+
+        fs::remove_dir_all(root).expect("remove test directory");
     }
 }

@@ -5,6 +5,8 @@ export type QuestionResult = {
   prompt: string;
   correct: boolean;
   answer?: SubmittedAnswer;
+  /** Options as shown during the attempt (for remapping shuffled answers on review). */
+  options?: string[];
   flagged?: boolean;
 };
 

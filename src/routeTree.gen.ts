@@ -15,7 +15,9 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as QuizQuizIdRouteImport } from './routes/quiz_.$quizId'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppMistakesIndexRouteImport } from './routes/_app/mistakes/index'
+import { Route as AppKnowledgeIndexRouteImport } from './routes/_app/knowledge/index'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
+import { Route as AppKnowledgeKnowledgeIdRouteImport } from './routes/_app/knowledge/$knowledgeId'
 import { Route as AppGoalsGoalIdAttemptsAttemptIdRouteImport } from './routes/_app/goals/$goalId/attempts/$attemptId'
 
 const AppRoute = AppRouteImport.update({
@@ -47,9 +49,19 @@ const AppMistakesIndexRoute = AppMistakesIndexRouteImport.update({
   path: '/mistakes/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppKnowledgeIndexRoute = AppKnowledgeIndexRouteImport.update({
+  id: '/knowledge/',
+  path: '/knowledge/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
   id: '/goals/',
   path: '/goals/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKnowledgeKnowledgeIdRoute = AppKnowledgeKnowledgeIdRouteImport.update({
+  id: '/knowledge/$knowledgeId',
+  path: '/knowledge/$knowledgeId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGoalsGoalIdAttemptsAttemptIdRoute =
@@ -64,7 +76,9 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/settings': typeof AppSettingsRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
+  '/knowledge/$knowledgeId': typeof AppKnowledgeKnowledgeIdRoute
   '/goals/': typeof AppGoalsIndexRoute
+  '/knowledge/': typeof AppKnowledgeIndexRoute
   '/mistakes/': typeof AppMistakesIndexRoute
   '/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
@@ -73,7 +87,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
   '/': typeof AppIndexRoute
+  '/knowledge/$knowledgeId': typeof AppKnowledgeKnowledgeIdRoute
   '/goals': typeof AppGoalsIndexRoute
+  '/knowledge': typeof AppKnowledgeIndexRoute
   '/mistakes': typeof AppMistakesIndexRoute
   '/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
@@ -84,7 +100,9 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/quiz_/$quizId': typeof QuizQuizIdRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/knowledge/$knowledgeId': typeof AppKnowledgeKnowledgeIdRoute
   '/_app/goals/': typeof AppGoalsIndexRoute
+  '/_app/knowledge/': typeof AppKnowledgeIndexRoute
   '/_app/mistakes/': typeof AppMistakesIndexRoute
   '/_app/goals/$goalId/attempts/$attemptId': typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
@@ -95,7 +113,9 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/quiz/$quizId'
+    | '/knowledge/$knowledgeId'
     | '/goals/'
+    | '/knowledge/'
     | '/mistakes/'
     | '/goals/$goalId/attempts/$attemptId'
   fileRoutesByTo: FileRoutesByTo
@@ -104,7 +124,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/quiz/$quizId'
     | '/'
+    | '/knowledge/$knowledgeId'
     | '/goals'
+    | '/knowledge'
     | '/mistakes'
     | '/goals/$goalId/attempts/$attemptId'
   id:
@@ -114,7 +136,9 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/quiz_/$quizId'
     | '/_app/'
+    | '/_app/knowledge/$knowledgeId'
     | '/_app/goals/'
+    | '/_app/knowledge/'
     | '/_app/mistakes/'
     | '/_app/goals/$goalId/attempts/$attemptId'
   fileRoutesById: FileRoutesById
@@ -169,11 +193,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMistakesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/knowledge/': {
+      id: '/_app/knowledge/'
+      path: '/knowledge'
+      fullPath: '/knowledge/'
+      preLoaderRoute: typeof AppKnowledgeIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/goals/': {
       id: '/_app/goals/'
       path: '/goals'
       fullPath: '/goals/'
       preLoaderRoute: typeof AppGoalsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/knowledge/$knowledgeId': {
+      id: '/_app/knowledge/$knowledgeId'
+      path: '/knowledge/$knowledgeId'
+      fullPath: '/knowledge/$knowledgeId'
+      preLoaderRoute: typeof AppKnowledgeKnowledgeIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/goals/$goalId/attempts/$attemptId': {
@@ -189,7 +227,9 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppKnowledgeKnowledgeIdRoute: typeof AppKnowledgeKnowledgeIdRoute
   AppGoalsIndexRoute: typeof AppGoalsIndexRoute
+  AppKnowledgeIndexRoute: typeof AppKnowledgeIndexRoute
   AppMistakesIndexRoute: typeof AppMistakesIndexRoute
   AppGoalsGoalIdAttemptsAttemptIdRoute: typeof AppGoalsGoalIdAttemptsAttemptIdRoute
 }
@@ -197,7 +237,9 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppKnowledgeKnowledgeIdRoute: AppKnowledgeKnowledgeIdRoute,
   AppGoalsIndexRoute: AppGoalsIndexRoute,
+  AppKnowledgeIndexRoute: AppKnowledgeIndexRoute,
   AppMistakesIndexRoute: AppMistakesIndexRoute,
   AppGoalsGoalIdAttemptsAttemptIdRoute: AppGoalsGoalIdAttemptsAttemptIdRoute,
 }

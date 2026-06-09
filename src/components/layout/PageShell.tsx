@@ -20,7 +20,7 @@ export function PageShell({
   return (
     <main
       className={cn(
-        "mx-auto w-full py-[var(--app-page-py)]",
+        "mx-auto w-full min-w-0 max-w-full overflow-x-hidden py-[var(--app-page-py)]",
         pageShellPaddingClass,
         pageShellWidthClass[width],
         className,

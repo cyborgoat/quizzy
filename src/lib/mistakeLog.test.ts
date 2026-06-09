@@ -47,6 +47,43 @@ describe("mistakeLog", () => {
     expect(q2?.correctnessPercentage).toBe(50);
   });
 
+  it("keeps the latest incorrect answer options for mistake review", () => {
+    const entries = aggregateQuestionResults([
+      {
+        quizId: "quiz-1",
+        quizTitle: "Quiz One",
+        takenAt: "2026-01-01T10:00:00.000Z",
+        questionResults: [
+          {
+            questionId: "q1",
+            prompt: "Question 1",
+            correct: false,
+            answer: { type: "single_choice", selectedIndex: 0 },
+            options: ["C", "A", "B"],
+          },
+        ],
+      },
+      {
+        quizId: "quiz-1",
+        quizTitle: "Quiz One",
+        takenAt: "2026-01-02T10:00:00.000Z",
+        questionResults: [
+          {
+            questionId: "q1",
+            prompt: "Question 1",
+            correct: false,
+            answer: { type: "single_choice", selectedIndex: 1 },
+            options: ["B", "C", "A"],
+          },
+        ],
+      },
+    ]);
+
+    const q1 = entries.find((entry) => entry.questionId === "q1");
+    expect(q1?.lastIncorrectAnswer).toEqual({ type: "single_choice", selectedIndex: 1 });
+    expect(q1?.lastIncorrectOptions).toEqual(["B", "C", "A"]);
+  });
+
   it("filters and sorts by configured thresholds", () => {
     const entries = buildMistakeEntries(attempts, {
       minMistakes: 2,

@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 export type PageShellWidth = "wide" | "narrow" | "quiz";
 
 const widthClass: Record<PageShellWidth, string> = {
-  wide: "max-w-[var(--app-content-max-wide)]",
-  narrow: "max-w-[var(--app-content-max-narrow)]",
-  quiz: "max-w-[var(--app-content-max-quiz)]",
+  wide: "max-w-[min(100%,var(--app-content-max-wide))]",
+  narrow: "max-w-[min(100%,var(--app-content-max-narrow))]",
+  quiz: "max-w-[min(100%,var(--app-content-max-quiz))]",
 };
 
 const paddingClass =

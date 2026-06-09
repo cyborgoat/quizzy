@@ -12,6 +12,7 @@ their display name, quiz preferences, Mistake Log thresholds, and working direct
 - [Features and workflows](features.md): sidebar, goals, Mistake Log, practice and scored quiz modes, settings, quiz-folder management, and review
 - [Software architecture](architecture.md): frontend, native layer, data flow, and project structure
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
+- [Knowledge file format](knowledge-format.md): markdown note front matter, linking rules, and folder layout
 - [Native storage and security](native-storage.md): settings, quiz-folder access, filesystem boundaries, and atomic writes
 - [Development and testing](development.md): scripts, tests, formatting, and packaging
 

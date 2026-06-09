@@ -9,7 +9,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MistakeReviewDrawer } from "@/components/mistakes/MistakeReviewDrawer";
 import { PageShell } from "@/components/layout/PageShell";
@@ -36,6 +36,15 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import {
+  DataTableColumnHeader,
+  DataTableNumericCell,
+  DataTableSortableHeader,
+  dataTableCellClass,
+  dataTableCellMutedClass,
+  dataTableCellTextClass,
+  dataTableHeadClass,
+} from "@/components/ui/data-table";
+import {
   Table,
   TableBody,
   TableCell,
@@ -43,9 +52,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import { detectEmptyReason, formatMistakeDate } from "@/lib/mistakeLog";
+import { formatShortDate } from "@/lib/formatDate";
+import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
+import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
+import { detectEmptyReason } from "@/lib/mistakeLog";
 import type { MistakeEntry } from "@/types/mistakeLog";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -140,6 +153,7 @@ export function MistakeLogPage() {
     refetch,
   } = useMistakeLog();
   const { quizzes } = useQuizLibrary();
+  const knowledgeIndex = useKnowledgeIndex();
   const [quizFilter, setQuizFilter] = useState<string>("all");
   const [sorting, setSorting] = useState<SortingState>([
     { id: "flaggedCount", desc: true },
@@ -183,72 +197,56 @@ export function MistakeLogPage() {
   const columns = useMemo<ColumnDef<MistakeEntry>[]>(
     () => [
       {
-        accessorKey: "prompt",
-        header: "Question",
+        id: "question",
+        accessorFn: (row) =>
+          formatQuizQuestionLabel(
+            { quizId: row.quizId, questionId: row.questionId },
+            quizzes,
+            { quizTitleFallback: row.quizTitle, quizScoped: isQuizScoped },
+          ),
+        header: () => <DataTableColumnHeader label="Question" />,
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="text-xs font-medium leading-5 text-zinc-950 sm:text-sm">
-              {row.original.prompt}
-            </p>
-            {!isQuizScoped && (
-              <p className="mt-0.5 text-[11px] text-zinc-500 sm:text-xs">{row.original.quizTitle}</p>
-            )}
-          </div>
+          <span className={`${dataTableCellTextClass} min-w-0 font-medium`}>
+            {row.getValue<string>("question")}
+          </span>
+        ),
+      },
+      {
+        id: "notes",
+        accessorFn: (row) =>
+          getKnowledgeForQuestion(knowledgeIndex, row.quizId, row.questionId).length,
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Notes" column={column} />
+        ),
+        cell: ({ row }) => (
+          <DataTableNumericCell value={row.getValue<number>("notes")} mutedWhenZero />
         ),
       },
       {
         accessorKey: "flaggedCount",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-1.5 text-[11px] text-zinc-600"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Flags
-            <ArrowUpDown className="size-3" />
-          </Button>
+          <DataTableSortableHeader label="Flags" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-[11px] font-semibold tabular-nums text-zinc-950 sm:text-xs">
-            {row.original.flaggedCount}
-          </span>
+          <DataTableNumericCell value={row.original.flaggedCount} />
         ),
       },
       {
         accessorKey: "mistakeCount",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-1.5 text-[11px] text-zinc-600"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Mistakes
-            <ArrowUpDown className="size-3" />
-          </Button>
+          <DataTableSortableHeader label="Mistakes" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-[11px] font-semibold tabular-nums text-zinc-950 sm:text-xs">
-            {row.original.mistakeCount}
-          </span>
+          <DataTableNumericCell value={row.original.mistakeCount} />
         ),
       },
       {
         accessorKey: "correctnessPercentage",
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-1.5 text-[11px] text-zinc-600"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Correctness
-            <ArrowUpDown className="size-3" />
-          </Button>
+          <DataTableSortableHeader label="Correctness" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-[11px] tabular-nums text-zinc-600 sm:text-xs">
+          <span className={dataTableCellMutedClass}>
             {row.original.correctnessPercentage}%
           </span>
         ),
@@ -266,24 +264,16 @@ export function MistakeLogPage() {
           return aTime - bTime;
         },
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-1.5 text-[11px] text-zinc-600"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Last mistaken
-            <ArrowUpDown className="size-3" />
-          </Button>
+          <DataTableSortableHeader label="Last mistaken" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-[11px] text-zinc-600 sm:text-xs">
-            {formatMistakeDate(row.original.lastMistakenAt)}
+          <span className={dataTableCellMutedClass}>
+            {formatShortDate(row.original.lastMistakenAt)}
           </span>
         ),
       },
     ],
-    [isQuizScoped],
+    [isQuizScoped, knowledgeIndex, quizzes],
   );
 
   const table = useReactTable({
@@ -336,10 +326,16 @@ export function MistakeLogPage() {
     emptyReason,
   ]);
 
-  const activeQuestion = useMemo(() => {
-    if (!activeEntry) return null;
+  const activeQuestionContext = useMemo(() => {
+    if (!activeEntry) return { question: null, questionIndex: 0 };
     const source = quizzes.find((item) => item.quiz.id === activeEntry.quizId);
-    return source?.quiz.questions.find((question) => question.id === activeEntry.questionId) ?? null;
+    const questionIndex =
+      source?.quiz.questions.findIndex(
+        (question) => question.id === activeEntry.questionId,
+      ) ?? -1;
+    const question =
+      questionIndex >= 0 ? source!.quiz.questions[questionIndex]! : null;
+    return { question, questionIndex: questionIndex >= 0 ? questionIndex : 0 };
   }, [activeEntry, quizzes]);
 
   const pageCount = table.getPageCount();
@@ -438,7 +434,7 @@ export function MistakeLogPage() {
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} className={dataTableHeadClass}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -455,7 +451,7 @@ export function MistakeLogPage() {
                     onClick={() => setActiveEntry(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className={dataTableCellClass}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -566,7 +562,8 @@ export function MistakeLogPage() {
 
       <MistakeReviewDrawer
         entry={activeEntry}
-        question={activeQuestion}
+        question={activeQuestionContext.question}
+        questionIndex={activeQuestionContext.questionIndex}
         open={activeEntry !== null}
         onOpenChange={(open) => {
           if (!open) setActiveEntry(null);

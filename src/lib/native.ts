@@ -32,6 +32,14 @@ export type NativeQuizFile = {
   readError?: string;
 };
 
+export type NativeKnowledgeFile = NativeQuizFile;
+
+export type WriteKnowledgeFileRequest = {
+  fileName: string;
+  contents: string;
+  overwrite: boolean;
+};
+
 export type GoalMeta = Omit<Goal, "attempts">;
 
 export const nativeApi = {
@@ -40,7 +48,14 @@ export const nativeApi = {
     invoke<void>("save_settings", { request }),
   readWorkingDirectory: () =>
     invoke<NativeQuizFile[]>("read_working_directory"),
+  readKnowledgeDirectory: () =>
+    invoke<NativeKnowledgeFile[]>("read_knowledge_directory"),
+  writeKnowledgeFile: (request: WriteKnowledgeFileRequest) =>
+    invoke<void>("write_knowledge_file", { request }),
+  deleteKnowledgeFile: (fileName: string) =>
+    invoke<void>("delete_knowledge_file", { fileName }),
   openQuizFolder: () => invoke<void>("open_quiz_folder"),
+  openKnowledgeFolder: () => invoke<void>("open_knowledge_folder"),
   listGoals: () =>
     invoke<Goal[]>("list_goals"),
   upsertGoal: (goal: GoalMeta) =>

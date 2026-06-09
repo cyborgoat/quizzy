@@ -83,6 +83,10 @@ function QuizSessionPage({
           prompt: q.prompt,
           correct: session.answers[i]?.isCorrect ?? false,
           answer: session.answers[i]?.answer,
+          options:
+            q.type === "single_choice" || q.type === "multiple_choice"
+              ? q.options
+              : undefined,
           flagged: session.answers[i]?.flagged ?? false,
         })),
       });
