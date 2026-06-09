@@ -26,8 +26,8 @@ export function MistakeReviewDrawer({
   const record: AnswerRecord = {
     questionId: entry.questionId,
     answer: entry.lastIncorrectAnswer,
-    isCorrect: false,
-    flagged: false,
+    isCorrect: entry.mistakeCount === 0,
+    flagged: entry.flaggedCount > 0,
   };
 
   return (
@@ -43,7 +43,8 @@ export function MistakeReviewDrawer({
           <DrawerDescription>
             {entry.quizTitle} · {entry.mistakeCount} mistake
             {entry.mistakeCount === 1 ? "" : "s"} · Last mistaken{" "}
-            {formatMistakeDate(entry.lastMistakenAt)}
+            {formatMistakeDate(entry.lastMistakenAt)} · {entry.flaggedCount} flag
+            {entry.flaggedCount === 1 ? "" : "s"}
           </DrawerDescription>
         </DrawerHeader>
 

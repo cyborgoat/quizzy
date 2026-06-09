@@ -7,7 +7,7 @@ screen. It contains:
 
 - **Home** — the quiz library
 - **Goals** — study goals and attempt history
-- **Mistake Log** — threshold-filtered mistakes from scored attempts
+- **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
 - **Settings** — profile, appearance, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
@@ -85,12 +85,17 @@ Each saved attempt opens on a dedicated page at
 
 ## Mistake Log
 
-The Mistake Log aggregates incorrect answers from **scored attempts only**.
+The Mistake Log aggregates incorrect answers and flagged questions from **scored attempts only**.
 Practice runs are not included. **Mistake Log** in the sidebar opens the global
 view at `/mistakes`; an existing quiz goal's menu can open the same view scoped
 to that quiz.
 
-The list shows only questions that meet both configured thresholds:
+The list shows:
+
+- Questions that meet both configured thresholds
+- Any question flagged during scored attempts (always included, even if thresholds are not met)
+
+Threshold values:
 
 - Minimum mistakes per question
 - Maximum correctness percentage per question (calculated across all scored attempts
@@ -100,8 +105,8 @@ Mistakes are sorted from most frequent to least frequent. Summary statistics
 show qualifying mistake count, total mistake events, and quizzes represented.
 The global view includes a quiz filter.
 
-Click a mistake to open a right-side drawer with the full question, your most
-recent incorrect answer, the correct answer, and the explanation when available.
+Click a row to open a right-side drawer with the full question, your most
+recent incorrect answer (if any), the correct answer, and the explanation when available.
 The Mistake Log refreshes automatically when goals change (for example after a
 scored quiz), when attempts are deleted, and when the app window regains focus.
 
@@ -128,17 +133,18 @@ Preferences are saved to `settings.json` and applied immediately after Save.
 
 ### Quiz preferences
 
-**Shuffle mode** randomizes question order within each question type group during
-quiz sessions.
+- **Shuffle questions** randomizes question order within each question type group.
+- **Shuffle options** randomizes answer option order while keeping correct-answer mapping accurate.
 
-### Mistake Log
+### Mistake Log thresholds
 
 Configure when a question appears in the Mistake Log:
 
 - **Minimum mistakes per question** — integer of at least 1
 - **Maximum correctness percentage per question** — 0 through 100
 
-A question must satisfy both thresholds to appear in the log.
+A question must satisfy both thresholds to appear in the log, unless it was
+flagged in a scored attempt (flagged questions are always included).
 
 ### Quiz directory
 
@@ -242,7 +248,9 @@ After final quiz submission, the result screen shows:
 - Percentage
 - Incorrect count
 - Unanswered count
+- Goal status when that quiz has a goal (achieved / not achieved)
 - Restart action
+- View-goal-attempts action (opens Goals and expands the matching goal)
 - Return-home action
 - Per-question answer review
 

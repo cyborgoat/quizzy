@@ -4,6 +4,7 @@ import {
   groupQuestionsByType,
   orderQuestionsByType,
   selectPracticeQuestions,
+  shuffleQuestionOptions,
   shuffleQuestionsWithinGroups,
 } from "@/lib/questionOrder";
 import type { QuizQuestion } from "@/types/quiz";
@@ -93,16 +94,48 @@ describe("buildQuizSessionQuestions", () => {
     const random = () => 0;
     const first = buildQuizSessionQuestions(
       questions,
-      { mode: "scored", shuffle: true },
+      { mode: "scored", shuffleQuestions: true, shuffleOptions: true },
       random,
     );
     const second = buildQuizSessionQuestions(
       questions,
-      { mode: "scored", shuffle: true },
+      { mode: "scored", shuffleQuestions: true, shuffleOptions: true },
       random,
     );
     expect(first.map((question) => question.id)).toEqual(
       second.map((question) => question.id),
     );
+  });
+});
+
+describe("shuffleQuestionOptions", () => {
+  it("remaps single choice answers to match shuffled options", () => {
+    const shuffled = shuffleQuestionOptions([questions[1]], () => 0);
+    const singleChoice = shuffled[0];
+    if (singleChoice.type !== "single_choice") {
+      throw new Error("Expected single choice question");
+    }
+
+    expect(singleChoice.options).toEqual(["B", "A"]);
+    expect(singleChoice.answerIndex).toBe(1);
+  });
+
+  it("remaps multiple choice answers to match shuffled options", () => {
+    const multiple: QuizQuestion = {
+      id: "mc-remap",
+      type: "multiple_choice",
+      prompt: "Pick A and C",
+      options: ["A", "B", "C"],
+      answerIndices: [0, 1],
+    };
+
+    const shuffled = shuffleQuestionOptions([multiple], () => 0);
+    const shuffledMultiple = shuffled[0];
+    if (shuffledMultiple.type !== "multiple_choice") {
+      throw new Error("Expected multiple choice question");
+    }
+
+    expect(shuffledMultiple.options).toEqual(["B", "C", "A"]);
+    expect(shuffledMultiple.answerIndices).toEqual([0, 2]);
   });
 });

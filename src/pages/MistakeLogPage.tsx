@@ -83,7 +83,7 @@ function EmptyMistakeLog({
   scopedQuizTitle,
 }: {
   reason: "no_attempts" | "no_mistakes" | "thresholds_exclude_all";
-  thresholds: { minMistakes: number; maxCorrectnessPercentage: number };
+  thresholds: { minMistakes: number; minFlags: number; maxCorrectnessPercentage: number };
   scopedQuizTitle?: string;
 }) {
   const scopePrefix = scopedQuizTitle ? `${scopedQuizTitle}: ` : "";
@@ -100,8 +100,8 @@ function EmptyMistakeLog({
   if (reason === "no_mistakes") {
     return (
       <EmptyState
-        title={`${scopePrefix}No mistakes found`}
-        description="No mistakes found in your scored attempts."
+        title={`${scopePrefix}No mistakes or flags found`}
+        description="No mistakes or flagged questions found in your scored attempts."
       />
     );
   }
@@ -113,7 +113,7 @@ function EmptyMistakeLog({
       </h2>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">
         Showing questions with at least {thresholds.minMistakes} mistake(s) and correctness at or
-        below {thresholds.maxCorrectnessPercentage}%. Adjust thresholds in Settings.
+        below {thresholds.maxCorrectnessPercentage}%, or with at least {thresholds.minFlags} flag(s).
       </p>
       <Link
         to="/settings"
@@ -141,7 +141,10 @@ export function MistakeLogPage() {
   } = useMistakeLog();
   const { quizzes } = useQuizLibrary();
   const [quizFilter, setQuizFilter] = useState<string>("all");
-  const [sorting, setSorting] = useState<SortingState>([{ id: "mistakeCount", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "flaggedCount", desc: true },
+    { id: "mistakeCount", desc: true },
+  ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -191,6 +194,25 @@ export function MistakeLogPage() {
               <p className="mt-0.5 text-[11px] text-zinc-500 sm:text-xs">{row.original.quizTitle}</p>
             )}
           </div>
+        ),
+      },
+      {
+        accessorKey: "flaggedCount",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[11px] text-zinc-600"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Flags
+            <ArrowUpDown className="size-3" />
+          </Button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-[11px] font-semibold tabular-nums text-zinc-950 sm:text-xs">
+            {row.original.flaggedCount}
+          </span>
         ),
       },
       {
@@ -297,7 +319,9 @@ export function MistakeLogPage() {
     if (isQuizScoped && scopedQuizId) {
       const quizAttempts = attemptData.filter((attempt) => attempt.quizId === scopedQuizId);
       const quizRaw = rawEntries.filter((entry) => entry.quizId === scopedQuizId);
-      const hasQuizMistakes = quizRaw.some((entry) => entry.mistakeCount > 0);
+      const hasQuizMistakes = quizRaw.some(
+        (entry) => entry.mistakeCount > 0 || entry.flaggedCount > 0,
+      );
       return detectEmptyReason(quizAttempts.length > 0, hasQuizMistakes, filteredEntries.length);
     }
 
@@ -305,6 +329,7 @@ export function MistakeLogPage() {
   }, [
     filteredEntries.length,
     isQuizScoped,
+    quizFilter,
     scopedQuizId,
     attemptData,
     rawEntries,
@@ -336,8 +361,8 @@ export function MistakeLogPage() {
       <div className="mb-4 shrink-0 lg:mb-5">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">Mistake Log</h1>
         <p className="mt-1 text-sm text-zinc-500 lg:text-base">
-          Threshold-filtered mistakes from scored attempts, sorted by frequency. Click a question
-          to review the correct answer and explanation.
+          Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question
+          to review the answer and explanation.
         </p>
         {isQuizScoped && scopedQuizTitle && (
           <p className="mt-2 text-sm font-medium text-zinc-700">{scopedQuizTitle}</p>
@@ -384,8 +409,8 @@ export function MistakeLogPage() {
           </div>
         )}
         <div className="text-xs text-zinc-500">
-          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≤{thresholds.maxCorrectnessPercentage}%
-          correctness{" "}
+          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥{thresholds.minFlags} flag(s), ≤
+          {thresholds.maxCorrectnessPercentage}% correctness{" "}
           <Link to="/settings" className="font-medium text-zinc-700 underline-offset-2 hover:underline">
             <Settings className="mr-0.5 inline size-3" />
             Settings

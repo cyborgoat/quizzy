@@ -32,30 +32,42 @@ import {
 
 export function SettingsPage() {
   const { userName, setUserName } = useUserProfile();
-  const { shuffleMode, setShuffleMode } = useQuizPreferences();
+  const {
+    shuffleQuestions,
+    shuffleOptions,
+    setShuffleQuestions,
+    setShuffleOptions,
+  } = useQuizPreferences();
   const { fontSize, density, setFontSize, setDensity } = useUiPreferences();
   const {
     minMistakes,
+    minFlags,
     maxCorrectnessPercentage,
     setMinMistakes,
+    setMinFlags,
     setMaxCorrectnessPercentage,
   } = useMistakeLogSettings();
   const library = useQuizLibrary();
   const [nameInput, setNameInput] = useState(userName);
-  const [shuffleInput, setShuffleInput] = useState(shuffleMode);
+  const [shuffleQuestionsInput, setShuffleQuestionsInput] = useState(shuffleQuestions);
+  const [shuffleOptionsInput, setShuffleOptionsInput] = useState(shuffleOptions);
   const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
   const [densityInput, setDensityInput] = useState<UiDensity>(density);
   const [minMistakesInput, setMinMistakesInput] = useState(String(minMistakes));
+  const [minFlagsInput, setMinFlagsInput] = useState(String(minFlags));
   const [maxCorrectnessInput, setMaxCorrectnessInput] = useState(String(maxCorrectnessPercentage));
   const [pendingDir, setPendingDir] = useState<string | null>(null);
   const [savedUserName, setSavedUserName] = useState(userName);
-  const [savedShuffleMode, setSavedShuffleMode] = useState(shuffleMode);
+  const [savedShuffleQuestions, setSavedShuffleQuestions] = useState(shuffleQuestions);
+  const [savedShuffleOptions, setSavedShuffleOptions] = useState(shuffleOptions);
   const [savedFontSize, setSavedFontSize] = useState(fontSize);
   const [savedDensity, setSavedDensity] = useState<UiDensity>(density);
   const [savedMinMistakes, setSavedMinMistakes] = useState(minMistakes);
+  const [savedMinFlags, setSavedMinFlags] = useState(minFlags);
   const [savedMaxCorrectness, setSavedMaxCorrectness] = useState(maxCorrectnessPercentage);
   const [fontSizeError, setFontSizeError] = useState<string | null>(null);
   const [minMistakesError, setMinMistakesError] = useState<string | null>(null);
+  const [minFlagsError, setMinFlagsError] = useState<string | null>(null);
   const [maxCorrectnessError, setMaxCorrectnessError] = useState<string | null>(null);
 
   if (userName !== savedUserName) {
@@ -63,9 +75,14 @@ export function SettingsPage() {
     setNameInput(userName);
   }
 
-  if (shuffleMode !== savedShuffleMode) {
-    setSavedShuffleMode(shuffleMode);
-    setShuffleInput(shuffleMode);
+  if (shuffleQuestions !== savedShuffleQuestions) {
+    setSavedShuffleQuestions(shuffleQuestions);
+    setShuffleQuestionsInput(shuffleQuestions);
+  }
+
+  if (shuffleOptions !== savedShuffleOptions) {
+    setSavedShuffleOptions(shuffleOptions);
+    setShuffleOptionsInput(shuffleOptions);
   }
 
   if (fontSize !== savedFontSize) {
@@ -83,6 +100,11 @@ export function SettingsPage() {
     setMinMistakesInput(String(minMistakes));
   }
 
+  if (minFlags !== savedMinFlags) {
+    setSavedMinFlags(minFlags);
+    setMinFlagsInput(String(minFlags));
+  }
+
   if (maxCorrectnessPercentage !== savedMaxCorrectness) {
     setSavedMaxCorrectness(maxCorrectnessPercentage);
     setMaxCorrectnessInput(String(maxCorrectnessPercentage));
@@ -92,10 +114,12 @@ export function SettingsPage() {
   const hasChanges =
     nameInput.trim() !== userName ||
     pendingDir !== null ||
-    shuffleInput !== shuffleMode ||
+    shuffleQuestionsInput !== shuffleQuestions ||
+    shuffleOptionsInput !== shuffleOptions ||
     fontSizeInput !== String(fontSize) ||
     densityInput !== density ||
     minMistakesInput !== String(minMistakes) ||
+    minFlagsInput !== String(minFlags) ||
     maxCorrectnessInput !== String(maxCorrectnessPercentage);
 
   const { proceed, reset, status } = useBlocker({
@@ -133,6 +157,7 @@ export function SettingsPage() {
   async function handleSave() {
     const trimmed = nameInput.trim();
     const parsedMinMistakes = Number(minMistakesInput);
+    const parsedMinFlags = Number(minFlagsInput);
     const parsedMaxCorrectness = Number(maxCorrectnessInput);
     const parsedFontSize = Number(fontSizeInput);
 
@@ -153,6 +178,13 @@ export function SettingsPage() {
       setMinMistakesError(null);
     }
 
+    if (!Number.isInteger(parsedMinFlags) || parsedMinFlags < 1) {
+      setMinFlagsError("Enter a whole number of at least 1.");
+      hasValidationError = true;
+    } else {
+      setMinFlagsError(null);
+    }
+
     if (
       !Number.isFinite(parsedMaxCorrectness) ||
       parsedMaxCorrectness < 0 ||
@@ -169,10 +201,12 @@ export function SettingsPage() {
     try {
       await nativeApi.saveSettings({
         profileName: trimmed,
-        shuffleMode: shuffleInput,
+        shuffleQuestions: shuffleQuestionsInput,
+        shuffleOptions: shuffleOptionsInput,
         uiFontSize: parsedFontSize,
         uiDensity: densityInput,
         mistakeLogMinMistakes: parsedMinMistakes,
+        mistakeLogMinFlags: parsedMinFlags,
         mistakeLogMaxCorrectnessPercentage: parsedMaxCorrectness,
         ...(pendingDir !== null ? { workingDirectory: pendingDir } : {}),
       });
@@ -183,14 +217,19 @@ export function SettingsPage() {
 
     setUserName(trimmed);
     setNameInput(trimmed);
-    setShuffleMode(shuffleInput);
+    setShuffleQuestions(shuffleQuestionsInput);
+    setShuffleOptions(shuffleOptionsInput);
+    setSavedShuffleQuestions(shuffleQuestionsInput);
+    setSavedShuffleOptions(shuffleOptionsInput);
     setFontSize(parsedFontSize);
     setDensity(densityInput);
     setMinMistakes(parsedMinMistakes);
+    setMinFlags(parsedMinFlags);
     setMaxCorrectnessPercentage(parsedMaxCorrectness);
     setSavedFontSize(parsedFontSize);
     setSavedDensity(densityInput);
     setSavedMinMistakes(parsedMinMistakes);
+    setSavedMinFlags(parsedMinFlags);
     setSavedMaxCorrectness(parsedMaxCorrectness);
 
     if (pendingDir !== null) {
@@ -289,17 +328,33 @@ export function SettingsPage() {
           <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p id="shuffle-mode-label" className="text-sm font-medium text-zinc-700">
-                  Shuffle mode
+                <p id="shuffle-questions-label" className="text-sm font-medium text-zinc-700">
+                  Shuffle questions
                 </p>
                 <p className="mt-0.5 text-sm text-zinc-500">
                   Randomize question order within each question type group.
                 </p>
               </div>
               <Switch
-                checked={shuffleInput}
-                onCheckedChange={setShuffleInput}
-                aria-labelledby="shuffle-mode-label"
+                checked={shuffleQuestionsInput}
+                onCheckedChange={setShuffleQuestionsInput}
+                aria-labelledby="shuffle-questions-label"
+                className="mt-0.5"
+              />
+            </div>
+            <div className="mt-4 flex items-start justify-between gap-4 border-t border-zinc-200 pt-4">
+              <div className="min-w-0">
+                <p id="shuffle-options-label" className="text-sm font-medium text-zinc-700">
+                  Shuffle options
+                </p>
+                <p className="mt-0.5 text-sm text-zinc-500">
+                  Randomize answer option order while keeping correct answers mapped.
+                </p>
+              </div>
+              <Switch
+                checked={shuffleOptionsInput}
+                onCheckedChange={setShuffleOptionsInput}
+                aria-labelledby="shuffle-options-label"
                 className="mt-0.5"
               />
             </div>
@@ -332,6 +387,27 @@ export function SettingsPage() {
               />
               {minMistakesError && (
                 <p className="mt-1.5 text-sm text-red-600">{minMistakesError}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="min-flags">Minimum flags per question</Label>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                Flagged questions are included only when they reach at least this many flags.
+              </p>
+              <Input
+                id="min-flags"
+                type="number"
+                min={1}
+                step={1}
+                value={minFlagsInput}
+                onChange={(e) => {
+                  setMinFlagsInput(e.target.value);
+                  setMinFlagsError(null);
+                }}
+                className="mt-3 max-w-xs"
+              />
+              {minFlagsError && (
+                <p className="mt-1.5 text-sm text-red-600">{minFlagsError}</p>
               )}
             </div>
             <div>

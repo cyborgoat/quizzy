@@ -62,10 +62,15 @@ function QuizSessionPage({
 }) {
   const navigate = useNavigate();
   const session = useQuizSession(quiz, config);
-  const { recordAttempt } = useGoals();
+  const { recordAttempt, goals } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const recordedRef = useRef(false);
+
+  const matchingGoal = useMemo(
+    () => goals.find((goal) => goal.quizId === quiz.id),
+    [goals, quiz.id],
+  );
 
   useEffect(() => {
     if (session.isComplete && config.mode === "scored" && !recordedRef.current) {
@@ -98,6 +103,17 @@ function QuizSessionPage({
           total={session.totalQuestions}
           modeLabel={sessionModeLabel(config, session.totalQuestions)}
           unansweredCount={unansweredCount}
+          goal={
+            matchingGoal
+              ? {
+                  id: matchingGoal.id,
+                  achieved:
+                    matchingGoal.targetScore === undefined ||
+                    Math.round((session.score / session.totalQuestions) * 100) >=
+                      matchingGoal.targetScore,
+                }
+              : undefined
+          }
           onRestart={session.restart}
         />
         <ReviewSummary questions={session.questions} answers={session.answers} />

@@ -33,6 +33,60 @@ function shuffleArray<T>(items: T[], random: () => number = Math.random) {
   return result;
 }
 
+function shuffledOptionOrder(length: number, random: () => number = Math.random): number[] {
+  return shuffleArray(
+    Array.from({ length }, (_, index) => index),
+    random,
+  );
+}
+
+function remapSingleChoiceQuestion(
+  question: Extract<QuizQuestion, { type: "single_choice" }>,
+  random: () => number,
+): Extract<QuizQuestion, { type: "single_choice" }> {
+  const order = shuffledOptionOrder(question.options.length, random);
+  const remappedAnswerIndex = order.indexOf(question.answerIndex);
+
+  return {
+    ...question,
+    options: order.map((index) => question.options[index]),
+    answerIndex: remappedAnswerIndex,
+  };
+}
+
+function remapMultipleChoiceQuestion(
+  question: Extract<QuizQuestion, { type: "multiple_choice" }>,
+  random: () => number,
+): Extract<QuizQuestion, { type: "multiple_choice" }> {
+  const order = shuffledOptionOrder(question.options.length, random);
+  const remappedAnswerIndices = question.answerIndices
+    .map((answerIndex) => order.indexOf(answerIndex))
+    .sort((a, b) => a - b);
+
+  return {
+    ...question,
+    options: order.map((index) => question.options[index]),
+    answerIndices: remappedAnswerIndices,
+  };
+}
+
+export function shuffleQuestionOptions(
+  questions: QuizQuestion[],
+  random: () => number = Math.random,
+) {
+  return questions.map((question) => {
+    if (question.type === "single_choice") {
+      return remapSingleChoiceQuestion(question, random);
+    }
+
+    if (question.type === "multiple_choice") {
+      return remapMultipleChoiceQuestion(question, random);
+    }
+
+    return question;
+  });
+}
+
 export function shuffleQuestionsWithinGroups(
   questions: QuizQuestion[],
   random: () => number = Math.random,
@@ -93,7 +147,8 @@ export function buildQuizSessionQuestions(
   options: {
     mode: "practice" | "scored";
     questionCount?: number;
-    shuffle: boolean;
+    shuffleQuestions: boolean;
+    shuffleOptions: boolean;
   },
   random: () => number = Math.random,
 ): QuizQuestion[] {
@@ -101,7 +156,11 @@ export function buildQuizSessionQuestions(
     options.mode === "practice" && options.questionCount != null
       ? selectPracticeQuestions(questions, options.questionCount)
       : questions;
-  return orderQuizQuestions(pool, options.shuffle, random);
+
+  const ordered = orderQuizQuestions(pool, options.shuffleQuestions, random);
+  if (!options.shuffleOptions) return ordered;
+
+  return shuffleQuestionOptions(ordered, random);
 }
 
 export type QuestionTypeGroup = {

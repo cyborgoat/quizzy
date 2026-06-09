@@ -1,4 +1,4 @@
-import { Home, RotateCcw } from "lucide-react";
+import { CheckCircle2, Home, RotateCcw, Target } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ export function ResultSummary({
   total,
   modeLabel,
   unansweredCount,
+  goal,
   onRestart,
 }: {
   quiz: Quiz;
@@ -17,6 +18,10 @@ export function ResultSummary({
   total: number;
   modeLabel?: string;
   unansweredCount: number;
+  goal?: {
+    id: string;
+    achieved: boolean;
+  };
   onRestart: () => void;
 }) {
   const navigate = useNavigate();
@@ -50,11 +55,33 @@ export function ResultSummary({
         <ResultMetric label="Unanswered" value={String(unansweredCount)} />
       </div>
 
+      {goal && (
+        <div className="border-t border-zinc-200 bg-zinc-50 px-4 py-3">
+          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-800">
+            {goal.achieved ? (
+              <CheckCircle2 className="size-4 text-emerald-600" />
+            ) : (
+              <Target className="size-4 text-amber-600" />
+            )}
+            Goal status: {goal.achieved ? "Achieved" : "Not achieved yet"}
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2 border-t border-zinc-200 p-4">
         <Button onClick={onRestart}>
           <RotateCcw className="size-4" />
           Restart quiz
         </Button>
+        {goal && (
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/goals", search: { expand: goal.id } })}
+          >
+            <Target className="size-4" />
+            View goal attempts
+          </Button>
+        )}
         <Button variant="outline" onClick={() => navigate({ to: "/" })}>
           <Home className="size-4" />
           Return home

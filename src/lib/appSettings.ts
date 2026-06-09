@@ -7,7 +7,8 @@ export async function loadAppSettings(): Promise<AppSettings> {
   const settings = await nativeApi.getSettings();
   const updates: {
     profileName?: string;
-    shuffleMode?: boolean;
+    shuffleQuestions?: boolean;
+    shuffleOptions?: boolean;
   } = {};
 
   const legacyName = localStorage.getItem(LEGACY_NAME_KEY);
@@ -17,8 +18,8 @@ export async function loadAppSettings(): Promise<AppSettings> {
   }
 
   const legacyShuffle = localStorage.getItem(LEGACY_SHUFFLE_KEY);
-  if (legacyShuffle === "true" && !settings.shuffleMode) {
-    updates.shuffleMode = true;
+  if (legacyShuffle === "true" && !settings.shuffleQuestions && !settings.shuffleOptions) {
+    updates.shuffleQuestions = true;
     localStorage.removeItem(LEGACY_SHUFFLE_KEY);
   }
 
@@ -27,5 +28,10 @@ export async function loadAppSettings(): Promise<AppSettings> {
   }
 
   await nativeApi.saveSettings(updates);
-  return { ...settings, ...updates };
+  return {
+    ...settings,
+    ...updates,
+    shuffleQuestions: updates.shuffleQuestions ?? settings.shuffleQuestions,
+    shuffleOptions: updates.shuffleOptions ?? settings.shuffleOptions,
+  };
 }

@@ -10,21 +10,23 @@ import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
 function sessionQuestionOptions(
   config: QuizSessionConfig,
-  shuffleMode: boolean,
+  shuffleQuestions: boolean,
+  shuffleOptions: boolean,
 ) {
   return {
     mode: config.mode,
     questionCount: config.questionCount,
-    shuffle: shuffleMode,
+    shuffleQuestions,
+    shuffleOptions,
   };
 }
 
 export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
-  const { shuffleMode } = useQuizPreferences();
+  const { shuffleQuestions, shuffleOptions } = useQuizPreferences();
   const [questions, setQuestions] = useState(() =>
     buildQuizSessionQuestions(
       quiz.questions,
-      sessionQuestionOptions(config, shuffleMode),
+      sessionQuestionOptions(config, shuffleQuestions, shuffleOptions),
     ),
   );
   const [state, dispatch] = useReducer(
@@ -110,7 +112,7 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
       setQuestions(
         buildQuizSessionQuestions(
           quiz.questions,
-          sessionQuestionOptions(config, shuffleMode),
+          sessionQuestionOptions(config, shuffleQuestions, shuffleOptions),
         ),
       );
       dispatch({ type: "restart" });

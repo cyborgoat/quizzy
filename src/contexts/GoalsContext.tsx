@@ -92,8 +92,8 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   async function recordAttempt(quizId: string, input: AttemptInput) {
-    const matching = goals.filter((goal) => goal.quizId === quizId);
-    if (matching.length === 0) return;
+    const targetGoal = goals.find((item) => item.quizId === quizId);
+    if (!targetGoal) return;
 
     const attempt: GoalAttempt = {
       id: generateId(),
@@ -106,13 +106,11 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      await Promise.all(
-        matching.map((goal) => nativeApi.saveGoalAttempt(goal.id, attempt)),
-      );
+      await nativeApi.saveGoalAttempt(targetGoal.id, attempt);
       const summary = toAttemptSummary(attempt);
       setGoals((current) =>
         current.map((goal) =>
-          goal.quizId === quizId
+          goal.id === targetGoal.id
             ? { ...goal, attempts: [...goal.attempts, summary] }
             : goal,
         ),

@@ -8,11 +8,11 @@ import {
   summarizeMistakeEntries,
   type AttemptQuestionData,
 } from "@/lib/mistakeLog";
-import type { MistakeEntry, MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
+import type { MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
 
 export function useMistakeLog() {
   const { goals, isLoading: goalsLoading, loadGoalAttempt } = useGoals();
-  const { minMistakes, maxCorrectnessPercentage } = useMistakeLogSettings();
+  const { minMistakes, minFlags, maxCorrectnessPercentage } = useMistakeLogSettings();
   const [attemptData, setAttemptData] = useState<AttemptQuestionData[]>([]);
   const [isLoadingAttempts, setIsLoadingAttempts] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,8 +62,8 @@ export function useMistakeLog() {
   }, [goalsLoading, loadAttempts]);
 
   const thresholds = useMemo(
-    () => ({ minMistakes, maxCorrectnessPercentage }),
-    [minMistakes, maxCorrectnessPercentage],
+    () => ({ minMistakes, minFlags, maxCorrectnessPercentage }),
+    [minMistakes, minFlags, maxCorrectnessPercentage],
   );
 
   const qualifyingEntries = useMemo(
@@ -74,7 +74,9 @@ export function useMistakeLog() {
   const rawEntries = useMemo(() => aggregateQuestionResults(attemptData), [attemptData]);
 
   const hasScoredAttempts = attemptData.length > 0;
-  const hasAnyMistakes = rawEntries.some((entry) => entry.mistakeCount > 0);
+  const hasAnyMistakes = rawEntries.some(
+    (entry) => entry.mistakeCount > 0 || entry.flaggedCount > 0,
+  );
 
   const summary: MistakeLogSummary = useMemo(
     () => summarizeMistakeEntries(qualifyingEntries),
@@ -96,11 +98,6 @@ export function useMistakeLog() {
       .sort((a, b) => a.quizTitle.localeCompare(b.quizTitle));
   }, [qualifyingEntries]);
 
-  function filterByQuiz(entries: MistakeEntry[], quizId?: string): MistakeEntry[] {
-    if (!quizId) return entries;
-    return entries.filter((entry) => entry.quizId === quizId);
-  }
-
   return {
     qualifyingEntries,
     rawEntries,
@@ -112,6 +109,5 @@ export function useMistakeLog() {
     isLoading: goalsLoading || isLoadingAttempts,
     error,
     refetch: () => loadAttempts(false),
-    filterByQuiz,
   };
 }

@@ -52,8 +52,9 @@ its own `SidebarProvider` for the question navigator.
 
 ### User profile and preferences state
 
-`UserProfileProvider` and `QuizPreferencesProvider` load profile name and shuffle
-mode from `settings.json` via `loadAppSettings`. `MistakeLogSettingsProvider`
+`UserProfileProvider` and `QuizPreferencesProvider` load profile name and split
+shuffle preferences (question order and option order) from `settings.json` via
+`loadAppSettings`. `MistakeLogSettingsProvider`
 loads Mistake Log threshold settings from the same file. Settings changes are
 committed through `nativeApi.saveSettings` on the Settings page; providers update
 their in-memory state after a successful save.
@@ -170,7 +171,7 @@ managed directly through the system file manager.
    new directory in `SettingsPage`.
 2. Changes are staged in local component state; nothing is written yet.
 3. Clicking Save validates inputs and calls `nativeApi.saveSettings`.
-4. Providers update in-memory state for profile, shuffle mode, and Mistake Log
+4. Providers update in-memory state for profile, shuffle preferences, and Mistake Log
    thresholds.
 5. If a new directory was staged, React rescans the working directory.
 6. A success toast confirms the save.
@@ -190,7 +191,7 @@ managed directly through the system file manager.
    `QuizStartScreen`. Practice passes `?mode=practice&count=N`; scored passes
    `?mode=scored`.
 2. `useQuizSession` selects a type-balanced subset for practice (or all questions
-   for scored), then applies order/shuffle settings.
+  for scored), then applies question-order and option-order shuffle settings.
 3. Editable drafts and flags are stored per question.
 4. Direct, previous, and next navigation preserve those drafts.
 5. Final submission freezes one answer record per question in the session.
@@ -219,7 +220,8 @@ managed directly through the system file manager.
 1. The user opens `/mistakes` or `/mistakes?quizId=...`.
 2. `useMistakeLog` loads full attempt payloads for all scored attempts linked to
    goals.
-3. Entries are filtered by configured thresholds and sorted by mistake frequency.
+3. Entries are filtered by configured thresholds, with flagged questions always
+  included, and sorted by flagged count then mistake frequency.
 4. Clicking a row opens `MistakeReviewDrawer`, which loads the live question
    definition from the quiz library and shows review UI with the most recent
    incorrect answer.

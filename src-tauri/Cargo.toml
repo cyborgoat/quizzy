@@ -1,6 +1,6 @@
 [package]
 name = "quizzy"
-version = "0.1.7"
+version = "0.1.8"
 description = "A local-file desktop quiz application"
 authors = ["Quizzy contributors"]
 edition = "2021"

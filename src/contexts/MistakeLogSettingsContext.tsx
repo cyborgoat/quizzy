@@ -4,11 +4,13 @@ import { loadAppSettings } from "@/lib/appSettings";
 
 export function MistakeLogSettingsProvider({ children }: { children: ReactNode }) {
   const [minMistakes, setMinMistakesState] = useState(1);
+  const [minFlags, setMinFlagsState] = useState(1);
   const [maxCorrectnessPercentage, setMaxCorrectnessPercentageState] = useState(100);
 
   useEffect(() => {
     void loadAppSettings().then((settings) => {
       setMinMistakesState(settings.mistakeLogMinMistakes);
+      setMinFlagsState(settings.mistakeLogMinFlags);
       setMaxCorrectnessPercentageState(settings.mistakeLogMaxCorrectnessPercentage);
     });
   }, []);
@@ -21,9 +23,20 @@ export function MistakeLogSettingsProvider({ children }: { children: ReactNode }
     setMaxCorrectnessPercentageState(value);
   }
 
+  function setMinFlags(value: number) {
+    setMinFlagsState(value);
+  }
+
   return (
     <MistakeLogSettingsContext.Provider
-      value={{ minMistakes, maxCorrectnessPercentage, setMinMistakes, setMaxCorrectnessPercentage }}
+      value={{
+        minMistakes,
+        minFlags,
+        maxCorrectnessPercentage,
+        setMinMistakes,
+        setMinFlags,
+        setMaxCorrectnessPercentage,
+      }}
     >
       {children}
     </MistakeLogSettingsContext.Provider>

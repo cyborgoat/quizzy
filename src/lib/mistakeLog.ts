@@ -18,6 +18,7 @@ export function meetsThreshold(
   entry: Omit<MistakeEntry, "meetsThreshold">,
   thresholds: MistakeLogThresholds,
 ): boolean {
+  if (entry.flaggedCount >= thresholds.minFlags) return true;
   if (entry.mistakeCount === 0) return false;
   return (
     entry.mistakeCount >= thresholds.minMistakes &&
@@ -27,6 +28,7 @@ export function meetsThreshold(
 
 export function sortMistakeEntries(entries: MistakeEntry[]): MistakeEntry[] {
   return [...entries].sort((a, b) => {
+    if (b.flaggedCount !== a.flaggedCount) return b.flaggedCount - a.flaggedCount;
     if (b.mistakeCount !== a.mistakeCount) return b.mistakeCount - a.mistakeCount;
     if (a.correctnessPercentage !== b.correctnessPercentage) {
       return a.correctnessPercentage - b.correctnessPercentage;
@@ -48,8 +50,10 @@ export function aggregateQuestionResults(
       questionId: string;
       prompt: string;
       mistakeCount: number;
+      flaggedCount: number;
       totalAttempts: number;
       lastMistakenAt: string | null;
+      lastFlaggedAt: string | null;
       lastPromptAt: string;
       lastIncorrectAnswer?: SubmittedAnswer;
     }
@@ -66,8 +70,10 @@ export function aggregateQuestionResults(
           questionId: result.questionId,
           prompt: result.prompt,
           mistakeCount: 0,
+          flaggedCount: 0,
           totalAttempts: 0,
           lastMistakenAt: null,
+          lastFlaggedAt: null,
           lastPromptAt: attempt.takenAt,
         };
         map.set(key, row);
@@ -85,6 +91,13 @@ export function aggregateQuestionResults(
           row.lastIncorrectAnswer = result.answer;
         }
       }
+
+      if (result.flagged) {
+        row.flaggedCount += 1;
+        if (!row.lastFlaggedAt || attempt.takenAt > row.lastFlaggedAt) {
+          row.lastFlaggedAt = attempt.takenAt;
+        }
+      }
     }
   }
 
@@ -94,6 +107,7 @@ export function aggregateQuestionResults(
     questionId: row.questionId,
     prompt: row.prompt,
     mistakeCount: row.mistakeCount,
+    flaggedCount: row.flaggedCount,
     totalAttempts: row.totalAttempts,
     correctCount: row.totalAttempts - row.mistakeCount,
     correctnessPercentage:
@@ -101,6 +115,7 @@ export function aggregateQuestionResults(
         ? Math.round(((row.totalAttempts - row.mistakeCount) / row.totalAttempts) * 100)
         : 0,
     lastMistakenAt: row.lastMistakenAt,
+    lastFlaggedAt: row.lastFlaggedAt,
     lastIncorrectAnswer: row.lastIncorrectAnswer,
   }));
 }

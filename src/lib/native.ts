@@ -5,8 +5,10 @@ export type AppSettings = {
   workingDirectory: string | null;
   workingDirectoryAvailable: boolean;
   profileName: string;
-  shuffleMode: boolean;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   mistakeLogMinMistakes: number;
+  mistakeLogMinFlags: number;
   mistakeLogMaxCorrectnessPercentage: number;
   uiFontSize: number;
   uiDensity: string;
@@ -15,8 +17,10 @@ export type AppSettings = {
 export type SaveSettingsRequest = {
   workingDirectory?: string;
   profileName?: string;
-  shuffleMode?: boolean;
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
   mistakeLogMinMistakes?: number;
+  mistakeLogMinFlags?: number;
   mistakeLogMaxCorrectnessPercentage?: number;
   uiFontSize?: number;
   uiDensity?: string;

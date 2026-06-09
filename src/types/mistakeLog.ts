@@ -6,15 +6,18 @@ export type MistakeEntry = {
   questionId: string;
   prompt: string;
   mistakeCount: number;
+  flaggedCount: number;
   totalAttempts: number;
   correctCount: number;
   correctnessPercentage: number;
   lastMistakenAt: string | null;
+  lastFlaggedAt: string | null;
   lastIncorrectAnswer?: SubmittedAnswer;
 };
 
 export type MistakeLogThresholds = {
   minMistakes: number;
+  minFlags: number;
   maxCorrectnessPercentage: number;
 };
 

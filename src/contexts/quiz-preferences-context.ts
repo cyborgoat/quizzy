@@ -1,8 +1,10 @@
 import { createContext } from "react";
 
 export type QuizPreferencesContextValue = {
-  shuffleMode: boolean;
-  setShuffleMode: (enabled: boolean) => void;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  setShuffleQuestions: (enabled: boolean) => void;
+  setShuffleOptions: (enabled: boolean) => void;
 };
 
 export const QuizPreferencesContext =

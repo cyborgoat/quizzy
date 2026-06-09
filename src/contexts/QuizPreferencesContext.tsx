@@ -3,20 +3,33 @@ import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
 import { loadAppSettings } from "@/lib/appSettings";
 
 export function QuizPreferencesProvider({ children }: { children: ReactNode }) {
-  const [shuffleMode, setShuffleModeState] = useState(false);
+  const [shuffleQuestions, setShuffleQuestionsState] = useState(false);
+  const [shuffleOptions, setShuffleOptionsState] = useState(false);
 
   useEffect(() => {
     void loadAppSettings().then((settings) => {
-      setShuffleModeState(settings.shuffleMode);
+      setShuffleQuestionsState(settings.shuffleQuestions);
+      setShuffleOptionsState(settings.shuffleOptions);
     });
   }, []);
 
-  function setShuffleMode(enabled: boolean) {
-    setShuffleModeState(enabled);
+  function setShuffleQuestions(enabled: boolean) {
+    setShuffleQuestionsState(enabled);
+  }
+
+  function setShuffleOptions(enabled: boolean) {
+    setShuffleOptionsState(enabled);
   }
 
   return (
-    <QuizPreferencesContext.Provider value={{ shuffleMode, setShuffleMode }}>
+    <QuizPreferencesContext.Provider
+      value={{
+        shuffleQuestions,
+        shuffleOptions,
+        setShuffleQuestions,
+        setShuffleOptions,
+      }}
+    >
       {children}
     </QuizPreferencesContext.Provider>
   );

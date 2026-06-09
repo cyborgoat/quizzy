@@ -16,6 +16,10 @@ fn default_mistake_log_min_mistakes() -> u32 {
     1
 }
 
+fn default_mistake_log_min_flags() -> u32 {
+    1
+}
+
 fn default_mistake_log_max_correctness_percentage() -> u32 {
     100
 }
@@ -116,9 +120,15 @@ struct Settings {
     #[serde(default)]
     profile_name: String,
     #[serde(default)]
-    shuffle_mode: bool,
+    shuffle_questions: bool,
+    #[serde(default)]
+    shuffle_options: bool,
+    #[serde(default, alias = "shuffleMode", skip_serializing)]
+    legacy_shuffle_mode: Option<bool>,
     #[serde(default = "default_mistake_log_min_mistakes")]
     mistake_log_min_mistakes: u32,
+    #[serde(default = "default_mistake_log_min_flags")]
+    mistake_log_min_flags: u32,
     #[serde(default = "default_mistake_log_max_correctness_percentage")]
     mistake_log_max_correctness_percentage: u32,
     #[serde(default = "default_ui_font_size", deserialize_with = "deserialize_ui_font_size")]
@@ -133,8 +143,10 @@ struct AppSettings {
     working_directory: Option<String>,
     working_directory_available: bool,
     profile_name: String,
-    shuffle_mode: bool,
+    shuffle_questions: bool,
+    shuffle_options: bool,
     mistake_log_min_mistakes: u32,
+    mistake_log_min_flags: u32,
     mistake_log_max_correctness_percentage: u32,
     ui_font_size: u32,
     ui_density: String,
@@ -145,8 +157,12 @@ struct AppSettings {
 struct SaveSettingsRequest {
     working_directory: Option<String>,
     profile_name: Option<String>,
-    shuffle_mode: Option<bool>,
+    shuffle_questions: Option<bool>,
+    shuffle_options: Option<bool>,
+    #[serde(alias = "shuffleMode")]
+    legacy_shuffle_mode: Option<bool>,
     mistake_log_min_mistakes: Option<u32>,
+    mistake_log_min_flags: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
     ui_font_size: Option<u32>,
     ui_density: Option<String>,
@@ -178,8 +194,17 @@ fn read_settings(app: &AppHandle) -> Result<Settings, String> {
     }
     let contents = fs::read_to_string(path)
         .map_err(|error| format!("Unable to read Quizzy settings: {error}"))?;
-    serde_json::from_str(&strip_utf8_bom(contents))
-        .map_err(|error| format!("Quizzy settings are invalid: {error}"))
+    let mut settings: Settings = serde_json::from_str(&strip_utf8_bom(contents))
+        .map_err(|error| format!("Quizzy settings are invalid: {error}"))?;
+
+    if settings.legacy_shuffle_mode == Some(true)
+        && !settings.shuffle_questions
+        && !settings.shuffle_options
+    {
+        settings.shuffle_questions = true;
+    }
+
+    Ok(settings)
 }
 
 fn is_json_extension(extension: &str) -> bool {
@@ -284,8 +309,10 @@ fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         working_directory: settings.working_directory,
         working_directory_available,
         profile_name: settings.profile_name,
-        shuffle_mode: settings.shuffle_mode,
+        shuffle_questions: settings.shuffle_questions,
+        shuffle_options: settings.shuffle_options,
         mistake_log_min_mistakes: settings.mistake_log_min_mistakes,
+        mistake_log_min_flags: settings.mistake_log_min_flags,
         mistake_log_max_correctness_percentage: settings.mistake_log_max_correctness_percentage,
         ui_font_size: settings.ui_font_size,
         ui_density: settings.ui_density,
@@ -300,8 +327,14 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
         settings.profile_name = profile_name;
     }
 
-    if let Some(shuffle_mode) = request.shuffle_mode {
-        settings.shuffle_mode = shuffle_mode;
+    if let Some(shuffle_questions) = request.shuffle_questions {
+        settings.shuffle_questions = shuffle_questions;
+    } else if let Some(legacy_shuffle_mode) = request.legacy_shuffle_mode {
+        settings.shuffle_questions = legacy_shuffle_mode;
+    }
+
+    if let Some(shuffle_options) = request.shuffle_options {
+        settings.shuffle_options = shuffle_options;
     }
 
     if let Some(min_mistakes) = request.mistake_log_min_mistakes {
@@ -309,6 +342,13 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
             return Err("Minimum mistakes per question must be at least 1.".to_string());
         }
         settings.mistake_log_min_mistakes = min_mistakes;
+    }
+
+    if let Some(min_flags) = request.mistake_log_min_flags {
+        if min_flags < 1 {
+            return Err("Minimum flags per question must be at least 1.".to_string());
+        }
+        settings.mistake_log_min_flags = min_flags;
     }
 
     if let Some(max_correctness) = request.mistake_log_max_correctness_percentage {
