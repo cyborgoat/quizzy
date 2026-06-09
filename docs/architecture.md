@@ -118,17 +118,21 @@ Other quiz components are split by responsibility:
 - Question content and answer rows
 - Result summary and answer review
 
-Goal components cover accordion goal cards, attempt history, score summaries,
-and the dedicated attempt review page layout.
+Goal components cover shared add/edit dialogs, accordion goal cards, attempt
+history, score summaries, and the dedicated attempt review page layout. Quiz
+cards reuse the goal dialogs so goal changes do not require navigation.
 
 ### Goals state
 
 `GoalsProvider` loads goals and attempt summaries from the native layer on
 startup and refreshes them in the background when the window regains focus. It
-exposes CRUD operations for goals and persists completed attempts when a quiz
-submission matches one or more goals. Full attempt payloads (including
-per-question results) are loaded on demand for the attempt review page and the
-Mistake Log.
+exposes CRUD operations for goals, enforces one goal per quiz in the frontend,
+and persists completed attempts when a quiz submission matches a goal. Full
+attempt payloads (including per-question results) are loaded on demand for the
+attempt review page and the Mistake Log.
+
+The native `upsert_goal` command independently enforces the one-goal-per-quiz
+invariant so callers cannot bypass it.
 
 `useMistakeLog` aggregates scored attempt question results across goals,
 applies Mistake Log thresholds, and sorts mistakes by frequency. It reloads
@@ -195,8 +199,8 @@ performed by custom Rust commands.
 5. Final submission freezes one answer record per question in the session.
 6. Pure scoring functions evaluate answered questions; blanks score as incorrect.
 7. The frozen records drive the result and review screens.
-8. If the session mode is **scored** and the quiz matches any goals,
-   `GoalsProvider` saves an attempt for each.
+8. If the session mode is **scored** and the quiz has a goal,
+   `GoalsProvider` saves an attempt for it.
 
 ### Attempt review
 
@@ -217,7 +221,7 @@ performed by custom Rust commands.
 
 1. The user opens `/mistakes` or `/mistakes?quizId=...`.
 2. `useMistakeLog` loads full attempt payloads for all scored attempts linked to
-   goals, deduplicating shared attempts across goals for the same quiz.
+   goals.
 3. Entries are filtered by configured thresholds and sorted by mistake frequency.
 4. Clicking a row opens `MistakeReviewDrawer`, which loads the live question
    definition from the quiz library and shows review UI with the most recent

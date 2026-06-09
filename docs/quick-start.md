@@ -39,9 +39,10 @@ application, and opens the desktop window.
 6. Answer in any order, use flags for questions to revisit, and submit the quiz
    when ready.
 7. Review the final score, correct answers, and explanations.
-8. Optionally create a **Goal** on the Goals page to track target scores and
-   review saved attempts later. Only **Scored attempt** completions are saved.
-9. Open **Mistake Log** from the sidebar (or **Mistakes Log** on a quiz card) to
+8. Optionally create a **Goal** from the Goals page or the target icon on a quiz
+   card. Each quiz can have one goal. Only **Scored attempt** completions are
+   saved.
+9. Open **Mistake Log** from the sidebar to
    review questions missed in scored attempts. Adjust thresholds in **Settings** if
    needed.
 

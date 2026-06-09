@@ -296,7 +296,7 @@
       "type": "true_false",
       "prompt": "A scored quiz attempt in Quizzy is recorded to goals, while a practice session with a reduced question count is not.",
       "answer": true,
-      "explanation": "Only scored mode persists attempts to matching goals after submission."
+      "explanation": "Only scored mode persists attempts to the matching goal after submission."
     },
     {
       "id": "stress-sc-13",

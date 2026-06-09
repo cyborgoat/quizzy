@@ -74,8 +74,6 @@ pub struct GoalMeta {
     pub description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_score: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deadline: Option<String>,
     pub created_at: String,
     pub completed: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -99,8 +97,6 @@ struct LegacyGoal {
     description: String,
     #[serde(default)]
     target_score: Option<u32>,
-    #[serde(default)]
-    deadline: Option<String>,
     created_at: String,
     completed: bool,
     #[serde(default)]
@@ -117,7 +113,6 @@ impl LegacyGoal {
             quiz_title: self.quiz_title.clone(),
             description: self.description.clone(),
             target_score: self.target_score,
-            deadline: self.deadline.clone(),
             created_at: self.created_at.clone(),
             completed: self.completed,
             completed_at: self.completed_at.clone(),
@@ -217,6 +212,40 @@ fn read_goal_meta(goal_dir: &Path) -> Result<GoalMeta, String> {
     read_json(&goal_dir.join(GOAL_META_FILE))
 }
 
+fn ensure_unique_quiz_goal(root: &Path, meta: &GoalMeta) -> Result<(), String> {
+    if !root.exists() {
+        return Ok(());
+    }
+
+    for entry in
+        fs::read_dir(root).map_err(|error| format!("Unable to read goals directory: {error}"))?
+    {
+        let entry =
+            entry.map_err(|error| format!("Unable to inspect a goals directory entry: {error}"))?;
+        if !entry
+            .file_type()
+            .map_err(|error| error.to_string())?
+            .is_dir()
+        {
+            continue;
+        }
+
+        let existing_path = entry.path().join(GOAL_META_FILE);
+        if !existing_path.exists() {
+            continue;
+        }
+        let existing: GoalMeta = read_json(&existing_path)?;
+        if existing.quiz_id == meta.quiz_id && existing.id != meta.id {
+            return Err(format!(
+                "The quiz \"{}\" already has a goal.",
+                meta.quiz_title
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 fn persist_attempt(goal_dir: &Path, attempt: &GoalAttempt) -> Result<(), String> {
     validate_storage_id(&attempt.id)?;
     let attempt_path = attempts_directory(goal_dir).join(format!("{}.json", attempt.id));
@@ -303,6 +332,7 @@ pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
 pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
     migrate_legacy_goals(app)?;
     let root = goals_root(app)?;
+    ensure_unique_quiz_goal(&root, &meta)?;
     let goal_dir = goal_directory(&root, &meta.id)?;
     fs::create_dir_all(&goal_dir)
         .map_err(|error| format!("Unable to create {}: {error}", goal_dir.display()))?;
@@ -391,9 +421,9 @@ fn delete_attempt_from_goal_dir(goal_dir: &Path, attempt_id: &str) -> Result<(),
 #[cfg(test)]
 mod tests {
     use super::{
-        attempt_summary, attempts_directory, delete_attempt_from_goal_dir,
-        persist_attempt, read_attempt_summaries, AttemptSummary, GoalAttempt,
-        QuestionResult,
+        attempt_summary, attempts_directory, delete_attempt_from_goal_dir, ensure_unique_quiz_goal,
+        persist_attempt, read_attempt_summaries, write_goal_meta, AttemptSummary, GoalAttempt,
+        GoalMeta, QuestionResult,
     };
     use std::fs;
 
@@ -443,10 +473,7 @@ mod tests {
 
     #[test]
     fn delete_attempt_from_goal_dir_removes_file_and_index_entry() {
-        let temp = std::env::temp_dir().join(format!(
-            "quizzy-goals-test-{}",
-            std::process::id()
-        ));
+        let temp = std::env::temp_dir().join(format!("quizzy-goals-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&temp);
         fs::create_dir_all(&temp).expect("create temp goal dir");
 
@@ -459,17 +486,63 @@ mod tests {
             question_results: vec![],
         };
         persist_attempt(&temp, &attempt).expect("persist attempt");
-        assert!(attempts_directory(&temp)
-            .join("attempt-1.json")
-            .exists());
+        assert!(attempts_directory(&temp).join("attempt-1.json").exists());
 
         delete_attempt_from_goal_dir(&temp, "attempt-1").expect("delete attempt");
 
-        assert!(!attempts_directory(&temp)
-            .join("attempt-1.json")
-            .exists());
+        assert!(!attempts_directory(&temp).join("attempt-1.json").exists());
         let summaries = read_attempt_summaries(&temp).expect("read summaries");
         assert!(summaries.is_empty());
+
+        let _ = fs::remove_dir_all(&temp);
+    }
+
+    fn goal_meta(id: &str, quiz_id: &str) -> GoalMeta {
+        GoalMeta {
+            id: id.into(),
+            quiz_id: quiz_id.into(),
+            quiz_title: "Quiz".into(),
+            description: String::new(),
+            target_score: None,
+            created_at: "2026-06-09T00:00:00.000Z".into(),
+            completed: false,
+            completed_at: None,
+        }
+    }
+
+    #[test]
+    fn unique_quiz_goal_allows_updating_the_same_goal() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-unique-goal-update-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        let goal_dir = temp.join("goal-1");
+        fs::create_dir_all(&goal_dir).expect("create goal dir");
+        let existing = goal_meta("goal-1", "quiz-1");
+        write_goal_meta(&goal_dir, &existing).expect("write goal");
+
+        assert!(ensure_unique_quiz_goal(&temp, &existing).is_ok());
+
+        let _ = fs::remove_dir_all(&temp);
+    }
+
+    #[test]
+    fn unique_quiz_goal_rejects_a_second_goal_for_the_same_quiz() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-unique-goal-create-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        let goal_dir = temp.join("goal-1");
+        fs::create_dir_all(&goal_dir).expect("create goal dir");
+        write_goal_meta(&goal_dir, &goal_meta("goal-1", "quiz-1")).expect("write goal");
+
+        let result = ensure_unique_quiz_goal(&temp, &goal_meta("goal-2", "quiz-1"));
+        assert_eq!(
+            result.expect_err("duplicate goal should fail"),
+            "The quiz \"Quiz\" already has a goal."
+        );
 
         let _ = fs::remove_dir_all(&temp);
     }

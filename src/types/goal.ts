@@ -27,7 +27,6 @@ export type Goal = {
   quizTitle: string;
   description: string;
   targetScore?: number;
-  deadline?: string;
   createdAt: string;
   completed: boolean;
   completedAt?: string;
@@ -37,20 +36,17 @@ export type Goal = {
 export type GoalDetailsFormValues = {
   description: string;
   targetScore: string;
-  deadline: string;
 };
 
 export type GoalDetailsInput = {
   description: string;
   targetScore?: number;
-  deadline?: string;
 };
 
 export function goalToDetailsForm(goal: Goal): GoalDetailsFormValues {
   return {
     description: goal.description,
     targetScore: goal.targetScore !== undefined ? String(goal.targetScore) : "",
-    deadline: goal.deadline ?? "",
   };
 }
 
@@ -59,7 +55,6 @@ export function detailsFormToGoalInput(values: GoalDetailsFormValues): GoalDetai
   return {
     description: values.description.trim(),
     targetScore: targetScore ? Number(targetScore) : undefined,
-    deadline: values.deadline || undefined,
   };
 }
 
@@ -81,7 +76,6 @@ export function goalMeta(goal: Goal): Omit<Goal, "attempts"> {
     quizTitle: goal.quizTitle,
     description: goal.description,
     targetScore: goal.targetScore,
-    deadline: goal.deadline,
     createdAt: goal.createdAt,
     completed: goal.completed,
     completedAt: goal.completedAt,

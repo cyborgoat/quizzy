@@ -20,10 +20,10 @@ Quizzy stores application data in the Tauri app-config directory:
 (such as shuffle mode), and Mistake Log thresholds (`mistakeLogMinMistakes` and
 `mistakeLogMaxCorrectnessPercentage`).
 
-Each goal is stored in its own directory. `goal.json` contains goal
-metadata. Attempt summaries live in `attempts/index.json`, and each full
-attempt (including per-question results) is stored separately as
-`attempts/<attempt-id>.json`.
+Each quiz can have at most one goal. Each goal is stored in its own directory.
+`goal.json` contains its target score and description metadata. Attempt
+summaries live in `attempts/index.json`, and each full attempt (including
+per-question results) is stored separately as `attempts/<attempt-id>.json`.
 
 Legacy single-file `goals.json` data is migrated into this layout on first
 load and archived as `goals.json.bak`.
@@ -44,7 +44,7 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `write_imported_quiz` | Write or replace a validated quiz file |
 | `delete_quiz_file` | Delete one named quiz file |
 | `list_goals` | Load saved goals with attempt summaries |
-| `upsert_goal` | Create or update one goal's metadata |
+| `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz |
 | `delete_goal` | Delete a goal and its attempt files |
 | `save_goal_attempt` | Persist one attempt and update its summary index |
 | `get_goal_attempt` | Load one full attempt with question results |

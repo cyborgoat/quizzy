@@ -92,8 +92,8 @@ export function QuizStartScreen({
         {mode === "scored" && (
           <p className="mt-6 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs leading-5 text-zinc-600">
             You will answer all {totalQuestions} question
-            {totalQuestions !== 1 ? "s" : ""}. Your result will be saved to any
-            matching goals.
+            {totalQuestions !== 1 ? "s" : ""}. Your result will be saved to this
+            quiz&apos;s goal, if one exists.
           </p>
         )}
 

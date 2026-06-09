@@ -17,13 +17,15 @@ import {
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import { detailsFormToGoalInput, type GoalDetailsFormValues } from "@/types/goal";
+import {
+  detailsFormToGoalInput,
+  type GoalDetailsFormValues,
+} from "@/types/goal";
 
 const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
   quizId: "",
   description: "",
   targetScore: "",
-  deadline: "",
 };
 
 export function GoalsPage() {
@@ -32,12 +34,16 @@ export function GoalsPage() {
   const { expand: expandParam } = Route.useSearch();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
+  const [isCreating, setIsCreating] = useState(false);
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
   const defaultExpandedGoalId =
     expandParam && goals.some((goal) => goal.id === expandParam) ? expandParam : "";
 
   const activeGoals = goals.filter((g) => !g.completed);
   const completedGoals = goals.filter((g) => g.completed);
+  const availableQuizzes = quizzes.filter(
+    (quiz) => !goals.some((goal) => goal.quizId === quiz.quiz.id),
+  );
 
   const accordionValue =
     expandedGoalId !== null ? expandedGoalId : defaultExpandedGoalId;
@@ -50,11 +56,14 @@ export function GoalsPage() {
     if (!form.quizId) return;
     const quiz = quizzes.find((q) => q.quiz.id === form.quizId);
     if (!quiz) return;
-    await addGoal({
+    setIsCreating(true);
+    const created = await addGoal({
       quizId: form.quizId,
       quizTitle: quiz.quiz.title,
       ...detailsFormToGoalInput(form),
     });
+    setIsCreating(false);
+    if (!created) return;
     setForm(DEFAULT_FORM);
     setShowForm(false);
   }
@@ -75,7 +84,7 @@ export function GoalsPage() {
             Set quiz goals to track your progress and stay motivated.
           </p>
         </div>
-        {!showForm && (
+        {!showForm && availableQuizzes.length > 0 && (
           <Button size="sm" onClick={() => setShowForm(true)}>
             <Plus className="size-4" />
             New goal
@@ -91,6 +100,7 @@ export function GoalsPage() {
               size="icon"
               variant="ghost"
               className="size-7 text-zinc-500"
+              disabled={isCreating}
               onClick={() => {
                 setShowForm(false);
                 setForm(DEFAULT_FORM);
@@ -108,12 +118,13 @@ export function GoalsPage() {
               <Select
                 value={form.quizId || undefined}
                 onValueChange={(value) => handleField("quizId", value)}
+                disabled={isCreating}
               >
                 <SelectTrigger id="new-goal-quiz" className="mt-1.5 sm:max-w-xs">
                   <SelectValue placeholder="Select a quiz…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {quizzes.map((q) => (
+                  {availableQuizzes.map((q) => (
                     <SelectItem key={q.quiz.id} value={q.quiz.id}>
                       {q.quiz.title}
                     </SelectItem>
@@ -126,18 +137,20 @@ export function GoalsPage() {
               idPrefix="new-goal"
               values={form}
               onChange={handleField}
+              disabled={isCreating}
             />
           </div>
 
           <div className="mt-5 flex gap-2">
             <Button
               onClick={() => void handleCreate()}
-              disabled={!form.quizId}
+              disabled={!form.quizId || isCreating}
             >
-              Create goal
+              {isCreating ? "Creating..." : "Create goal"}
             </Button>
             <Button
               variant="outline"
+              disabled={isCreating}
               onClick={() => {
                 setShowForm(false);
                 setForm(DEFAULT_FORM);

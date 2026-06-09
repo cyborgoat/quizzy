@@ -9,6 +9,7 @@ import { QuizLibraryProvider } from "@/contexts/QuizLibraryContext";
 import { QuizPreferencesProvider } from "@/contexts/QuizPreferencesContext";
 import { UserProfileProvider } from "@/contexts/UserProfileContext";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "@/index.css";
 import "katex/dist/katex.min.css";
 
@@ -20,8 +21,10 @@ createRoot(document.getElementById("root")!).render(
           <MistakeLogSettingsProvider>
             <QuizLibraryProvider>
               <GoalsProvider>
-                <RouterProvider router={router} />
-                <Toaster position="bottom-right" />
+                <TooltipProvider>
+                  <RouterProvider router={router} />
+                  <Toaster position="bottom-right" />
+                </TooltipProvider>
               </GoalsProvider>
             </QuizLibraryProvider>
           </MistakeLogSettingsProvider>

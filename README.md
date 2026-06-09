@@ -41,8 +41,10 @@ npm run tauri build
 On first launch, open **Settings** from the sidebar to enter your name and select
 a working directory. Click **Save**, then return to the home page to import quiz
 files and get started. Use **Goals** in the sidebar to set target scores and
-review past attempts. Use **Mistake Log** to review questions you miss most often
-in scored attempts.
+review past attempts. You can also use the target icon on a quiz card to add or
+edit that quiz's single goal without leaving the home page. Existing goal icons
+provide quick access to attempts, the quiz-scoped Mistake Log, and goal deletion.
+Use **Mistake Log** to review questions you miss most often in scored attempts.
 
 When you start a quiz, choose **Practice** (subset of questions, not saved to
 goals) or **Scored attempt** (full quiz, counts toward goals and the Mistake Log).

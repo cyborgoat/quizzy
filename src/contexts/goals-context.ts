@@ -10,12 +10,12 @@ export type AttemptInput = {
 export type GoalsContextValue = {
   goals: Goal[];
   isLoading: boolean;
-  addGoal: (goal: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) => Promise<void>;
-  updateGoal: (id: string, data: GoalDetailsInput) => Promise<void>;
+  addGoal: (goal: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) => Promise<boolean>;
+  updateGoal: (id: string, data: GoalDetailsInput) => Promise<boolean>;
   recordAttempt: (quizId: string, attempt: AttemptInput) => Promise<void>;
   completeGoal: (id: string) => Promise<void>;
   reopenGoal: (id: string) => Promise<void>;
-  deleteGoal: (id: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<boolean>;
   deleteAttempt: (goalId: string, attemptId: string) => Promise<void>;
   loadGoalAttempt: (goalId: string, attemptId: string) => Promise<GoalAttempt>;
 };

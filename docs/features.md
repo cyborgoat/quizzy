@@ -37,7 +37,6 @@ includes:
 - Linked quiz
 - Description
 - Optional target score percentage
-- Optional deadline (calendar picker with month/year dropdown; clear to remove)
 - Attempt history with scores
 
 Goals are shown in accordion rows. Each row displays target, latest, and highest
@@ -47,16 +46,18 @@ row opens the linked quiz; expanding the accordion shows past attempts with
 
 Available actions:
 
-- **Add goal** creates a goal for any quiz in the library.
+- **Add goal** creates a goal for any quiz in the library that does not already
+  have one. Each quiz can have at most one goal.
+- **Edit goal** uses the same target-score and description dialog from either
+  the Goals page or a quiz card's goal menu.
 - **Complete** / **Reopen** toggles goal completion. Completing without reaching
   the target score requires confirmation.
 - **Delete** removes the goal and all saved attempts after confirmation.
 - **Delete attempt** removes one saved attempt from a goal's history after
   confirmation.
 
-Completing a **scored attempt** for a quiz that matches one or more goals
-automatically records an attempt for each matching goal. **Practice** runs never
-create goal attempts.
+Completing a **scored attempt** for a quiz with a goal automatically records an
+attempt for that goal. **Practice** runs never create goal attempts.
 
 ## Attempt review
 
@@ -71,16 +72,21 @@ Each saved attempt opens on a dedicated page at
 **Back to goals** returns to the Goals page and expands the relevant goal row.
 **Retake quiz** opens the quiz start screen with **Scored attempt** pre-selected.
 
+### Quiz card goal actions
+
+- A light **goal target icon** in a quiz card header opens an in-page add-goal
+  dialog without navigating away from the home page.
+- The icon is dark before the first attempt, brown while an active goal remains
+  below its target, and green once its highest score meets the target. Clicking
+  an existing goal icon opens actions to edit the goal in place, view attempts,
+  open the quiz-scoped Mistake Log, or delete the goal after confirmation.
+
 ## Mistake Log
 
 The Mistake Log aggregates incorrect answers from **scored attempts only**.
-Practice runs are not included.
-
-Entry points:
-
-- **Mistake Log** in the sidebar opens the global view at `/mistakes`.
-- **Mistakes Log** on each quiz card opens the same page scoped to that quiz
-  (`/mistakes?quizId=...`).
+Practice runs are not included. **Mistake Log** in the sidebar opens the global
+view at `/mistakes`; an existing quiz goal's menu can open the same view scoped
+to that quiz.
 
 The list shows only questions that meet both configured thresholds:
 
@@ -147,7 +153,7 @@ working directory. Each quiz entry includes:
 - Tags
 - Question count
 - Source filename
-- **Mistakes Log** and **Start quiz** actions
+- Goal target icon and **Start quiz** action
 - Delete action
 
 Nested directories and non-JSON files are ignored.
@@ -199,7 +205,7 @@ Starting a quiz opens a mode picker:
   Practice runs do not count toward goals. Pre-selected when starting from the
   home page.
 - **Scored attempt** — answer every question in the quiz. Results are saved to
-  any matching goals when you submit. Pre-selected when starting from a goal or
+  the matching goal when you submit. Pre-selected when starting from a goal or
   retaking from attempt review.
 
 Quizzy presents one question at a time and supports:

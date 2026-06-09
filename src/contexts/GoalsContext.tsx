@@ -48,6 +48,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
+    if (goals.some((goal) => goal.quizId === data.quizId)) {
+      toast.error("This quiz already has a goal.");
+      return false;
+    }
     const newGoal: Goal = {
       ...data,
       id: generateId(),
@@ -59,19 +63,20 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       await nativeApi.upsertGoal(goalMeta(newGoal));
       setGoals((current) => [...current, newGoal]);
       toast.success("Goal created.");
+      return true;
     } catch (error) {
       toast.error(errorMessage(error));
+      return false;
     }
   }
 
   async function updateGoal(id: string, data: GoalDetailsInput) {
     const goal = goals.find((item) => item.id === id);
-    if (!goal) return;
+    if (!goal) return false;
     const updated: Goal = {
       ...goal,
       description: data.description,
       targetScore: data.targetScore,
-      deadline: data.deadline,
     };
     try {
       await nativeApi.upsertGoal(goalMeta(updated));
@@ -79,8 +84,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         current.map((item) => (item.id === id ? updated : item)),
       );
       toast.success("Goal updated.");
+      return true;
     } catch (error) {
       toast.error(errorMessage(error));
+      return false;
     }
   }
 
@@ -158,8 +165,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       await nativeApi.deleteGoal(id);
       setGoals((current) => current.filter((goal) => goal.id !== id));
       toast.success("Goal deleted.");
+      return true;
     } catch (error) {
       toast.error(errorMessage(error));
+      return false;
     }
   }
 

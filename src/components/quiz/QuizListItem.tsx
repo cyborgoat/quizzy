@@ -1,7 +1,27 @@
-import { ArrowRight, Trash2 } from "lucide-react";
+import { confirm } from "@tauri-apps/plugin-dialog";
+import {
+  ArrowRight,
+  ClipboardList,
+  ListChecks,
+  Pencil,
+  Target,
+  Trash2,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { AddGoalDialog } from "@/components/goals/AddGoalDialog";
+import { EditGoalDialog } from "@/components/goals/EditGoalDialog";
+import { quizCardActionClass } from "@/components/quiz/quiz-card-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useGoals } from "@/hooks/useGoals";
 import type { QuizSource } from "@/types/quiz";
 
 export function QuizListItem({
@@ -11,6 +31,42 @@ export function QuizListItem({
   source: QuizSource;
   onDelete: () => void;
 }) {
+  const { goals, deleteGoal } = useGoals();
+  const goal = goals.find((item) => item.quizId === source.quiz.id);
+  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [isGoalMenuOpen, setIsGoalMenuOpen] = useState(false);
+  const hasAttempts = Boolean(goal?.attempts.length);
+  const highestScore = hasAttempts
+    ? Math.max(...goal!.attempts.map((attempt) => attempt.percentage))
+    : undefined;
+  const targetAchieved =
+    goal?.targetScore !== undefined &&
+    highestScore !== undefined &&
+    highestScore >= goal.targetScore;
+  const goalIconClass =
+    goal && !goal.completed && hasAttempts
+      ? targetAchieved
+        ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+        : "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+      : "text-zinc-950 hover:bg-zinc-100 hover:text-zinc-950";
+  async function handleDeleteGoal() {
+    if (!goal) return;
+    const approved = await confirm(
+      `Delete the goal for "${source.quiz.title}" and all of its attempt history? This cannot be undone.`,
+      { title: "Delete goal?", kind: "warning" },
+    );
+    if (!approved) return;
+    setIsDeletingGoal(true);
+    await deleteGoal(goal.id);
+    setIsDeletingGoal(false);
+  }
+
+  function handleEditGoal() {
+    setIsGoalMenuOpen(false);
+    window.setTimeout(() => setIsEditingGoal(true), 0);
+  }
+
   return (
     <article className="group flex flex-col rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -18,15 +74,72 @@ export function QuizListItem({
           <h2 className="text-sm font-semibold text-zinc-950">{source.quiz.title}</h2>
           <p className="mt-0.5 text-xs text-zinc-500">{source.fileName}</p>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-7 text-zinc-500 hover:text-red-700"
-          onClick={onDelete}
-          aria-label={`Delete ${source.quiz.title}`}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {goal ? (
+            <DropdownMenu
+              open={isGoalMenuOpen}
+              onOpenChange={setIsGoalMenuOpen}
+              modal={false}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={`size-7 ${goalIconClass}`}
+                  disabled={isDeletingGoal}
+                  aria-label={`Open goal actions for ${source.quiz.title}`}
+                >
+                  <Target className="size-4" strokeWidth={2.5} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={handleEditGoal}>
+                  <Pencil />
+                  Edit goal
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/goals" search={{ expand: goal.id }}>
+                    <ListChecks />
+                    View attempts
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/mistakes" search={{ quizId: source.quiz.id }}>
+                    <ClipboardList />
+                    View mistake log
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => void handleDeleteGoal()}
+                  disabled={isDeletingGoal}
+                >
+                  <Trash2 />
+                  {isDeletingGoal ? "Deleting goal..." : "Delete goal"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <AddGoalDialog quiz={source.quiz} />
+          )}
+          {goal && (
+            <EditGoalDialog
+              goal={goal}
+              open={isEditingGoal}
+              onOpenChange={setIsEditingGoal}
+            />
+          )}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7 text-zinc-500 hover:text-red-700"
+            onClick={onDelete}
+            aria-label={`Delete ${source.quiz.title}`}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
       <p className="mt-3 flex-1 text-xs leading-5 text-zinc-600">
         {source.quiz.description ?? "No description provided."}
@@ -42,14 +155,7 @@ export function QuizListItem({
         </span>
         <div className="flex items-center gap-1">
           <Link
-            className="inline-flex h-7 items-center rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
-            to="/mistakes"
-            search={{ quizId: source.quiz.id }}
-          >
-            Mistakes Log
-          </Link>
-          <Link
-            className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
+            className={quizCardActionClass}
             to="/quiz/$quizId"
             params={{ quizId: source.quiz.id }}
             search={{ from: "home" }}
