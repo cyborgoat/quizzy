@@ -6,7 +6,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 export function AppLayout() {
   return (
     <SidebarProvider
-      defaultOpen
+      defaultOpen={false}
+      storageKey="app_sidebar_open"
       style={
         {
           "--sidebar-width": "var(--app-sidebar-width)",

@@ -24,8 +24,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -43,6 +41,15 @@ type SidebarContextProps = {
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
 
+function getInitialSidebarOpen(storageKey: string | undefined, defaultOpen: boolean): boolean {
+  if (!storageKey || typeof window === "undefined") return defaultOpen
+
+  const storedValue = window.localStorage.getItem(storageKey)
+  if (storedValue === "true") return true
+  if (storedValue === "false") return false
+  return defaultOpen
+}
+
 function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {
@@ -58,6 +65,7 @@ const SidebarProvider = React.forwardRef<
     defaultOpen?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    storageKey?: string
   }
 >(
   (
@@ -65,6 +73,7 @@ const SidebarProvider = React.forwardRef<
       defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
+      storageKey,
       className,
       style,
       children,
@@ -77,7 +86,7 @@ const SidebarProvider = React.forwardRef<
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState(defaultOpen)
+    const [_open, _setOpen] = React.useState(() => getInitialSidebarOpen(storageKey, defaultOpen))
     const open = openProp ?? _open
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
@@ -88,10 +97,11 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState)
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        if (storageKey && typeof window !== "undefined") {
+          window.localStorage.setItem(storageKey, String(openState))
+        }
       },
-      [setOpenProp, open]
+      [setOpenProp, open, storageKey]
     )
 
     // Helper to toggle the sidebar.
