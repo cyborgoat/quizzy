@@ -48,13 +48,20 @@ export function HomePage() {
 
   return (
     <PageShell>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">
-          Hello, {userName || "there"}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 lg:text-base">
-          Ready to practice? Pick a quiz below and get started.
-        </p>
+      <div className="mb-8 flex items-center gap-4 lg:gap-5">
+        <img
+          src="/quizzy-logo.png"
+          alt="Quizzy logo"
+          className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
+        />
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">
+            Hello, {userName || "there"}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 lg:text-base">
+            Ready to practice? Pick a quiz below and get started.
+          </p>
+        </div>
       </div>
 
       {activeGoals.length > 0 && (
