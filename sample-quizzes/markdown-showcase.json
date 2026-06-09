@@ -1,0 +1,71 @@
+{
+  "id": "markdown-showcase",
+  "title": "Markdown Showcase",
+  "description": "Demonstrates Markdown features: math formulas, bold/italic, inline code, code blocks, and lists.",
+  "tags": ["markdown", "demo"],
+  "questions": [
+    {
+      "id": "md-q1",
+      "type": "single_choice",
+      "prompt": "What is the value of $x$ if $2x + 4 = 10$?",
+      "options": ["$x = 2$", "$x = 3$", "$x = 5$", "$x = 7$"],
+      "answerIndex": 1,
+      "explanation": "Subtract 4 from both sides: $2x = 6$, then divide by 2: $x = 3$."
+    },
+    {
+      "id": "md-q2",
+      "type": "single_choice",
+      "prompt": "Which **CSS property** controls the space *inside* an element's border?",
+      "options": ["`margin`", "`padding`", "`border-spacing`", "`gap`"],
+      "answerIndex": 1,
+      "explanation": "**`padding`** is the space between an element's content and its border. `margin` is the space *outside* the border."
+    },
+    {
+      "id": "md-q3",
+      "type": "single_choice",
+      "prompt": "What does the following code log?\n\n```js\nconst arr = [1, 2, 3];\nconsole.log(arr.map(x => x * 2));\n```",
+      "options": ["`[1, 2, 3]`", "`[2, 4, 6]`", "`6`", "`undefined`"],
+      "answerIndex": 1,
+      "explanation": "`Array.prototype.map` returns a **new array** with each element transformed. Multiplying each value by 2 gives `[2, 4, 6]`."
+    },
+    {
+      "id": "md-q4",
+      "type": "multiple_choice",
+      "prompt": "The quadratic formula solves $ax^2 + bx + c = 0$:\n\n$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\nWhich values of $x$ satisfy $x^2 - 5x + 6 = 0$?",
+      "options": ["$x = 1$", "$x = 2$", "$x = 3$", "$x = 6$"],
+      "answerIndices": [1, 2],
+      "explanation": "With $a=1$, $b=-5$, $c=6$:\n$$x = \\frac{5 \\pm \\sqrt{25-24}}{2} = \\frac{5 \\pm 1}{2}$$\nSo $x = 3$ or $x = 2$."
+    },
+    {
+      "id": "md-q5",
+      "type": "true_false",
+      "prompt": "In Python, `**` is the **exponentiation** operator, so `2 ** 8` evaluates to `256`.",
+      "answer": true,
+      "explanation": "`2 ** 8` means $2^8 = 256$. Python uses `**` for exponentiation, unlike many languages that use `^`."
+    },
+    {
+      "id": "md-q6",
+      "type": "single_choice",
+      "prompt": "Consider this TypeScript snippet:\n\n```ts\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n```\n\nWhat does `greet(\"World\")` return?",
+      "options": ["`Hello, World`", "`Hello, World!`", "`greet(World)`", "`undefined`"],
+      "answerIndex": 1,
+      "explanation": "The template literal `` `Hello, ${name}!` `` interpolates `name` and appends `!`, producing **`\"Hello, World!\"`**."
+    },
+    {
+      "id": "md-q7",
+      "type": "multiple_choice",
+      "prompt": "Which of the following are valid ways to write $\\frac{1}{2}$ as a decimal?",
+      "options": ["$0.5$", "$0.50$", "$0.500$", "$0.05$"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "$0.5$, $0.50$, and $0.500$ are all equal to $\\frac{1}{2}$. Trailing zeros after the decimal point do not change the value. $0.05 = \\frac{1}{20}$, which is different."
+    },
+    {
+      "id": "md-q8",
+      "type": "single_choice",
+      "prompt": "What is $\\lim_{x \\to 0} \\dfrac{\\sin x}{x}$?",
+      "options": ["$0$", "$1$", "$\\infty$", "Undefined"],
+      "answerIndex": 1,
+      "explanation": "This is a **standard limit**: $\\lim_{x \\to 0} \\dfrac{\\sin x}{x} = 1$. It can be proven using the squeeze theorem."
+    }
+  ]
+}

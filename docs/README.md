@@ -30,6 +30,7 @@ Reference quiz files for development and manual import testing are kept in
 | UI primitives | shadcn-style local components |
 | Routing | TanStack Router (file-based) |
 | Validation | Zod |
+| Markdown rendering | react-markdown, remark-math, rehype-katex |
 | Toast notifications | Sonner |
 | Frontend tests | Vitest |
 

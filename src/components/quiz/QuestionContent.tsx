@@ -1,5 +1,6 @@
 import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
+import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
@@ -54,12 +55,12 @@ export function QuestionContent({
           {flagged ? "Flagged for review" : "Flag for review"}
         </Button>
       </div>
-      <h1
+      <div
         id="question-prompt"
         className="mt-2 text-base font-medium leading-snug text-zinc-950 sm:text-lg"
       >
-        {question.prompt}
-      </h1>
+        <MarkdownContent>{question.prompt}</MarkdownContent>
+      </div>
       <div className="mt-5 space-y-2" role="group" aria-labelledby="question-prompt">
         {options.map((option, index) => (
           <AnswerOptionRow

@@ -1,5 +1,6 @@
 import { CheckCircle, XCircle } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
+import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Badge } from "@/components/ui/badge";
 import {
   isOptionCorrect,
@@ -52,9 +53,9 @@ export function ReviewQuestionDetail({
             )}
           </div>
 
-          <h3 className="text-sm font-semibold leading-snug text-zinc-950 sm:text-base">
-            {question.prompt}
-          </h3>
+          <div className="text-sm font-semibold leading-snug text-zinc-950 sm:text-base">
+            <MarkdownContent>{question.prompt}</MarkdownContent>
+          </div>
 
           <div className="space-y-2">
             {options.map((option, optionIndex) => (
@@ -81,7 +82,9 @@ export function ReviewQuestionDetail({
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 Explanation
               </p>
-              <p className="mt-2 text-sm leading-6 text-zinc-700">{question.explanation}</p>
+              <div className="mt-2 text-sm leading-6 text-zinc-700">
+                <MarkdownContent>{question.explanation}</MarkdownContent>
+              </div>
             </div>
           )}
         </div>

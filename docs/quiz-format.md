@@ -92,6 +92,61 @@ Rules:
 
 The `answer` field must be a JSON boolean, not the string `"true"` or `"false"`.
 
+## Markdown in question content
+
+The `prompt`, `options`, and `explanation` fields all support CommonMark
+Markdown. Supported syntax:
+
+| Syntax | Effect |
+| --- | --- |
+| `**text**` | Bold |
+| `*text*` | Italic |
+| `` `code` `` | Inline code |
+| ` ```lang … ``` ` | Fenced code block |
+| `$…$` | Inline math (KaTeX) |
+| `$$…$$` | Display math (KaTeX) |
+
+**Inline math:**
+
+```json
+{
+  "id": "q1",
+  "type": "single_choice",
+  "prompt": "Solve for $x$: $2x + 4 = 10$",
+  "options": ["$x = 2$", "$x = 3$", "$x = 5$"],
+  "answerIndex": 1,
+  "explanation": "Subtract 4: $2x = 6$, then divide: $x = 3$."
+}
+```
+
+**Display math:**
+
+```json
+{
+  "id": "q2",
+  "type": "single_choice",
+  "prompt": "Using:\n\n$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\nSolve $x^2 - 5x + 6 = 0$.",
+  "options": ["$x = 1$ or $x = 4$", "$x = 2$ or $x = 3$"],
+  "answerIndex": 1
+}
+```
+
+**Fenced code block:**
+
+```json
+{
+  "id": "q3",
+  "type": "single_choice",
+  "prompt": "What does this log?\n\n```js\nconsole.log(typeof null);\n```",
+  "options": ["`\"null\"`", "`\"object\"`", "`\"undefined\"`"],
+  "answerIndex": 1,
+  "explanation": "`typeof null` returns `\"object\"` — a long-standing JavaScript quirk."
+}
+```
+
+See `sample-quizzes/markdown-showcase.json` for a complete file that exercises
+every supported Markdown feature.
+
 ## Complete example
 
 ```json

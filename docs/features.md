@@ -208,6 +208,12 @@ Quizzy presents one question at a time and supports:
 - Multiple choice
 - True or false
 
+Question text, options, and explanations support Markdown formatting. This
+includes **bold**, *italic*, `inline code`, fenced code blocks, and math
+formulas rendered with KaTeX using `$…$` for inline math and `$$…$$` for
+display math. See [Quiz JSON format](quiz-format.md#markdown-in-question-content)
+for syntax reference and examples.
+
 Behavior:
 
 - Answers are saved as editable drafts as soon as they are selected.
@@ -261,7 +267,15 @@ config directory. See [Native storage and security](native-storage.md).
 
 ## Example data
 
-The repository contains example JSON files under `sample-quizzes/`. They are
-ordinary quiz files for development, documentation, and manual import testing.
-They are not embedded in production builds and the app has no special sample
-loading action.
+The repository contains example JSON files under `sample-quizzes/`:
+
+| File | Contents |
+| --- | --- |
+| `react-basics.json` | React fundamentals |
+| `javascript-basics.json` | Core JavaScript behavior |
+| `css-basics.json` | CSS fundamentals |
+| `comprehensive-stress-test.json` | Large mixed-format quiz for edge-case testing |
+| `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
+
+These files are for development and manual import testing. They are not embedded
+in production builds and the app has no special sample loading action.

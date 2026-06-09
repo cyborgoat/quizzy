@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { cn } from "@/lib/utils";
 
 function optionLabel(index: number) {
@@ -70,10 +71,10 @@ export function AnswerOptionRow({
           </span>
         )}
       </span>
-      <p className="min-w-0 flex-1 text-sm leading-5 text-zinc-900">
+      <div className="min-w-0 flex-1 text-sm leading-5 text-zinc-900">
         <span className="mr-1.5 font-medium text-zinc-500">{optionLabel(index)}</span>
-        {text}
-      </p>
+        <MarkdownContent inline>{text}</MarkdownContent>
+      </div>
     </button>
   );
 }
