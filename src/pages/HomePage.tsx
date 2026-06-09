@@ -1,10 +1,11 @@
-import { ArrowRight, FolderOpen, RefreshCw, Target } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, FolderOpen, RefreshCw, Search, Target } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { QuizList } from "@/components/quiz/QuizList";
 import { useGoals } from "@/hooks/useGoals";
@@ -19,6 +20,24 @@ export function HomePage() {
   const navigate = useNavigate();
   const activeGoals = goals.filter((g) => !g.completed);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredQuizzes = useMemo(() => {
+    if (!normalizedQuery) return library.quizzes;
+
+    return library.quizzes.filter((source) => {
+      const title = source.quiz.title.toLowerCase();
+      const description = (source.quiz.description ?? "").toLowerCase();
+      const tags = source.quiz.tags.join(" ").toLowerCase();
+
+      return (
+        title.includes(normalizedQuery) ||
+        description.includes(normalizedQuery) ||
+        tags.includes(normalizedQuery)
+      );
+    });
+  }, [library.quizzes, normalizedQuery]);
 
   async function handleRefresh() {
     setIsRefreshing(true);
@@ -98,6 +117,20 @@ export function HomePage() {
             </div>
           </div>
 
+          {library.quizzes.length > 0 && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3">
+              <Search className="size-4 text-zinc-400" aria-hidden="true" />
+              <Input
+                id="quiz-search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search quizzes"
+                className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
+                aria-label="Search quizzes"
+              />
+            </div>
+          )}
+
           {library.invalidReports.length > 0 && (
             <Alert variant="destructive" className="mb-6">
               <AlertTitle>
@@ -116,7 +149,17 @@ export function HomePage() {
           )}
 
           {library.quizzes.length > 0 ? (
-            <QuizList quizzes={library.quizzes} />
+            filteredQuizzes.length > 0 ? (
+              <QuizList quizzes={filteredQuizzes} />
+            ) : (
+              <EmptyState
+                title="No quizzes match your search"
+                description="Try another keyword or clear the search to see all quizzes."
+                actionLabel="Clear search"
+                actionVariant="outline"
+                onAction={() => setSearchQuery("")}
+              />
+            )
           ) : (
             <EmptyState
               title="No valid quizzes yet"
