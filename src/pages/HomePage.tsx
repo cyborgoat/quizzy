@@ -1,4 +1,4 @@
-import { ArrowRight, Download, RefreshCw, Target } from "lucide-react";
+import { ArrowRight, FolderOpen, RefreshCw, Target } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -87,9 +87,13 @@ export function HomePage() {
                 <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
-              <Button size="sm" onClick={() => void library.importQuizzes()}>
-                <Download className="size-4" />
-                Import JSON
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void library.openQuizFolder()}
+              >
+                <FolderOpen className="size-4" />
+                Open quiz folder
               </Button>
             </div>
           </div>
@@ -112,13 +116,15 @@ export function HomePage() {
           )}
 
           {library.quizzes.length > 0 ? (
-            <QuizList quizzes={library.quizzes} onDelete={(quiz) => void library.deleteQuiz(quiz)} />
+            <QuizList quizzes={library.quizzes} />
           ) : (
             <EmptyState
               title="No valid quizzes yet"
-              description="Import one or more quiz JSON files into this working directory."
-              actionLabel="Import JSON files"
-              onAction={() => void library.importQuizzes()}
+              description="Add one or more quiz JSON files to the configured quiz folder."
+              actionLabel="Open quiz folder"
+              actionIcon={<FolderOpen className="size-4" />}
+              actionVariant="outline"
+              onAction={() => void library.openQuizFolder()}
             />
           )}
         </>

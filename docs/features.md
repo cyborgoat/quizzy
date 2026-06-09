@@ -24,7 +24,8 @@ Available actions on the home page:
 
 - **Refresh** rescans the working directory. The button spins during the
   operation and a toast confirms completion.
-- **Import JSON** opens the import dialog.
+- **Open quiz folder** opens the configured working directory in the system file
+  manager.
 
 When the user has active goals, a summary card lists up to three of them with a
 link to the full Goals page.
@@ -76,10 +77,11 @@ Each saved attempt opens on a dedicated page at
 
 - A light **goal target icon** in a quiz card header opens an in-page add-goal
   dialog without navigating away from the home page.
-- The icon is dark before the first attempt, brown while an active goal remains
-  below its target, and green once its highest score meets the target. Clicking
-  an existing goal icon opens actions to edit the goal in place, view attempts,
-  open the quiz-scoped Mistake Log, or delete the goal after confirmation.
+- The icon is brown while an active goal remains below its target, including
+  before the first attempt, and green once its highest score meets the target.
+  Clicking an existing goal icon opens actions to edit the goal in place, view
+  attempts, open the quiz-scoped Mistake Log, or delete the goal after
+  confirmation.
 
 ## Mistake Log
 
@@ -154,7 +156,6 @@ working directory. Each quiz entry includes:
 - Question count
 - Source filename
 - Goal target icon and **Start quiz** action
-- Delete action
 
 Nested directories and non-JSON files are ignored.
 
@@ -164,35 +165,24 @@ Users choose any existing local directory. Quizzy stores its canonical path in
 the application configuration directory and reopens it on future launches.
 
 The working directory is configured exclusively in **Settings**. The home page
-provides **Refresh** to rescan the current directory, and the application also
-rescans automatically when the window regains focus.
+provides **Open quiz folder** for direct file management and **Refresh** to
+rescan the current directory. The application also rescans automatically when
+the window regains focus.
 
-## Importing quizzes
+## Managing quiz files
 
-The import dialog accepts multiple JSON files.
-
-Before writing anything, Quizzy:
-
-1. Reads the selected files through the native layer.
-2. Parses and validates them with Zod.
-3. Rejects malformed JSON and invalid quiz structures.
-4. Detects duplicate filenames and quiz IDs.
-5. Requests confirmation when imported quizzes conflict with existing files.
-
-Imports copy the selected content into the working directory. The original files
-are not modified.
-
-When a quiz ID already exists under a different filename, confirming replacement
-writes the new file and removes the previous file. Invalid files are skipped and
-reported.
+Use **Open quiz folder** to add, replace, rename, or remove top-level `.json`
+files with the system file manager. Quizzy validates the directory contents
+whenever it refreshes, skips malformed or invalid quiz files, and reports
+diagnostics on the home page. Duplicate quiz IDs are also rejected.
 
 ## Notifications
 
 Operations that complete asynchronously surface as toast notifications in the
 bottom-right corner of the screen:
 
-- Successful import, deletion, refresh, directory change, settings save, and
-  goal or attempt changes
+- Successful refresh, directory change, settings save, and goal or attempt
+  changes
 - Error conditions from any of the above
 
 ## Quiz sessions
@@ -283,5 +273,5 @@ The repository contains example JSON files under `sample-quizzes/`:
 | `comprehensive-stress-test.json` | Large mixed-format quiz for edge-case testing |
 | `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
 
-These files are for development and manual import testing. They are not embedded
-in production builds and the app has no special sample loading action.
+These files are for development and manual quiz-folder testing. They are not
+embedded in production builds and the app has no special sample loading action.

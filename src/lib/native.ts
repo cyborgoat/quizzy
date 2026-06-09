@@ -28,13 +28,6 @@ export type NativeQuizFile = {
   readError?: string;
 };
 
-export type WriteImportedQuizRequest = {
-  fileName: string;
-  contents: string;
-  overwrite: boolean;
-  removeFileName?: string;
-};
-
 export type GoalMeta = Omit<Goal, "attempts">;
 
 export const nativeApi = {
@@ -43,12 +36,7 @@ export const nativeApi = {
     invoke<void>("save_settings", { request }),
   readWorkingDirectory: () =>
     invoke<NativeQuizFile[]>("read_working_directory"),
-  readImportFiles: (paths: string[]) =>
-    invoke<NativeQuizFile[]>("read_import_files", { paths }),
-  writeImportedQuiz: (request: WriteImportedQuizRequest) =>
-    invoke<void>("write_imported_quiz", { request }),
-  deleteQuizFile: (fileName: string) =>
-    invoke<void>("delete_quiz_file", { fileName }),
+  openQuizFolder: () => invoke<void>("open_quiz_folder"),
   listGoals: () =>
     invoke<Goal[]>("list_goals"),
   upsertGoal: (goal: GoalMeta) =>

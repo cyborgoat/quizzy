@@ -30,7 +30,7 @@ describe("parseQuizFiles", () => {
     expect(result.invalidReports).toHaveLength(2);
   });
 
-  it("reports unreadable and duplicate-filename imports", () => {
+  it("reports unreadable files and duplicate filenames", () => {
     const result = parseQuizFiles([
       { fileName: "same.json", contents: quiz("one") },
       { fileName: "same.json", contents: quiz("two") },

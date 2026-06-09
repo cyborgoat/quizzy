@@ -12,8 +12,7 @@ export type QuizLibraryContextValue = {
   invalidReports: InvalidQuizReport[];
   isLoading: boolean;
   refresh: (options?: QuizLibraryRefreshOptions) => Promise<void>;
-  importQuizzes: () => Promise<void>;
-  deleteQuiz: (source: QuizSource) => Promise<void>;
+  openQuizFolder: () => Promise<void>;
 };
 
 export const QuizLibraryContext = createContext<QuizLibraryContextValue | null>(null);

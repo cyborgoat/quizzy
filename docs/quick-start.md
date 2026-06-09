@@ -33,7 +33,8 @@ application, and opens the desktop window.
 1. Open **Settings** from the sidebar (bottom of the left panel).
 2. Enter your full name and click **Select folder** to choose a working directory.
 3. Click **Save** to apply both settings.
-4. Return to the home page and import one or more quiz JSON files.
+4. Return to the home page, click **Open quiz folder**, and add one or more quiz
+   JSON files with the system file manager.
 5. Click **Start quiz** and choose **Practice** or **Scored attempt** on the
    mode picker. In Practice, use the slider to set how many questions to take.
 6. Answer in any order, use flags for questions to revisit, and submit the quiz

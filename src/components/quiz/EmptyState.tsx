@@ -1,15 +1,20 @@
+import type { ReactNode } from "react";
 import { FolderOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 
 export function EmptyState({
   title,
   description,
   actionLabel,
+  actionIcon,
+  actionVariant,
   onAction,
 }: {
   title: string;
   description: string;
   actionLabel?: string;
+  actionIcon?: ReactNode;
+  actionVariant?: ButtonProps["variant"];
   onAction?: () => void;
 }) {
   return (
@@ -18,7 +23,8 @@ export function EmptyState({
       <h2 className="text-xl font-semibold text-zinc-950">{title}</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">{description}</p>
       {actionLabel && onAction && (
-        <Button className="mt-6" onClick={onAction}>
+        <Button className="mt-6" variant={actionVariant} onClick={onAction}>
+          {actionIcon}
           {actionLabel}
         </Button>
       )}

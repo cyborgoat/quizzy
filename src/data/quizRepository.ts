@@ -28,7 +28,7 @@ export function parseQuizFiles(files: RawQuizFile[]): ParsedQuizLibrary {
       if (seenFileNames.has(file.fileName)) {
         invalidReports.push({
           fileName: file.fileName,
-          issues: ["The import selection contains more than one file with this filename."],
+          issues: ["The quiz directory contains more than one file with this filename."],
         });
         return;
       }

@@ -40,9 +40,9 @@ npm test
 
 Native tests cover:
 
-- Rejection of path traversal and non-JSON destination filenames
-- Explicit overwrite requirements
-- Successful atomic replacement
+- JSON extension and UTF-8 BOM handling
+- Atomic settings writes
+- Goal and attempt persistence invariants
 
 Run:
 
@@ -112,13 +112,13 @@ Before packaging a release:
 4. Run Rust tests and formatting checks.
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
-7. Test directory selection, imports, replacement, deletion, practice and scored
-   quiz completion, goal creation, attempt recording, attempt deletion, attempt
-   review, and Mistake Log threshold filtering and question review in the packaged
-   application.
+7. Test directory selection, opening and rescanning the quiz folder, practice
+   and scored quiz completion, goal creation, attempt recording, attempt
+   deletion, attempt review, and Mistake Log threshold filtering and question
+   review in the packaged application.
 
-The files under `sample-quizzes/` can be selected through the normal import
-dialog when manual test data is needed. They are not production resources.
+The files under `sample-quizzes/` can be copied into the configured quiz folder
+when manual test data is needed. They are not production resources.
 
 Cross-platform release builds are handled by `.github/workflows/release.yml` when
 a version tag is pushed.

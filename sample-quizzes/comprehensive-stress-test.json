@@ -367,7 +367,7 @@
         "Native filesystem access is mediated by Rust commands",
         "The UI runs in a WebView",
         "All quiz files are bundled inside the app binary by default",
-        "A working directory on disk holds imported quiz JSON",
+        "A working directory on disk holds quiz JSON files",
         "localStorage is unavailable in the webview",
         "Release builds can target macOS, Windows, and Linux"
       ],

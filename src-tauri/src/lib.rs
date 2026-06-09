@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 use tauri::{AppHandle, Manager};
 
@@ -160,15 +161,6 @@ struct QuizFile {
     read_error: Option<String>,
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WriteImportedQuizRequest {
-    file_name: String,
-    contents: String,
-    overwrite: bool,
-    remove_file_name: Option<String>,
-}
-
 fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     let directory = app
         .path()
@@ -212,42 +204,6 @@ fn normalize_stored_path(path: PathBuf) -> String {
     stored
 }
 
-fn validate_portable_file_stem(stem: &str) -> Result<(), String> {
-    const INVALID_CHARS: &[char] = &['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
-    if stem
-        .chars()
-        .any(|character| INVALID_CHARS.contains(&character))
-    {
-        return Err(
-            "The filename contains characters that are not supported on all platforms.".to_string(),
-        );
-    }
-    if stem.ends_with('.') || stem.ends_with(' ') {
-        return Err("Filenames cannot end with a dot or space.".to_string());
-    }
-    validate_windows_reserved_name(stem)
-}
-
-fn validate_windows_reserved_name(stem: &str) -> Result<(), String> {
-    #[cfg(windows)]
-    {
-        let upper = stem.to_ascii_uppercase();
-        let base = upper.split('.').next().unwrap_or(&upper);
-        const RESERVED: &[&str] = &[
-            "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
-            "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-        ];
-        if RESERVED.contains(&base) {
-            return Err(format!(
-                "\"{stem}\" is a reserved filename on Windows and cannot be used."
-            ));
-        }
-    }
-    #[cfg(not(windows))]
-    let _ = stem;
-    Ok(())
-}
-
 fn write_settings(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     let path = settings_path(app)?;
     let contents = serde_json::to_vec_pretty(settings)
@@ -265,27 +221,6 @@ fn configured_directory(app: &AppHandle) -> Result<PathBuf, String> {
         return Err("The configured working directory is unavailable.".to_string());
     }
     Ok(directory)
-}
-
-fn validate_json_file_name(file_name: &str) -> Result<(), String> {
-    let path = Path::new(file_name);
-    if path.components().count() != 1
-        || path.file_name().and_then(|value| value.to_str()) != Some(file_name)
-    {
-        return Err("The destination filename is invalid.".to_string());
-    }
-    if path
-        .extension()
-        .and_then(|value| value.to_str())
-        .is_none_or(|extension| !is_json_extension(extension))
-    {
-        return Err("Quiz files must use the .json extension.".to_string());
-    }
-    let stem = path
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .ok_or_else(|| "The destination filename is invalid.".to_string())?;
-    validate_portable_file_stem(stem)
 }
 
 fn read_text_file(path: &Path) -> Result<String, String> {
@@ -307,7 +242,7 @@ fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), Str
         ".quizzy-{}.tmp",
         path.file_name()
             .and_then(|value| value.to_str())
-            .unwrap_or("import")
+            .unwrap_or("settings")
     ));
     fs::write(&temp_path, contents)
         .map_err(|error| format!("Unable to write temporary quiz file: {error}"))?;
@@ -316,21 +251,20 @@ fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), Str
             ".quizzy-{}.backup",
             path.file_name()
                 .and_then(|value| value.to_str())
-                .unwrap_or("import")
+                .unwrap_or("settings")
         ));
         if backup_path.exists() {
             fs::remove_file(&backup_path)
                 .map_err(|error| format!("Unable to clear an old backup file: {error}"))?;
         }
-        fs::rename(path, &backup_path).map_err(|error| {
-            format!("Unable to prepare the existing file for replacement: {error}")
-        })?;
+        fs::rename(path, &backup_path)
+            .map_err(|error| format!("Unable to prepare the existing file for update: {error}"))?;
         if let Err(error) = fs::rename(&temp_path, path) {
             let _ = fs::rename(&backup_path, path);
-            return Err(format!("Unable to finish replacing the quiz file: {error}"));
+            return Err(format!("Unable to finish updating the file: {error}"));
         }
         fs::remove_file(backup_path).map_err(|error| {
-            format!("The quiz was replaced, but its temporary backup could not be removed: {error}")
+            format!("The file was updated, but its temporary backup could not be removed: {error}")
         })?;
         return Ok(());
     }
@@ -445,54 +379,21 @@ fn read_working_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
 }
 
 #[tauri::command]
-fn read_import_files(paths: Vec<String>) -> Result<Vec<QuizFile>, String> {
-    let mut files = Vec::new();
-    for raw_path in paths {
-        let path = PathBuf::from(&raw_path);
-        if !path.is_file()
-            || path
-                .extension()
-                .and_then(|value| value.to_str())
-                .is_none_or(|extension| !is_json_extension(extension))
-        {
-            return Err(format!("{} is not a JSON file.", path.display()));
-        }
-        let file_name = path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .ok_or_else(|| format!("{} has an invalid filename.", path.display()))?
-            .to_string();
-        let contents = read_text_file(&path)?;
-        files.push(QuizFile {
-            file_name,
-            contents,
-            read_error: None,
-        });
-    }
-    Ok(files)
-}
-
-#[tauri::command]
-fn write_imported_quiz(app: AppHandle, request: WriteImportedQuizRequest) -> Result<(), String> {
-    validate_json_file_name(&request.file_name)?;
+fn open_quiz_folder(app: AppHandle) -> Result<(), String> {
     let directory = configured_directory(&app)?;
-    let destination = directory.join(&request.file_name);
-    atomic_write(&destination, request.contents.as_bytes(), request.overwrite)?;
 
-    if let Some(remove_file_name) = request.remove_file_name {
-        validate_json_file_name(&remove_file_name)?;
-        if remove_file_name != request.file_name {
-            let old_path = directory.join(remove_file_name);
-            if old_path.exists() {
-                fs::remove_file(old_path).map_err(|error| {
-                    format!(
-                        "The new quiz was saved, but the old file could not be removed: {error}"
-                    )
-                })?;
-            }
-        }
-    }
-    Ok(())
+    #[cfg(target_os = "macos")]
+    let mut command = Command::new("open");
+    #[cfg(target_os = "windows")]
+    let mut command = Command::new("explorer");
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut command = Command::new("xdg-open");
+
+    command
+        .arg(directory)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| format!("Unable to open the quiz folder: {error}"))
 }
 
 #[tauri::command]
@@ -529,16 +430,6 @@ fn delete_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> R
     goals_storage::delete_goal_attempt(&app, goal_id, attempt_id)
 }
 
-#[tauri::command]
-fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), String> {
-    validate_json_file_name(&file_name)?;
-    let path = configured_directory(&app)?.join(file_name);
-    if !path.exists() {
-        return Ok(());
-    }
-    fs::remove_file(path).map_err(|error| format!("Unable to delete the quiz file: {error}"))
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -547,9 +438,7 @@ pub fn run() {
             get_settings,
             save_settings,
             read_working_directory,
-            read_import_files,
-            write_imported_quiz,
-            delete_quiz_file,
+            open_quiz_folder,
             list_goals,
             upsert_goal,
             delete_goal,
@@ -563,10 +452,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        atomic_write, is_json_extension, strip_utf8_bom, validate_json_file_name,
-        validate_portable_file_stem,
-    };
+    use super::{atomic_write, is_json_extension, strip_utf8_bom};
     use std::{fs, path::PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
@@ -588,22 +474,6 @@ mod tests {
             "{\"id\":\"quiz\"}"
         );
         assert_eq!(strip_utf8_bom("plain".to_string()), "plain");
-    }
-
-    #[test]
-    fn rejects_traversal_and_non_json_destinations() {
-        assert!(validate_json_file_name("../quiz.json").is_err());
-        assert!(validate_json_file_name("nested/quiz.json").is_err());
-        assert!(validate_json_file_name("quiz.txt").is_err());
-        assert!(validate_json_file_name("quiz.json").is_ok());
-        assert!(validate_json_file_name("quiz.JSON").is_ok());
-    }
-
-    #[test]
-    fn rejects_cross_platform_invalid_filename_characters() {
-        assert!(validate_json_file_name("quiz:1.json").is_err());
-        assert!(validate_json_file_name("quiz?.json").is_err());
-        assert!(validate_portable_file_stem("valid-name").is_ok());
     }
 
     #[test]

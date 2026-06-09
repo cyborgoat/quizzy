@@ -69,9 +69,9 @@ consumers call to read or update these values.
 - Valid quiz sources
 - Invalid-file reports
 - Loading state
-- Refresh, import, and deletion workflows
+- Refresh and folder-opening workflows
 
-Operations that complete asynchronously — import, deletion, refresh, and
+Operations that complete asynchronously — refresh, folder opening, and
 directory application — call `toast.success` or `toast.error` from Sonner
 directly rather than updating a local notice state.
 
@@ -149,12 +149,10 @@ automatically when goals change.
 - Settings persistence
 - Working-directory validation
 - Top-level JSON scanning
-- Reading files selected through the import dialog
-- Atomic file writes and replacement
-- Quiz deletion
+- Opening the configured quiz directory in the system file manager
 
-The dialog plugin is used only to obtain user-selected paths. File operations are
-performed by custom Rust commands.
+The dialog plugin obtains the working-directory path in Settings. Quiz files are
+managed directly through the system file manager.
 
 ## Data flow
 
@@ -177,15 +175,14 @@ performed by custom Rust commands.
 5. If a new directory was staged, React rescans the working directory.
 6. A success toast confirms the save.
 
-### Import
+### Open quiz folder
 
-1. The dialog plugin returns selected source paths.
-2. Rust reads those source files.
-3. React validates all candidate quizzes and plans conflicts.
-4. The user confirms replacements if necessary.
-5. React sends validated content and destination filenames to Rust.
-6. Rust validates the destination filename and writes atomically.
-7. React rescans the working directory.
+1. The user clicks **Open quiz folder**.
+2. React invokes the native `open_quiz_folder` command without passing a path.
+3. Rust resolves and validates the configured working directory.
+4. Rust opens that directory with the platform file manager.
+5. Quizzy rescans when the application regains focus or the user clicks
+   **Refresh**.
 
 ### Quiz attempt
 
@@ -253,5 +250,5 @@ src-tauri/
   Cargo.toml      Rust dependencies and crate configuration
   tauri.conf.json Desktop window, build, and bundle configuration
 
-sample-quizzes/    Reference quiz JSON files for manual import and testing
+sample-quizzes/    Reference quiz JSON files for manual folder testing
 ```

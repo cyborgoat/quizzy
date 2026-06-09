@@ -9,13 +9,13 @@ their display name, quiz preferences, Mistake Log thresholds, and working direct
 ## Documentation map
 
 - [Quick start](quick-start.md): prerequisites, local development, and desktop builds
-- [Features and workflows](features.md): sidebar, goals, Mistake Log, practice and scored quiz modes, settings, imports, and review
+- [Features and workflows](features.md): sidebar, goals, Mistake Log, practice and scored quiz modes, settings, quiz-folder management, and review
 - [Software architecture](architecture.md): frontend, native layer, data flow, and project structure
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
-- [Native storage and security](native-storage.md): settings, filesystem boundaries, and atomic writes
+- [Native storage and security](native-storage.md): settings, quiz-folder access, filesystem boundaries, and atomic writes
 - [Development and testing](development.md): scripts, tests, formatting, and packaging
 
-Reference quiz files for development and manual import testing are kept in
+Reference quiz files for development and manual quiz-folder testing are kept in
 `sample-quizzes/`. They are not bundled with the desktop application.
 
 ## Technology stack

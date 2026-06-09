@@ -24,13 +24,7 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 import type { QuizSource } from "@/types/quiz";
 
-export function QuizListItem({
-  source,
-  onDelete,
-}: {
-  source: QuizSource;
-  onDelete: () => void;
-}) {
+export function QuizListItem({ source }: { source: QuizSource }) {
   const { goals, deleteGoal } = useGoals();
   const goal = goals.find((item) => item.quizId === source.quiz.id);
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
@@ -45,7 +39,7 @@ export function QuizListItem({
     highestScore !== undefined &&
     highestScore >= goal.targetScore;
   const goalIconClass =
-    goal && !goal.completed && hasAttempts
+    goal && !goal.completed
       ? targetAchieved
         ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
         : "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
@@ -130,15 +124,6 @@ export function QuizListItem({
               onOpenChange={setIsEditingGoal}
             />
           )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7 text-zinc-500 hover:text-red-700"
-            onClick={onDelete}
-            aria-label={`Delete ${source.quiz.title}`}
-          >
-            <Trash2 className="size-4" />
-          </Button>
         </div>
       </div>
       <p className="mt-3 flex-1 text-xs leading-5 text-zinc-600">
