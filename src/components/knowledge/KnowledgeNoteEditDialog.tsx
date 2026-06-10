@@ -12,6 +12,7 @@ import {
   formatTagsInput,
   isUnsavedKnowledgeDraft,
   parseTagsInput,
+  resolveKnowledgeNoteSource,
   stashKnowledgeDraft,
   validateKnowledgeNote,
 } from "@/lib/knowledgeDraft";
@@ -35,8 +36,7 @@ export function KnowledgeNoteEditDialog({
   readOnlyLinkedQuestion?: LinkedQuizQuestion;
 }) {
   const { items, createItem, saveItem, deleteItem } = useKnowledgeLibrary();
-  const persisted = items.find((entry) => entry.id === item.id);
-  const source = persisted ?? item;
+  const source = resolveKnowledgeNoteSource(item.id, items, item) ?? item;
   const [mode, setMode] = useState<"view" | "edit">(initialMode);
   const [draft, setDraft] = useState(source);
   const [tagsInput, setTagsInput] = useState(() => formatTagsInput(source.tags));
@@ -45,12 +45,13 @@ export function KnowledgeNoteEditDialog({
 
   useEffect(() => {
     if (!open) return;
-    const nextSource = items.find((entry) => entry.id === item.id) ?? item;
+    const nextSource = resolveKnowledgeNoteSource(item.id, items, item) ?? item;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form when dialog opens
     setMode(initialMode);
     setDraft(nextSource);
     setTagsInput(formatTagsInput(nextSource.tags));
-  }, [open, initialMode, item, items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- omit `items` so focus-triggered library refreshes do not wipe edits
+  }, [open, initialMode, item.id, item]);
   const isNewDraft = isUnsavedKnowledgeDraft(draft);
 
   function handleOpenChange(nextOpen: boolean) {

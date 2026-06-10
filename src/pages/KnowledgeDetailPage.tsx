@@ -1,7 +1,7 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
 import { KnowledgeDetailViewer } from "@/components/knowledge/KnowledgeDetailViewer";
@@ -15,7 +15,7 @@ import {
   formatTagsInput,
   isUnsavedKnowledgeDraft,
   parseTagsInput,
-  readKnowledgeDraft,
+  resolveKnowledgeNoteSource,
   stashKnowledgeDraft,
   validateKnowledgeNote,
 } from "@/lib/knowledgeDraft";
@@ -26,16 +26,6 @@ type KnowledgeDetailLocationState = {
   knowledgeDraft?: KnowledgeItem;
 };
 
-function resolveKnowledgeSource(
-  knowledgeId: string,
-  persisted: KnowledgeItem | undefined,
-  draftFromState: KnowledgeItem | undefined,
-) {
-  if (persisted) return persisted;
-  if (draftFromState?.id === knowledgeId) return draftFromState;
-  return readKnowledgeDraft(knowledgeId);
-}
-
 export function KnowledgeDetailPage() {
   const { knowledgeId } = Route.useParams();
   const { edit: editParam } = Route.useSearch();
@@ -44,8 +34,9 @@ export function KnowledgeDetailPage() {
   const draftFromState = (location.state as KnowledgeDetailLocationState | undefined)
     ?.knowledgeDraft;
   const { items, createItem, saveItem, deleteItem } = useKnowledgeLibrary();
-  const persisted = items.find((item) => item.id === knowledgeId);
-  const source = resolveKnowledgeSource(knowledgeId, persisted, draftFromState);
+  const fallback =
+    draftFromState?.id === knowledgeId ? draftFromState : undefined;
+  const source = resolveKnowledgeNoteSource(knowledgeId, items, fallback);
 
   const startsInEditMode = editParam === "1" || editParam === "true";
   const [mode, setMode] = useState<"view" | "edit">(startsInEditMode ? "edit" : "view");
@@ -53,31 +44,29 @@ export function KnowledgeDetailPage() {
   const [tagsInput, setTagsInput] = useState(() => formatTagsInput(source?.tags ?? []));
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const previousKnowledgeIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- keep page form aligned with library and navigation */
-    if (persisted) {
-      setDraft(persisted);
-      setTagsInput(formatTagsInput(persisted.tags));
-      if (!startsInEditMode) {
-        setMode("view");
-      }
-      return;
-    }
+    const knowledgeIdChanged = previousKnowledgeIdRef.current !== knowledgeId;
+    previousKnowledgeIdRef.current = knowledgeId;
 
-    const nextSource = resolveKnowledgeSource(knowledgeId, undefined, draftFromState);
+    const nextSource = resolveKnowledgeNoteSource(knowledgeId, items, fallback);
     if (!nextSource) {
       setDraft(null);
       return;
     }
 
-    setDraft(nextSource);
-    setTagsInput(formatTagsInput(nextSource.tags));
-    if (startsInEditMode) {
-      setMode("edit");
+    if (knowledgeIdChanged) {
+      setDraft(nextSource);
+      setTagsInput(formatTagsInput(nextSource.tags));
+      setMode(startsInEditMode ? "edit" : "view");
+      return;
     }
+
+    setDraft((current) => (current?.id === knowledgeId ? current : nextSource));
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [knowledgeId, persisted, draftFromState, startsInEditMode]);
+  }, [knowledgeId, items, fallback, startsInEditMode]);
 
   if (!draft) {
     return (
@@ -129,6 +118,7 @@ export function KnowledgeDetailPage() {
       discardDraft();
       return;
     }
+    const persisted = items.find((entry) => entry.id === knowledgeId);
     if (persisted) {
       setDraft(persisted);
       setTagsInput(formatTagsInput(persisted.tags));

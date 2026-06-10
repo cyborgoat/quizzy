@@ -30,6 +30,18 @@ export function clearKnowledgeDraft(knowledgeId: string) {
   sessionStorage.removeItem(`${DRAFT_STORAGE_PREFIX}${knowledgeId}`);
 }
 
+export function resolveKnowledgeNoteSource(
+  knowledgeId: string,
+  items: KnowledgeItem[],
+  fallback?: KnowledgeItem,
+): KnowledgeItem | undefined {
+  return (
+    items.find((entry) => entry.id === knowledgeId) ??
+    readKnowledgeDraft(knowledgeId) ??
+    (fallback?.id === knowledgeId ? fallback : undefined)
+  );
+}
+
 export function buildKnowledgeDraft(options?: {
   linkedQuizQuestions?: LinkedQuizQuestion[];
 }): KnowledgeItem {
