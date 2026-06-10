@@ -3,6 +3,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type { Components } from "react-markdown";
 
+const codeFontClass = "font-mono";
+
 function createBlockComponents(variant: "default" | "prose"): Components {
   const prose = variant === "prose";
   return {
@@ -50,7 +52,7 @@ function createBlockComponents(variant: "default" | "prose"): Components {
       if (className) {
         return (
           <code
-            className={`font-mono text-sm ${prose ? "block w-full max-w-full wrap-break-word whitespace-pre-wrap text-zinc-800" : "block max-w-full overflow-x-auto"} ${className}`}
+            className={`${codeFontClass} text-sm ${prose ? "block w-full max-w-full wrap-break-word whitespace-pre-wrap text-zinc-800" : "block max-w-full overflow-x-auto"} ${className}`}
           >
             {children}
           </code>
@@ -60,8 +62,8 @@ function createBlockComponents(variant: "default" | "prose"): Components {
         <code
           className={
             prose
-              ? "font-mono text-[0.9em] text-zinc-800 wrap-break-word"
-              : "rounded bg-zinc-100 px-1 py-0.5 text-sm font-mono wrap-break-word"
+              ? `${codeFontClass} text-[0.9em] text-zinc-800 wrap-break-word`
+              : `rounded bg-zinc-100 px-1 py-0.5 text-sm ${codeFontClass} wrap-break-word`
           }
         >
           {children}
@@ -72,7 +74,7 @@ function createBlockComponents(variant: "default" | "prose"): Components {
       <pre
         className={`mt-3 w-full max-w-full text-sm leading-relaxed ${
           prose
-            ? "wrap-break-word whitespace-pre-wrap font-mono text-zinc-800"
+            ? `wrap-break-word whitespace-pre-wrap ${codeFontClass} text-zinc-800`
             : "mt-2 overflow-x-auto rounded-lg bg-zinc-100 p-3"
         }`}
       >
@@ -127,7 +129,7 @@ const inlineComponents: Components = {
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   code: ({ children }) => (
-    <code className="rounded bg-zinc-100 px-1 py-0.5 text-xs font-mono">{children}</code>
+    <code className={`rounded bg-zinc-100 px-1 py-0.5 text-xs ${codeFontClass}`}>{children}</code>
   ),
 };
 

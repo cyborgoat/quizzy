@@ -14,7 +14,11 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { DataTableSortableHeader } from "@/components/ui/data-table";
+import {
+  DataTableSortableHeader,
+  dataTableCellMutedClass,
+  dataTableCellTextClass,
+} from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Input } from "@/components/ui/input";
@@ -75,8 +79,12 @@ export function KnowledgeBasePage() {
         header: "Title",
         cell: ({ row }) => (
           <div className="min-w-0 max-w-full">
-            <p className="truncate text-sm font-medium text-zinc-950">{row.original.title}</p>
-            <p className="mt-0.5 truncate text-xs text-zinc-500">{row.original.fileName}</p>
+            <span className={`${dataTableCellTextClass} truncate font-medium`}>
+              {row.original.title}
+            </span>
+            <span className={`${dataTableCellMutedClass} mt-0.5 truncate text-zinc-500`}>
+              {row.original.fileName}
+            </span>
           </div>
         ),
       },
@@ -89,7 +97,7 @@ export function KnowledgeBasePage() {
               <span className="text-xs text-zinc-400">—</span>
             ) : (
               row.original.tags.map((tag) => (
-                <Badge key={tag} className="max-w-full truncate text-[10px]">
+                <Badge key={tag} className="max-w-full truncate">
                   {tag}
                 </Badge>
               ))
@@ -102,7 +110,7 @@ export function KnowledgeBasePage() {
         accessorFn: (row) => row.linkedQuizQuestions.length,
         header: "Links",
         cell: ({ row }) => (
-          <span className="text-xs tabular-nums text-zinc-600">
+          <span className={dataTableCellMutedClass}>
             {row.original.linkedQuizQuestions.length} Q
             {row.original.linkedQuizQuestions.length === 1 ? "" : "s"}
           </span>
@@ -114,7 +122,7 @@ export function KnowledgeBasePage() {
           <DataTableSortableHeader label="Updated" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-xs text-zinc-600">
+          <span className={dataTableCellMutedClass}>
             {formatShortDate(row.original.updatedAt)}
           </span>
         ),

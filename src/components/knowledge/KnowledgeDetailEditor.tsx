@@ -8,6 +8,9 @@ const fieldClassName =
 const sectionLabelClassName =
   "text-xs font-semibold uppercase tracking-wide text-zinc-500";
 
+const contentFieldClassName =
+  "knowledge-markdown-editor w-full max-w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-base leading-7 text-zinc-700 shadow-none outline-none transition-colors placeholder:text-zinc-400 focus-visible:border-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-200/80 disabled:opacity-50";
+
 export function KnowledgeDetailEditor({
   item,
   tagsInput,
@@ -79,7 +82,7 @@ export function KnowledgeDetailEditor({
           rows={contentRows}
           disabled={disabled}
           placeholder="Write your notes in markdown..."
-          className={`${fieldClassName} mt-2 resize-y font-mono text-sm leading-relaxed text-zinc-950`}
+          className={`${contentFieldClassName} mt-2`}
         />
       </div>
     </article>

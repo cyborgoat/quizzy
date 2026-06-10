@@ -8,7 +8,7 @@ screen. It contains:
 - **Home** — the quiz library
 - **Goals** — study goals and attempt history
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
-- **Knowledge Base** — markdown notes linked to quiz questions
+- **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
 - **Settings** — profile, appearance, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
@@ -123,7 +123,7 @@ The Knowledge Base stores markdown notes in a `knowledge-base` subfolder inside 
 
 Available actions:
 
-- **Knowledge Base** in the sidebar opens the browse view at `/knowledge`
+- **Knowledge** in the sidebar opens the Knowledge Base browse view at `/knowledge`
 - **New note** opens an in-memory draft in edit mode; the file is written only when you **Save**
 - **Open folder** opens the `knowledge-base` folder in the system file manager
 - **Refresh** rescans knowledge files from disk

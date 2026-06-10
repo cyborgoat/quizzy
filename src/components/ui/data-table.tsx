@@ -10,11 +10,12 @@ const headerTextClass = "text-xs font-medium text-zinc-600";
 const sortButtonClass =
   "h-auto w-full justify-start gap-1 rounded-none p-0 text-left text-xs font-medium text-zinc-600 hover:bg-transparent hover:text-zinc-950";
 
-export const dataTableCellTextClass = "block text-left text-xs text-zinc-950";
+export const dataTableCellTextClass =
+  "block min-w-0 text-left text-xs leading-normal text-zinc-950";
 export const dataTableCellNumericClass =
-  "block text-left text-xs font-medium tabular-nums text-zinc-950";
+  "block text-left text-xs font-medium leading-normal tabular-nums text-zinc-950";
 export const dataTableCellMutedClass =
-  "block text-left text-xs tabular-nums text-zinc-600";
+  "block min-w-0 text-left text-xs leading-normal tabular-nums text-zinc-600";
 
 export function DataTableColumnHeader({ label }: { label: string }) {
   return <span className={headerTextClass}>{label}</span>;
