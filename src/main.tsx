@@ -12,6 +12,7 @@ import { UserProfileProvider } from "@/contexts/UserProfileContext";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "@/index.css";
+import "@mdxeditor/editor/style.css";
 import "katex/dist/katex.min.css";
 
 createRoot(document.getElementById("root")!).render(

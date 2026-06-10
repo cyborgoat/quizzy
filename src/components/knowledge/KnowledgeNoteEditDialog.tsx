@@ -176,15 +176,15 @@ export function KnowledgeNoteEditDialog({
             stacked ? "z-80" : "z-60",
           )}
         >
-          <div className="shrink-0 border-b border-zinc-100 px-6 py-4">
-            <Dialog.Title className="text-lg font-semibold text-zinc-950">
+          <div className="shrink-0 border-b border-zinc-100 px-6 py-3">
+            <Dialog.Title className="text-base font-semibold text-zinc-950">
               {mode === "view" && !isNewDraft ? "Knowledge note" : "Edit knowledge note"}
             </Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm text-zinc-500">
-              {mode === "view" && !isNewDraft
-                ? "Review the note and return to the question when you are done."
-                : "Title and content are required. Tags are optional."}
-            </Dialog.Description>
+            {mode === "view" && !isNewDraft ? (
+              <Dialog.Description className="mt-0.5 text-sm text-zinc-500">
+                Review the note and return to the question when you are done.
+              </Dialog.Description>
+            ) : null}
             <Dialog.Close asChild>
               <Button
                 size="icon"
@@ -198,7 +198,14 @@ export function KnowledgeNoteEditDialog({
             </Dialog.Close>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div
+            className={cn(
+              "min-h-0 flex-1 px-6",
+              mode === "view" && !isNewDraft
+                ? "overflow-y-auto py-5"
+                : "flex flex-col overflow-hidden py-4",
+            )}
+          >
             {mode === "view" && !isNewDraft ? (
               <KnowledgeDetailViewer
                 item={draft}
@@ -209,14 +216,14 @@ export function KnowledgeNoteEditDialog({
                 item={draft}
                 tagsInput={tagsInput}
                 disabled={isSaving || isDeleting}
-                contentRows={12}
+                fillHeight
                 readOnlyLinkedQuestion={readOnlyLinkedQuestion}
                 onChange={updateDraft}
               />
             )}
           </div>
 
-          <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-3">
             {mode === "view" && !isNewDraft ? (
               <Dialog.Close asChild>
                 <Button size="sm" variant="ghost" disabled={isSaving || isDeleting}>

@@ -21,6 +21,7 @@ import {
   validateKnowledgeNote,
 } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
+import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 
 type KnowledgeDetailLocationState = {
@@ -208,8 +209,19 @@ export function KnowledgeDetailPage() {
   }
 
   return (
-    <PageShell className="overflow-x-clip">
-      <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3">
+    <PageShell
+      className={cn(
+        "overflow-x-clip",
+        mode === "edit" &&
+          "flex h-[calc(100svh-(var(--app-page-py)*2))] min-h-0 flex-col overflow-hidden",
+      )}
+    >
+      <div
+        className={cn(
+          "flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-3",
+          mode === "edit" ? "mb-4" : "mb-6",
+        )}
+      >
         {isNewDraft && mode === "edit" ? (
           <Button
             type="button"
@@ -260,6 +272,7 @@ export function KnowledgeDetailPage() {
           item={item}
           tagsInput={tagsInput}
           disabled={isSaving || isDeleting}
+          fillHeight={mode === "edit"}
           onChange={updateDraft}
         />
       )}

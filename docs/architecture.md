@@ -247,8 +247,10 @@ managed directly through the system file manager.
 
 1. The user opens `/knowledge` or a note from the Mistake Log drawer.
 2. React loads note metadata from `KnowledgeLibraryProvider` or a session draft.
-3. View mode renders markdown through `MarkdownContent` (remark-gfm, remark-math,
-   rehype-katex).
+3. Edit mode uses **MDXEditor** for WYSIWYG markdown authoring (tables, lists,
+   code blocks, links). Math (`$…$`, `$$…$$`) is typed as markdown and rendered
+   in view mode. View mode renders markdown through `MarkdownContent` (remark-gfm,
+   remark-math, rehype-katex).
 4. Clicking a linked-question chip opens `LinkedQuestionPreviewDialog` without
    changing routes.
 5. Saving writes the `.md` file through native commands and refreshes the library.

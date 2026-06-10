@@ -134,6 +134,7 @@ Available actions:
 
 Editing and drafts:
 
+- Note content is edited with **MDXEditor** (WYSIWYG markdown: headings, lists, tables, code blocks, links). KaTeX math is entered as `$…$` or `$$…$$` markdown and rendered when viewing the note.
 - Unsaved note edits are kept in session storage while you work; they survive window focus changes and library refreshes until you **Save** or discard the draft
 - After **Save**, view mode updates immediately with the latest title and content
 

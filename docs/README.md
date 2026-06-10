@@ -34,6 +34,7 @@ is bundled with the desktop application.
 | Routing | TanStack Router (file-based) |
 | Validation | Zod |
 | Markdown rendering | react-markdown, remark-gfm, remark-math, rehype-katex |
+| Knowledge editing | MDXEditor (`@mdxeditor/editor`) — WYSIWYG markdown editor for notes |
 | Toast notifications | Sonner |
 | Frontend tests | Vitest |
 
