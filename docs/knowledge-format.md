@@ -49,7 +49,15 @@ The body supports the same markdown syntax used in quiz content:
 
 - **bold**, *italic*, `inline code`
 - fenced code blocks
+- GFM pipe tables
 - KaTeX math with `$...$` and `$$...$$`
+
+## Viewing linked questions
+
+From a knowledge note, click a linked-question chip to open a preview dialog. The
+dialog shows the quiz title and description, the question prompt and options, a
+**Show answer** toggle, related knowledge notes for that question, and links to
+open other notes without leaving your current context.
 
 ## Storage location
 

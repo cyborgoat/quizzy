@@ -1,12 +1,15 @@
 import { CheckCircle, XCircle } from "lucide-react";
+import { useState } from "react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   isOptionCorrect,
   isOptionIncorrectSelection,
   isOptionSelected,
 } from "@/lib/quizReview";
+import { questionTypeHint } from "@/lib/quizDisplay";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 
@@ -15,13 +18,19 @@ export function ReviewQuestionDetail({
   index,
   record,
   className,
+  variant = "review",
 }: {
   question: QuizQuestion;
   index: number;
-  record: AnswerRecord;
+  record?: AnswerRecord;
   className?: string;
+  variant?: "review" | "preview";
 }) {
+  const isPreview = variant === "preview";
+  const [showAnswers, setShowAnswers] = useState(false);
   const options = question.type === "true_false" ? ["True", "False"] : question.options;
+
+  const revealAnswers = isPreview && showAnswers;
 
   return (
     <article
@@ -36,22 +45,46 @@ export function ReviewQuestionDetail({
           {index + 1}
         </span>
         <div className="min-w-0 flex-1 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {record.isCorrect ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                <CheckCircle className="size-3.5" aria-hidden />
-                Correct
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                <XCircle className="size-3.5" aria-hidden />
-                Incorrect
-              </span>
-            )}
-            {record.flagged && (
-              <Badge className="border-amber-200 bg-amber-50 text-amber-800">Flagged</Badge>
-            )}
-          </div>
+          {isPreview ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {questionTypeHint(question.type)}
+              </p>
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor={`show-answers-${index}`}
+                  className="text-xs font-medium text-zinc-600"
+                >
+                  Show answer
+                </label>
+                <Switch
+                  id={`show-answers-${index}`}
+                  checked={showAnswers}
+                  onCheckedChange={setShowAnswers}
+                  aria-labelledby={`show-answers-${index}`}
+                />
+              </div>
+            </div>
+          ) : (
+            record && (
+              <div className="flex flex-wrap items-center gap-2">
+                {record.isCorrect ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                    <CheckCircle className="size-3.5" aria-hidden />
+                    Correct
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+                    <XCircle className="size-3.5" aria-hidden />
+                    Incorrect
+                  </span>
+                )}
+                {record.flagged && (
+                  <Badge className="border-amber-200 bg-amber-50 text-amber-800">Flagged</Badge>
+                )}
+              </div>
+            )
+          )}
 
           <div className="text-sm font-semibold leading-snug text-zinc-950 sm:text-base">
             <MarkdownContent>{question.prompt}</MarkdownContent>
@@ -63,21 +96,29 @@ export function ReviewQuestionDetail({
                 key={`${optionIndex}-${option}`}
                 index={optionIndex}
                 text={option}
-                selected={isOptionSelected(question, record.answer, optionIndex)}
+                selected={
+                  isPreview || !record
+                    ? false
+                    : isOptionSelected(question, record.answer, optionIndex)
+                }
                 multiple={question.type === "multiple_choice"}
                 locked
-                isCorrectAnswer={isOptionCorrect(question, optionIndex)}
-                isIncorrectSelection={isOptionIncorrectSelection(
-                  question,
-                  record.answer,
-                  optionIndex,
-                )}
+                isCorrectAnswer={
+                  revealAnswers || (!isPreview && record)
+                    ? isOptionCorrect(question, optionIndex)
+                    : false
+                }
+                isIncorrectSelection={
+                  !isPreview && record
+                    ? isOptionIncorrectSelection(question, record.answer, optionIndex)
+                    : false
+                }
                 onSelect={() => {}}
               />
             ))}
           </div>
 
-          {question.explanation && (
+          {question.explanation && (!isPreview || showAnswers) && (
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 Explanation

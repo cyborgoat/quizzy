@@ -76,7 +76,7 @@ export function KnowledgeDetailViewer({
             Linked questions
           </h2>
           <div className="mt-2">
-            <LinkedQuestionList links={item.linkedQuizQuestions} />
+            <LinkedQuestionList links={item.linkedQuizQuestions} currentNoteId={item.id} />
           </div>
         </section>
       )}

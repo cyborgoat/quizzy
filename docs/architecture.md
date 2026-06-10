@@ -11,7 +11,7 @@ User
 React pages and components
   |
 UserProfileProvider / QuizPreferencesProvider / MistakeLogSettingsProvider /
-QuizLibraryProvider / GoalsProvider / useQuizSession
+QuizLibraryProvider / KnowledgeLibraryProvider / GoalsProvider / useQuizSession
   |
 Zod validation and scoring
   |
@@ -39,6 +39,8 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/goals` | Goal tracking |
 | `/goals/:goalId/attempts/:attemptId` | Attempt review |
 | `/mistakes` | Mistake Log (`?quizId=` scopes to one quiz) |
+| `/knowledge` | Knowledge Base browse view |
+| `/knowledge/:knowledgeId` | Knowledge note detail (`?edit=1` opens edit mode) |
 | `/settings` | User profile, preferences, and working-directory configuration |
 | `/quiz/:quizId` | Active quiz or final results (`?mode=practice&count=N` or `?mode=scored`) |
 
@@ -80,6 +82,16 @@ directly rather than updating a local notice state.
 objects. It parses JSON, applies the Zod schema, sorts files, and rejects
 duplicate quiz IDs.
 
+### Knowledge library state
+
+`KnowledgeLibraryProvider` owns the `knowledge-base` subfolder scan, valid note
+items, invalid-file reports, and create/save/delete workflows. Notes are parsed
+from YAML front matter plus a markdown body. Unsaved drafts live in session
+storage via `knowledgeDraft.ts` until the user saves a new note.
+
+`useKnowledgeLibrary` and `useKnowledgeIndex` expose library items and a
+question-to-notes index for the Mistake Log and linked-question previews.
+
 ### Quiz session state
 
 `useQuizSession` owns one in-memory attempt:
@@ -99,9 +111,9 @@ transitions deterministic and testable. The hook receives an already validated
 The app uses two independent sidebar contexts:
 
 **App layout** (`AppLayout` + `AppSidebar`): wraps the home, goals, Mistake Log,
-and settings pages. The sidebar is collapsible to icon-only mode and contains
-Home, Goals, and Mistake Log navigation in the content area and Settings
-navigation pinned to the footer.
+Knowledge Base, and settings pages. The sidebar is collapsible to icon-only mode
+and contains Home, Goals, Mistake Log, and Knowledge navigation in the content
+area and Settings navigation pinned to the footer.
 
 **Quiz page** (`QuizPage`): wraps the active quiz in its own `SidebarProvider`.
 The left sidebar (`QuizQuestionSidebar`) shows the question navigator; on mobile
@@ -122,6 +134,11 @@ Other quiz components are split by responsibility:
 Goal components cover shared add/edit dialogs, accordion goal cards, attempt
 history, score summaries, and the dedicated attempt review page layout. Quiz
 cards reuse the goal dialogs so goal changes do not require navigation.
+
+Knowledge components cover note browse/detail views, edit and link dialogs,
+linked-question preview, clipboard export, and shared linked-notes lists reused
+by the Mistake Log drawer. Secondary actions use `IconActionButton` with
+tooltips.
 
 ### Goals state
 
@@ -224,7 +241,17 @@ managed directly through the system file manager.
   included, and sorted by flagged count then mistake frequency.
 4. Clicking a row opens `MistakeReviewDrawer`, which loads the live question
    definition from the quiz library and shows review UI with the most recent
-   incorrect answer.
+   incorrect answer. Linked knowledge notes reuse `LinkedKnowledgeNotesSection`.
+
+### Knowledge note workflow
+
+1. The user opens `/knowledge` or a note from the Mistake Log drawer.
+2. React loads note metadata from `KnowledgeLibraryProvider` or a session draft.
+3. View mode renders markdown through `MarkdownContent` (remark-gfm, remark-math,
+   rehype-katex).
+4. Clicking a linked-question chip opens `LinkedQuestionPreviewDialog` without
+   changing routes.
+5. Saving writes the `.md` file through native commands and refreshes the library.
 
 ## Project structure
 
@@ -233,17 +260,20 @@ src/
   app/            Router bootstrap (`createRouter`)
   routes/         File-based TanStack Router route definitions
   components/
+    knowledge/    Note editor, viewer, link/preview dialogs, linked-notes list
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
     mistakes/     Mistake Log review drawer
     quiz/         Quiz UI components (including QuizStartScreen)
     ui/           shadcn-style local primitives (including Drawer and Slider)
-  contexts/       QuizLibraryProvider, GoalsProvider, preferences providers
+  contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
+                  preferences providers
   data/           Zod schema, repository parser, and tests
-  hooks/          useGoals, useMistakeLog, useQuizLibrary, useQuizSession, etc.
-  lib/            Native adapter, scoring, mistake aggregation, and utilities
-  pages/          HomePage, GoalsPage, MistakeLogPage, AttemptReviewPage, etc.
-  types/          Quiz, goal, mistake log, and quiz session domain types
+  hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
+  lib/            Native adapter, scoring, knowledge drafts, mistake aggregation
+  pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
+  test/           Vitest setup (browser API polyfills for Node)
+  types/          Quiz, goal, knowledge, mistake log, and quiz session types
 
 src-tauri/
   capabilities/   Tauri permissions
@@ -253,4 +283,5 @@ src-tauri/
   tauri.conf.json Desktop window, build, and bundle configuration
 
 sample-quizzes/    Reference quiz JSON files for manual folder testing
+sample-knowledge/  Reference knowledge `.md` files for manual folder testing
 ```

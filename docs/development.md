@@ -29,7 +29,10 @@ Tests currently cover:
 - Early submission with unanswered questions
 - Frozen submitted results and complete restart behavior
 - Mistake Log aggregation, threshold filtering, sorting, and empty-state detection
-- Knowledge note drafts, front matter parsing, link validation, and question label formatting
+- Knowledge note drafts, front matter parsing, link validation, question label formatting, linked-question lookup, and clipboard export
+
+Vitest loads `src/test/setup.ts` to polyfill browser APIs such as `sessionStorage`
+when tests run in Node (including CI).
 
 Run them with:
 
@@ -92,6 +95,8 @@ Use the narrowest appropriate layer:
 - Goals workflow: `GoalsProvider` and `src/components/goals`
 - Mistake Log workflow: `useMistakeLog`, `src/lib/mistakeLog.ts`, and
   `src/pages/MistakeLogPage.tsx`
+- Knowledge Base workflow: `KnowledgeLibraryProvider`, `src/lib/knowledgeDraft.ts`,
+  and `src/components/knowledge`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
 - Filesystem behavior: typed native adapter plus a Rust command
 - Presentation: a focused component under `src/components`
@@ -110,16 +115,18 @@ Before packaging a release:
 1. Run `npm test`.
 2. Run `npm run lint`.
 3. Run `npm run build`.
-4. Run Rust tests and formatting checks.
+4. Run `cargo test --manifest-path src-tauri/Cargo.toml` and Rust formatting checks.
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
 7. Test directory selection, opening and rescanning the quiz folder, practice
    and scored quiz completion, goal creation, attempt recording, attempt
-   deletion, attempt review, and Mistake Log threshold filtering and question
-   review in the packaged application.
+   deletion, attempt review, Mistake Log threshold filtering and question
+   review, and Knowledge Base note create/edit/link/preview in the packaged
+   application.
 
-The files under `sample-quizzes/` can be copied into the configured quiz folder
-when manual test data is needed. They are not production resources.
+The files under `sample-quizzes/` and `sample-knowledge/` can be copied into
+your working directory when manual test data is needed. They are not production
+resources.
 
 Cross-platform release builds are handled by `.github/workflows/release.yml` when
 a version tag is pushed.

@@ -2,6 +2,7 @@ import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { questionTypeHint } from "@/lib/quizDisplay";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
 export function QuestionContent({
@@ -39,11 +40,7 @@ export function QuestionContent({
     <section aria-labelledby="question-prompt">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          {question.type === "multiple_choice"
-            ? "Select all answers that apply"
-            : question.type === "true_false"
-              ? "True or false"
-              : "Select one answer"}
+          {questionTypeHint(question.type)}
         </p>
         <IconActionButton
           icon={Flag}

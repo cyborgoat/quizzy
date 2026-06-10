@@ -18,6 +18,7 @@ import {
   validateKnowledgeNote,
 } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
+import { cn } from "@/lib/utils";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
 export function KnowledgeNoteEditDialog({
@@ -27,6 +28,7 @@ export function KnowledgeNoteEditDialog({
   initialMode = "view",
   onSaved,
   readOnlyLinkedQuestion,
+  stacked = false,
 }: {
   item: KnowledgeItem;
   open: boolean;
@@ -34,6 +36,7 @@ export function KnowledgeNoteEditDialog({
   initialMode?: "view" | "edit";
   onSaved?: (item: KnowledgeItem) => void;
   readOnlyLinkedQuestion?: LinkedQuizQuestion;
+  stacked?: boolean;
 }) {
   const { items, createItem, saveItem, deleteItem } = useKnowledgeLibrary();
   const source = resolveKnowledgeNoteSource(item.id, items, item) ?? item;
@@ -164,8 +167,15 @@ export function KnowledgeNoteEditDialog({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-60 bg-zinc-950/50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-60 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[min(100%,64rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none">
+        <Dialog.Overlay
+          className={cn("fixed inset-0 bg-zinc-950/50", stacked ? "z-80" : "z-60")}
+        />
+        <Dialog.Content
+          className={cn(
+            "fixed left-1/2 top-1/2 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[min(100%,64rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none",
+            stacked ? "z-80" : "z-60",
+          )}
+        >
           <div className="shrink-0 border-b border-zinc-100 px-6 py-4">
             <Dialog.Title className="text-lg font-semibold text-zinc-950">
               {mode === "view" && !isNewDraft ? "Knowledge note" : "Edit knowledge note"}

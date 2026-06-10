@@ -6,9 +6,9 @@ history, and keeps quiz data entirely local.
 
 Detailed documentation is available in [docs/README.md](docs/README.md).
 
-Example JSON quizzes are available in [sample-quizzes](sample-quizzes) for
-manual folder testing and format reference. They are not bundled into production
-builds.
+Example JSON quizzes are in [sample-quizzes](sample-quizzes). Example knowledge
+notes are in [sample-knowledge](sample-knowledge). Copy them into your working
+directory when testing locally. They are not bundled into production builds.
 
 ## Requirements
 
@@ -29,6 +29,7 @@ Frontend-only checks:
 npm test
 npm run lint
 npm run build
+cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
 Create desktop installers with:
@@ -45,7 +46,8 @@ a working directory. Click **Save**, then return to the home page and use
 sidebar to set target scores and review past attempts. You can also use the
 target icon on a quiz card to add or edit that quiz's single goal without
 leaving the home page. Existing goal icons provide quick access to attempts,
-the quiz-scoped Mistake Log, and goal deletion. Use **Mistake Log** to review
+the quiz-scoped Mistake Log, and goal deletion. Use **Knowledge** in the sidebar
+to browse markdown notes linked to quiz questions. Use **Mistake Log** to review
 questions you miss most often and flagged questions from scored attempts.
 
 When you start a quiz, choose **Practice** (subset of questions, not saved to

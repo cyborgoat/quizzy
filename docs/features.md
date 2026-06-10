@@ -123,18 +123,26 @@ The Knowledge Base stores markdown notes in a `knowledge-base` subfolder inside 
 
 Available actions:
 
-- **Knowledge** in the sidebar opens the Knowledge Base browse view at `/knowledge`
+- **Knowledge** in the sidebar opens the browse view at `/knowledge`
 - **New note** opens an in-memory draft in edit mode; the file is written only when you **Save**
 - **Open folder** opens the `knowledge-base` folder in the system file manager
 - **Refresh** rescans knowledge files from disk
-- Note detail pages default to a read-only markdown viewer; click **Edit** to change title, tags, links, or content
-- The Mistake Log drawer lists linked note titles only; use the link or add icons to attach an existing note or create a new one for the question
+- Note detail pages and the Mistake Log note dialog default to a read-only markdown viewer
+- **Edit** and **Copy** icon actions in the viewer header open edit mode or copy the full serialized `.md` file to the clipboard
+- **Linked questions** appear as clickable chips; clicking opens a preview dialog (not a route change) with the quiz title, question prompt, options, related knowledge notes, and a **Show answer** toggle for correct options and the explanation
+- Secondary icon actions across the app use tooltips; primary actions such as **Save** and **Submit** stay labeled
+
+Editing and drafts:
+
+- Unsaved note edits are kept in session storage while you work; they survive window focus changes and library refreshes until you **Save** or discard the draft
+- After **Save**, view mode updates immediately with the latest title and content
 
 Mistake Log integration:
 
 - The table shows a sortable **Notes** count for each qualifying mistake
 - Clicking a row opens the review drawer with the question review plus linked knowledge notes below
-- Creating or linking a note from the drawer keeps the question pre-linked and returns to view mode after save
+- Link and add-note icon actions attach existing notes or create a new draft pre-linked to that question
+- Opening a linked note from the drawer or from a linked-question preview uses the same knowledge note dialog
 
 ## Settings
 
@@ -235,8 +243,8 @@ Quizzy presents one question at a time and supports:
 - True or false
 
 Question text, options, and explanations support Markdown formatting. This
-includes **bold**, *italic*, `inline code`, fenced code blocks, and math
-formulas rendered with KaTeX using `$…$` for inline math and `$$…$$` for
+includes **bold**, *italic*, `inline code`, fenced code blocks, GFM pipe tables,
+and math formulas rendered with KaTeX using `$…$` for inline math and `$$…$$` for
 display math. See [Quiz JSON format](quiz-format.md#markdown-in-question-content)
 for syntax reference and examples.
 
@@ -295,7 +303,8 @@ config directory. See [Native storage and security](native-storage.md).
 
 ## Example data
 
-The repository contains example JSON files under `sample-quizzes/`:
+The repository contains example JSON files under `sample-quizzes/` and example
+knowledge notes under `sample-knowledge/`:
 
 | File | Contents |
 | --- | --- |
@@ -304,6 +313,8 @@ The repository contains example JSON files under `sample-quizzes/`:
 | `css-basics.json` | CSS fundamentals |
 | `comprehensive-stress-test.json` | Large mixed-format quiz for edge-case testing |
 | `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
+| `markdown-showcase.md` | Knowledge note with tables, math, and other markdown features |
 
-These files are for development and manual quiz-folder testing. They are not
-embedded in production builds and the app has no special sample loading action.
+Copy quiz files into your working directory and knowledge notes into
+`knowledge-base/` for local testing. These files are not embedded in production
+builds and the app has no special sample loading action.

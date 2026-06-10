@@ -46,13 +46,17 @@ application, and opens the desktop window.
 9. Open **Mistake Log** from the sidebar to
    review questions missed in scored attempts. Adjust thresholds in **Settings** if
    needed.
+10. Open **Knowledge** to browse notes, link them to quiz questions, or copy
+    `sample-knowledge/markdown-showcase.md` into `knowledge-base/` to test tables
+    and other markdown features.
 
 The selected working directory and your name are remembered between launches. If
 the directory becomes unavailable, Quizzy keeps the configured path and prompts
 you to update it in Settings.
 
-Example quiz files are available in the repository's `sample-quizzes/`
-directory. They are reference data and are not bundled into the production app.
+Example quiz files are in `sample-quizzes/`. Example knowledge notes are in
+`sample-knowledge/`. They are reference data and are not bundled into the
+production app.
 
 ## Frontend-only development
 

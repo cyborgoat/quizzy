@@ -1,6 +1,7 @@
 import { FilePlus, Link2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
+import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
 import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNoteDialog";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
 import { IconActionButton } from "@/components/ui/icon-action-button";
@@ -142,45 +143,22 @@ export function MistakeReviewDrawer({
 
             <Separator className="my-5" />
 
-            <section className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-zinc-950">
-                  Knowledge notes ({linkedNotes.length})
-                </h2>
+            <LinkedKnowledgeNotesSection
+              notes={linkedNotes}
+              onSelectNote={(item) => openNote(item, "view")}
+              headerActions={
                 <KnowledgeNoteActions
                   onLink={() => setLinkDialogOpen(true)}
                   onAdd={handleAddNote}
                 />
-              </div>
-
-              {linkedNotes.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-center">
-                  <p className="text-sm text-zinc-600">
-                    No knowledge notes linked to this question yet.
-                  </p>
-                  <div className="mt-3 flex justify-center">
-                    <KnowledgeNoteActions
-                      onLink={() => setLinkDialogOpen(true)}
-                      onAdd={handleAddNote}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
-                  {linkedNotes.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => openNote(item, "view")}
-                        className="w-full px-3 py-2.5 text-left text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-50"
-                      >
-                        {item.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+              }
+              emptyActions={
+                <KnowledgeNoteActions
+                  onLink={() => setLinkDialogOpen(true)}
+                  onAdd={handleAddNote}
+                />
+              }
+            />
           </div>
         </DrawerContent>
       </Drawer>

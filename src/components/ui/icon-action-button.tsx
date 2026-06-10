@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-export const iconActionButtonClass = "text-zinc-900 hover:bg-zinc-100/60";
+const iconActionButtonClass = "text-zinc-900 hover:bg-zinc-100/60";
 
 type IconActionButtonProps = {
   icon: LucideIcon;
@@ -18,7 +18,6 @@ type IconActionButtonProps = {
   variant?: "ghost" | "outline" | "default";
   className?: string;
   tooltipSide?: "bottom" | "top" | "left" | "right";
-  tooltipClassName?: string;
   type?: "button" | "submit";
   children?: ReactNode;
 } & Omit<ComponentProps<typeof Button>, "children" | "size" | "variant" | "type">;
@@ -31,7 +30,6 @@ export function IconActionButton({
   variant = "ghost",
   className,
   tooltipSide = "bottom",
-  tooltipClassName,
   type = "button",
   children,
   ...props
@@ -58,9 +56,7 @@ export function IconActionButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side={tooltipSide} className={tooltipClassName}>
-        {label}
-      </TooltipContent>
+      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
     </Tooltip>
   );
 }
