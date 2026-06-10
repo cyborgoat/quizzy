@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -85,10 +86,12 @@ export function GoalsPage() {
           </p>
         </div>
         {!showForm && availableQuizzes.length > 0 && (
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="size-4" />
-            New goal
-          </Button>
+          <IconActionButton
+            icon={Plus}
+            label="New goal"
+            variant="default"
+            onClick={() => setShowForm(true)}
+          />
         )}
       </div>
 
@@ -96,18 +99,16 @@ export function GoalsPage() {
         <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-950">New goal</h2>
-            <Button
-              size="icon"
-              variant="ghost"
+            <IconActionButton
+              icon={X}
+              label="Cancel"
               className="size-7 text-zinc-500"
               disabled={isCreating}
               onClick={() => {
                 setShowForm(false);
                 setForm(DEFAULT_FORM);
               }}
-            >
-              <X className="size-4" />
-            </Button>
+            />
           </div>
 
           <div className="space-y-3">
@@ -148,16 +149,16 @@ export function GoalsPage() {
             >
               {isCreating ? "Creating..." : "Create goal"}
             </Button>
-            <Button
+            <IconActionButton
+              icon={X}
+              label="Cancel"
               variant="outline"
               disabled={isCreating}
               onClick={() => {
                 setShowForm(false);
                 setForm(DEFAULT_FORM);
               }}
-            >
-              Cancel
-            </Button>
+            />
           </div>
         </div>
       )}

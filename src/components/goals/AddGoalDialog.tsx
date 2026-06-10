@@ -3,6 +3,7 @@ import { Target, X } from "lucide-react";
 import { useState } from "react";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import {
   Tooltip,
   TooltipContent,
@@ -118,9 +119,7 @@ export function AddGoalDialog({ quiz }: { quiz: Quiz }) {
 
           <div className="mt-6 flex justify-end gap-2">
             <Dialog.Close asChild>
-              <Button variant="outline" disabled={isSaving}>
-                Cancel
-              </Button>
+              <IconActionButton icon={X} label="Cancel" variant="outline" disabled={isSaving} />
             </Dialog.Close>
             <Button onClick={() => void handleCreate()} disabled={isSaving}>
               {isSaving ? "Creating..." : "Create goal"}

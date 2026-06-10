@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Slider } from "@/components/ui/slider";
 import {
   defaultPracticeQuestionCount,
@@ -97,11 +99,14 @@ export function QuizStartScreen({
           </p>
         )}
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-wrap items-center gap-2">
           <Button onClick={handleBegin}>Begin</Button>
-          <Button variant="outline" onClick={() => navigate({ to: "/" })}>
-            Cancel
-          </Button>
+          <IconActionButton
+            icon={X}
+            label="Cancel"
+            variant="outline"
+            onClick={() => navigate({ to: "/" })}
+          />
         </div>
       </div>
     </main>

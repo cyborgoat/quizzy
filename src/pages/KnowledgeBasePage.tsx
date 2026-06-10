@@ -19,7 +19,7 @@ import {
   dataTableCellMutedClass,
   dataTableCellTextClass,
 } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,27 +171,29 @@ export function KnowledgeBasePage() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button
+          <IconActionButton
+            icon={FolderOpen}
+            label="Open folder"
             variant="outline"
-            size="sm"
             onClick={() => void library.openKnowledgeFolder()}
             disabled={!library.directoryAvailable}
+          />
+          <IconActionButton
+            icon={RefreshCw}
+            label="Refresh"
+            variant="outline"
+            onClick={() => void handleRefresh()}
+            disabled={isRefreshing}
           >
-            <FolderOpen className="size-4" />
-            Open folder
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void handleRefresh()} disabled={isRefreshing}>
             <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            size="sm"
+          </IconActionButton>
+          <IconActionButton
+            icon={Plus}
+            label="New note"
+            variant="default"
             onClick={handleNewNote}
             disabled={!library.directoryAvailable}
-          >
-            <Plus className="size-4" />
-            New note
-          </Button>
+          />
         </div>
       </div>
 

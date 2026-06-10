@@ -1,7 +1,7 @@
 import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
-import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
 export function QuestionContent({
@@ -45,15 +45,13 @@ export function QuestionContent({
               ? "True or false"
               : "Select one answer"}
         </p>
-        <Button
+        <IconActionButton
+          icon={Flag}
+          label={flagged ? "Unflag question" : "Flag for review"}
           variant={flagged ? "default" : "outline"}
-          size="sm"
           aria-pressed={flagged}
           onClick={onToggleFlag}
-        >
-          <Flag className="size-4" />
-          {flagged ? "Flagged for review" : "Flag for review"}
-        </Button>
+        />
       </div>
       <div
         id="question-prompt"

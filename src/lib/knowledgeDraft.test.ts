@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   buildKnowledgeDraft,
-  clearKnowledgeDraft,
   parseTagsInput,
   resolveKnowledgeNoteSource,
   stashKnowledgeDraft,

@@ -1,6 +1,6 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
@@ -9,6 +9,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/$knowledgeId";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import {
   clearKnowledgeDraft,
@@ -164,7 +165,10 @@ export function KnowledgeDetailPage() {
         return;
       }
 
-      await saveItem({ ...item, ...payload });
+      const updated = { ...item, ...payload };
+      await saveItem(updated);
+      setDraft(updated);
+      setTagsInput(formatTagsInput(updated.tags));
       toast.success("Knowledge note saved.");
       setMode("view");
       void navigate({
@@ -226,38 +230,21 @@ export function KnowledgeDetailPage() {
           </Link>
         )}
 
-        {mode === "view" ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 shrink-0 px-2 text-zinc-900 hover:bg-zinc-100/60"
-            onClick={() => setMode("edit")}
-          >
-            <Pencil className="size-3.5" />
-            Edit
-          </Button>
-        ) : (
+        {mode === "edit" && (
           <div className="flex shrink-0 flex-wrap items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-zinc-900 hover:bg-zinc-100/60"
+            <IconActionButton
+              icon={X}
+              label="Cancel"
               onClick={handleCancel}
               disabled={isSaving || isDeleting}
-            >
-              Cancel
-            </Button>
+            />
             {!isNewDraft && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-zinc-900 hover:bg-zinc-100/60"
+              <IconActionButton
+                icon={Trash2}
+                label="Delete"
                 onClick={() => void handleDelete()}
                 disabled={isDeleting || isSaving}
-              >
-                <Trash2 className="size-3.5" />
-                Delete
-              </Button>
+              />
             )}
             <Button size="sm" onClick={() => void handleSave()} disabled={isSaving || isDeleting}>
               {isSaving ? "Saving..." : "Save"}
@@ -267,7 +254,7 @@ export function KnowledgeDetailPage() {
       </div>
 
       {mode === "view" && !isNewDraft ? (
-        <KnowledgeDetailViewer item={item} onAddContent={() => setMode("edit")} />
+        <KnowledgeDetailViewer item={item} onEdit={() => setMode("edit")} />
       ) : (
         <KnowledgeDetailEditor
           item={item}

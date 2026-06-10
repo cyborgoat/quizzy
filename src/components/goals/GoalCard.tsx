@@ -15,7 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useGoals } from "@/hooks/useGoals";
 import {
   anyAttemptMetTarget,
@@ -100,16 +100,12 @@ function AttemptRow({
         >
           Review
         </Link>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
+        <IconActionButton
+          icon={Trash2}
+          label={`Delete attempt from ${date}`}
           className="size-7 shrink-0 text-zinc-500 hover:text-red-700"
-          aria-label={`Delete attempt from ${date}`}
           onClick={(event) => void handleDelete(event)}
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
+        />
       </div>
     </div>
   );
@@ -209,49 +205,34 @@ export function GoalCard({ goal }: { goal: Goal }) {
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="gap-1.5 text-zinc-500 hover:text-red-700"
+            <IconActionButton
+              icon={Trash2}
+              label="Delete"
+              className="text-zinc-500 hover:text-red-700"
               onClick={(event) => void handleDelete(event)}
-            >
-              <Trash2 className="size-3.5" />
-              Delete
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
+            />
+            <div className="flex items-center gap-1">
+              <IconActionButton
+                icon={Pencil}
+                label="Edit"
                 variant="outline"
-                className="gap-1.5"
                 onClick={startEditing}
-              >
-                <Pencil className="size-3.5" />
-                Edit
-              </Button>
+              />
               {goal.completed ? (
-                <Button
-                  type="button"
-                  size="sm"
+                <IconActionButton
+                  icon={RotateCcw}
+                  label="Reopen"
                   variant="outline"
+                  className="text-zinc-500"
                   onClick={(event) => void handleReopen(event)}
-                  className="gap-1.5 text-zinc-500"
-                >
-                  <RotateCcw className="size-3.5" />
-                  Reopen
-                </Button>
+                />
               ) : (
-                <Button
-                  type="button"
-                  size="sm"
+                <IconActionButton
+                  icon={CheckCircle2}
+                  label="Complete"
                   variant="outline"
                   onClick={(event) => void handleComplete(event)}
-                  className="gap-1.5"
-                >
-                  <CheckCircle2 className="size-3.5" />
-                  Complete
-                </Button>
+                />
               )}
             </div>
           </div>

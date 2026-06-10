@@ -1,11 +1,12 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { Pencil, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
 import { KnowledgeDetailViewer } from "@/components/knowledge/KnowledgeDetailViewer";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import {
   clearKnowledgeDraft,
@@ -17,7 +18,6 @@ import {
   validateKnowledgeNote,
 } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
-import { cn } from "@/lib/utils";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
 export function KnowledgeNoteEditDialog({
@@ -161,21 +161,11 @@ export function KnowledgeNoteEditDialog({
     }
   }
 
-  const displayItem =
-    mode === "view" ? items.find((entry) => entry.id === draft.id) ?? draft : draft;
-
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-60 bg-zinc-950/50" />
-        <Dialog.Content
-          className={cn(
-            "fixed left-1/2 top-1/2 z-60 flex w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none",
-            mode === "view" && !isNewDraft
-              ? "h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] max-w-[min(100%,64rem)]"
-              : "max-h-[calc(100vh-2rem)] max-w-2xl",
-          )}
-        >
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-60 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[min(100%,64rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none">
           <div className="shrink-0 border-b border-zinc-100 px-6 py-4">
             <Dialog.Title className="text-lg font-semibold text-zinc-950">
               {mode === "view" && !isNewDraft ? "Knowledge note" : "Edit knowledge note"}
@@ -201,8 +191,8 @@ export function KnowledgeNoteEditDialog({
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             {mode === "view" && !isNewDraft ? (
               <KnowledgeDetailViewer
-                item={displayItem}
-                onAddContent={() => setMode("edit")}
+                item={draft}
+                onEdit={() => setMode("edit")}
               />
             ) : (
               <KnowledgeDetailEditor
@@ -218,37 +208,26 @@ export function KnowledgeNoteEditDialog({
 
           <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-4">
             {mode === "view" && !isNewDraft ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 px-2 text-zinc-900 hover:bg-zinc-100/60"
-                onClick={() => setMode("edit")}
-              >
-                <Pencil className="size-3.5" />
-                Edit
-              </Button>
+              <Dialog.Close asChild>
+                <Button size="sm" variant="ghost" disabled={isSaving || isDeleting}>
+                  Close
+                </Button>
+              </Dialog.Close>
             ) : (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 text-zinc-900 hover:bg-zinc-100/60"
+                <IconActionButton
+                  icon={X}
+                  label="Cancel"
                   onClick={handleCancelEdit}
                   disabled={isSaving || isDeleting}
-                >
-                  Cancel
-                </Button>
+                />
                 {!isNewDraft && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-zinc-900 hover:bg-zinc-100/60"
+                  <IconActionButton
+                    icon={Trash2}
+                    label="Delete"
                     onClick={() => void handleDelete()}
                     disabled={isDeleting || isSaving}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Delete
-                  </Button>
+                  />
                 )}
                 <Button size="sm" onClick={() => void handleSave()} disabled={isSaving || isDeleting}>
                   {isSaving ? "Saving..." : "Save"}

@@ -3,13 +3,8 @@ import { useMemo, useState } from "react";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
 import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNoteDialog";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
-import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Drawer,
   DrawerContent,
@@ -35,41 +30,16 @@ function KnowledgeNoteActions({
 }) {
   return (
     <div className="flex shrink-0 items-center gap-1">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-8 text-zinc-900 hover:bg-zinc-100/60"
-            onClick={onLink}
-            aria-label="Link existing note"
-          >
-            <Link2 className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="z-70">
-          Link existing note
-        </TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-8 text-zinc-900 hover:bg-zinc-100/60"
-            onClick={onAdd}
-            aria-label="Add new note"
-          >
-            <FilePlus className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="z-70">
-          Add new note
-        </TooltipContent>
-      </Tooltip>
+      <IconActionButton
+        icon={Link2}
+        label="Link existing note"
+        onClick={onLink}
+      />
+      <IconActionButton
+        icon={FilePlus}
+        label="Add new note"
+        onClick={onAdd}
+      />
     </div>
   );
 }

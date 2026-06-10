@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useGoals } from "@/hooks/useGoals";
 import {
   detailsFormToGoalInput,
@@ -98,9 +99,7 @@ export function EditGoalDialog({
 
           <div className="mt-6 flex justify-end gap-2">
             <Dialog.Close asChild>
-              <Button variant="outline" disabled={isSaving}>
-                Cancel
-              </Button>
+              <IconActionButton icon={X} label="Cancel" variant="outline" disabled={isSaving} />
             </Dialog.Close>
             <Button onClick={() => void handleSave()} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save changes"}

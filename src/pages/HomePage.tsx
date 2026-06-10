@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { QuizList } from "@/components/quiz/QuizList";
@@ -109,18 +109,21 @@ export function HomePage() {
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => void handleRefresh()} disabled={isRefreshing}>
-                <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-              <Button
+              <IconActionButton
+                icon={RefreshCw}
+                label="Refresh"
                 variant="outline"
-                size="sm"
-                onClick={() => void library.openQuizFolder()}
+                onClick={() => void handleRefresh()}
+                disabled={isRefreshing}
               >
-                <FolderOpen className="size-4" />
-                Open quiz folder
-              </Button>
+                <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              </IconActionButton>
+              <IconActionButton
+                icon={FolderOpen}
+                label="Open quiz folder"
+                variant="outline"
+                onClick={() => void library.openQuizFolder()}
+              />
             </div>
           </div>
 

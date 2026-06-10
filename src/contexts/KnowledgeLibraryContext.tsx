@@ -113,6 +113,11 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       contents,
       overwrite: true,
     });
+    setItems((current) =>
+      current
+        .map((entry) => (entry.id === updated.id ? updated : entry))
+        .sort((a, b) => a.title.localeCompare(b.title)),
+    );
     await refresh({ background: true });
   }
 

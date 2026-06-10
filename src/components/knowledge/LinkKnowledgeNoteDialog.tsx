@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
@@ -150,9 +151,7 @@ export function LinkKnowledgeNoteDialog({
 
           <div className="mt-6 flex justify-end">
             <Dialog.Close asChild>
-              <Button variant="ghost" size="sm" className="text-zinc-900" disabled={isLinking}>
-                Cancel
-              </Button>
+              <IconActionButton icon={X} label="Cancel" disabled={isLinking} />
             </Dialog.Close>
           </div>
         </Dialog.Content>
