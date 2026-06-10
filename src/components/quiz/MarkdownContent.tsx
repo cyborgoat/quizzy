@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type { Components } from "react-markdown";
@@ -111,9 +112,26 @@ function createBlockComponents(variant: "default" | "prose"): Components {
     ),
     hr: () => <hr className={prose ? "my-6 border-zinc-200" : "my-4 border-zinc-200"} />,
     table: ({ children }) => (
-      <div className="mt-2 w-full max-w-full overflow-x-auto">
-        <table className="w-full text-sm">{children}</table>
+      <div className={`w-full max-w-full overflow-x-auto ${prose ? "mt-4" : "mt-2"}`}>
+        <table className="w-full border-collapse text-sm">{children}</table>
       </div>
+    ),
+    thead: ({ children }) => (
+      <thead className="border-b border-zinc-200 bg-zinc-50/60">{children}</thead>
+    ),
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => <tr className="border-b border-zinc-200/45">{children}</tr>,
+    th: ({ children }) => (
+      <th className="px-3 py-2 text-left align-middle text-xs font-semibold text-zinc-600">
+        {children}
+      </th>
+    ),
+    td: ({ children }) => (
+      <td
+        className={`px-3 py-2 align-middle ${prose ? "text-base leading-7 text-zinc-700" : "text-sm text-zinc-700"}`}
+      >
+        {children}
+      </td>
     ),
     img: ({ src, alt }) => (
       <img src={src} alt={alt ?? ""} className="my-2 h-auto max-w-full rounded-md" />
@@ -150,7 +168,7 @@ export function MarkdownContent({
 
   const markdown = (
     <ReactMarkdown
-      remarkPlugins={[remarkMath]}
+      remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeKatex]}
       components={components}
     >
