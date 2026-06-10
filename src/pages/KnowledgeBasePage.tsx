@@ -9,10 +9,8 @@ import {
 } from "@tanstack/react-table";
 import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/index";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
   DataTableSortableHeader,
@@ -21,6 +19,8 @@ import {
 } from "@/components/ui/data-table";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { EmptyState } from "@/components/quiz/EmptyState";
+import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
+import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
+import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
 import type { KnowledgeItem } from "@/types/knowledge";
@@ -52,7 +53,10 @@ export function KnowledgeBasePage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updatedAt", desc: true },
   ]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { isRefreshing, handleRefresh } = useLibraryRefresh(
+    () => library.refresh(),
+    "Knowledge base refreshed.",
+  );
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -140,13 +144,6 @@ export function KnowledgeBasePage() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  async function handleRefresh() {
-    setIsRefreshing(true);
-    await Promise.all([library.refresh(), new Promise((resolve) => setTimeout(resolve, 500))]);
-    setIsRefreshing(false);
-    toast.success("Knowledge base refreshed.");
-  }
-
   function handleNewNote() {
     const draft = buildKnowledgeDraft();
     stashKnowledgeDraft(draft);
@@ -197,37 +194,23 @@ export function KnowledgeBasePage() {
         </div>
       </div>
 
-      {library.isLoading && !library.directoryPath ? (
-        <p className="py-20 text-center text-sm text-zinc-500">Loading knowledge base…</p>
-      ) : !library.directoryAvailable ? (
-        <EmptyState
-          title={library.directoryPath ? "Working directory unavailable" : "No working directory set"}
-          description={
-            library.directoryPath
-              ? "Quizzy could not access the configured directory. You can update it in Settings."
-              : "Choose a working directory in Settings to store knowledge notes."
-          }
-          actionLabel="Open Settings"
-          onAction={() => navigate({ to: "/settings" })}
-        />
-      ) : (
+      <WorkingDirectoryGate
+        isLoading={library.isLoading}
+        directoryPath={library.directoryPath}
+        directoryAvailable={library.directoryAvailable}
+        loadingMessage="Loading knowledge base…"
+        noDirectoryTitle="No working directory set"
+        noDirectoryDescription="Choose a working directory in Settings to store knowledge notes."
+        unavailableTitle="Working directory unavailable"
+        unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
+        onOpenSettings={() => navigate({ to: "/settings" })}
+      >
         <>
-          {library.invalidReports.length > 0 && (
-            <Alert variant="destructive" className="mb-4 min-w-0 lg:mb-5">
-              <AlertTitle>
-                {library.invalidReports.length} invalid knowledge file(s) were skipped
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="mt-2 space-y-2 wrap-break-word">
-                  {library.invalidReports.map((report) => (
-                    <li key={report.fileName} className="min-w-0">
-                      <strong>{report.fileName}:</strong> {report.issues.join(" ")}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
+          <InvalidFileReportsAlert
+            reports={library.invalidReports}
+            entityLabel="knowledge"
+            className="mb-4 min-w-0 lg:mb-5"
+          />
 
           <div className="mb-4 flex min-w-0 flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-3 sm:flex-row sm:items-end lg:mb-5 lg:p-4">
             <div className="min-w-0 flex-1">
@@ -327,7 +310,7 @@ export function KnowledgeBasePage() {
             </div>
           )}
         </>
-      )}
+      </WorkingDirectoryGate>
 
       </div>
     </PageShell>

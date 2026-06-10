@@ -1,12 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { QuizLibraryContext } from "@/contexts/quiz-library-context";
 import { parseQuizFiles } from "@/data/quizRepository";
+import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
 
@@ -15,13 +11,8 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const [directoryAvailable, setDirectoryAvailable] = useState(false);
   const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(async (options?: { background?: boolean }) => {
-    const background = options?.background ?? false;
-    if (!background) {
-      setIsLoading(true);
-    }
+  const load = useCallback(async () => {
     try {
       const settings = await nativeApi.getSettings();
       setDirectoryPath(settings.workingDirectory);
@@ -41,25 +32,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       setDirectoryAvailable(false);
       toast.error(errorMessage(error));
-    } finally {
-      if (!background) {
-        setIsLoading(false);
-      }
     }
   }, []);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => void refresh(), 0);
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
-
-  useEffect(() => {
-    function handleFocus() {
-      void refresh({ background: true });
-    }
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [refresh]);
+  const { refresh, isLoading } = useBackgroundDataLoader(load);
 
   async function openQuizFolder() {
     try {

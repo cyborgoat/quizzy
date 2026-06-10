@@ -1,10 +1,4 @@
-import { useContext } from "react";
 import { GoalsContext } from "@/contexts/goals-context";
+import { createContextHook } from "@/hooks/createContextHook";
 
-export function useGoals() {
-  const context = useContext(GoalsContext);
-  if (!context) {
-    throw new Error("useGoals must be used within GoalsProvider.");
-  }
-  return context;
-}
+export const useGoals = createContextHook(GoalsContext, "GoalsProvider");

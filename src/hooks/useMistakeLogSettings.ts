@@ -1,10 +1,7 @@
-import { useContext } from "react";
 import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
+import { createContextHook } from "@/hooks/createContextHook";
 
-export function useMistakeLogSettings() {
-  const context = useContext(MistakeLogSettingsContext);
-  if (!context) {
-    throw new Error("useMistakeLogSettings must be used within MistakeLogSettingsProvider.");
-  }
-  return context;
-}
+export const useMistakeLogSettings = createContextHook(
+  MistakeLogSettingsContext,
+  "MistakeLogSettingsProvider",
+);

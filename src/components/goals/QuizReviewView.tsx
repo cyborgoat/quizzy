@@ -1,8 +1,9 @@
 import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
 import { ReviewHeader } from "@/components/goals/ReviewHeader";
 import { ReviewScoreSummary } from "@/components/goals/ReviewScoreSummary";
+import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { QuestionReviewList } from "@/components/quiz/QuestionReviewList";
-import type { QuestionReviewItem } from "@/components/quiz/QuestionReviewList";
+import type { QuestionReviewItem } from "@/types/review";
 import { useAttemptReviewNavigation } from "@/hooks/useAttemptReviewNavigation";
 import type {
   ReviewGoalContext,
@@ -69,13 +70,13 @@ export function QuizReviewView({
           Answer review
         </h2>
         {!quizAvailable ? (
-          <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+          <InlineEmptyMessage>
             This quiz is unavailable, so question details cannot be shown.
-          </p>
+          </InlineEmptyMessage>
         ) : items.length === 0 ? (
-          <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+          <InlineEmptyMessage>
             No matching questions found for this attempt.
-          </p>
+          </InlineEmptyMessage>
         ) : (
           <QuestionReviewList
             items={items}

@@ -42,6 +42,47 @@ const CODE_BLOCK_LANGUAGES = {
   python: "Python",
 } as const;
 
+function handleEditorTableWheel(wrapper: HTMLElement, event: WheelEvent) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  if (!target.closest("table")) return;
+
+  const inner = wrapper.querySelector<HTMLElement>(".mdxeditor-root-contenteditable");
+  let scrollContainer: HTMLElement | null =
+    inner && inner.scrollHeight > inner.clientHeight ? inner : null;
+
+  if (!scrollContainer) {
+    let node: HTMLElement | null = target.parentElement;
+    while (node && wrapper.contains(node)) {
+      const { overflowY } = getComputedStyle(node);
+      if (
+        (overflowY === "auto" || overflowY === "scroll") &&
+        node.scrollHeight > node.clientHeight
+      ) {
+        scrollContainer = node;
+        break;
+      }
+      node = node.parentElement;
+    }
+  }
+
+  scrollContainer ??= document.scrollingElement as HTMLElement | null;
+  if (!scrollContainer) return;
+
+  const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+  if (maxScroll <= 0) return;
+
+  const nextScrollTop = Math.min(
+    maxScroll,
+    Math.max(0, scrollContainer.scrollTop + event.deltaY),
+  );
+
+  if (nextScrollTop !== scrollContainer.scrollTop) {
+    scrollContainer.scrollTop = nextScrollTop;
+    event.preventDefault();
+  }
+}
+
 function KnowledgeMarkdownEditorToolbar() {
   return (
     <DiffSourceToggleWrapper options={["rich-text", "source"]}>
@@ -108,6 +149,7 @@ export function KnowledgeMarkdownEditor({
   className?: string;
 }) {
   const editorRef = useRef<MDXEditorMethods>(null);
+  const editorWrapperRef = useRef<HTMLDivElement>(null);
   const lastEmittedRef = useRef(value);
 
   useEffect(() => {
@@ -118,6 +160,16 @@ export function KnowledgeMarkdownEditor({
     lastEmittedRef.current = value;
   }, [value]);
 
+  useEffect(() => {
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
+
+    const onWheel = (event: WheelEvent) => handleEditorTableWheel(wrapper, event);
+
+    wrapper.addEventListener("wheel", onWheel, { passive: false });
+    return () => wrapper.removeEventListener("wheel", onWheel);
+  }, []);
+
   function handleChange(markdown: string) {
     lastEmittedRef.current = markdown;
     onChange(markdown);
@@ -125,6 +177,7 @@ export function KnowledgeMarkdownEditor({
 
   return (
     <div
+      ref={editorWrapperRef}
       className={cn(
         "knowledge-mdx-editor mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/50",
         fillHeight && "knowledge-mdx-editor-fill flex min-h-0 flex-1 flex-col",

@@ -3,7 +3,9 @@ import { nativeApi, type AppSettings } from "@/lib/native";
 const LEGACY_NAME_KEY = "quizzy:profile:name";
 const LEGACY_SHUFFLE_KEY = "quizzy:preferences:shuffle-mode";
 
-export async function loadAppSettings(): Promise<AppSettings> {
+let inflightSettings: Promise<AppSettings> | null = null;
+
+async function loadAppSettingsImpl(): Promise<AppSettings> {
   const settings = await nativeApi.getSettings();
   const updates: {
     profileName?: string;
@@ -34,4 +36,13 @@ export async function loadAppSettings(): Promise<AppSettings> {
     shuffleQuestions: updates.shuffleQuestions ?? settings.shuffleQuestions,
     shuffleOptions: updates.shuffleOptions ?? settings.shuffleOptions,
   };
+}
+
+export async function loadAppSettings(): Promise<AppSettings> {
+  if (!inflightSettings) {
+    inflightSettings = loadAppSettingsImpl().finally(() => {
+      inflightSettings = null;
+    });
+  }
+  return inflightSettings;
 }

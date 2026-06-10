@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
+import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getLinkWarnings, linkWarningKey } from "@/lib/knowledgeValidation";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
 
@@ -25,9 +26,7 @@ export function LinkedQuestionPicker({
   );
   const warningKeys = new Set(warnings.map(linkWarningKey));
 
-  const selectedKeys = new Set(
-    value.map((link) => `${link.quizId}:${link.questionId}`),
-  );
+  const selectedKeys = new Set(value.map((link) => questionLinkKey(link.quizId, link.questionId)));
 
   const options = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -73,7 +72,7 @@ export function LinkedQuestionPicker({
   }
 
   function addLink(link: LinkedQuizQuestion) {
-    const key = `${link.quizId}:${link.questionId}`;
+    const key = questionLinkKey(link.quizId, link.questionId);
     if (selectedKeys.has(key)) return;
     onChange([...value, link]);
     setSearch("");
@@ -84,10 +83,11 @@ export function LinkedQuestionPicker({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {value.map((link) => {
-            const hasWarning = warningKeys.has(`${link.quizId}:${link.questionId}`);
+            const key = questionLinkKey(link.quizId, link.questionId);
+            const hasWarning = warningKeys.has(key);
             return (
               <Badge
-                key={`${link.quizId}:${link.questionId}`}
+                key={key}
                 className={`gap-1 pr-1 ${hasWarning ? "border-amber-300 bg-amber-50 text-amber-900" : ""}`}
               >
                 <span className="max-w-[16rem] truncate">
@@ -124,7 +124,7 @@ export function LinkedQuestionPicker({
               <li className="px-3 py-2 text-sm text-zinc-500">No matching questions.</li>
             ) : (
               options.map((option) => {
-                const key = `${option.quizId}:${option.questionId}`;
+                const key = questionLinkKey(option.quizId, option.questionId);
                 const isSelected = selectedKeys.has(key);
                 return (
                   <li key={key}>

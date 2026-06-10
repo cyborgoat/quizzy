@@ -1,23 +1,8 @@
-import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { QuestionKnowledgeNotesPanel } from "@/components/knowledge/QuestionKnowledgeNotesPanel";
+import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
-
-function ReviewQuestionExplanation({ question }: { question: QuizQuestion }) {
-  if (!question.explanation) return null;
-
-  return (
-    <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-        Explanation
-      </p>
-      <div className="mt-1.5 text-sm leading-5 text-zinc-700">
-        <MarkdownContent>{question.explanation}</MarkdownContent>
-      </div>
-    </section>
-  );
-}
 
 export function ReviewQuestionSplitPanel({
   question,
@@ -49,7 +34,9 @@ export function ReviewQuestionSplitPanel({
       />
 
       <aside className="flex min-w-0 flex-col gap-3">
-        <ReviewQuestionExplanation question={question} />
+        {question.explanation && (
+          <QuestionExplanation explanation={question.explanation} compact />
+        )}
         {quizId && (
           <QuestionKnowledgeNotesPanel
             quizId={quizId}

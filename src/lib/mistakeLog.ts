@@ -1,3 +1,4 @@
+import { questionLinkKey } from "@/lib/knowledgeLinks";
 import type { QuestionResult } from "@/types/goal";
 import type { SubmittedAnswer } from "@/types/quiz";
 import type {
@@ -62,7 +63,7 @@ export function aggregateQuestionResults(
 
   for (const attempt of attempts) {
     for (const result of attempt.questionResults) {
-      const key = `${attempt.quizId}:${result.questionId}`;
+      const key = questionLinkKey(attempt.quizId, result.questionId);
       let row = map.get(key);
       if (!row) {
         row = {
@@ -151,6 +152,3 @@ export function detectEmptyReason(
   return null;
 }
 
-export function entryKey(entry: Pick<MistakeEntry, "quizId" | "questionId">): string {
-  return `${entry.quizId}:${entry.questionId}`;
-}

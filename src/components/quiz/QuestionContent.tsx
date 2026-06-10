@@ -2,7 +2,8 @@ import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { questionTypeHint } from "@/lib/quizDisplay";
+import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
+import { isOptionSelected } from "@/lib/quizReview";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
 export function QuestionContent({
@@ -22,19 +23,7 @@ export function QuestionContent({
   onMultiple: (index: number) => void;
   onTrueFalse: (answer: boolean) => void;
 }) {
-  const options = question.type === "true_false" ? ["True", "False"] : question.options;
-  const selected = (index: number) => {
-    if (question.type === "single_choice" && answer?.type === "single_choice") {
-      return answer.selectedIndex === index;
-    }
-    if (question.type === "multiple_choice" && answer?.type === "multiple_choice") {
-      return answer.selectedIndices.includes(index);
-    }
-    if (question.type === "true_false" && answer?.type === "true_false") {
-      return answer.selectedAnswer === (index === 0);
-    }
-    return false;
-  };
+  const options = getQuestionOptions(question);
 
   return (
     <section aria-labelledby="question-prompt">
@@ -62,7 +51,7 @@ export function QuestionContent({
             key={`${index}-${option}`}
             index={index}
             text={option}
-            selected={selected(index)}
+            selected={isOptionSelected(question, answer, index)}
             multiple={question.type === "multiple_choice"}
             locked={false}
             isCorrectAnswer={false}

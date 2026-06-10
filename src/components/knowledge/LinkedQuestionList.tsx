@@ -3,6 +3,7 @@ import { LinkedQuestionPreviewDialog } from "@/components/knowledge/LinkedQuesti
 import { Badge } from "@/components/ui/badge";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
+import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getLinkWarnings, linkWarningKey } from "@/lib/knowledgeValidation";
 import { cn } from "@/lib/utils";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
@@ -27,12 +28,13 @@ export function LinkedQuestionList({
     <>
       <div className="flex min-w-0 flex-wrap gap-2">
         {links.map((link) => {
-          const hasWarning = warningKeys.has(`${link.quizId}:${link.questionId}`);
+          const key = questionLinkKey(link.quizId, link.questionId);
+          const hasWarning = warningKeys.has(key);
           const label = formatQuizQuestionLabel(link, quizzes);
 
           return (
             <button
-              key={`${link.quizId}:${link.questionId}`}
+              key={key}
               type="button"
               onClick={() => setPreviewLink(link)}
               title={label}

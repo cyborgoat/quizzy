@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { GoalAttempt, QuestionResult } from "@/types/goal";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
-import type { QuestionReviewItem } from "@/components/quiz/QuestionReviewList";
+import type { QuestionReviewItem } from "@/types/review";
 
 export function buildAttemptReviewItems(
   attempt: GoalAttempt,

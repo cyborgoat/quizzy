@@ -1,10 +1,4 @@
-import { useContext } from "react";
 import { UserProfileContext } from "@/contexts/user-profile-context";
+import { createContextHook } from "@/hooks/createContextHook";
 
-export function useUserProfile() {
-  const context = useContext(UserProfileContext);
-  if (!context) {
-    throw new Error("useUserProfile must be used within UserProfileProvider.");
-  }
-  return context;
-}
+export const useUserProfile = createContextHook(UserProfileContext, "UserProfileProvider");

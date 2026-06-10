@@ -1,4 +1,5 @@
 import { quizSchema } from "@/data/quizSchema";
+import { formatIssue } from "@/lib/formatIssue";
 import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
 
 export type RawQuizFile = {
@@ -11,10 +12,6 @@ export type ParsedQuizLibrary = {
   quizzes: QuizSource[];
   invalidReports: InvalidQuizReport[];
 };
-
-function formatIssue(path: PropertyKey[], message: string) {
-  return path.length > 0 ? `${path.join(".")}: ${message}` : message;
-}
 
 export function parseQuizFiles(files: RawQuizFile[]): ParsedQuizLibrary {
   const quizzes: QuizSource[] = [];

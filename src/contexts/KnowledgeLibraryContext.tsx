@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -11,6 +6,7 @@ import {
 } from "@/contexts/knowledge-library-context";
 import type { CreateKnowledgeDraft } from "@/contexts/knowledge-library-context";
 import { parseKnowledgeFiles } from "@/data/knowledgeRepository";
+import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { validateKnowledgeNote } from "@/lib/knowledgeDraft";
 import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
@@ -23,13 +19,8 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   const [directoryAvailable, setDirectoryAvailable] = useState(false);
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidKnowledgeReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(async (options?: { background?: boolean }) => {
-    const background = options?.background ?? false;
-    if (!background) {
-      setIsLoading(true);
-    }
+  const load = useCallback(async () => {
     try {
       const settings = await nativeApi.getSettings();
       setDirectoryPath(settings.workingDirectory);
@@ -55,25 +46,10 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     } catch (error) {
       setDirectoryAvailable(false);
       toast.error(errorMessage(error));
-    } finally {
-      if (!background) {
-        setIsLoading(false);
-      }
     }
   }, []);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => void refresh(), 0);
-    return () => window.clearTimeout(timer);
-  }, [refresh]);
-
-  useEffect(() => {
-    function handleFocus() {
-      void refresh({ background: true });
-    }
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [refresh]);
+  const { refresh, isLoading } = useBackgroundDataLoader(load);
 
   async function createItem(draft: CreateKnowledgeDraft) {
     const title = draft.title.trim();

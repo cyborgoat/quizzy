@@ -3,6 +3,8 @@ import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react"
 import { useNavigate } from "@tanstack/react-router";
 import { Route, type QuizSearch } from "@/routes/quiz_.$quizId";
 import { ErrorState } from "@/components/quiz/ErrorState";
+import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
+import { LoadingState } from "@/components/quiz/LoadingState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
 import { QuizReviewView } from "@/components/goals/QuizReviewView";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
@@ -116,9 +118,7 @@ function ScoredAttemptRedirect({
 
   return (
     <PageShell width="quiz">
-      <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-        Saving attempt and opening review…
-      </p>
+      <InlineEmptyMessage>Saving attempt and opening review…</InlineEmptyMessage>
     </PageShell>
   );
 }
@@ -283,7 +283,7 @@ export function QuizPage() {
   );
 
   if (library.isLoading && !quiz) {
-    return <p className="py-20 text-center text-sm text-zinc-500">Loading quiz…</p>;
+    return <LoadingState message="Loading quiz…" />;
   }
   if (!quiz) {
     return (

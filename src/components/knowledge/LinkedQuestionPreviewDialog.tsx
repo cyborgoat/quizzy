@@ -1,19 +1,19 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
 import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
+import { useKnowledgeForQuestion } from "@/hooks/useKnowledgeForQuestion";
+import { useKnowledgeNoteDialog } from "@/hooks/useKnowledgeNoteDialog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
-import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { getLinkWarnings } from "@/lib/knowledgeValidation";
-import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
+import type { LinkedQuizQuestion } from "@/types/knowledge";
 
 export function LinkedQuestionPreviewDialog({
   link,
@@ -27,19 +27,19 @@ export function LinkedQuestionPreviewDialog({
   currentNoteId?: string;
 }) {
   const { quizzes } = useQuizLibrary();
-  const knowledgeIndex = useKnowledgeIndex();
-  const [activeNote, setActiveNote] = useState<KnowledgeItem | null>(null);
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const {
+    activeNote,
+    noteDialogOpen,
+    openNote,
+    handleOpenChange,
+  } = useKnowledgeNoteDialog();
 
   const resolved = useMemo(
     () => (link ? resolveLinkedQuestion(link, quizzes) : null),
     [link, quizzes],
   );
 
-  const linkedNotes = useMemo(() => {
-    if (!link) return [];
-    return getKnowledgeForQuestion(knowledgeIndex, link.quizId, link.questionId);
-  }, [link, knowledgeIndex]);
+  const linkedNotes = useKnowledgeForQuestion(link?.quizId ?? "", link?.questionId ?? "");
 
   const hasLinkWarning = useMemo(() => {
     if (!link) return false;
@@ -47,11 +47,6 @@ export function LinkedQuestionPreviewDialog({
   }, [link, quizzes]);
 
   const label = link ? formatQuizQuestionLabel(link, quizzes) : "";
-
-  function openNote(item: KnowledgeItem) {
-    setActiveNote(item);
-    setNoteDialogOpen(true);
-  }
 
   if (!link) return null;
 
@@ -128,7 +123,7 @@ export function LinkedQuestionPreviewDialog({
                   currentNoteId={currentNoteId}
                   title={`Related knowledge (${linkedNotes.length})`}
                   emptyDescription="No knowledge notes are linked to this question yet."
-                  onSelectNote={openNote}
+                  onSelectNote={(item) => openNote(item)}
                 />
               </div>
             </div>
@@ -149,12 +144,7 @@ export function LinkedQuestionPreviewDialog({
           item={activeNote}
           open={noteDialogOpen}
           stacked
-          onOpenChange={(nextOpen) => {
-            setNoteDialogOpen(nextOpen);
-            if (!nextOpen) {
-              setActiveNote(null);
-            }
-          }}
+          onOpenChange={handleOpenChange}
         />
       )}
     </>

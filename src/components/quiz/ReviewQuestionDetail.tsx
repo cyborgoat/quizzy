@@ -2,6 +2,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 import { useState } from "react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
+import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -9,7 +10,7 @@ import {
   isOptionIncorrectSelection,
   isOptionSelected,
 } from "@/lib/quizReview";
-import { questionTypeHint } from "@/lib/quizDisplay";
+import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 
@@ -32,7 +33,7 @@ export function ReviewQuestionDetail({
 }) {
   const isPreview = variant === "preview";
   const [showAnswers, setShowAnswers] = useState(false);
-  const options = question.type === "true_false" ? ["True", "False"] : question.options;
+  const options = getQuestionOptions(question);
 
   const revealAnswers = isPreview && showAnswers;
 
@@ -129,19 +130,7 @@ export function ReviewQuestionDetail({
           </div>
 
           {showExplanation && question.explanation && (!isPreview || showAnswers) && (
-            <div className={cn("rounded-lg border border-zinc-200 bg-zinc-50", compact ? "p-3" : "p-4")}>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Explanation
-              </p>
-              <div
-                className={cn(
-                  "text-sm text-zinc-700",
-                  compact ? "mt-1.5 leading-5" : "mt-2 leading-6",
-                )}
-              >
-                <MarkdownContent>{question.explanation}</MarkdownContent>
-              </div>
-            </div>
+            <QuestionExplanation explanation={question.explanation} compact={compact} />
           )}
         </div>
       </div>

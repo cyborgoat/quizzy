@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { AttemptReviewView } from "@/components/goals/AttemptReviewView";
 import { PageShell } from "@/components/layout/PageShell";
 import { ErrorState } from "@/components/quiz/ErrorState";
+import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { useGoals } from "@/hooks/useGoals";
 import { errorMessage } from "@/lib/native";
 import type { Goal, GoalAttempt } from "@/types/goal";
@@ -39,12 +40,12 @@ function AttemptReviewLoader({
     };
   }, [goal.id, attemptId, loadGoalAttempt]);
 
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <PageShell className="space-y-5">
-        <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-          Loading attempt…
-        </p>
+        <InlineEmptyMessage>Loading attempt…</InlineEmptyMessage>
       </PageShell>
     );
   }
@@ -52,9 +53,12 @@ function AttemptReviewLoader({
   if (error || !attempt) {
     return (
       <PageShell className="space-y-5">
-        <p className="rounded-md border border-dashed border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-600">
-          {error ?? "Attempt details are unavailable."}
-        </p>
+        <ErrorState
+          title="Attempt unavailable"
+          description={error ?? "Attempt details are unavailable."}
+          actionLabel="Back to goals"
+          onAction={() => navigate({ to: "/goals" })}
+        />
       </PageShell>
     );
   }

@@ -1,13 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { KnowledgeNoteActions } from "@/components/knowledge/KnowledgeNoteActions";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
 import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
 import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNoteDialog";
-import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
+import { useKnowledgeForQuestion } from "@/hooks/useKnowledgeForQuestion";
+import { useKnowledgeNoteDialog } from "@/hooks/useKnowledgeNoteDialog";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
-import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { cn } from "@/lib/utils";
-import type { KnowledgeItem } from "@/types/knowledge";
 
 export function QuestionKnowledgeNotesPanel({
   quizId,
@@ -20,22 +19,16 @@ export function QuestionKnowledgeNotesPanel({
   className?: string;
   compact?: boolean;
 }) {
-  const knowledgeIndex = useKnowledgeIndex();
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
-  const [noteDialogMode, setNoteDialogMode] = useState<"view" | "edit">("view");
-  const [activeNote, setActiveNote] = useState<KnowledgeItem | null>(null);
+  const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
+  const {
+    activeNote,
+    noteDialogOpen,
+    noteDialogMode,
+    openNote,
+    handleOpenChange,
+    handleSaved,
+  } = useKnowledgeNoteDialog();
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-
-  const linkedNotes = useMemo(
-    () => getKnowledgeForQuestion(knowledgeIndex, quizId, questionId),
-    [knowledgeIndex, quizId, questionId],
-  );
-
-  function openNote(item: KnowledgeItem, mode: "view" | "edit") {
-    setActiveNote(item);
-    setNoteDialogMode(mode);
-    setNoteDialogOpen(true);
-  }
 
   function handleAddNote() {
     const draft = buildKnowledgeDraft({
@@ -64,12 +57,14 @@ export function QuestionKnowledgeNotesPanel({
         />
       </div>
 
-      <LinkKnowledgeNoteDialog
-        open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
-        quizId={quizId}
-        questionId={questionId}
-      />
+      {linkDialogOpen && (
+        <LinkKnowledgeNoteDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          quizId={quizId}
+          questionId={questionId}
+        />
+      )}
 
       {activeNote && (
         <KnowledgeNoteEditDialog
@@ -77,16 +72,8 @@ export function QuestionKnowledgeNotesPanel({
           open={noteDialogOpen}
           initialMode={noteDialogMode}
           readOnlyLinkedQuestion={{ quizId, questionId }}
-          onSaved={(saved) => {
-            setActiveNote(saved);
-            setNoteDialogMode("view");
-          }}
-          onOpenChange={(nextOpen) => {
-            setNoteDialogOpen(nextOpen);
-            if (!nextOpen) {
-              setActiveNote(null);
-            }
-          }}
+          onSaved={handleSaved}
+          onOpenChange={handleOpenChange}
         />
       )}
     </>

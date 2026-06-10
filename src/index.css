@@ -198,6 +198,21 @@ button {
   outline: none;
 }
 
+/* knowledge-prose sets overflow-x: clip, which forces overflow-y: auto on the
+   contenteditable and traps wheel events over MDXEditor tables (height: 100%). */
+.knowledge-mdx-editor .knowledge-mdx-content.knowledge-prose {
+  overflow: visible;
+}
+
+/* MDXEditor tables default to height: 100%, which fills the editor and blocks scroll. */
+.knowledge-mdx-editor table[class*="tableEditor"] {
+  height: auto !important;
+}
+
+.knowledge-mdx-editor table[class*="tableEditor"] [contenteditable="true"] {
+  overflow: visible;
+}
+
 .knowledge-mdx-editor .mdxeditor-root-contenteditable [class*="_placeholder_"] {
   color: rgb(113 113 122);
   pointer-events: none;
@@ -242,15 +257,11 @@ button {
   overflow: hidden;
 }
 
-.knowledge-mdx-editor-fill
-  .mdxeditor-rich-text-editor[style*="display: block"]
-  .knowledge-mdx-content,
-.knowledge-mdx-editor-fill
-  .mdxeditor-rich-text-editor[style*="display:block"]
-  .knowledge-mdx-content {
+.knowledge-mdx-editor-fill .mdxeditor-root-contenteditable {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .knowledge-mdx-editor-fill .mdxeditor-source-editor,
@@ -452,24 +463,30 @@ button {
   height: auto;
 }
 
-.knowledge-prose .katex-display {
+/* KaTeX: avoid nested overflow scroll regions — they show spurious scrollbar
+   arrows on some formulas (sums, fractions, limits) even when content fits. */
+span.katex {
+  display: inline;
+  overflow: visible;
+  vertical-align: baseline;
+}
+
+.katex-display {
   display: block;
   max-width: 100%;
+  margin: 0.75rem 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 0.25rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.knowledge-prose .katex-display > .katex {
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  vertical-align: bottom;
+.katex-display::-webkit-scrollbar {
+  display: none;
 }
 
-.knowledge-prose span.katex {
+.katex-display > .katex {
   display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  vertical-align: bottom;
+  overflow: visible;
+  vertical-align: baseline;
 }

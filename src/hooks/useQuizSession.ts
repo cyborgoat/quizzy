@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { buildQuizSessionQuestions } from "@/lib/questionOrder";
 import {
@@ -37,13 +37,18 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
   const currentQuestion = questions[state.currentQuestionIndex];
   const currentAttempt = state.attempts[currentQuestion.id];
   const currentAnswer = currentAttempt?.answer;
-  const answeredCount = questions.filter(
-    (question) => state.attempts[question.id]?.answer,
-  ).length;
-  const flaggedCount = questions.filter(
-    (question) => state.attempts[question.id]?.flagged,
-  ).length;
-  const score = state.answers.filter((answer) => answer.isCorrect).length;
+  const answeredCount = useMemo(
+    () => questions.filter((question) => state.attempts[question.id]?.answer).length,
+    [questions, state.attempts],
+  );
+  const flaggedCount = useMemo(
+    () => questions.filter((question) => state.attempts[question.id]?.flagged).length,
+    [questions, state.attempts],
+  );
+  const score = useMemo(
+    () => state.answers.filter((answer) => answer.isCorrect).length,
+    [state.answers],
+  );
 
   function setCurrentAnswer(answer?: SubmittedAnswer) {
     dispatch({

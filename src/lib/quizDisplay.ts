@@ -1,5 +1,9 @@
 import type { QuizQuestion } from "@/types/quiz";
 
+export function getQuestionOptions(question: QuizQuestion) {
+  return question.type === "true_false" ? ["True", "False"] : question.options;
+}
+
 export function questionTypeHint(type: QuizQuestion["type"]) {
   switch (type) {
     case "multiple_choice":

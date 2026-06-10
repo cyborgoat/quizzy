@@ -1,14 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { formatShortDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
-
-function formatAttemptDate(takenAt: string) {
-  return new Date(takenAt).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function AttemptHistoryList({
   goalId,
@@ -38,7 +31,7 @@ function AttemptHistoryList({
               aria-current={isCurrent ? "page" : undefined}
             >
               <span className={cn("text-xs", isCurrent ? "text-zinc-300" : "text-zinc-500")}>
-                {formatAttemptDate(attempt.takenAt)}
+                {formatShortDate(attempt.takenAt)}
               </span>
               <span className="font-semibold tabular-nums">{attempt.percentage}%</span>
             </Link>
@@ -88,7 +81,7 @@ export function AttemptHistoryCard({
           >
             {sortedAttempts.map((attempt) => (
               <option key={attempt.id} value={attempt.id}>
-                {formatAttemptDate(attempt.takenAt)} · {attempt.percentage}%
+                {formatShortDate(attempt.takenAt)} · {attempt.percentage}%
               </option>
             ))}
           </select>

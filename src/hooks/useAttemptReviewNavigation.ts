@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { QuestionReviewItem } from "@/components/quiz/QuestionReviewList";
+import type { QuestionReviewItem } from "@/types/review";
 import {
   defaultReviewFilter,
   initialReviewQuestionIndex,

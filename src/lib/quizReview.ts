@@ -1,4 +1,4 @@
-import type { QuestionReviewItem } from "@/components/quiz/QuestionReviewList";
+import type { QuestionReviewItem } from "@/types/review";
 import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
 export type ReviewFilter = "incorrect" | "correct" | "flagged" | "all";
@@ -20,6 +20,31 @@ export function initialReviewQuestionIndex(
 ) {
   const filtered = items.filter((item) => matchesReviewFilter(item.record, filter));
   return filtered[0]?.index ?? items[0]?.index ?? 0;
+}
+
+export function getReviewFilterCounts(items: { record: AnswerRecord }[]) {
+  let incorrect = 0;
+  let flagged = 0;
+
+  for (const item of items) {
+    if (!item.record.isCorrect) incorrect += 1;
+    if (item.record.flagged) flagged += 1;
+  }
+
+  return {
+    incorrect,
+    correct: items.length - incorrect,
+    flagged,
+    all: items.length,
+  };
+}
+
+export function getFilteredPosition(
+  filteredItems: { index: number }[],
+  activeQuestionIndex: number,
+) {
+  const position = filteredItems.findIndex((item) => item.index === activeQuestionIndex);
+  return position >= 0 ? position : 0;
 }
 
 export function remapAnswerToFileQuestion(
@@ -86,15 +111,24 @@ export function isOptionIncorrectSelection(
   return isOptionSelected(question, answer, index) && !isOptionCorrect(question, index);
 }
 
+function buildQuestionReviewItems(
+  questions: QuizQuestion[],
+  getRecord: (question: QuizQuestion) => AnswerRecord | undefined,
+): QuestionReviewItem[] {
+  return questions.flatMap((question, index) => {
+    const record = getRecord(question);
+    if (!record) return [];
+    return [{ question, index, record }];
+  });
+}
+
 export function buildSessionReviewItems(
   questions: QuizQuestion[],
   answers: AnswerRecord[],
 ): QuestionReviewItem[] {
   const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
 
-  return questions.flatMap((question, index) => {
-    const record = answerByQuestionId.get(question.id);
-    if (!record) return [];
-    return [{ question, index, record }];
-  });
+  return buildQuestionReviewItems(questions, (question) =>
+    answerByQuestionId.get(question.id),
+  );
 }

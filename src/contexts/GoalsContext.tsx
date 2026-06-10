@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { type AttemptInput, GoalsContext } from "@/contexts/goals-context";
+import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { errorMessage, nativeApi } from "@/lib/native";
 import { goalMeta, toAttemptSummary, type Goal, type GoalAttempt, type GoalDetailsInput } from "@/types/goal";
 
@@ -10,13 +11,8 @@ function generateId() {
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async (options?: { background?: boolean }) => {
-    const background = options?.background ?? false;
-    if (!background) {
-      setIsLoading(true);
-    }
+  const load = useCallback(async () => {
     try {
       const loaded = await nativeApi.listGoals();
       setGoals(
@@ -27,25 +23,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       );
     } catch (error) {
       toast.error(errorMessage(error));
-    } finally {
-      if (!background) {
-        setIsLoading(false);
-      }
     }
   }, []);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
-
-  useEffect(() => {
-    function handleFocus() {
-      void load({ background: true });
-    }
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [load]);
+  const { isLoading } = useBackgroundDataLoader(load);
 
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
     if (goals.some((goal) => goal.quizId === data.quizId)) {

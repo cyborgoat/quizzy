@@ -1,14 +1,15 @@
 import { ArrowRight, FolderOpen, RefreshCw, Search, Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/quiz/EmptyState";
+import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { QuizList } from "@/components/quiz/QuizList";
+import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useGoals } from "@/hooks/useGoals";
+import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { latestAttempt, type Goal } from "@/types/goal";
@@ -19,8 +20,11 @@ export function HomePage() {
   const { goals } = useGoals();
   const navigate = useNavigate();
   const activeGoals = goals.filter((g) => !g.completed);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { isRefreshing, handleRefresh } = useLibraryRefresh(
+    () => library.refresh(),
+    "Library refreshed.",
+  );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredQuizzes = useMemo(() => {
@@ -38,13 +42,6 @@ export function HomePage() {
       );
     });
   }, [library.quizzes, normalizedQuery]);
-
-  async function handleRefresh() {
-    setIsRefreshing(true);
-    await Promise.all([library.refresh(), new Promise((r) => setTimeout(r, 500))]);
-    setIsRefreshing(false);
-    toast.success("Library refreshed.");
-  }
 
   return (
     <PageShell>
@@ -86,20 +83,17 @@ export function HomePage() {
         </div>
       )}
 
-      {library.isLoading && !library.directoryPath ? (
-        <p className="py-20 text-center text-sm text-zinc-500">Loading Quizzy…</p>
-      ) : !library.directoryAvailable ? (
-        <EmptyState
-          title={library.directoryPath ? "Working directory unavailable" : "No quiz directory set"}
-          description={
-            library.directoryPath
-              ? "Quizzy could not access the configured directory. You can update it in Settings."
-              : "Choose a working directory in Settings to get started."
-          }
-          actionLabel="Open Settings"
-          onAction={() => navigate({ to: "/settings" })}
-        />
-      ) : (
+      <WorkingDirectoryGate
+        isLoading={library.isLoading}
+        directoryPath={library.directoryPath}
+        directoryAvailable={library.directoryAvailable}
+        loadingMessage="Loading Quizzy…"
+        noDirectoryTitle="No quiz directory set"
+        noDirectoryDescription="Choose a working directory in Settings to get started."
+        unavailableTitle="Working directory unavailable"
+        unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
+        onOpenSettings={() => navigate({ to: "/settings" })}
+      >
         <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -141,22 +135,11 @@ export function HomePage() {
             </div>
           )}
 
-          {library.invalidReports.length > 0 && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertTitle>
-                {library.invalidReports.length} invalid quiz file(s) were skipped
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="mt-2 space-y-2">
-                  {library.invalidReports.map((report) => (
-                    <li key={report.fileName}>
-                      <strong>{report.fileName}:</strong> {report.issues.join(" ")}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
+          <InvalidFileReportsAlert
+            reports={library.invalidReports}
+            entityLabel="quiz"
+            className="mb-6"
+          />
 
           {library.quizzes.length > 0 ? (
             filteredQuizzes.length > 0 ? (
@@ -181,7 +164,7 @@ export function HomePage() {
             />
           )}
         </>
-      )}
+      </WorkingDirectoryGate>
     </PageShell>
   );
 }

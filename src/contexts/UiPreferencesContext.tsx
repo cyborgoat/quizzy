@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { toast } from "sonner";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { loadAppSettings } from "@/lib/appSettings";
+import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { errorMessage, nativeApi } from "@/lib/native";
 import {
   applyUiPreferences,
@@ -12,13 +13,6 @@ import {
   UI_FONT_SIZE_DEFAULT,
   type UiDensity,
 } from "@/lib/uiPreferences";
-
-function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-}
 
 export function UiPreferencesProvider({ children }: { children: ReactNode }) {
   const [fontSize, setFontSizeState] = useState(UI_FONT_SIZE_DEFAULT);
@@ -64,7 +58,7 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      if (isEditableTarget(event.target)) return;
+      if (isEditableKeyboardTarget(event.target)) return;
 
       if (event.key === "=" || event.key === "+") {
         event.preventDefault();

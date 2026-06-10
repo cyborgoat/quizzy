@@ -1,4 +1,5 @@
 import { splitFrontMatter } from "@/lib/frontMatter";
+import { formatIssue } from "@/lib/formatIssue";
 import { fileNameStem } from "@/lib/knowledgeLinks";
 import { knowledgeMetaSchema } from "@/data/knowledgeSchema";
 import type { InvalidKnowledgeReport, KnowledgeItem } from "@/types/knowledge";
@@ -13,10 +14,6 @@ export type ParsedKnowledgeLibrary = {
   items: KnowledgeItem[];
   invalidReports: InvalidKnowledgeReport[];
 };
-
-function formatIssue(path: PropertyKey[], message: string) {
-  return path.length > 0 ? `${path.join(".")}: ${message}` : message;
-}
 
 export function parseKnowledgeFiles(files: RawKnowledgeFile[]): ParsedKnowledgeLibrary {
   const items: KnowledgeItem[] = [];

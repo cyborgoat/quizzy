@@ -1,27 +1,22 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { ReviewQuestionSplitPanel } from "@/components/quiz/ReviewQuestionSplitPanel";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Button } from "@/components/ui/button";
-import { matchesReviewFilter, type ReviewFilter } from "@/lib/quizReview";
-import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
-
-export type QuestionReviewItem = {
-  question: QuizQuestion;
-  index: number;
-  record: AnswerRecord;
-};
+import { isEditableKeyboardTarget } from "@/lib/keyboard";
+import {
+  getFilteredPosition,
+  getReviewFilterCounts,
+  matchesReviewFilter,
+  type ReviewFilter,
+} from "@/lib/quizReview";
+import type { QuestionReviewItem } from "@/types/review";
 
 function emptyFilterMessage(filter: ReviewFilter) {
   if (filter === "incorrect") return "Perfect score — no incorrect answers.";
   if (filter === "flagged") return "No flagged questions in this attempt.";
   return "No questions to show.";
-}
-
-function isEditableKeyboardTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
 }
 
 export function QuestionReviewList({
@@ -74,14 +69,12 @@ function QuestionReviewListBody({
     [items, filter],
   );
 
-  const incorrectCount = items.filter((item) => !item.record.isCorrect).length;
-  const correctCount = items.length - incorrectCount;
-  const flaggedCount = items.filter((item) => item.record.flagged).length;
+  const filterCounts = useMemo(() => getReviewFilterCounts(items), [items]);
 
-  const currentFilteredPosition = filteredItems.findIndex(
-    (item) => item.index === activeQuestionIndex,
+  const resolvedFilteredPosition = useMemo(
+    () => getFilteredPosition(filteredItems, activeQuestionIndex),
+    [filteredItems, activeQuestionIndex],
   );
-  const resolvedFilteredPosition = currentFilteredPosition >= 0 ? currentFilteredPosition : 0;
   const currentItem = filteredItems[resolvedFilteredPosition];
 
   function goToPreviousQuestion() {
@@ -102,26 +95,23 @@ function QuestionReviewListBody({
 
       event.preventDefault();
 
-      const position = filteredItems.findIndex((item) => item.index === activeQuestionIndex);
-      const resolved = position >= 0 ? position : 0;
-
-      if (event.key === "ArrowLeft" && resolved > 0) {
-        onActiveQuestionIndexChange(filteredItems[resolved - 1].index);
+      if (event.key === "ArrowLeft" && resolvedFilteredPosition > 0) {
+        onActiveQuestionIndexChange(filteredItems[resolvedFilteredPosition - 1].index);
       }
-      if (event.key === "ArrowRight" && resolved < filteredItems.length - 1) {
-        onActiveQuestionIndexChange(filteredItems[resolved + 1].index);
+      if (event.key === "ArrowRight" && resolvedFilteredPosition < filteredItems.length - 1) {
+        onActiveQuestionIndexChange(filteredItems[resolvedFilteredPosition + 1].index);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredItems, activeQuestionIndex, onActiveQuestionIndexChange]);
+  }, [filteredItems, resolvedFilteredPosition, onActiveQuestionIndexChange]);
 
   const filters: { value: ReviewFilter; label: string; count: number }[] = [
-    { value: "incorrect", label: "Incorrect", count: incorrectCount },
-    { value: "correct", label: "Correct", count: correctCount },
-    { value: "flagged", label: "Flagged", count: flaggedCount },
-    { value: "all", label: "All", count: items.length },
+    { value: "incorrect", label: "Incorrect", count: filterCounts.incorrect },
+    { value: "correct", label: "Correct", count: filterCounts.correct },
+    { value: "flagged", label: "Flagged", count: filterCounts.flagged },
+    { value: "all", label: "All", count: filterCounts.all },
   ];
 
   return (
@@ -142,9 +132,7 @@ function QuestionReviewListBody({
       </div>
 
       {filteredItems.length === 0 ? (
-        <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-          {emptyFilterMessage(filter)}
-        </p>
+        <InlineEmptyMessage>{emptyFilterMessage(filter)}</InlineEmptyMessage>
       ) : (
         <div className="space-y-3" aria-label="Question results">
           <div className="flex items-center justify-center gap-2">
