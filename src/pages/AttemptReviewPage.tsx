@@ -1,10 +1,7 @@
 import { Route } from "@/routes/_app/goals/$goalId/attempts/$attemptId";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
-import { AttemptReviewContent } from "@/components/goals/AttemptReviewContent";
-import { AttemptReviewHeader } from "@/components/goals/AttemptReviewHeader";
-import { AttemptScoreSummary } from "@/components/goals/AttemptScoreSummary";
+import { AttemptReviewView } from "@/components/goals/AttemptReviewView";
 import { PageShell } from "@/components/layout/PageShell";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { useGoals } from "@/hooks/useGoals";
@@ -42,43 +39,29 @@ function AttemptReviewLoader({
     };
   }, [goal.id, attemptId, loadGoalAttempt]);
 
-  const hasMultipleAttempts = goal.attempts.length > 1;
+  if (loading) {
+    return (
+      <PageShell className="space-y-5">
+        <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+          Loading attempt…
+        </p>
+      </PageShell>
+    );
+  }
+
+  if (error || !attempt) {
+    return (
+      <PageShell className="space-y-5">
+        <p className="rounded-md border border-dashed border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-600">
+          {error ?? "Attempt details are unavailable."}
+        </p>
+      </PageShell>
+    );
+  }
 
   return (
-    <PageShell className="space-y-6">
-      <AttemptReviewHeader goal={goal} />
-
-      <div
-        className={
-          hasMultipleAttempts
-            ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch"
-            : undefined
-        }
-      >
-        {attempt && !loading && !error && (
-          <AttemptScoreSummary attempt={attempt} goal={goal} />
-        )}
-
-        {hasMultipleAttempts && (
-          <AttemptHistoryCard
-            goalId={goal.id}
-            attempts={goal.attempts}
-            currentAttemptId={attemptId}
-          />
-        )}
-      </div>
-
-      <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Answer review
-        </h2>
-        <AttemptReviewContent
-          attempt={attempt}
-          quizId={goal.quizId}
-          loading={loading}
-          error={error}
-        />
-      </section>
+    <PageShell className="space-y-5">
+      <AttemptReviewView goal={goal} attempt={attempt} attemptId={attemptId} />
     </PageShell>
   );
 }

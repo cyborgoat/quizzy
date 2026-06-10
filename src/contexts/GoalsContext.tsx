@@ -93,7 +93,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
 
   async function recordAttempt(quizId: string, input: AttemptInput) {
     const targetGoal = goals.find((item) => item.quizId === quizId);
-    if (!targetGoal) return;
+    if (!targetGoal) return null;
 
     const attempt: GoalAttempt = {
       id: generateId(),
@@ -115,8 +115,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             : goal,
         ),
       );
+      return { goalId: targetGoal.id, attemptId: attempt.id };
     } catch (error) {
       toast.error(errorMessage(error));
+      return null;
     }
   }
 

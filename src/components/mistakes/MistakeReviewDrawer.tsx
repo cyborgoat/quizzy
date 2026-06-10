@@ -1,10 +1,6 @@
-import { FilePlus, Link2 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
-import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
-import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNoteDialog";
+import { useMemo } from "react";
+import { QuestionKnowledgeNotesPanel } from "@/components/knowledge/QuestionKnowledgeNotesPanel";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
-import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Separator } from "@/components/ui/separator";
 import {
   Drawer,
@@ -13,37 +9,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
 import { formatShortDate } from "@/lib/formatDate";
 import { remapAnswerToFileQuestion } from "@/lib/quizReview";
-import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
-import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
-import type { KnowledgeItem } from "@/types/knowledge";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
-
-function KnowledgeNoteActions({
-  onLink,
-  onAdd,
-}: {
-  onLink: () => void;
-  onAdd: () => void;
-}) {
-  return (
-    <div className="flex shrink-0 items-center gap-1">
-      <IconActionButton
-        icon={Link2}
-        label="Link existing note"
-        onClick={onLink}
-      />
-      <IconActionButton
-        icon={FilePlus}
-        label="Add new note"
-        onClick={onAdd}
-      />
-    </div>
-  );
-}
 
 export function MistakeReviewDrawer({
   entry,
@@ -58,17 +27,6 @@ export function MistakeReviewDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const knowledgeIndex = useKnowledgeIndex();
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
-  const [noteDialogMode, setNoteDialogMode] = useState<"view" | "edit">("view");
-  const [activeNote, setActiveNote] = useState<KnowledgeItem | null>(null);
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-
-  const linkedNotes = useMemo(() => {
-    if (!entry) return [];
-    return getKnowledgeForQuestion(knowledgeIndex, entry.quizId, entry.questionId);
-  }, [entry, knowledgeIndex]);
-
   const record: AnswerRecord | null = useMemo(() => {
     if (!entry) return null;
     return {
@@ -89,108 +47,49 @@ export function MistakeReviewDrawer({
   if (!entry || !record) return null;
   const currentEntry = entry;
 
-  function openNote(item: KnowledgeItem, mode: "view" | "edit") {
-    setActiveNote(item);
-    setNoteDialogMode(mode);
-    setNoteDialogOpen(true);
-  }
-
-  function handleAddNote() {
-    const draft = buildKnowledgeDraft({
-      linkedQuizQuestions: [
-        { quizId: currentEntry.quizId, questionId: currentEntry.questionId },
-      ],
-    });
-    stashKnowledgeDraft(draft);
-    openNote(draft, "edit");
-  }
-
   return (
-    <>
-      <Drawer
-        open={open}
-        onOpenChange={onOpenChange}
-        direction="right"
-        shouldScaleBackground={false}
-      >
-        <DrawerContent className="flex h-full w-full max-w-xl min-w-0 flex-col overflow-x-hidden lg:max-w-2xl">
-          <DrawerHeader className="shrink-0 border-b border-zinc-100">
-            <DrawerTitle>Review mistake</DrawerTitle>
-            <DrawerDescription>
-              {currentEntry.quizTitle} · {currentEntry.mistakeCount} mistake
-              {currentEntry.mistakeCount === 1 ? "" : "s"} · Last mistaken{" "}
-              {formatShortDate(currentEntry.lastMistakenAt)} · {currentEntry.flaggedCount} flag
-              {currentEntry.flaggedCount === 1 ? "" : "s"}
-            </DrawerDescription>
-          </DrawerHeader>
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      direction="right"
+      shouldScaleBackground={false}
+    >
+      <DrawerContent className="flex h-full w-full max-w-xl min-w-0 flex-col overflow-x-hidden lg:max-w-2xl">
+        <DrawerHeader className="shrink-0 border-b border-zinc-100">
+          <DrawerTitle>Review mistake</DrawerTitle>
+          <DrawerDescription>
+            {currentEntry.quizTitle} · {currentEntry.mistakeCount} mistake
+            {currentEntry.mistakeCount === 1 ? "" : "s"} · Last mistaken{" "}
+            {formatShortDate(currentEntry.lastMistakenAt)} · {currentEntry.flaggedCount} flag
+            {currentEntry.flaggedCount === 1 ? "" : "s"}
+          </DrawerDescription>
+        </DrawerHeader>
 
-          <div className="min-w-0 flex-1 overflow-x-clip overflow-y-auto p-4">
-            {question ? (
-              <ReviewQuestionDetail
-                question={question}
-                index={questionIndex}
-                record={record}
-              />
-            ) : (
-              <article className="rounded-lg border border-zinc-200 bg-white p-4">
-                <p className="text-sm font-semibold text-zinc-950">{currentEntry.prompt}</p>
-                <p className="mt-3 text-sm text-zinc-600">
-                  This question could not be loaded from the quiz file. It may have been removed or
-                  the quiz file is unavailable.
-                </p>
-              </article>
-            )}
-
-            <Separator className="my-5" />
-
-            <LinkedKnowledgeNotesSection
-              notes={linkedNotes}
-              onSelectNote={(item) => openNote(item, "view")}
-              headerActions={
-                <KnowledgeNoteActions
-                  onLink={() => setLinkDialogOpen(true)}
-                  onAdd={handleAddNote}
-                />
-              }
-              emptyActions={
-                <KnowledgeNoteActions
-                  onLink={() => setLinkDialogOpen(true)}
-                  onAdd={handleAddNote}
-                />
-              }
+        <div className="min-w-0 flex-1 overflow-x-clip overflow-y-auto p-4">
+          {question ? (
+            <ReviewQuestionDetail
+              question={question}
+              index={questionIndex}
+              record={record}
             />
-          </div>
-        </DrawerContent>
-      </Drawer>
+          ) : (
+            <article className="rounded-lg border border-zinc-200 bg-white p-4">
+              <p className="text-sm font-semibold text-zinc-950">{currentEntry.prompt}</p>
+              <p className="mt-3 text-sm text-zinc-600">
+                This question could not be loaded from the quiz file. It may have been removed or
+                the quiz file is unavailable.
+              </p>
+            </article>
+          )}
 
-      <LinkKnowledgeNoteDialog
-        open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
-        quizId={currentEntry.quizId}
-        questionId={currentEntry.questionId}
-      />
+          <Separator className="my-5" />
 
-      {activeNote && (
-        <KnowledgeNoteEditDialog
-          item={activeNote}
-          open={noteDialogOpen}
-          initialMode={noteDialogMode}
-          readOnlyLinkedQuestion={{
-            quizId: currentEntry.quizId,
-            questionId: currentEntry.questionId,
-          }}
-          onSaved={(saved) => {
-            setActiveNote(saved);
-            setNoteDialogMode("view");
-          }}
-          onOpenChange={(nextOpen) => {
-            setNoteDialogOpen(nextOpen);
-            if (!nextOpen) {
-              setActiveNote(null);
-            }
-          }}
-        />
-      )}
-    </>
+          <QuestionKnowledgeNotesPanel
+            quizId={currentEntry.quizId}
+            questionId={currentEntry.questionId}
+          />
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

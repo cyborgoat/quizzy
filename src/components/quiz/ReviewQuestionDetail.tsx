@@ -19,12 +19,16 @@ export function ReviewQuestionDetail({
   record,
   className,
   variant = "review",
+  showExplanation = true,
+  compact = false,
 }: {
   question: QuizQuestion;
   index: number;
   record?: AnswerRecord;
   className?: string;
   variant?: "review" | "preview";
+  showExplanation?: boolean;
+  compact?: boolean;
 }) {
   const isPreview = variant === "preview";
   const [showAnswers, setShowAnswers] = useState(false);
@@ -36,15 +40,16 @@ export function ReviewQuestionDetail({
     <article
       id={`review-question-${index}`}
       className={cn(
-        "scroll-mt-4 rounded-lg border border-zinc-200 bg-white p-4 sm:p-5",
+        "scroll-mt-4 rounded-lg border border-zinc-200 bg-white",
+        compact ? "p-3" : "p-4 sm:p-5",
         className,
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className={cn("flex items-start", compact ? "gap-2" : "gap-3")}>
         <span className="grid-center size-6 shrink-0 rounded-md bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700">
           {index + 1}
         </span>
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className={cn("min-w-0 flex-1", compact ? "space-y-2" : "space-y-3")}>
           {isPreview ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -86,11 +91,16 @@ export function ReviewQuestionDetail({
             )
           )}
 
-          <div className="text-sm font-semibold leading-snug text-zinc-950 sm:text-base">
+          <div
+            className={cn(
+              "font-semibold leading-snug text-zinc-950",
+              compact ? "text-sm" : "text-sm sm:text-base",
+            )}
+          >
             <MarkdownContent>{question.prompt}</MarkdownContent>
           </div>
 
-          <div className="space-y-2">
+          <div className={compact ? "space-y-1.5" : "space-y-2"}>
             {options.map((option, optionIndex) => (
               <AnswerOptionRow
                 key={`${optionIndex}-${option}`}
@@ -118,12 +128,17 @@ export function ReviewQuestionDetail({
             ))}
           </div>
 
-          {question.explanation && (!isPreview || showAnswers) && (
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          {showExplanation && question.explanation && (!isPreview || showAnswers) && (
+            <div className={cn("rounded-lg border border-zinc-200 bg-zinc-50", compact ? "p-3" : "p-4")}>
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 Explanation
               </p>
-              <div className="mt-2 text-sm leading-6 text-zinc-700">
+              <div
+                className={cn(
+                  "text-sm text-zinc-700",
+                  compact ? "mt-1.5 leading-5" : "mt-2 leading-6",
+                )}
+              >
                 <MarkdownContent>{question.explanation}</MarkdownContent>
               </div>
             </div>

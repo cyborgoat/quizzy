@@ -1,4 +1,26 @@
-import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
+import type { QuestionReviewItem } from "@/components/quiz/QuestionReviewList";
+import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
+
+export type ReviewFilter = "incorrect" | "correct" | "flagged" | "all";
+
+export function matchesReviewFilter(record: AnswerRecord, filter: ReviewFilter) {
+  if (filter === "correct") return record.isCorrect;
+  if (filter === "incorrect") return !record.isCorrect;
+  if (filter === "flagged") return record.flagged;
+  return true;
+}
+
+export function defaultReviewFilter(items: { record: AnswerRecord }[]) {
+  return items.some((item) => !item.record.isCorrect) ? "incorrect" : "all";
+}
+
+export function initialReviewQuestionIndex(
+  items: { index: number; record: AnswerRecord }[],
+  filter: ReviewFilter = defaultReviewFilter(items),
+) {
+  const filtered = items.filter((item) => matchesReviewFilter(item.record, filter));
+  return filtered[0]?.index ?? items[0]?.index ?? 0;
+}
 
 export function remapAnswerToFileQuestion(
   fileQuestion: QuizQuestion,
@@ -62,4 +84,17 @@ export function isOptionIncorrectSelection(
   index: number,
 ) {
   return isOptionSelected(question, answer, index) && !isOptionCorrect(question, index);
+}
+
+export function buildSessionReviewItems(
+  questions: QuizQuestion[],
+  answers: AnswerRecord[],
+): QuestionReviewItem[] {
+  const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
+
+  return questions.flatMap((question, index) => {
+    const record = answerByQuestionId.get(question.id);
+    if (!record) return [];
+    return [{ question, index, record }];
+  });
 }

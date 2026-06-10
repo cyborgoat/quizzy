@@ -4,13 +4,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { Route, type QuizSearch } from "@/routes/quiz_.$quizId";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
+import { QuizReviewView } from "@/components/goals/QuizReviewView";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
 import { QuizQuestionSidebar } from "@/components/quiz/QuizQuestionSidebar";
 import { QuizStartScreen } from "@/components/quiz/QuizStartScreen";
-import { ResultSummary } from "@/components/quiz/ResultSummary";
-import { ReviewSummary } from "@/components/quiz/ReviewSummary";
 import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { quizChromeInnerClass } from "@/components/layout/pageShellClasses";
@@ -22,6 +21,8 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
+import { buildSessionReviewItems } from "@/lib/quizReview";
+import { reviewScoreFromSession } from "@/lib/quizReviewSummary";
 import { cn } from "@/lib/utils";
 import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
@@ -53,6 +54,112 @@ function sessionModeLabel(config: QuizSessionConfig, totalQuestions: number) {
   return `Practice · ${totalQuestions} question${totalQuestions !== 1 ? "s" : ""}`;
 }
 
+function ScoredAttemptRedirect({
+  quiz,
+  session,
+  recordAttempt,
+}: {
+  quiz: Quiz;
+  session: ReturnType<typeof useQuizSession>;
+  recordAttempt: ReturnType<typeof useGoals>["recordAttempt"];
+}) {
+  const navigate = useNavigate();
+  const recordedRef = useRef(false);
+  const [missingGoal, setMissingGoal] = useState(false);
+
+  useEffect(() => {
+    if (!session.isComplete || recordedRef.current) return;
+    recordedRef.current = true;
+
+    void recordAttempt(quiz.id, {
+      score: session.score,
+      total: session.totalQuestions,
+      questionResults: session.questions.map((q, i) => ({
+        questionId: q.id,
+        prompt: q.prompt,
+        correct: session.answers[i]?.isCorrect ?? false,
+        answer: session.answers[i]?.answer,
+        options:
+          q.type === "single_choice" || q.type === "multiple_choice"
+            ? q.options
+            : undefined,
+        flagged: session.answers[i]?.flagged ?? false,
+      })),
+    }).then((recorded) => {
+      if (recorded) {
+        navigate({
+          to: "/goals/$goalId/attempts/$attemptId",
+          params: {
+            goalId: recorded.goalId,
+            attemptId: recorded.attemptId,
+          },
+          replace: true,
+        });
+        return;
+      }
+      setMissingGoal(true);
+    });
+  }, [quiz.id, session.isComplete, session.score, session.totalQuestions, session.questions, session.answers, recordAttempt, navigate]);
+
+  if (missingGoal) {
+    return (
+      <PageShell width="quiz">
+        <ErrorState
+          title="No goal for this quiz"
+          description="Scored attempts are saved to a goal. Create a goal for this quiz to review your attempt."
+          actionLabel="Return home"
+          onAction={() => navigate({ to: "/" })}
+        />
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell width="quiz">
+      <p className="rounded-md border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+        Saving attempt and opening review…
+      </p>
+    </PageShell>
+  );
+}
+
+function PracticeCompleteView({
+  quiz,
+  config,
+  session,
+}: {
+  quiz: Quiz;
+  config: QuizSessionConfig;
+  session: ReturnType<typeof useQuizSession>;
+}) {
+  const reviewItems = useMemo(
+    () => buildSessionReviewItems(session.questions, session.answers),
+    [session.questions, session.answers],
+  );
+
+  return (
+    <PageShell className="space-y-5">
+      <QuizReviewView
+        quizId={quiz.id}
+        quizTitle={quiz.title}
+        items={reviewItems}
+        resetKey={session.questions.map((q) => q.id).join(",")}
+        score={reviewScoreFromSession({
+          score: session.score,
+          total: session.totalQuestions,
+          questions: session.questions,
+          answers: session.answers,
+        })}
+        goalContext={null}
+        practiceContext={{
+          modeLabel: sessionModeLabel(config, session.totalQuestions),
+          onRestart: session.restart,
+        }}
+      />
+    </PageShell>
+  );
+}
+
 function QuizSessionPage({
   quiz,
   config,
@@ -62,67 +169,22 @@ function QuizSessionPage({
 }) {
   const navigate = useNavigate();
   const session = useQuizSession(quiz, config);
-  const { recordAttempt, goals } = useGoals();
+  const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
-  const recordedRef = useRef(false);
 
-  const matchingGoal = useMemo(
-    () => goals.find((goal) => goal.quizId === quiz.id),
-    [goals, quiz.id],
-  );
-
-  useEffect(() => {
-    if (session.isComplete && config.mode === "scored" && !recordedRef.current) {
-      recordedRef.current = true;
-      void recordAttempt(quiz.id, {
-        score: session.score,
-        total: session.totalQuestions,
-        questionResults: session.questions.map((q, i) => ({
-          questionId: q.id,
-          prompt: q.prompt,
-          correct: session.answers[i]?.isCorrect ?? false,
-          answer: session.answers[i]?.answer,
-          options:
-            q.type === "single_choice" || q.type === "multiple_choice"
-              ? q.options
-              : undefined,
-          flagged: session.answers[i]?.flagged ?? false,
-        })),
-      });
-    } else if (!session.isComplete) {
-      recordedRef.current = false;
-    }
-    // Record once when the session completes; avoid re-firing on unrelated session updates.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional completion gate
-  }, [session.isComplete, config.mode]);
+  if (session.isComplete && config.mode === "scored") {
+    return (
+      <ScoredAttemptRedirect
+        quiz={quiz}
+        session={session}
+        recordAttempt={recordAttempt}
+      />
+    );
+  }
 
   if (session.isComplete) {
-    const unansweredCount = session.answers.filter((answer) => !answer.answer).length;
-    return (
-      <PageShell width="quiz">
-        <ResultSummary
-          quiz={quiz}
-          score={session.score}
-          total={session.totalQuestions}
-          modeLabel={sessionModeLabel(config, session.totalQuestions)}
-          unansweredCount={unansweredCount}
-          goal={
-            matchingGoal
-              ? {
-                  id: matchingGoal.id,
-                  achieved:
-                    matchingGoal.targetScore === undefined ||
-                    Math.round((session.score / session.totalQuestions) * 100) >=
-                      matchingGoal.targetScore,
-                }
-              : undefined
-          }
-          onRestart={session.restart}
-        />
-        <ReviewSummary questions={session.questions} answers={session.answers} />
-      </PageShell>
-    );
+    return <PracticeCompleteView quiz={quiz} config={config} session={session} />;
   }
 
   return (
