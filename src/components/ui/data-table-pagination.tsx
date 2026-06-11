@@ -24,7 +24,13 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "@/lib/dataTablePagination";
 
-export function DataTablePaginationFooter<TData>({ table }: { table: Table<TData> }) {
+export function DataTablePaginationFooter<TData>({
+  table,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
+}: {
+  table: Table<TData>;
+  pageSizeOptions?: readonly number[];
+}) {
   const pageCount = table.getPageCount();
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
@@ -45,8 +51,8 @@ export function DataTablePaginationFooter<TData>({ table }: { table: Table<TData
   }
 
   return (
-    <div className="shrink-0 border-t border-zinc-200/55 px-2 py-2 sm:px-3 sm:py-3">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+    <div className="shrink-0 px-2 py-1.5 sm:px-3">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
         <div aria-hidden="true" />
 
         {pageCount > 1 ? (
@@ -85,17 +91,17 @@ export function DataTablePaginationFooter<TData>({ table }: { table: Table<TData
         )}
 
         <div className="justify-self-end">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {pageCount >= PAGE_JUMP_THRESHOLD && (
-              <div className="flex items-center gap-2">
-                <Label htmlFor="go-to-page" className="text-xs text-zinc-600">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="go-to-page" className="text-[11px] text-zinc-500">
                   Go to page
                 </Label>
                 <Input
                   id="go-to-page"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  className="h-7 w-14 px-2 text-center text-xs"
+                  className="h-6 w-12 border-0 bg-zinc-100 px-1.5 text-center text-[11px] shadow-none focus-visible:ring-1"
                   value={pageJumpValue}
                   onFocus={() => {
                     setIsEditingPageJump(true);
@@ -117,8 +123,8 @@ export function DataTablePaginationFooter<TData>({ table }: { table: Table<TData
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <Label htmlFor="rows-per-page" className="text-xs text-zinc-600">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="rows-per-page" className="text-[11px] text-zinc-500">
                 Rows per page
               </Label>
               <Select
@@ -128,11 +134,11 @@ export function DataTablePaginationFooter<TData>({ table }: { table: Table<TData
                   table.setPageIndex(0);
                 }}
               >
-                <SelectTrigger id="rows-per-page" className="h-7 w-20 text-xs">
+                <SelectTrigger id="rows-per-page" className="h-6 w-14 border-0 bg-zinc-100 px-1.5 text-[11px] shadow-none focus:ring-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((size) => (
+                  {pageSizeOptions.map((size) => (
                     <SelectItem key={size} value={String(size)}>
                       {size}
                     </SelectItem>

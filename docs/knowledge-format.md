@@ -40,7 +40,7 @@ Always return a cleanup function when subscribing to external resources.
 
 - Links are one-way: knowledge notes reference quiz questions.
 - Multiple notes may link to the same question.
-- Linked questions appear in the Mistake Log table and review drawer.
+- Linked questions appear in the Mistake Log table and inline review card.
 - If a linked quiz or question is missing from the current library, Quizzy shows a warning but still displays the note.
 
 ## Markdown body

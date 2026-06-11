@@ -137,7 +137,7 @@ cards reuse the goal dialogs so goal changes do not require navigation.
 
 Knowledge components cover note browse/detail views, edit and link dialogs,
 linked-question preview, clipboard export, and shared linked-notes lists reused
-by the Mistake Log drawer. Secondary actions use `IconActionButton` with
+by the Mistake Log inline review card. Secondary actions use `IconActionButton` with
 tooltips.
 
 ### Goals state
@@ -239,13 +239,17 @@ managed directly through the system file manager.
    goals.
 3. Entries are filtered by configured thresholds, with flagged questions always
   included, and sorted by flagged count then mistake frequency.
-4. Clicking a row opens `MistakeReviewDrawer`, which loads the live question
-   definition from the quiz library and shows review UI with the most recent
-   incorrect answer. Linked knowledge notes reuse `LinkedKnowledgeNotesSection`.
+4. The first sorted row is selected by default. Clicking a row or using arrow
+   navigation selects an entry in `MistakeLogQuestionReviewCard` below the table.
+   The card loads the live question definition from the quiz library and shows
+   review UI with the most recent incorrect answer. Linked knowledge notes reuse
+   `QuestionKnowledgeNotesPanel` via `ReviewQuestionSplitPanel`.
+5. Column-header dropdowns filter by quiz name and question type. The mistake
+   list section can be collapsed while review navigation continues.
 
 ### Knowledge note workflow
 
-1. The user opens `/knowledge` or a note from the Mistake Log drawer.
+1. The user opens `/knowledge` or a note from the Mistake Log review card.
 2. React loads note metadata from `KnowledgeLibraryProvider` or a session draft.
 3. Edit mode uses **MDXEditor** for WYSIWYG markdown authoring (tables, lists,
    code blocks, links). Math (`$…$`, `$$…$$`) is typed as markdown and rendered
@@ -265,14 +269,15 @@ src/
     knowledge/    Note editor, viewer, link/preview dialogs, linked-notes list
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
-    mistakes/     Mistake Log review drawer
-    quiz/         Quiz UI components (including QuizStartScreen)
+    mistakes/     Mistake Log inline review card
+    quiz/         Quiz UI, ReviewQuestionNavigationBar, ReviewQuestionSplitPanel
     ui/           shadcn-style local primitives (including Drawer and Slider)
   contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
                   preferences providers
   data/           Zod schema, repository parser, and tests
   hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
-  lib/            Native adapter, scoring, knowledge drafts, mistake aggregation
+  lib/            Native adapter, scoring, knowledge drafts, mistake aggregation,
+                  mistakeLogReview (answer remap and table page sync)
   pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
   test/           Vitest setup (browser API polyfills for Node)
   types/          Quiz, goal, knowledge, mistake log, and quiz session types

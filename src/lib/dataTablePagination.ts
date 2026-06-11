@@ -1,4 +1,5 @@
 export const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+export const MISTAKE_LOG_PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
 export const PAGE_JUMP_THRESHOLD = 15;
 
 export function getPaginationItems(

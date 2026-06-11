@@ -102,14 +102,20 @@ Threshold values:
 - Maximum correctness percentage per question (calculated across all scored attempts
   for that quiz)
 
-Mistakes are sorted from most frequent to least frequent. Summary statistics
-show qualifying mistake count, total mistake events, and quizzes represented.
-The global view includes a quiz filter. The table lists each question as
-**quiz title · question number** (for example `React Basics · Q3`) with sortable
-columns for notes, flags, mistakes, correctness, and last mistaken date.
+Mistakes are sorted from most frequent to least frequent (flagged count, then
+mistake count). Threshold details appear under the page title. The mistake list
+is collapsible and paginated (default **5** rows per page).
 
-Click a row to open a right-side drawer with the full question, your most
-recent incorrect answer (if any), the correct answer, and the explanation when available.
+The table lists **Quiz Name**, **Question** (for example `Q3`), **Question type**
+(single choice, multiple choice, or true or false), and sortable columns for
+notes, flags, mistakes, correctness, and last mistaken date. Click the **Quiz Name**
+or **Question type** column header to filter; the global view filters by quiz,
+and any view can filter by question type.
+
+The first sorted row is selected automatically. Click a row or use arrow
+navigation in the inline review card below the table to review the full question,
+your most recent incorrect answer (if any), the correct answer, and the explanation
+when available.
 Mistake Log review always uses the original quiz file order; shuffle settings
 from **Settings → Quiz preferences** do not apply here.
 The Mistake Log refreshes automatically when goals change (for example after a
@@ -127,7 +133,7 @@ Available actions:
 - **New note** opens an in-memory draft in edit mode; the file is written only when you **Save**
 - **Open folder** opens the `knowledge-base` folder in the system file manager
 - **Refresh** rescans knowledge files from disk
-- Note detail pages and the Mistake Log note dialog default to a read-only markdown viewer
+- Note detail pages and the Mistake Log inline review card default to a read-only markdown viewer for linked notes
 - **Edit** and **Copy** icon actions in the viewer header open edit mode or copy the full serialized `.md` file to the clipboard
 - **Linked questions** appear as clickable chips; clicking opens a preview dialog (not a route change) with the quiz title, question prompt, options, related knowledge notes, and a **Show answer** toggle for correct options and the explanation
 - Secondary icon actions across the app use tooltips; primary actions such as **Save** and **Submit** stay labeled
@@ -141,9 +147,9 @@ Editing and drafts:
 Mistake Log integration:
 
 - The table shows a sortable **Notes** count for each qualifying mistake
-- Clicking a row opens the review drawer with the question review plus linked knowledge notes below
+- Clicking a row opens the inline review card with the question review plus linked knowledge notes below
 - Link and add-note icon actions attach existing notes or create a new draft pre-linked to that question
-- Opening a linked note from the drawer or from a linked-question preview uses the same knowledge note dialog
+- Opening a linked note from the review card or from a linked-question preview uses the same knowledge note dialog
 
 ## Settings
 

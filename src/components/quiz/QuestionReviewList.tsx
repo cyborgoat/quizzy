@@ -1,10 +1,8 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
+import { ReviewQuestionNavigationBar } from "@/components/quiz/ReviewQuestionNavigationBar";
 import { ReviewQuestionSplitPanel } from "@/components/quiz/ReviewQuestionSplitPanel";
-import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Button } from "@/components/ui/button";
-import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import {
   getFilteredPosition,
   getReviewFilterCounts,
@@ -87,26 +85,6 @@ function QuestionReviewListBody({
     onActiveQuestionIndexChange(filteredItems[resolvedFilteredPosition + 1].index);
   }
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-      if (isEditableKeyboardTarget(event.target)) return;
-      if (filteredItems.length === 0) return;
-
-      event.preventDefault();
-
-      if (event.key === "ArrowLeft" && resolvedFilteredPosition > 0) {
-        onActiveQuestionIndexChange(filteredItems[resolvedFilteredPosition - 1].index);
-      }
-      if (event.key === "ArrowRight" && resolvedFilteredPosition < filteredItems.length - 1) {
-        onActiveQuestionIndexChange(filteredItems[resolvedFilteredPosition + 1].index);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredItems, resolvedFilteredPosition, onActiveQuestionIndexChange]);
-
   const filters: { value: ReviewFilter; label: string; count: number }[] = [
     { value: "incorrect", label: "Incorrect", count: filterCounts.incorrect },
     { value: "correct", label: "Correct", count: filterCounts.correct },
@@ -135,23 +113,14 @@ function QuestionReviewListBody({
         <InlineEmptyMessage>{emptyFilterMessage(filter)}</InlineEmptyMessage>
       ) : (
         <div className="space-y-3" aria-label="Question results">
-          <div className="flex items-center justify-center gap-2">
-            <IconActionButton
-              icon={ChevronLeft}
-              label="Previous question"
-              onClick={goToPreviousQuestion}
-              disabled={resolvedFilteredPosition === 0}
-            />
-            <p className="min-w-14 text-center text-xs tabular-nums text-zinc-500">
-              {resolvedFilteredPosition + 1} / {filteredItems.length}
-            </p>
-            <IconActionButton
-              icon={ChevronRight}
-              label="Next question"
-              onClick={goToNextQuestion}
-              disabled={resolvedFilteredPosition === filteredItems.length - 1}
-            />
-          </div>
+          <ReviewQuestionNavigationBar
+            position={resolvedFilteredPosition + 1}
+            total={filteredItems.length}
+            onPrevious={goToPreviousQuestion}
+            onNext={goToNextQuestion}
+            disablePrevious={resolvedFilteredPosition === 0}
+            disableNext={resolvedFilteredPosition >= filteredItems.length - 1}
+          />
           {currentItem && (
             <ReviewQuestionSplitPanel
               question={currentItem.question}

@@ -15,7 +15,7 @@ const PaginationContent = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<"ul">
 >(({ className, ...props }, ref) => (
-  <ul ref={ref} className={cn("flex flex-row items-center gap-1", className)} {...props} />
+  <ul ref={ref} className={cn("flex flex-row items-center gap-0.5", className)} {...props} />
 ));
 PaginationContent.displayName = "PaginationContent";
 
@@ -36,10 +36,10 @@ const PaginationLink = ({ className, isActive, ...props }: PaginationLinkProps) 
     type="button"
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      "inline-flex size-7 items-center justify-center rounded-md border text-[11px] font-medium transition-colors",
+      "inline-flex size-6 items-center justify-center rounded text-[11px] font-medium transition-colors",
       isActive
-        ? "border-zinc-900 bg-zinc-900 text-white ring-1 ring-zinc-900/30"
-        : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100",
+        ? "bg-zinc-100 text-zinc-950"
+        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950",
       "disabled:pointer-events-none disabled:opacity-40",
       className,
     )}
@@ -51,7 +51,7 @@ const PaginationPrevious = ({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to previous page" className={cn("h-7 w-7 p-0", className)} {...props}>
+  <PaginationLink aria-label="Go to previous page" className={cn("size-6 p-0", className)} {...props}>
     <ChevronLeft className="size-3" />
   </PaginationLink>
 );
@@ -60,7 +60,7 @@ const PaginationNext = ({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to next page" className={cn("h-7 w-7 p-0", className)} {...props}>
+  <PaginationLink aria-label="Go to next page" className={cn("size-6 p-0", className)} {...props}>
     <ChevronRight className="size-3" />
   </PaginationLink>
 );
@@ -69,7 +69,7 @@ const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span"
   <span
     aria-hidden
     aria-disabled="true"
-    className={cn("pointer-events-none select-none flex size-7 items-center justify-center text-zinc-500", className)}
+    className={cn("pointer-events-none flex size-6 select-none items-center justify-center text-zinc-400", className)}
     {...props}
   >
     <MoreHorizontal className="size-3.5" />

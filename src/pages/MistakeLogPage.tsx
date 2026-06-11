@@ -9,22 +9,23 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { Settings } from "lucide-react";
+import { ChevronDown, Settings } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { MistakeReviewDrawer } from "@/components/mistakes/MistakeReviewDrawer";
+import { MistakeLogQuestionReviewCard } from "@/components/mistakes/MistakeLogQuestionReviewCard";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/quiz/EmptyState";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/quiz/EmptyState";
 import {
   DataTableColumnHeader,
   DataTableNumericCell,
@@ -48,17 +49,88 @@ import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatShortDate } from "@/lib/formatDate";
 import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
-import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
+import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
+import { QUESTION_TYPE_LABELS } from "@/lib/questionOrder";
+import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { detectEmptyReason } from "@/lib/mistakeLog";
+import { mistakeEntryKey, syncTablePageForEntry } from "@/lib/mistakeLogReview";
+import { cn } from "@/lib/utils";
 import type { MistakeEntry } from "@/types/mistakeLog";
+import type { QuizQuestion, QuizSource } from "@/types/quiz";
 
-function SummaryCard({ label, value }: { label: string; value: string | number }) {
+type QuestionTypeFilter = "all" | QuizQuestion["type"];
+
+const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }[] = [
+  { value: "all", label: "All types" },
+  { value: "single_choice", label: QUESTION_TYPE_LABELS.single_choice },
+  { value: "multiple_choice", label: QUESTION_TYPE_LABELS.multiple_choice },
+  { value: "true_false", label: QUESTION_TYPE_LABELS.true_false },
+];
+
+function MistakeLogColumnFilterHeader({
+  label,
+  filterValue,
+  menuLabel,
+  options,
+  onFilterChange,
+}: {
+  label: string;
+  filterValue: string;
+  menuLabel: string;
+  options: { value: string; label: string }[];
+  onFilterChange: (value: string) => void;
+}) {
+  const isFiltered = filterValue !== "all";
+
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2.5 sm:px-4">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums text-zinc-950 xl:text-2xl">{value}</p>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "h-auto w-full justify-start gap-1 rounded-none p-0 text-left text-xs font-medium hover:bg-transparent",
+            isFiltered ? "text-zinc-950" : "text-zinc-600 hover:text-zinc-950",
+          )}
+        >
+          {label}
+          <ChevronDown className="size-3 shrink-0 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+        <DropdownMenuLabel>{menuLabel}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup value={filterValue} onValueChange={onFilterChange}>
+          {options.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
+}
+
+function formatMistakeQuestionLabel(entry: MistakeEntry, quizzes: QuizSource[]) {
+  const quiz = quizzes.find((source) => source.quiz.id === entry.quizId);
+  const number = quiz ? getQuestionNumber(quiz.quiz.questions, entry.questionId) : null;
+  return number ? `Q${number}` : entry.questionId;
+}
+
+function getMistakeQuestionType(
+  entry: MistakeEntry,
+  quizzes: QuizSource[],
+): QuizQuestion["type"] | null {
+  const quiz = quizzes.find((source) => source.quiz.id === entry.quizId);
+  const question = quiz?.quiz.questions.find((item) => item.id === entry.questionId);
+  return question?.type ?? null;
+}
+
+function formatMistakeQuestionType(entry: MistakeEntry, quizzes: QuizSource[]) {
+  const type = getMistakeQuestionType(entry, quizzes);
+  if (!type) return "—";
+  return QUESTION_TYPE_LABELS[type];
 }
 
 function EmptyMistakeLog({
@@ -115,7 +187,6 @@ export function MistakeLogPage() {
     qualifyingEntries,
     rawEntries,
     attemptData,
-    summary,
     emptyReason,
     quizzesWithMistakes,
     thresholds,
@@ -126,15 +197,17 @@ export function MistakeLogPage() {
   const { quizzes } = useQuizLibrary();
   const knowledgeIndex = useKnowledgeIndex();
   const [quizFilter, setQuizFilter] = useState<string>("all");
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<QuestionTypeFilter>("all");
   const [sorting, setSorting] = useState<SortingState>([
     { id: "flaggedCount", desc: true },
     { id: "mistakeCount", desc: true },
   ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 5,
   });
   const [activeEntry, setActiveEntry] = useState<MistakeEntry | null>(null);
+  const [isMistakeListExpanded, setIsMistakeListExpanded] = useState(true);
 
   const isQuizScoped = Boolean(scopedQuizId);
   const scopedQuizTitle =
@@ -151,29 +224,77 @@ export function MistakeLogPage() {
   }, [quizFilter, quizzesWithMistakes]);
 
   const filteredEntries = useMemo(() => {
+    let entries = qualifyingEntries;
+
     const quizId = isQuizScoped ? scopedQuizId : quizFilter === "all" ? undefined : quizFilter;
-    if (!quizId) return qualifyingEntries;
-    return qualifyingEntries.filter((entry) => entry.quizId === quizId);
-  }, [qualifyingEntries, isQuizScoped, scopedQuizId, quizFilter]);
+    if (quizId) {
+      entries = entries.filter((entry) => entry.quizId === quizId);
+    }
+
+    if (questionTypeFilter !== "all") {
+      entries = entries.filter(
+        (entry) => getMistakeQuestionType(entry, quizzes) === questionTypeFilter,
+      );
+    }
+
+    return entries;
+  }, [qualifyingEntries, isQuizScoped, scopedQuizId, quizFilter, questionTypeFilter, quizzes]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [quizFilter, isQuizScoped, scopedQuizId]);
+  }, [quizFilter, questionTypeFilter, isQuizScoped, scopedQuizId]);
 
   const columns = useMemo<ColumnDef<MistakeEntry>[]>(
     () => [
       {
-        id: "question",
-        accessorFn: (row) =>
-          formatQuizQuestionLabel(
-            { quizId: row.quizId, questionId: row.questionId },
-            quizzes,
-            { quizTitleFallback: row.quizTitle, quizScoped: isQuizScoped },
+        accessorKey: "quizTitle",
+        header: () =>
+          isQuizScoped ? (
+            <DataTableColumnHeader label="Quiz Name" />
+          ) : (
+            <MistakeLogColumnFilterHeader
+              label="Quiz Name"
+              filterValue={quizFilter}
+              menuLabel="Filter by quiz"
+              options={[
+                { value: "all", label: "All quizzes" },
+                ...quizzesWithMistakes.map((quiz) => ({
+                  value: quiz.quizId,
+                  label: quiz.quizTitle,
+                })),
+              ]}
+              onFilterChange={setQuizFilter}
+            />
           ),
+        cell: ({ row }) => (
+          <span className={`${dataTableCellTextClass} min-w-0`}>{row.original.quizTitle}</span>
+        ),
+      },
+      {
+        id: "question",
+        accessorFn: (row) => formatMistakeQuestionLabel(row, quizzes),
         header: () => <DataTableColumnHeader label="Question" />,
         cell: ({ row }) => (
           <span className={`${dataTableCellTextClass} min-w-0 font-medium`}>
-            {row.getValue<string>("question")}
+            {formatMistakeQuestionLabel(row.original, quizzes)}
+          </span>
+        ),
+      },
+      {
+        id: "questionType",
+        accessorFn: (row) => formatMistakeQuestionType(row, quizzes),
+        header: () => (
+          <MistakeLogColumnFilterHeader
+            label="Question type"
+            filterValue={questionTypeFilter}
+            menuLabel="Filter by question type"
+            options={QUESTION_TYPE_FILTER_OPTIONS}
+            onFilterChange={(value) => setQuestionTypeFilter(value as QuestionTypeFilter)}
+          />
+        ),
+        cell: ({ row }) => (
+          <span className={dataTableCellMutedClass}>
+            {formatMistakeQuestionType(row.original, quizzes)}
           </span>
         ),
       },
@@ -239,7 +360,7 @@ export function MistakeLogPage() {
         ),
       },
     ],
-    [isQuizScoped, knowledgeIndex, quizzes],
+    [isQuizScoped, knowledgeIndex, questionTypeFilter, quizFilter, quizzes, quizzesWithMistakes],
   );
 
   const table = useReactTable({
@@ -256,19 +377,57 @@ export function MistakeLogPage() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const scopedSummary = useMemo(() => {
-    if (filteredEntries.length === qualifyingEntries.length) return summary;
-    return {
-      qualifyingCount: filteredEntries.length,
-      totalMistakeEvents: filteredEntries.reduce((sum, entry) => sum + entry.mistakeCount, 0),
-      quizCount: new Set(filteredEntries.map((entry) => entry.quizId)).size,
-    };
-  }, [filteredEntries, qualifyingEntries.length, summary]);
+  const sortedEntries = useMemo(
+    () => table.getSortedRowModel().rows.map((row) => row.original),
+    [filteredEntries, sorting],
+  );
+
+  const effectiveEntry = useMemo(() => {
+    if (sortedEntries.length === 0) return null;
+    if (
+      activeEntry &&
+      sortedEntries.some((entry) => mistakeEntryKey(entry) === mistakeEntryKey(activeEntry))
+    ) {
+      return activeEntry;
+    }
+    return sortedEntries[0];
+  }, [sortedEntries, activeEntry]);
+
+  useEffect(() => {
+    setActiveEntry(null);
+  }, [quizFilter, questionTypeFilter, scopedQuizId, isQuizScoped, sorting]);
+
+  useEffect(() => {
+    if (!effectiveEntry) return;
+    syncTablePageForEntry(table, effectiveEntry);
+  }, [effectiveEntry, filteredEntries, sorting, pagination.pageSize, table]);
+
+  const activePosition = useMemo(() => {
+    if (!effectiveEntry) return -1;
+    return sortedEntries.findIndex(
+      (entry) => mistakeEntryKey(entry) === mistakeEntryKey(effectiveEntry),
+    );
+  }, [sortedEntries, effectiveEntry]);
+
+  function selectEntry(entry: MistakeEntry) {
+    setActiveEntry(entry);
+    syncTablePageForEntry(table, entry);
+  }
+
+  function goToPreviousMistake() {
+    if (activePosition <= 0) return;
+    selectEntry(sortedEntries[activePosition - 1]);
+  }
+
+  function goToNextMistake() {
+    if (activePosition < 0 || activePosition >= sortedEntries.length - 1) return;
+    selectEntry(sortedEntries[activePosition + 1]);
+  }
 
   const scopedEmptyReason = useMemo(() => {
     if (filteredEntries.length > 0) return null;
 
-    if (!isQuizScoped && quizFilter !== "all") {
+    if (!isQuizScoped && (quizFilter !== "all" || questionTypeFilter !== "all")) {
       return "no_mistakes" as const;
     }
 
@@ -286,6 +445,7 @@ export function MistakeLogPage() {
     filteredEntries.length,
     isQuizScoped,
     quizFilter,
+    questionTypeFilter,
     scopedQuizId,
     attemptData,
     rawEntries,
@@ -293,32 +453,41 @@ export function MistakeLogPage() {
   ]);
 
   const activeQuestionContext = useMemo(() => {
-    if (!activeEntry) return { question: null, questionIndex: 0 };
-    const source = quizzes.find((item) => item.quiz.id === activeEntry.quizId);
+    if (!effectiveEntry) return { question: null, questionIndex: 0 };
+    const source = quizzes.find((item) => item.quiz.id === effectiveEntry.quizId);
     const questionIndex =
       source?.quiz.questions.findIndex(
-        (question) => question.id === activeEntry.questionId,
+        (question) => question.id === effectiveEntry.questionId,
       ) ?? -1;
     const question =
       questionIndex >= 0 ? source!.quiz.questions[questionIndex]! : null;
     return { question, questionIndex: questionIndex >= 0 ? questionIndex : 0 };
-  }, [activeEntry, quizzes]);
+  }, [effectiveEntry, quizzes]);
 
   return (
-    <PageShell className="flex h-[calc(100svh-(var(--app-page-py)*2))] flex-col overflow-hidden">
-      <div className="mb-4 shrink-0 lg:mb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">Mistake Log</h1>
-        <p className="mt-1 text-sm text-zinc-500 lg:text-base">
+    <PageShell className="space-y-3">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Mistake Log</h1>
+        <p className="mt-0.5 text-sm text-zinc-500">
           Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question
           to review the answer and explanation.
         </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥{thresholds.minFlags} flag(s), ≤
+          {thresholds.maxCorrectnessPercentage}% correctness. Adjust in{" "}
+          <Link to="/settings" className="font-medium text-zinc-700 underline-offset-2 hover:underline">
+            <Settings className="mr-0.5 inline size-3" />
+            Settings
+          </Link>
+          .
+        </p>
         {isQuizScoped && scopedQuizTitle && (
-          <p className="mt-2 text-sm font-medium text-zinc-700">{scopedQuizTitle}</p>
+          <p className="mt-1 text-sm font-medium text-zinc-700">{scopedQuizTitle}</p>
         )}
       </div>
 
       {error && (
-        <Alert variant="destructive" className="mb-4 shrink-0 lg:mb-5">
+        <Alert variant="destructive">
           <AlertTitle>Unable to load mistake data</AlertTitle>
           <AlertDescription>
             <div className="flex flex-wrap items-center gap-3">
@@ -331,100 +500,97 @@ export function MistakeLogPage() {
         </Alert>
       )}
 
-      <div className="mb-4 grid shrink-0 gap-2 sm:grid-cols-3 lg:mb-5 lg:gap-3">
-        <SummaryCard label="Qualifying mistakes" value={scopedSummary.qualifyingCount} />
-        <SummaryCard label="Total mistake events" value={scopedSummary.totalMistakeEvents} />
-        <SummaryCard label="Quizzes represented" value={scopedSummary.quizCount} />
-      </div>
-
-      <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 lg:mb-5 lg:p-4">
-        {!isQuizScoped && (
-          <div className="min-w-0 flex-1">
-            <Label htmlFor="quiz-filter">Quiz</Label>
-            <Select value={quizFilter} onValueChange={setQuizFilter}>
-              <SelectTrigger id="quiz-filter" className="mt-1.5 max-w-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All quizzes</SelectItem>
-                {quizzesWithMistakes.map((quiz) => (
-                  <SelectItem key={quiz.quizId} value={quiz.quizId}>
-                    {quiz.quizTitle}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="text-xs text-zinc-500">
-          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥{thresholds.minFlags} flag(s), ≤
-          {thresholds.maxCorrectnessPercentage}% correctness{" "}
-          <Link to="/settings" className="font-medium text-zinc-700 underline-offset-2 hover:underline">
-            <Settings className="mr-0.5 inline size-3" />
-            Settings
-          </Link>
-        </div>
-      </div>
-
       {isLoading ? (
-        <div className="grid min-h-0 flex-1 place-items-center">
-          <p className="text-sm text-zinc-500">Loading mistake data…</p>
-        </div>
+        <p className="py-12 text-center text-sm text-zinc-500">Loading mistake data…</p>
       ) : scopedEmptyReason ? (
-        <div className="min-h-0 flex-1 overflow-auto">
-          <EmptyMistakeLog
-            reason={scopedEmptyReason}
-            thresholds={thresholds}
-            scopedQuizTitle={isQuizScoped ? (scopedQuizTitle ?? undefined) : undefined}
-          />
-        </div>
+        <EmptyMistakeLog
+          reason={scopedEmptyReason}
+          thresholds={thresholds}
+          scopedQuizTitle={isQuizScoped ? (scopedQuizTitle ?? undefined) : undefined}
+        />
       ) : (
-        <div className="min-h-0 flex flex-1 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white">
-          <div className="min-h-0 flex-1 overflow-auto">
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/75">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} className={dataTableHeadClass}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="cursor-pointer"
-                    onClick={() => setActiveEntry(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className={dataTableCellClass}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <DataTablePaginationFooter table={table} />
-        </div>
-      )}
+        <>
+          <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 border-b border-zinc-200/55 px-3 py-2 text-left transition-colors hover:bg-zinc-50"
+              aria-expanded={isMistakeListExpanded}
+              onClick={() => setIsMistakeListExpanded((expanded) => !expanded)}
+            >
+              <ChevronDown
+                className={cn(
+                  "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
+                  isMistakeListExpanded && "rotate-180",
+                )}
+              />
+              <span className="text-sm font-semibold text-zinc-950">Mistake list</span>
+              <span className="text-xs text-zinc-500">({sortedEntries.length})</span>
+            </button>
 
-      <MistakeReviewDrawer
-        entry={activeEntry}
-        question={activeQuestionContext.question}
-        questionIndex={activeQuestionContext.questionIndex}
-        open={activeEntry !== null}
-        onOpenChange={(open) => {
-          if (!open) setActiveEntry(null);
-        }}
-      />
+            {isMistakeListExpanded && (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id} className={dataTableHeadClass}>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows.map((row) => {
+                        const isActive =
+                          effectiveEntry !== null &&
+                          mistakeEntryKey(row.original) === mistakeEntryKey(effectiveEntry);
+
+                        return (
+                          <TableRow
+                            key={row.id}
+                            className={cn("cursor-pointer", isActive && "bg-zinc-50")}
+                            data-state={isActive ? "selected" : undefined}
+                            onClick={() => selectEntry(row.original)}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id} className={dataTableCellClass}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <DataTablePaginationFooter
+                  table={table}
+                  pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
+                />
+              </>
+            )}
+          </div>
+
+          {effectiveEntry && (
+            <MistakeLogQuestionReviewCard
+              entry={effectiveEntry}
+              question={activeQuestionContext.question}
+              questionIndex={activeQuestionContext.questionIndex}
+              position={activePosition + 1}
+              total={sortedEntries.length}
+              onPrevious={goToPreviousMistake}
+              onNext={goToNextMistake}
+              disablePrevious={activePosition <= 0}
+              disableNext={activePosition < 0 || activePosition >= sortedEntries.length - 1}
+            />
+          )}
+        </>
+      )}
     </PageShell>
   );
 }
