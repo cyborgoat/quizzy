@@ -10,14 +10,16 @@ import {
   type Table as TanStackTable,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, Settings } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { MistakeLogQuestionReviewCard } from "@/components/mistakes/MistakeLogQuestionReviewCard";
+import { ChevronDown, Flag, Settings, Shuffle, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
+import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
+import { IconActionButton } from "@/components/ui/icon-action-button";
+import { Switch } from "@/components/ui/switch";
 import {
   DataTableColumnFilterHeader,
   DataTableColumnHeader,
@@ -44,10 +46,18 @@ import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatShortDate } from "@/lib/formatDate";
 import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
-import { QUESTION_TYPE_LABELS } from "@/lib/questionOrder";
+import {
+  QUESTION_TYPE_LABELS,
+  shuffleArrayKeepingKeyedItemAtIndex,
+} from "@/lib/questionOrder";
 import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { detectEmptyReason } from "@/lib/mistakeLog";
+import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
+import {
+  reviewQuestionFlaggedClass,
+  reviewQuestionIncorrectClass,
+} from "@/lib/reviewQuestionStatus";
 import { cn } from "@/lib/utils";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizQuestion, QuizSource } from "@/types/quiz";
@@ -83,6 +93,11 @@ function mistakeColumnWidth(columnId: string) {
   return MISTAKE_COLUMN_WIDTHS[columnId] ?? "";
 }
 
+const DEFAULT_MISTAKE_SORTING: SortingState = [
+  { id: "flaggedCount", desc: true },
+  { id: "mistakeCount", desc: true },
+];
+
 const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }[] = [
   { value: "all", label: "All types" },
   { value: "single_choice", label: QUESTION_TYPE_LABELS.single_choice },
@@ -109,6 +124,36 @@ function formatMistakeQuestionType(entry: MistakeEntry, quizzes: QuizSource[]) {
   const type = getMistakeQuestionType(entry, quizzes);
   if (!type) return "—";
   return QUESTION_TYPE_LABELS[type];
+}
+
+function MistakeStatusBadge({
+  count,
+  variant,
+}: {
+  count: number;
+  variant: "mistakes" | "flags";
+}) {
+  if (count <= 0) return null;
+
+  const isMistakes = variant === "mistakes";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+        isMistakes
+          ? reviewQuestionIncorrectClass
+          : cn("bg-amber-50 text-amber-800", reviewQuestionFlaggedClass),
+      )}
+    >
+      {isMistakes ? (
+        <X className="size-3.5 shrink-0" aria-hidden="true" />
+      ) : (
+        <Flag className="size-3.5 shrink-0" aria-hidden="true" />
+      )}
+      {count}
+    </span>
+  );
 }
 
 function EmptyMistakeLog({
@@ -176,16 +221,18 @@ export function MistakeLogPage() {
   const { getNotesForQuestion } = useKnowledgeLibrary();
   const [quizFilter, setQuizFilter] = useState<string>("all");
   const [questionTypeFilter, setQuestionTypeFilter] = useState<QuestionTypeFilter>("all");
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "flaggedCount", desc: true },
-    { id: "mistakeCount", desc: true },
-  ]);
+  const [sorting, setSorting] = useState<SortingState>(DEFAULT_MISTAKE_SORTING);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
   });
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [isMistakeListExpanded, setIsMistakeListExpanded] = useState(true);
+  const [studyMode, setStudyMode] = useState(true);
+  const [shuffleEnabled, setShuffleEnabled] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [shufflePinnedIndex, setShufflePinnedIndex] = useState(0);
+  const [shufflePinnedKey, setShufflePinnedKey] = useState<string | null>(null);
 
   const isQuizScoped = Boolean(scopedQuizId);
   const effectiveQuizFilter =
@@ -220,8 +267,39 @@ export function MistakeLogPage() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [effectiveQuizFilter, questionTypeFilter, isQuizScoped, scopedQuizId]);
 
+  const shuffleOrderKey = useMemo(
+    () =>
+      filteredEntries
+        .map((entry) => questionLinkKey(entry.quizId, entry.questionId))
+        .join("\0"),
+    [filteredEntries],
+  );
+
+  const displayEntries = useMemo(() => {
+    if (!shuffleEnabled) return filteredEntries;
+    let seed = shuffleSeed;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0xffffffff;
+    };
+    return shuffleArrayKeepingKeyedItemAtIndex(
+      filteredEntries,
+      shufflePinnedIndex,
+      (entry) => questionLinkKey(entry.quizId, entry.questionId),
+      shufflePinnedKey,
+      random,
+    );
+  }, [
+    filteredEntries,
+    shuffleEnabled,
+    shuffleSeed,
+    shufflePinnedIndex,
+    shufflePinnedKey,
+  ]);
+
   const columns = useMemo<ColumnDef<MistakeEntry>[]>(
-    () => [
+    () => {
+      const defs: ColumnDef<MistakeEntry>[] = [
       {
         accessorKey: "quizTitle",
         header: () =>
@@ -296,18 +374,24 @@ export function MistakeLogPage() {
         header: ({ column }) => (
           <DataTableSortableHeader label="Flags" column={column} />
         ),
-        cell: ({ row }) => (
-          <DataTableNumericCell value={row.original.flaggedCount} />
-        ),
+        cell: ({ row }) =>
+          studyMode ? (
+            <span className={dataTableCellMutedClass}>—</span>
+          ) : (
+            <DataTableNumericCell value={row.original.flaggedCount} />
+          ),
       },
       {
         accessorKey: "mistakeCount",
         header: ({ column }) => (
           <DataTableSortableHeader label="Mistakes" column={column} />
         ),
-        cell: ({ row }) => (
-          <DataTableNumericCell value={row.original.mistakeCount} />
-        ),
+        cell: ({ row }) =>
+          studyMode ? (
+            <span className={dataTableCellMutedClass}>—</span>
+          ) : (
+            <DataTableNumericCell value={row.original.mistakeCount} />
+          ),
       },
       {
         accessorKey: "correctnessPercentage",
@@ -341,12 +425,15 @@ export function MistakeLogPage() {
           </span>
         ),
       },
-    ],
-    [effectiveQuizFilter, getNotesForQuestion, isQuizScoped, questionTypeFilter, quizzes, quizzesWithMistakes],
+    ];
+
+      return defs;
+    },
+    [effectiveQuizFilter, getNotesForQuestion, isQuizScoped, questionTypeFilter, quizzes, quizzesWithMistakes, studyMode],
   );
 
   const table = useReactTable({
-    data: filteredEntries,
+    data: displayEntries,
     columns,
     state: { sorting, pagination },
     onSortingChange: (updater) => {
@@ -380,6 +467,55 @@ export function MistakeLogPage() {
         questionLinkKey(effectiveEntry.quizId, effectiveEntry.questionId),
     );
   }, [sortedEntries, effectiveEntry]);
+
+  const shuffleSelectionRef = useRef({
+    entry: effectiveEntry,
+    position: activePosition,
+  });
+  shuffleSelectionRef.current = {
+    entry: effectiveEntry,
+    position: activePosition,
+  };
+
+  const prevShuffleEnabledRef = useRef(shuffleEnabled);
+  const shuffleOrderKeyRef = useRef(shuffleOrderKey);
+
+  useEffect(() => {
+    if (!shuffleEnabled) {
+      setSorting(DEFAULT_MISTAKE_SORTING);
+      prevShuffleEnabledRef.current = false;
+      shuffleOrderKeyRef.current = shuffleOrderKey;
+      return;
+    }
+
+    setSorting([]);
+
+    const justEnabled = !prevShuffleEnabledRef.current;
+    const orderChanged = shuffleOrderKeyRef.current !== shuffleOrderKey;
+    if (orderChanged && !justEnabled) {
+      const { entry, position } = shuffleSelectionRef.current;
+      if (entry) {
+        const key = questionLinkKey(entry.quizId, entry.questionId);
+        setSelectedEntryKey(key);
+        setShufflePinnedKey(key);
+        setShufflePinnedIndex(position >= 0 ? position : 0);
+      }
+    }
+
+    prevShuffleEnabledRef.current = true;
+    shuffleOrderKeyRef.current = shuffleOrderKey;
+    setShuffleSeed((seed) => seed + 1);
+  }, [shuffleEnabled, shuffleOrderKey]);
+
+  function toggleShuffle() {
+    if (!shuffleEnabled && effectiveEntry) {
+      const key = questionLinkKey(effectiveEntry.quizId, effectiveEntry.questionId);
+      setSelectedEntryKey(key);
+      setShufflePinnedKey(key);
+      setShufflePinnedIndex(activePosition >= 0 ? activePosition : 0);
+    }
+    setShuffleEnabled((enabled) => !enabled);
+  }
 
   function selectEntry(entry: MistakeEntry) {
     setSelectedEntryKey(questionLinkKey(entry.quizId, entry.questionId));
@@ -564,16 +700,76 @@ export function MistakeLogPage() {
           </div>
 
           {effectiveEntry && (
-            <MistakeLogQuestionReviewCard
-              entry={effectiveEntry}
+            <QuestionReviewCard
+              header={
+                <>
+                  <h2 className="text-sm font-semibold text-zinc-950">Review mistake</h2>
+                  <div className="mt-1 flex min-h-5 items-center gap-x-2 text-xs text-zinc-500">
+                    <span className="truncate">{effectiveEntry.quizTitle}</span>
+                    <span
+                      className={cn(
+                        "flex shrink-0 items-center gap-x-2",
+                        studyMode && "invisible",
+                      )}
+                      aria-hidden={studyMode}
+                    >
+                      <span className="text-zinc-300" aria-hidden="true">
+                        ·
+                      </span>
+                      <span>
+                        Last mistaken {formatShortDate(effectiveEntry.lastMistakenAt)}
+                      </span>
+                      <MistakeStatusBadge
+                        count={effectiveEntry.mistakeCount}
+                        variant="mistakes"
+                      />
+                      <MistakeStatusBadge
+                        count={effectiveEntry.flaggedCount}
+                        variant="flags"
+                      />
+                    </span>
+                  </div>
+                </>
+              }
+              headerActions={
+                <>
+                  <IconActionButton
+                    icon={Shuffle}
+                    label={shuffleEnabled ? "Sorted order" : "Shuffle order"}
+                    variant={shuffleEnabled ? "default" : "outline"}
+                    onClick={toggleShuffle}
+                  />
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="mistake-log-study-mode"
+                      className="text-xs font-medium text-zinc-600"
+                    >
+                      Study mode
+                    </label>
+                    <Switch
+                      id="mistake-log-study-mode"
+                      checked={studyMode}
+                      onCheckedChange={setStudyMode}
+                      aria-labelledby="mistake-log-study-mode"
+                    />
+                  </div>
+                </>
+              }
               question={activeQuestionContext.question}
               questionIndex={activeQuestionContext.questionIndex}
+              record={buildMistakeAnswerRecord(effectiveEntry, activeQuestionContext.question)}
+              quizId={effectiveEntry.quizId}
+              concealAnswers={studyMode}
               position={activePosition + 1}
               total={sortedEntries.length}
               onPrevious={goToPreviousMistake}
               onNext={goToNextMistake}
               disablePrevious={activePosition <= 0}
-              disableNext={activePosition < 0 || activePosition >= sortedEntries.length - 1}
+              disableNext={
+                activePosition < 0 || activePosition >= sortedEntries.length - 1
+              }
+              panelKey={`${effectiveEntry.quizId}:${effectiveEntry.questionId}:${studyMode ? "study" : "review"}`}
+              unavailablePrompt={effectiveEntry.prompt}
             />
           )}
         </>

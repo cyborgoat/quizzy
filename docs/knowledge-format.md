@@ -55,8 +55,8 @@ The body supports the same markdown syntax used in quiz content:
 ## Viewing linked questions
 
 From a knowledge note, click a linked-question chip to open a preview dialog. The
-dialog shows the quiz title and description, the question prompt and options, a
-**Show answer** toggle, related knowledge notes for that question, and links to
+dialog shows the quiz title and description, the question prompt and options,
+correct answers, explanation, related knowledge notes for that question, and links to
 open other notes without leaving your current context.
 
 ## Storage location

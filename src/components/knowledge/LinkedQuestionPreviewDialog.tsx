@@ -2,6 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useMemo } from "react";
 import { ReviewQuestionSplitPanel } from "@/components/quiz/ReviewQuestionSplitPanel";
+import { UnavailableQuestionAlert } from "@/components/quiz/UnavailableQuestionMessage";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -62,13 +63,7 @@ export function LinkedQuestionPreviewDialog({
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             {!resolved ? (
-              <Alert>
-                <AlertTitle>Question unavailable</AlertTitle>
-                <AlertDescription>
-                  This question could not be loaded. The quiz or question may have been removed or
-                  is unavailable in your working directory.
-                </AlertDescription>
-              </Alert>
+              <UnavailableQuestionAlert />
             ) : (
               <div className="space-y-6">
                 <section className="min-w-0">
@@ -91,7 +86,6 @@ export function LinkedQuestionPreviewDialog({
                   index={Math.max((resolved.questionNumber ?? 1) - 1, 0)}
                   quizId={link.quizId}
                   currentNoteId={currentNoteId}
-                  concealAnswers
                 />
 
                 {hasLinkWarning && (

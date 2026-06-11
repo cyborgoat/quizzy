@@ -4,6 +4,7 @@ import {
   groupQuestionsByType,
   orderQuestionsByType,
   selectPracticeQuestions,
+  shuffleArrayKeepingKeyedItemAtIndex,
   shuffleQuestionOptions,
   shuffleQuestionsWithinGroups,
 } from "@/lib/questionOrder";
@@ -66,6 +67,28 @@ describe("groupQuestionsByType", () => {
         questions: [questions[0]],
       },
     ]);
+  });
+});
+
+describe("shuffleArrayKeepingKeyedItemAtIndex", () => {
+  it("keeps the pinned item at the requested index while shuffling the rest", () => {
+    const items = [
+      { id: "a", label: "A" },
+      { id: "b", label: "B" },
+      { id: "c", label: "C" },
+      { id: "d", label: "D" },
+    ];
+
+    const shuffled = shuffleArrayKeepingKeyedItemAtIndex(
+      items,
+      2,
+      (item) => item.id,
+      "b",
+      () => 0,
+    );
+
+    expect(shuffled.map((item) => item.id)).toEqual(["c", "d", "b", "a"]);
+    expect(shuffled[2]?.id).toBe("b");
   });
 });
 

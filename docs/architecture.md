@@ -240,7 +240,7 @@ managed directly through the system file manager.
 3. Entries are filtered by configured thresholds, with flagged questions always
   included, and sorted by flagged count then mistake frequency.
 4. The first sorted row is selected by default. Clicking a row or using arrow
-   navigation selects an entry in `MistakeLogQuestionReviewCard` below the table.
+   navigation selects an entry in `QuestionReviewCard` below the table.
    The card loads the live question definition from the quiz library and shows
    review UI with the most recent incorrect answer. Linked knowledge notes reuse
    `QuestionKnowledgeNotesPanel` via `ReviewQuestionSplitPanel`.
@@ -269,8 +269,7 @@ src/
     knowledge/    Note editor, viewer, link/preview dialogs, linked-notes list
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
-    mistakes/     Mistake Log inline review card
-    quiz/         Quiz UI, ReviewQuestionNavigationBar, ReviewQuestionSplitPanel
+    quiz/         Quiz UI, QuestionReviewCard, ReviewQuestionSplitPanel
     ui/           shadcn-style local primitives (including Drawer and Slider)
   contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
                   preferences providers

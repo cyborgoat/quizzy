@@ -1,15 +1,29 @@
+import { useMemo } from "react";
 import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
 import { ReviewHeader } from "@/components/goals/ReviewHeader";
 import { ReviewScoreSummary } from "@/components/goals/ReviewScoreSummary";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
-import { QuestionReviewList } from "@/components/quiz/QuestionReviewList";
-import type { QuestionReviewItem } from "@/types/review";
+import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
+import { Button } from "@/components/ui/button";
 import { useAttemptReviewNavigation } from "@/hooks/useAttemptReviewNavigation";
+import {
+  getFilteredPosition,
+  getReviewFilterCounts,
+  matchesReviewFilter,
+  type ReviewFilter,
+} from "@/lib/quizReview";
 import type {
   ReviewGoalContext,
   ReviewPracticeContext,
   ReviewScoreSummaryData,
 } from "@/lib/quizReviewSummary";
+import type { QuestionReviewItem } from "@/types/review";
+
+function emptyFilterMessage(filter: ReviewFilter) {
+  if (filter === "incorrect") return "Perfect score — no incorrect answers.";
+  if (filter === "flagged") return "No flagged questions in this attempt.";
+  return "No questions to show.";
+}
 
 export function QuizReviewView({
   quizId,
@@ -33,6 +47,40 @@ export function QuizReviewView({
   const navigation = useAttemptReviewNavigation(items);
   const attemptHistory = goalContext?.attemptHistory;
   const hasAttemptHistory = Boolean(attemptHistory);
+
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesReviewFilter(item.record, navigation.filter)),
+    [items, navigation.filter],
+  );
+
+  const filterCounts = useMemo(() => getReviewFilterCounts(items), [items]);
+
+  const resolvedFilteredPosition = useMemo(
+    () => getFilteredPosition(filteredItems, navigation.activeQuestionIndex),
+    [filteredItems, navigation.activeQuestionIndex],
+  );
+  const currentItem = filteredItems[resolvedFilteredPosition];
+
+  function goToPreviousQuestion() {
+    if (resolvedFilteredPosition === 0) return;
+    navigation.onActiveQuestionIndexChange(
+      filteredItems[resolvedFilteredPosition - 1].index,
+    );
+  }
+
+  function goToNextQuestion() {
+    if (resolvedFilteredPosition >= filteredItems.length - 1) return;
+    navigation.onActiveQuestionIndexChange(
+      filteredItems[resolvedFilteredPosition + 1].index,
+    );
+  }
+
+  const filters: { value: ReviewFilter; label: string; count: number }[] = [
+    { value: "incorrect", label: "Incorrect", count: filterCounts.incorrect },
+    { value: "correct", label: "Correct", count: filterCounts.correct },
+    { value: "flagged", label: "Flagged", count: filterCounts.flagged },
+    { value: "all", label: "All", count: filterCounts.all },
+  ];
 
   return (
     <>
@@ -78,15 +126,42 @@ export function QuizReviewView({
             No matching questions found for this attempt.
           </InlineEmptyMessage>
         ) : (
-          <QuestionReviewList
-            key={resetKey}
-            items={items}
-            quizId={quizId}
-            filter={navigation.filter}
-            onFilterChange={navigation.onFilterChange}
-            activeQuestionIndex={navigation.activeQuestionIndex}
-            onActiveQuestionIndexChange={navigation.onActiveQuestionIndexChange}
-          />
+          <div key={resetKey} className="space-y-3">
+            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter questions">
+              {filters.map(({ value, label, count }) => (
+                <Button
+                  key={value}
+                  role="tab"
+                  aria-selected={navigation.filter === value}
+                  size="sm"
+                  variant={navigation.filter === value ? "default" : "outline"}
+                  onClick={() => navigation.onFilterChange(value)}
+                >
+                  {label} ({count})
+                </Button>
+              ))}
+            </div>
+
+            {filteredItems.length === 0 ? (
+              <InlineEmptyMessage>{emptyFilterMessage(navigation.filter)}</InlineEmptyMessage>
+            ) : (
+              currentItem && (
+                <QuestionReviewCard
+                  question={currentItem.question}
+                  questionIndex={currentItem.index}
+                  record={currentItem.record}
+                  quizId={quizId}
+                  position={resolvedFilteredPosition + 1}
+                  total={filteredItems.length}
+                  onPrevious={goToPreviousQuestion}
+                  onNext={goToNextQuestion}
+                  disablePrevious={resolvedFilteredPosition === 0}
+                  disableNext={resolvedFilteredPosition >= filteredItems.length - 1}
+                  panelKey={`${currentItem.question.id}:${currentItem.index}`}
+                />
+              )
+            )}
+          </div>
         )}
       </section>
     </>

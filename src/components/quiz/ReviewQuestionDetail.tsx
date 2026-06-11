@@ -1,18 +1,47 @@
 import { CheckCircle, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import {
   isOptionCorrect,
   isOptionIncorrectSelection,
   isOptionSelected,
 } from "@/lib/quizReview";
 import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
+import { isAnswerCorrect } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
-import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
+import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
+
+function hasStudyAnswer(question: QuizQuestion, answer?: SubmittedAnswer) {
+  if (!answer || question.type !== answer.type) return false;
+  if (answer.type === "multiple_choice") return answer.selectedIndices.length > 0;
+  return true;
+}
+
+function selectStudyAnswer(
+  question: QuizQuestion,
+  current: SubmittedAnswer | undefined,
+  index: number,
+): SubmittedAnswer | undefined {
+  if (question.type === "single_choice") {
+    return { type: "single_choice", selectedIndex: index };
+  }
+
+  if (question.type === "multiple_choice") {
+    const selected =
+      current?.type === "multiple_choice" ? current.selectedIndices : [];
+    const next = selected.includes(index)
+      ? selected.filter((value) => value !== index)
+      : [...selected, index].sort((left, right) => left - right);
+    return next.length > 0
+      ? { type: "multiple_choice", selectedIndices: next }
+      : undefined;
+  }
+
+  return { type: "true_false", selectedAnswer: index === 0 };
+}
 
 export function ReviewQuestionDetail({
   question,
@@ -20,29 +49,30 @@ export function ReviewQuestionDetail({
   record,
   className,
   concealAnswers = false,
-  showAnswers: controlledShowAnswers,
-  onShowAnswersChange,
   showExplanation = true,
   compact = false,
+  onStudyRevealChange,
 }: {
   question: QuizQuestion;
   index: number;
   record?: AnswerRecord;
   className?: string;
   concealAnswers?: boolean;
-  showAnswers?: boolean;
-  onShowAnswersChange?: (show: boolean) => void;
   showExplanation?: boolean;
   compact?: boolean;
+  onStudyRevealChange?: (revealed: boolean) => void;
 }) {
-  const [internalShowAnswers, setInternalShowAnswers] = useState(false);
-  const showAnswers = concealAnswers
-    ? (controlledShowAnswers ?? internalShowAnswers)
-    : true;
-  const setShowAnswers = concealAnswers
-    ? (onShowAnswersChange ?? setInternalShowAnswers)
-    : undefined;
-  const revealed = !concealAnswers || showAnswers;
+  const [studyAnswer, setStudyAnswer] = useState<SubmittedAnswer | undefined>();
+  const [studySubmitted, setStudySubmitted] = useState(false);
+
+  useEffect(() => {
+    onStudyRevealChange?.(!concealAnswers || studySubmitted);
+  }, [concealAnswers, onStudyRevealChange, studySubmitted]);
+
+  const revealed = !concealAnswers || studySubmitted;
+  const activeAnswer = revealed && concealAnswers ? studyAnswer : record?.answer;
+  const studyIsCorrect =
+    studySubmitted && studyAnswer ? isAnswerCorrect(question, studyAnswer) : false;
   const options = getQuestionOptions(question);
 
   return (
@@ -55,69 +85,16 @@ export function ReviewQuestionDetail({
       )}
     >
       <div className={cn("flex items-start", compact ? "gap-2" : "gap-3")}>
-        <span className="grid-center size-6 shrink-0 rounded-md bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700">
+        <span
+          className="grid-center size-6 shrink-0 rounded-md border border-zinc-200 bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700"
+          aria-label={`Question ${index + 1}`}
+        >
           {index + 1}
         </span>
         <div className={cn("min-w-0 flex-1", compact ? "space-y-2" : "space-y-3")}>
-          {concealAnswers ? (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {questionTypeHint(question.type)}
-              </p>
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor={`show-answers-${index}`}
-                  className="text-xs font-medium text-zinc-600"
-                >
-                  Show answer
-                </label>
-                <Switch
-                  id={`show-answers-${index}`}
-                  checked={showAnswers}
-                  onCheckedChange={setShowAnswers}
-                  aria-labelledby={`show-answers-${index}`}
-                />
-              </div>
-            </div>
-          ) : (
-            record && (
-              <div className="flex flex-wrap items-center gap-2">
-                {record.isCorrect ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                    <CheckCircle className="size-3.5" aria-hidden />
-                    Correct
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                    <XCircle className="size-3.5" aria-hidden />
-                    Incorrect
-                  </span>
-                )}
-                {record.flagged && (
-                  <Badge className="border-amber-200 bg-amber-50 text-amber-800">Flagged</Badge>
-                )}
-              </div>
-            )
-          )}
-
-          {concealAnswers && revealed && record && (
-            <div className="flex flex-wrap items-center gap-2">
-              {record.isCorrect ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                  <CheckCircle className="size-3.5" aria-hidden />
-                  Correct
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                  <XCircle className="size-3.5" aria-hidden />
-                  Incorrect
-                </span>
-              )}
-              {record.flagged && (
-                <Badge className="border-amber-200 bg-amber-50 text-amber-800">Flagged</Badge>
-              )}
-            </div>
-          )}
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            {questionTypeHint(question.type)}
+          </p>
 
           <div
             className={cn(
@@ -135,26 +112,62 @@ export function ReviewQuestionDetail({
                 index={optionIndex}
                 text={option}
                 selected={
-                  revealed && record
-                    ? isOptionSelected(question, record.answer, optionIndex)
-                    : false
+                  concealAnswers && !studySubmitted
+                    ? isOptionSelected(question, studyAnswer, optionIndex)
+                    : revealed
+                      ? isOptionSelected(question, activeAnswer, optionIndex)
+                      : false
                 }
                 multiple={question.type === "multiple_choice"}
-                locked
+                locked={!concealAnswers || studySubmitted}
                 isCorrectAnswer={
-                  revealed
-                    ? isOptionCorrect(question, optionIndex)
-                    : false
+                  revealed ? isOptionCorrect(question, optionIndex) : false
                 }
                 isIncorrectSelection={
-                  revealed && record
-                    ? isOptionIncorrectSelection(question, record.answer, optionIndex)
+                  revealed
+                    ? isOptionIncorrectSelection(question, activeAnswer, optionIndex)
                     : false
                 }
-                onSelect={() => {}}
+                onSelect={() => {
+                  if (!concealAnswers || studySubmitted) return;
+                  setStudyAnswer((current) => selectStudyAnswer(question, current, optionIndex));
+                }}
               />
             ))}
           </div>
+
+          {concealAnswers && !studySubmitted && (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                disabled={!hasStudyAnswer(question, studyAnswer)}
+                onClick={() => setStudySubmitted(true)}
+              >
+                Submit
+              </Button>
+            </div>
+          )}
+
+          {concealAnswers && studySubmitted && (
+            <p
+              className={cn(
+                "inline-flex items-center gap-1 text-xs font-medium",
+                studyIsCorrect ? "text-emerald-700" : "text-red-600",
+              )}
+            >
+              {studyIsCorrect ? (
+                <>
+                  <CheckCircle className="size-3.5 shrink-0" aria-hidden="true" />
+                  Correct
+                </>
+              ) : (
+                <>
+                  <XCircle className="size-3.5 shrink-0" aria-hidden="true" />
+                  Incorrect
+                </>
+              )}
+            </p>
+          )}
 
           {showExplanation && question.explanation && revealed && (
             <QuestionExplanation explanation={question.explanation} compact={compact} />

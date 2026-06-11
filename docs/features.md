@@ -135,7 +135,7 @@ Available actions:
 - **Refresh** rescans knowledge files from disk
 - Note detail pages and the Mistake Log inline review card default to a read-only markdown viewer for linked notes
 - **Edit** and **Copy** icon actions in the viewer header open edit mode or copy the full serialized `.md` file to the clipboard
-- **Linked questions** appear as clickable chips; clicking opens a preview dialog (not a route change) with the quiz title, question prompt, options, related knowledge notes, and a **Show answer** toggle for correct options and the explanation
+- **Linked questions** appear as clickable chips; clicking opens a preview dialog (not a route change) with the quiz title, question prompt, options, correct answers, explanation, and related knowledge notes
 - Secondary icon actions across the app use tooltips; primary actions such as **Save** and **Submit** stay labeled
 
 Editing and drafts:
@@ -147,7 +147,7 @@ Editing and drafts:
 Mistake Log integration:
 
 - The table shows a sortable **Notes** count for each qualifying mistake
-- Clicking a row opens the inline review card with the question review plus linked knowledge notes below
+- Clicking a row opens the shared question review card with navigation, linked knowledge notes, and an optional **Study mode** that hides answers until you submit a practice attempt or turn study mode off
 - Link and add-note icon actions attach existing notes or create a new draft pre-linked to that question
 - Opening a linked note from the review card or from a linked-question preview uses the same knowledge note dialog
 

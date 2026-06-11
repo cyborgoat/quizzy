@@ -94,7 +94,7 @@ Use the narrowest appropriate layer:
 - Library workflow: `QuizLibraryProvider`
 - Goals workflow: `GoalsProvider` and `src/components/goals`
 - Mistake Log workflow: `useMistakeLog`, `src/lib/mistakeLog.ts`,
-  `src/lib/mistakeLogReview.ts`, `MistakeLogQuestionReviewCard`, and
+  `src/lib/mistakeLogReview.ts`, `QuestionReviewCard`, and
   `src/pages/MistakeLogPage.tsx`
 - Knowledge Base workflow: `KnowledgeLibraryProvider`, `src/lib/knowledgeDraft.ts`,
   and `src/components/knowledge`

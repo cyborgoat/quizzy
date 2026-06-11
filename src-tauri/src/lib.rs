@@ -232,10 +232,7 @@ fn is_safe_knowledge_file_name(file_name: &str) -> bool {
         return false;
     }
     stem.chars().all(|character| {
-        character.is_alphanumeric()
-            || character == '.'
-            || character == '_'
-            || character == '-'
+        character.is_alphanumeric() || character == '.' || character == '_' || character == '-'
     })
 }
 

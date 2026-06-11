@@ -5,6 +5,9 @@ import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 
+const STUDY_EXPLANATION_PLACEHOLDER =
+  "Answer the question and submit to see the explanation, or turn off Study mode.";
+
 export function ReviewQuestionSplitPanel({
   question,
   index,
@@ -22,8 +25,8 @@ export function ReviewQuestionSplitPanel({
   className?: string;
   concealAnswers?: boolean;
 }) {
-  const [showAnswers, setShowAnswers] = useState(false);
-  const revealed = !concealAnswers || showAnswers;
+  const [studyRevealed, setStudyRevealed] = useState(!concealAnswers);
+  const revealed = studyRevealed;
 
   return (
     <div
@@ -37,16 +40,21 @@ export function ReviewQuestionSplitPanel({
         index={index}
         record={record}
         concealAnswers={concealAnswers}
-        showAnswers={concealAnswers ? showAnswers : undefined}
-        onShowAnswersChange={concealAnswers ? setShowAnswers : undefined}
+        onStudyRevealChange={setStudyRevealed}
         showExplanation={false}
         compact
         className="h-full"
       />
 
       <aside className="flex min-w-0 flex-col gap-3">
-        {question.explanation && revealed && (
-          <QuestionExplanation explanation={question.explanation} compact />
+        {question.explanation && (
+          <QuestionExplanation
+            explanation={question.explanation}
+            compact
+            placeholder={
+              concealAnswers && !revealed ? STUDY_EXPLANATION_PLACEHOLDER : undefined
+            }
+          />
         )}
         {quizId && (
           <QuestionKnowledgeNotesPanel

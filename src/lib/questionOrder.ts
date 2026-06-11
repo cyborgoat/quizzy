@@ -24,12 +24,33 @@ export function orderQuestionsByType(questions: QuizQuestion[]): QuizQuestion[] 
     .map(({ question }) => question);
 }
 
-function shuffleArray<T>(items: T[], random: () => number = Math.random) {
+export function shuffleArray<T>(items: T[], random: () => number = Math.random) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1));
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
   }
+  return result;
+}
+
+export function shuffleArrayKeepingKeyedItemAtIndex<T>(
+  items: T[],
+  pinnedIndex: number,
+  getKey: (item: T) => string,
+  pinnedKey: string | null,
+  random: () => number = Math.random,
+) {
+  if (items.length <= 1) return [...items];
+  if (!pinnedKey) return shuffleArray(items, random);
+
+  const pinnedItem = items.find((item) => getKey(item) === pinnedKey);
+  if (!pinnedItem) return shuffleArray(items, random);
+
+  const rest = items.filter((item) => getKey(item) !== pinnedKey);
+  const shuffledRest = shuffleArray(rest, random);
+  const safeIndex = Math.min(Math.max(pinnedIndex, 0), items.length - 1);
+  const result = [...shuffledRest];
+  result.splice(safeIndex, 0, pinnedItem);
   return result;
 }
 
