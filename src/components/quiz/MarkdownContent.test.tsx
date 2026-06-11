@@ -25,6 +25,20 @@ describe("MarkdownContent", () => {
     expect(html).toContain("\\sum_{i=1}^{n} i");
   });
 
+  it("renders vector notation with escaped markdown punctuation in math", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownContent variant="prose">
+        {String.raw`Vector $X \= (x\_1, x\_2, ..., x\_N)$`}
+      </MarkdownContent>,
+    );
+
+    expect(html).toContain("katex");
+    expect(html).toContain("msupsub");
+    expect(html).not.toContain("katex-error");
+    expect(html).not.toContain(String.raw`x\_1`);
+    expect(html).not.toContain(String.raw`\=`);
+  });
+
   it("renders underscore subscripts and underline macros", () => {
     const html = renderToStaticMarkup(
       <MarkdownContent variant="prose">

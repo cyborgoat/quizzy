@@ -5,6 +5,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type { Components } from "react-markdown";
 import { MarkdownFencedCodeBlock } from "@/components/quiz/MarkdownFencedCodeBlock";
+import { normalizeMarkdownMathEscapes } from "@/lib/markdownMath";
 import { cn } from "@/lib/utils";
 
 const codeFontClass = "font-mono";
@@ -203,7 +204,7 @@ export function MarkdownContent({
       rehypePlugins={[rehypeKatex]}
       components={components}
     >
-      {children}
+      {normalizeMarkdownMathEscapes(children)}
     </ReactMarkdown>
   );
 
