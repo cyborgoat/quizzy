@@ -96,11 +96,14 @@ Use the narrowest appropriate layer:
   `src/types/quizSession.ts`
 - Library workflow: `QuizLibraryProvider`
 - Goals workflow: `GoalsProvider` and `src/components/goals`
-- Mistake Log workflow: `useMistakeLog`, `src/lib/mistakeLog.ts`,
-  `src/lib/mistakeLogReview.ts`, `QuestionReviewCard`, and
-  `src/pages/MistakeLogPage.tsx`
+- Mistake Log workflow: `useMistakeLog`, `useMistakeLogPageState`,
+  `src/lib/mistakeLog.ts`, `src/lib/mistakeLogDisplay.ts`,
+  `src/lib/mistakeLogReview.ts`, `src/components/mistake-log/`,
+  `QuestionReviewCard`, and `src/pages/MistakeLogPage.tsx`
 - Knowledge Base workflow: `KnowledgeLibraryProvider`, `src/lib/knowledgeDraft.ts`,
   and `src/components/knowledge`
+- Settings workflow: `useSettingsPageState`, `src/lib/settingsDraft.ts`,
+  `src/components/settings/`, and `src/pages/SettingsPage.tsx`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
 - Filesystem behavior: typed native adapter plus a Rust command (goal, mistake
   index, and manual sync are handled in `src-tauri/src/goals_storage.rs`,

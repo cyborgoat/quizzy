@@ -150,7 +150,7 @@ Editing and drafts:
 Mistake Log integration:
 
 - The table shows a sortable **Notes** count for each qualifying mistake
-- Clicking a row opens the shared question review card with navigation, linked knowledge notes, and an optional **Study mode** that hides answers until you submit a practice attempt or turn study mode off
+- Clicking a row opens the shared question review card with navigation, linked knowledge notes, and an optional **Study mode** that hides answers in the review panel until you submit a practice attempt or turn study mode off
 - Link and add-note icon actions attach existing notes or create a new draft pre-linked to that question
 - Opening a linked note from the review card or from a linked-question preview uses the same knowledge note dialog
 

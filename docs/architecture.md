@@ -280,6 +280,8 @@ src/
     knowledge/    Note editor, viewer, link/preview dialogs, linked-notes list
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
+    mistake-log/  Mistake Log table, review section, and status badges
+    settings/     Settings section cards and sync report UI
     quiz/         Quiz UI, QuestionReviewCard, ReviewQuestionSplitPanel
     ui/           shadcn-style local primitives (including Drawer and Slider)
   contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
@@ -287,8 +289,10 @@ src/
   data/           Zod schema, repository parser, and tests
   hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
   lib/            Native adapter, scoring, knowledge drafts, mistake threshold
-                  filtering, syncReport (sync result formatting),
-                  mistakeLogReview (answer remap and table page sync)
+                  filtering, mistakeLogDisplay (table filters and selection),
+                  settingsDraft (draft state and validation),
+                  syncReport (sync result formatting),
+                  mistakeLogReview (answer remap for review cards)
   pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
   test/           Vitest setup (browser API polyfills for Node)
   types/          Quiz, goal, knowledge, mistake log, and quiz session types
