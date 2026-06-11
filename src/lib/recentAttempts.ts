@@ -14,7 +14,6 @@ export type RecentAttemptEntry = {
 };
 
 export const RECENT_ATTEMPTS_INITIAL_COUNT = 3;
-export const RECENT_ATTEMPTS_LOAD_MORE_COUNT = 3;
 
 export function collectRecentAttempts(
   goals: Goal[],

@@ -1,68 +1,111 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import {
-  CheckCircle2,
-  ChevronDown,
-  Pencil,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, RotateCcw, Settings, Trash2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useState, type MouseEvent } from "react";
-import { EditGoalDialog } from "@/components/goals/EditGoalDialog";
+import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { IconActionButton } from "@/components/ui/icon-action-button";
-import { useGoals } from "@/hooks/useGoals";
 import {
-  anyAttemptMetTarget,
-  type AttemptSummary,
-  type Goal,
-} from "@/types/goal";
+  goalActionLinkPrimaryClass,
+  goalListRowClass,
+  goalListRowMetaClass,
+  goalListSubtitleClass,
+  goalListTitleClass,
+  goalRowHoverActionClass,
+} from "@/components/goals/goalListStyles";
+import { IconActionButton } from "@/components/ui/icon-action-button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useGoals } from "@/hooks/useGoals";
+import type { AttemptSummary, Goal } from "@/types/goal";
 
-function scoreBadgeClass(percentage: number, targetScore: number | undefined) {
-  const base = "whitespace-nowrap";
-  if (targetScore === undefined) return base;
-  return percentage >= targetScore
-    ? `${base} border-emerald-300 bg-emerald-50 text-emerald-700`
-    : `${base} border-red-300 bg-red-50 text-red-600`;
+function scoreTextClass(percentage: number, targetScore: number | undefined) {
+  if (targetScore === undefined) return "text-zinc-600";
+  return percentage >= targetScore ? "text-emerald-700" : "text-red-600";
 }
 
-function GoalMetaBadges({ goal }: { goal: Goal }) {
+function GoalCompactMeta({ goal }: { goal: Goal }) {
   const latestAttempt = goal.attempts.at(-1);
   const highestPercentage =
     goal.attempts.length > 0
       ? Math.max(...goal.attempts.map((attempt) => attempt.percentage))
       : undefined;
 
+  if (
+    goal.targetScore === undefined &&
+    latestAttempt === undefined &&
+    highestPercentage === undefined
+  ) {
+    return null;
+  }
+
   return (
-    <>
-      {goal.targetScore !== undefined && (
-        <Badge className="whitespace-nowrap">Target: {goal.targetScore}%</Badge>
-      )}
+    <span className={goalListRowMetaClass}>
+      {goal.targetScore !== undefined && `Target ${goal.targetScore}%`}
       {latestAttempt && (
-        <Badge className={scoreBadgeClass(latestAttempt.percentage, goal.targetScore)}>
-          Latest: {latestAttempt.percentage}%
-        </Badge>
+        <>
+          {goal.targetScore !== undefined && " · "}
+          <span className={scoreTextClass(latestAttempt.percentage, goal.targetScore)}>
+            Latest {latestAttempt.percentage}%
+          </span>
+        </>
       )}
-      {highestPercentage !== undefined && (
-        <Badge className={scoreBadgeClass(highestPercentage, goal.targetScore)}>
-          Highest: {highestPercentage}%
-        </Badge>
+      {highestPercentage !== undefined &&
+        highestPercentage !== latestAttempt?.percentage && (
+          <>
+            {" · "}
+            <span className={scoreTextClass(highestPercentage, goal.targetScore)}>
+              High {highestPercentage}%
+            </span>
+          </>
+        )}
+    </span>
+  );
+}
+
+const goalAttemptReviewClass =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100/60 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2";
+
+function attemptPassed(
+  attempt: AttemptSummary,
+  targetScore: number | undefined,
+) {
+  if (targetScore !== undefined) return attempt.percentage >= targetScore;
+  return attempt.incorrectCount === 0;
+}
+
+function AttemptResultBadge({
+  passed,
+}: {
+  passed: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        passed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600",
       )}
-    </>
+    >
+      {passed ? "Pass" : "Fail"}
+    </span>
   );
 }
 
 function AttemptRow({
   attempt,
   goalId,
+  targetScore,
 }: {
   attempt: AttemptSummary;
   goalId: string;
+  targetScore?: number;
 }) {
   const { deleteAttempt } = useGoals();
   const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
@@ -80,58 +123,70 @@ function AttemptRow({
     if (ok) await deleteAttempt(goalId, attempt.id);
   }
 
+  const passed = attemptPassed(attempt, targetScore);
+
   return (
-    <div className="flex items-center justify-between gap-2 rounded border border-zinc-100 bg-zinc-50 px-3 py-2">
-      <div className="min-w-0">
-        <p className="text-xs text-zinc-500">{date}</p>
-        {attempt.incorrectCount > 0 && (
-          <p className="text-xs text-red-600">{attempt.incorrectCount} incorrect</p>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="text-xs font-semibold text-zinc-900">
-          {attempt.score}/{attempt.total} · {attempt.percentage}%
-        </span>
-        <Link
-          to="/goals/$goalId/attempts/$attemptId"
-          params={{ goalId, attemptId: attempt.id }}
-          className="inline-flex h-7 shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-white px-2.5 text-xs font-medium text-zinc-900 transition-colors hover:bg-zinc-100"
-          onClick={(event) => event.stopPropagation()}
-        >
-          Review
-        </Link>
-        <IconActionButton
-          icon={Trash2}
-          label={`Delete attempt from ${date}`}
-          className="size-7 shrink-0 text-zinc-500 hover:text-red-700"
-          onClick={(event) => void handleDelete(event)}
-        />
+    <div className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-zinc-50">
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="text-xs text-zinc-600">{date}</p>
+          <AttemptResultBadge passed={passed} />
+          <IconActionButton
+            icon={Trash2}
+            label={`Delete attempt from ${date}`}
+            className="size-7 shrink-0 pointer-events-none text-zinc-500 opacity-0 transition-opacity hover:text-red-700 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+            onClick={(event) => void handleDelete(event)}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <span>
+              <span className="font-medium tabular-nums text-zinc-900">
+                {attempt.percentage}%
+              </span>{" "}
+              correct
+            </span>
+            <span>
+              <span className="font-medium tabular-nums text-zinc-900">
+                {attempt.incorrectCount}
+              </span>{" "}
+              incorrect
+            </span>
+            <span>
+              <span className="font-medium tabular-nums text-zinc-900">
+                {attempt.total}
+              </span>{" "}
+              questions
+            </span>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/goals/$goalId/attempts/$attemptId"
+                params={{ goalId, attemptId: attempt.id }}
+                className={goalAttemptReviewClass}
+                aria-label={`Review attempt from ${date}`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="left">Review attempt</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
 }
 
 export function GoalCard({ goal }: { goal: Goal }) {
-  const { completeGoal, reopenGoal, deleteGoal } = useGoals();
-  const [isEditing, setIsEditing] = useState(false);
-
+  const { reopenGoal } = useGoals();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const attempts = [...goal.attempts].reverse();
 
-  function startEditing(event: MouseEvent) {
+  function openSettings(event: MouseEvent) {
     event.stopPropagation();
-    setIsEditing(true);
-  }
-
-  async function handleComplete(event: MouseEvent) {
-    event.stopPropagation();
-    if (!anyAttemptMetTarget(goal)) {
-      const ok = await confirm(
-        `You haven't had any attempt that achieved the target score of ${goal.targetScore}%. Mark this goal as complete anyway?`,
-        { title: "Target score not reached", kind: "warning" },
-      );
-      if (!ok) return;
-    }
-    await completeGoal(goal.id);
+    setSettingsOpen(true);
   }
 
   async function handleReopen(event: MouseEvent) {
@@ -139,35 +194,41 @@ export function GoalCard({ goal }: { goal: Goal }) {
     await reopenGoal(goal.id);
   }
 
-  async function handleDelete(event: MouseEvent) {
-    event.stopPropagation();
-    const ok = await confirm(
-      `Delete the goal for "${goal.quizTitle}"? This cannot be undone.`,
-      { title: "Delete goal?", kind: "warning" },
-    );
-    if (ok) await deleteGoal(goal.id);
-  }
-
   return (
     <AccordionItem
       value={goal.id}
-      className={`rounded-lg border border-zinc-200 bg-white ${goal.completed ? "opacity-60" : ""}`}
+      className={cn(
+        "border-b border-zinc-100 last:border-b-0",
+        goal.completed && "opacity-60",
+      )}
     >
-      <div className="flex items-center gap-3 py-2.5 pl-4 pr-3">
-        <AccordionTrigger className="min-w-0 flex-1 gap-2 px-0 py-0 hover:no-underline">
-          <ChevronDown className="accordion-chevron size-4 shrink-0 text-zinc-500 transition-transform duration-200" />
-          <h3 className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-zinc-950">
-            {goal.quizTitle}
-          </h3>
+      <div className={goalListRowClass}>
+        <AccordionTrigger className="min-w-0 flex-1 gap-1.5 px-0 py-0 hover:no-underline">
+          <ChevronDown className="accordion-chevron size-3.5 shrink-0 text-zinc-400 transition-transform duration-200" />
+          <div className="min-w-0 flex-1 text-left">
+            <h3 className={goalListTitleClass}>{goal.quizTitle}</h3>
+            {goal.description.trim() && (
+              <p className={goalListSubtitleClass}>{goal.description.trim()}</p>
+            )}
+          </div>
         </AccordionTrigger>
 
         <div className="flex shrink-0 items-center gap-2">
-          <GoalMetaBadges goal={goal} />
           <span className="whitespace-nowrap text-xs text-zinc-400">
-            {goal.attempts.length} attempt{goal.attempts.length !== 1 ? "s" : ""}
+            {goal.attempts.length}×
           </span>
+          <GoalCompactMeta goal={goal} />
+          <IconActionButton
+            icon={Settings}
+            label="Goal settings"
+            variant="ghost"
+            className={goalRowHoverActionClass}
+            onClick={openSettings}
+          >
+            <Settings className="size-3.5" aria-hidden="true" />
+          </IconActionButton>
           <Link
-            className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md bg-zinc-900 px-2.5 text-xs font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
+            className={goalActionLinkPrimaryClass}
             to="/quiz/$quizId"
             params={{ quizId: goal.quizId }}
             search={{ from: "goals" }}
@@ -175,72 +236,52 @@ export function GoalCard({ goal }: { goal: Goal }) {
           >
             Start
           </Link>
+          {goal.completed && (
+            <IconActionButton
+              icon={RotateCcw}
+              label="Reopen goal"
+              variant="ghost"
+              className="size-7 text-zinc-500"
+              onClick={(event) => void handleReopen(event)}
+            >
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+            </IconActionButton>
+          )}
         </div>
       </div>
 
-      <AccordionContent className="border-t border-zinc-100 px-4 pt-3 pb-4">
-        {goal.description.trim() && (
-          <p className="text-xs leading-5 text-zinc-600">{goal.description.trim()}</p>
-        )}
-
+      <AccordionContent className="border-t border-zinc-100 px-3 pb-3 pt-2">
         {goal.completed && goal.completedAt && (
-          <p className="mt-2 text-xs text-zinc-400">
+          <p className="text-xs text-zinc-400">
             Completed {new Date(goal.completedAt).toLocaleDateString()}
           </p>
         )}
 
-        <div className="mt-4">
+        <div className={goal.completed && goal.completedAt ? "mt-2" : undefined}>
           <p className="text-xs font-medium text-zinc-500">Attempts</p>
           {goal.attempts.length === 0 ? (
-            <p className="mt-2 rounded-md border border-dashed border-zinc-200 bg-zinc-50 px-3 py-4 text-center text-xs leading-5 text-zinc-500">
-              No attempts yet. Start the quiz to track your progress toward this goal.
+            <p className="mt-1.5 rounded border border-dashed border-zinc-200 px-2.5 py-3 text-center text-xs text-zinc-500">
+              No attempts yet. Take the quiz to track progress.
             </p>
           ) : (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-1.5 divide-y divide-zinc-100 rounded border border-zinc-100">
               {attempts.map((attempt) => (
-                <AttemptRow key={attempt.id} attempt={attempt} goalId={goal.id} />
+                <AttemptRow
+                  key={attempt.id}
+                  attempt={attempt}
+                  goalId={goal.id}
+                  targetScore={goal.targetScore}
+                />
               ))}
             </div>
           )}
         </div>
-
-        <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
-            <IconActionButton
-              icon={Trash2}
-              label="Delete"
-              className="text-zinc-500 hover:text-red-700"
-              onClick={(event) => void handleDelete(event)}
-            />
-            <div className="flex items-center gap-1">
-              <IconActionButton
-                icon={Pencil}
-                label="Edit"
-                variant="outline"
-                onClick={startEditing}
-              />
-              {goal.completed ? (
-                <IconActionButton
-                  icon={RotateCcw}
-                  label="Reopen"
-                  variant="outline"
-                  className="text-zinc-500"
-                  onClick={(event) => void handleReopen(event)}
-                />
-              ) : (
-                <IconActionButton
-                  icon={CheckCircle2}
-                  label="Complete"
-                  variant="outline"
-                  onClick={(event) => void handleComplete(event)}
-                />
-              )}
-            </div>
-          </div>
       </AccordionContent>
-      <EditGoalDialog
+
+      <GoalSettingsDialog
         goal={goal}
-        open={isEditing}
-        onOpenChange={setIsEditing}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
       />
     </AccordionItem>
   );

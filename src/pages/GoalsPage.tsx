@@ -9,6 +9,11 @@ import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,7 +24,10 @@ import {
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import { collectRecentAttempts } from "@/lib/recentAttempts";
+import {
+  collectRecentAttempts,
+  RECENT_ATTEMPTS_INITIAL_COUNT,
+} from "@/lib/recentAttempts";
 import {
   detailsFormToGoalInput,
   type GoalDetailsFormValues,
@@ -33,7 +41,7 @@ const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
 
 export function GoalsPage() {
   const { goals, addGoal } = useGoals();
-  const { quizzes } = useQuizLibrary();
+  const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
   const { expand: expandParam } = Route.useSearch();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -47,13 +55,18 @@ export function GoalsPage() {
   const availableQuizzes = quizzes.filter(
     (quiz) => !goals.some((goal) => goal.quizId === quiz.quiz.id),
   );
+  const canAddGoal = !quizzesLoading && availableQuizzes.length > 0;
+  const addGoalDisabledReason = quizzesLoading
+    ? "Loading quizzes…"
+    : quizzes.length === 0
+      ? "Add quizzes to your library first"
+      : "Every quiz in your library already has a goal";
 
   const accordionValue =
     expandedGoalId !== null ? expandedGoalId : defaultExpandedGoalId;
-  const recentAttempts = useMemo(() => collectRecentAttempts(goals), [goals]);
-  const recentAttemptsKey = useMemo(
-    () => recentAttempts.map((entry) => entry.attemptId).join(","),
-    [recentAttempts],
+  const recentAttempts = useMemo(
+    () => collectRecentAttempts(goals, RECENT_ATTEMPTS_INITIAL_COUNT),
+    [goals],
   );
 
   function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
@@ -92,14 +105,26 @@ export function GoalsPage() {
             Set quiz goals to track your progress and stay motivated.
           </p>
         </div>
-        {!showForm && availableQuizzes.length > 0 && (
-          <IconActionButton
-            icon={Plus}
-            label="New goal"
-            variant="default"
-            onClick={() => setShowForm(true)}
-          />
-        )}
+        {!showForm &&
+          (canAddGoal ? (
+            <IconActionButton
+              icon={Plus}
+              label="New goal"
+              variant="default"
+              onClick={() => setShowForm(true)}
+            />
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex shrink-0">
+                  <Button size="icon" variant="default" disabled aria-label="New goal">
+                    <Plus className="size-4" aria-hidden="true" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{addGoalDisabledReason}</TooltipContent>
+            </Tooltip>
+          ))}
       </div>
 
       {showForm && (
@@ -181,33 +206,40 @@ export function GoalsPage() {
         <div className="space-y-8">
           {activeGoals.length > 0 && (
             <section>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Active · {activeGoals.length}
               </h2>
-              <Accordion {...accordionProps} className="flex flex-col gap-2">
-                {activeGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
-                ))}
-              </Accordion>
+              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+                <Accordion {...accordionProps}>
+                  {activeGoals.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </Accordion>
+              </div>
             </section>
           )}
 
-          <RecentAttemptsCard
-            key={recentAttemptsKey}
-            attempts={recentAttempts}
-            onSelectGoal={(goalId) => setExpandedGoalId(goalId)}
-          />
-
           {completedGoals.length > 0 && (
             <section>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Complete · {completedGoals.length}
               </h2>
-              <Accordion {...accordionProps} className="flex flex-col gap-2">
-                {completedGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
-                ))}
-              </Accordion>
+              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+                <Accordion {...accordionProps}>
+                  {completedGoals.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </Accordion>
+              </div>
+            </section>
+          )}
+
+          {recentAttempts.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Recent · {recentAttempts.length}
+              </h2>
+              <RecentAttemptsCard attempts={recentAttempts} />
             </section>
           )}
         </div>
