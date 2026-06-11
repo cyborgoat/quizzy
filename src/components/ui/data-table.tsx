@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export const dataTableHeadClass = "h-auto px-3 py-2 text-left align-middle";
 export const dataTableCellClass = "px-3 py-2 text-left align-middle";
+export const dataTableFixedLayoutClass = "table-fixed w-full min-w-0";
+export const dataTableFixedCellClass = "max-w-0 overflow-hidden";
 
 const headerTextClass = "text-xs font-medium text-zinc-600";
 const sortButtonClass =
@@ -137,5 +140,33 @@ export function DataTableNumericCell({
     >
       {value}
     </span>
+  );
+}
+
+export function DataTableTruncatedCell({
+  value,
+  variant = "text",
+  showTooltip = true,
+}: {
+  value: string;
+  variant?: "text" | "muted";
+  showTooltip?: boolean;
+}) {
+  const className =
+    variant === "muted" ? dataTableCellMutedClass : cn(dataTableCellTextClass, "font-medium");
+
+  if (!showTooltip || !value || value === "—") {
+    return <span className={cn(className, "truncate")}>{value}</span>;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn(className, "truncate")}>{value}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm whitespace-normal break-words">
+        {value}
+      </TooltipContent>
+    </Tooltip>
   );
 }

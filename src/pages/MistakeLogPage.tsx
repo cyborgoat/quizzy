@@ -23,9 +23,11 @@ import {
   DataTableColumnHeader,
   DataTableNumericCell,
   DataTableSortableHeader,
+  DataTableTruncatedCell,
   dataTableCellClass,
   dataTableCellMutedClass,
-  dataTableCellTextClass,
+  dataTableFixedCellClass,
+  dataTableFixedLayoutClass,
   dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
@@ -64,6 +66,21 @@ function syncTablePageForEntry(table: TanStackTable<MistakeEntry>, entry: Mistak
   if (pageIndex !== table.getState().pagination.pageIndex) {
     table.setPageIndex(pageIndex);
   }
+}
+
+const MISTAKE_COLUMN_WIDTHS: Record<string, string> = {
+  quizTitle: "w-[22%]",
+  question: "w-[8%]",
+  questionType: "w-[14%]",
+  notes: "w-[8%]",
+  flaggedCount: "w-[8%]",
+  mistakeCount: "w-[10%]",
+  correctnessPercentage: "w-[12%]",
+  lastMistakenAt: "w-[18%]",
+};
+
+function mistakeColumnWidth(columnId: string) {
+  return MISTAKE_COLUMN_WIDTHS[columnId] ?? "";
 }
 
 const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }[] = [
@@ -225,25 +242,27 @@ export function MistakeLogPage() {
               onFilterChange={setQuizFilter}
             />
           ),
-        cell: ({ row }) => (
-          <span className={`${dataTableCellTextClass} min-w-0`}>{row.original.quizTitle}</span>
-        ),
+        cell: ({ row }) => <DataTableTruncatedCell value={row.original.quizTitle} />,
       },
       {
         id: "question",
         accessorFn: (row) => formatMistakeQuestionLabel(row, quizzes),
         header: () => <DataTableColumnHeader label="Question" />,
-        cell: ({ row }) => (
-          <span className={`${dataTableCellTextClass} min-w-0 font-medium`}>
-            {formatMistakeQuestionLabel(row.original, quizzes)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const label = formatMistakeQuestionLabel(row.original, quizzes);
+          return (
+            <DataTableTruncatedCell
+              value={label}
+              showTooltip={label === row.original.questionId}
+            />
+          );
+        },
       },
       {
         id: "questionType",
         accessorFn: (row) => formatMistakeQuestionType(row, quizzes),
         header: () => (
-          <MistakeLogColumnFilterHeader
+          <DataTableColumnFilterHeader
             label="Question type"
             filterValue={questionTypeFilter}
             menuLabel="Filter by question type"
@@ -251,11 +270,16 @@ export function MistakeLogPage() {
             onFilterChange={(value) => setQuestionTypeFilter(value as QuestionTypeFilter)}
           />
         ),
-        cell: ({ row }) => (
-          <span className={dataTableCellMutedClass}>
-            {formatMistakeQuestionType(row.original, quizzes)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const typeLabel = formatMistakeQuestionType(row.original, quizzes);
+          return (
+            <DataTableTruncatedCell
+              value={typeLabel}
+              variant="muted"
+              showTooltip={typeLabel !== "—"}
+            />
+          );
+        },
       },
       {
         id: "notes",
@@ -478,12 +502,19 @@ export function MistakeLogPage() {
             {isMistakeListExpanded && (
               <>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className={dataTableFixedLayoutClass}>
                     <TableHeader>
                       {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                           {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id} className={dataTableHeadClass}>
+                            <TableHead
+                              key={header.id}
+                              className={cn(
+                                dataTableHeadClass,
+                                dataTableFixedCellClass,
+                                mistakeColumnWidth(header.column.id),
+                              )}
+                            >
                               {header.isPlaceholder
                                 ? null
                                 : flexRender(header.column.columnDef.header, header.getContext())}
@@ -507,7 +538,14 @@ export function MistakeLogPage() {
                             onClick={() => selectEntry(row.original)}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className={dataTableCellClass}>
+                              <TableCell
+                                key={cell.id}
+                                className={cn(
+                                  dataTableCellClass,
+                                  dataTableFixedCellClass,
+                                  mistakeColumnWidth(cell.column.id),
+                                )}
+                              >
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </TableCell>
                             ))}

@@ -18,9 +18,11 @@ import {
   DataTableColumnHeader,
   DataTableNumericCell,
   DataTableSortableHeader,
+  DataTableTruncatedCell,
   dataTableCellClass,
   dataTableCellMutedClass,
-  dataTableCellTextClass,
+  dataTableFixedCellClass,
+  dataTableFixedLayoutClass,
   dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
@@ -48,6 +50,17 @@ import {
 function formatTagsLabel(tags: string[]) {
   if (tags.length === 0) return "—";
   return tags.join(", ");
+}
+
+const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
+  title: "w-[38%]",
+  tags: "w-[28%]",
+  links: "w-[14%]",
+  updatedAt: "w-[20%]",
+};
+
+function knowledgeColumnWidth(columnId: string) {
+  return KNOWLEDGE_COLUMN_WIDTHS[columnId] ?? "";
 }
 
 export function KnowledgeBasePage() {
@@ -115,11 +128,7 @@ export function KnowledgeBasePage() {
       {
         accessorKey: "title",
         header: () => <DataTableColumnHeader label="Title" />,
-        cell: ({ row }) => (
-          <span className={`${dataTableCellTextClass} truncate font-medium`}>
-            {row.original.title}
-          </span>
-        ),
+        cell: ({ row }) => <DataTableTruncatedCell value={row.original.title} />,
       },
       {
         accessorKey: "tags",
@@ -132,16 +141,23 @@ export function KnowledgeBasePage() {
             onFilterChange={handleTagFilterChange}
           />
         ),
-        cell: ({ row }) => (
-          <span className={`${dataTableCellMutedClass} truncate`}>
-            {formatTagsLabel(row.original.tags)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const tagsLabel = formatTagsLabel(row.original.tags);
+          return (
+            <DataTableTruncatedCell
+              value={tagsLabel}
+              variant="muted"
+              showTooltip={tagsLabel !== "—"}
+            />
+          );
+        },
       },
       {
         id: "links",
         accessorFn: (row) => row.linkedQuizQuestions.length,
-        header: () => <DataTableColumnHeader label="Links" />,
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Links" column={column} />
+        ),
         cell: ({ row }) => (
           <DataTableNumericCell
             value={row.original.linkedQuizQuestions.length}
@@ -300,12 +316,19 @@ export function KnowledgeBasePage() {
               {isNotesListExpanded && (
                 <>
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className={dataTableFixedLayoutClass}>
                       <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                           <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
-                              <TableHead key={header.id} className={dataTableHeadClass}>
+                              <TableHead
+                                key={header.id}
+                                className={cn(
+                                  dataTableHeadClass,
+                                  dataTableFixedCellClass,
+                                  knowledgeColumnWidth(header.column.id),
+                                )}
+                              >
                                 {header.isPlaceholder
                                   ? null
                                   : flexRender(
@@ -325,7 +348,14 @@ export function KnowledgeBasePage() {
                             onClick={() => openNote(row.original)}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className={dataTableCellClass}>
+                              <TableCell
+                                key={cell.id}
+                                className={cn(
+                                  dataTableCellClass,
+                                  dataTableFixedCellClass,
+                                  knowledgeColumnWidth(cell.column.id),
+                                )}
+                              >
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </TableCell>
                             ))}
