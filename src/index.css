@@ -198,8 +198,7 @@ button {
   outline: none;
 }
 
-/* knowledge-prose sets overflow-x: clip, which forces overflow-y: auto on the
-   contenteditable and traps wheel events over MDXEditor tables (height: 100%). */
+/* Keep the MDXEditor contenteditable from becoming its own scroll container. */
 .knowledge-mdx-editor .knowledge-mdx-content.knowledge-prose {
   overflow: visible;
 }
@@ -277,7 +276,6 @@ button {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow-x: clip;
   overflow-wrap: anywhere;
   word-break: break-word;
   font-size: 1rem;
@@ -464,11 +462,11 @@ button {
 }
 
 /* KaTeX: avoid nested overflow scroll regions — they show spurious scrollbar
-   arrows on some formulas (sums, fractions, limits) even when content fits. */
+   arrows on some formulas (sums, fractions, limits) even when content fits.
+   Do not change display on span.katex; KaTeX needs its default layout for
+   underline/subscript vlist positioning. */
 span.katex {
-  display: inline;
   overflow: visible;
-  vertical-align: baseline;
 }
 
 .katex-display {

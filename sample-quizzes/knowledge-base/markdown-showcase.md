@@ -51,6 +51,18 @@ $$
 \sum_{i=1}^{n} i = \frac{n(n + 1)}{2}
 $$
 
+Subscripts with `_` and underline with `\underline`:
+
+- Subscript: $x_1 + y_{n+1}$
+- Limit: $\lim_{x \to 0} \dfrac{\sin x}{x}$
+- Underline: $\underline{ABC + xyz}$
+
+Indexed variables (common time-series / statistics notation):
+
+- Single subscript: $T_1$, $T_2$, $T_3$
+- Letter subscript: $S_t$, $X_t$, $Y_t$
+- Mixed: $T_1 + T_2 = S_t$ and $\bar{X}_n = \frac{1}{n}\sum_{i=1}^{n} X_i$
+
 - Bullet lists
 - Still render correctly
 

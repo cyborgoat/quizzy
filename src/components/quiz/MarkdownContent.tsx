@@ -168,7 +168,7 @@ export function MarkdownContent({
 
   const markdown = (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
+      remarkPlugins={[remarkMath, remarkGfm]}
       rehypePlugins={[rehypeKatex]}
       components={components}
     >
