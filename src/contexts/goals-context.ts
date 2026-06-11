@@ -12,10 +12,17 @@ export type RecordedAttempt = {
   attemptId: string;
 };
 
+export type GoalsRefreshOptions = {
+  background?: boolean;
+};
+
 export type GoalsContextValue = {
   goals: Goal[];
   isLoading: boolean;
   goalsVersion: number;
+  refresh: (options?: GoalsRefreshOptions) => Promise<void>;
+  refreshAfterSync: () => Promise<void>;
+  clearAttemptCache: () => void;
   addGoal: (goal: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) => Promise<boolean>;
   updateGoal: (id: string, data: GoalDetailsInput) => Promise<boolean>;
   recordAttempt: (quizId: string, attempt: AttemptInput) => Promise<RecordedAttempt | null>;

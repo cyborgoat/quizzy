@@ -194,6 +194,20 @@ The **Working directory** section shows the currently configured path. Clicking
 **Select folder** (or **Change**) opens a native directory picker and stages the
 selection. The path is written to disk only when Save is confirmed.
 
+### Data synchronization
+
+Use **Synchronize data** when quiz, knowledge, or app-data files have changed
+outside Quizzy (for example through the system file manager) and you want goals,
+attempt indexes, and the Mistake Log to match disk again.
+
+Quizzy asks for confirmation before running sync. It does **not** modify quiz
+JSON or knowledge markdown files, and it does **not** delete goals or attempts.
+
+After sync completes, Settings shows a summary of what was rescanned, repaired,
+and any warnings (such as a goal whose quiz file is missing). A toast provides a
+short headline; the inline card lists counts, changed app-config file paths, and
+details.
+
 ## Quiz library
 
 The home page displays every valid top-level `.json` file in the configured

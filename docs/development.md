@@ -49,6 +49,7 @@ Native tests cover:
 - Atomic settings writes
 - Goal and attempt persistence invariants
 - Mistake index aggregation, rebuild, and staleness detection
+- Data sync attempt-index repair, goal title alignment, and sync report counts
 
 Run:
 
@@ -101,9 +102,9 @@ Use the narrowest appropriate layer:
 - Knowledge Base workflow: `KnowledgeLibraryProvider`, `src/lib/knowledgeDraft.ts`,
   and `src/components/knowledge`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
-- Filesystem behavior: typed native adapter plus a Rust command (goal and mistake
-  index updates are handled in `src-tauri/src/goals_storage.rs` and
-  `src-tauri/src/mistake_index.rs`)
+- Filesystem behavior: typed native adapter plus a Rust command (goal, mistake
+  index, and manual sync are handled in `src-tauri/src/goals_storage.rs`,
+  `src-tauri/src/mistake_index.rs`, and `src-tauri/src/data_sync.rs`)
 - Presentation: a focused component under `src/components`
 
 Add tests at the domain boundary affected by the change. Filesystem changes
@@ -126,8 +127,8 @@ Before packaging a release:
 7. Test directory selection, opening and rescanning the quiz folder, practice
    and scored quiz completion, goal creation, attempt recording, attempt
    deletion, attempt review, Mistake Log threshold filtering and question
-   review, and Knowledge Base note create/edit/link/preview in the packaged
-   application.
+   review, Settings data synchronization (including result summary), and
+   Knowledge Base note create/edit/link/preview in the packaged application.
 
 The files under `sample-quizzes/` and `sample-knowledge/` can be copied into
 your working directory when manual test data is needed. They are not production

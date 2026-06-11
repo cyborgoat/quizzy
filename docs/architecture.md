@@ -246,6 +246,18 @@ managed directly through the system file manager.
 5. Column-header dropdowns filter by quiz name and question type. The mistake
    list section can be collapsed while review navigation continues.
 
+### Manual data synchronization
+
+1. The user opens **Settings** and clicks **Synchronize data**.
+2. A confirmation dialog explains that quiz/knowledge files are not modified.
+3. Rust runs `synchronize_app_data`: rescans the working directory and knowledge
+   base, repairs goal attempt indexes, updates goal titles from quiz files when
+   needed, and rebuilds `mistake-index.json` when its contents change.
+4. React refreshes the working-directory state, quiz library, knowledge library,
+   and goals (clearing the attempt cache) so Mistake Log and Goals stay aligned.
+5. Settings shows a result card with rescanned counts, repairs, changed file
+   paths, and any warnings.
+
 ### Knowledge note workflow
 
 1. The user opens `/knowledge` or a note from the Mistake Log review card.
@@ -275,7 +287,8 @@ src/
   data/           Zod schema, repository parser, and tests
   hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
   lib/            Native adapter, scoring, knowledge drafts, mistake threshold
-                  filtering, mistakeLogReview (answer remap and table page sync)
+                  filtering, syncReport (sync result formatting),
+                  mistakeLogReview (answer remap and table page sync)
   pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
   test/           Vitest setup (browser API polyfills for Node)
   types/          Quiz, goal, knowledge, mistake log, and quiz session types
@@ -283,7 +296,8 @@ src/
 src-tauri/
   capabilities/   Tauri permissions
   icons/          Desktop and mobile platform icons
-  src/            Rust commands (`lib.rs`, `goals_storage.rs`, `mistake_index.rs`)
+  src/            Rust commands (`lib.rs`, `goals_storage.rs`, `mistake_index.rs`,
+                  `data_sync.rs`)
   Cargo.toml      Rust dependencies and crate configuration
   tauri.conf.json Desktop window, build, and bundle configuration
 

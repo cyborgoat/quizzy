@@ -54,6 +54,9 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `get_goal_attempt` | Load one full attempt with question results |
 | `delete_goal_attempt` | Delete one attempt file, remove it from the summary index, and refresh that quiz's mistake-index entries |
 | `get_mistake_index` | Load the materialized mistake index (rebuilds if missing, version-mismatched, or attempt-count stale) |
+| `synchronize_app_data` | Rescan quiz/knowledge folders, repair goal attempt indexes, refresh goal titles from quiz files, rebuild the mistake index when changed, and return a structured `SyncReport` |
+
+`synchronize_app_data` only writes app-config files (`goals/...`, `mistake-index.json`). It rebuilds each goal's `attempts/index.json` from on-disk attempt files, removes orphan index entries when attempt files are missing, and records per-file changes in the report. Goals whose quiz files are missing are reported as warnings, not deleted.
 
 ## Filesystem boundaries
 

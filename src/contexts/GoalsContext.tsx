@@ -43,7 +43,17 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const { isLoading } = useBackgroundDataLoader(load);
+  const { refresh, isLoading } = useBackgroundDataLoader(load);
+
+  const refreshAfterSync = useCallback(async () => {
+    attemptCacheRef.current.clear();
+    await refresh({ background: true });
+    bumpGoalsVersion();
+  }, [refresh, bumpGoalsVersion]);
+
+  const clearAttemptCache = useCallback(() => {
+    attemptCacheRef.current.clear();
+  }, []);
 
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
     if (goals.some((goal) => goal.quizId === data.quizId)) {
@@ -218,6 +228,9 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         goals,
         isLoading,
         goalsVersion,
+        refresh,
+        refreshAfterSync,
+        clearAttemptCache,
         addGoal,
         updateGoal,
         recordAttempt,

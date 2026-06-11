@@ -49,6 +49,42 @@ export type MistakeIndex = {
   entries: MistakeEntry[];
 };
 
+export type SyncChangeKind =
+  | "legacy_goals_migrated"
+  | "attempt_index_rebuilt"
+  | "goal_title_updated"
+  | "mistake_index_rebuilt";
+
+export type SyncChange = {
+  kind: SyncChangeKind | string;
+  path?: string;
+  detail: string;
+};
+
+export type SyncWarningKind = "goal_quiz_missing" | "working_directory_unavailable";
+
+export type SyncWarning = {
+  kind: SyncWarningKind | string;
+  detail: string;
+};
+
+export type SyncReport = {
+  quizzesScanned: number;
+  knowledgeNotesScanned: number;
+  goalsChecked: number;
+  appConfigFilesWritten: number;
+  attemptIndexesRebuilt: number;
+  attemptIndexEntriesAdded: number;
+  attemptIndexEntriesRemoved: number;
+  goalTitlesUpdated: number;
+  mistakeIndexRebuilt: boolean;
+  mistakeIndexEntries: number;
+  legacyGoalsMigrated: boolean;
+  changes: SyncChange[];
+  changesTruncated: boolean;
+  warnings: SyncWarning[];
+};
+
 export const nativeApi = {
   getSettings: () => invoke<AppSettings>("get_settings"),
   saveSettings: (request: SaveSettingsRequest) =>
@@ -76,6 +112,7 @@ export const nativeApi = {
   deleteGoalAttempt: (goalId: string, attemptId: string) =>
     invoke<void>("delete_goal_attempt", { goalId, attemptId }),
   getMistakeIndex: () => invoke<MistakeIndex>("get_mistake_index"),
+  synchronizeAppData: () => invoke<SyncReport>("synchronize_app_data"),
 };
 
 export function errorMessage(error: unknown) {

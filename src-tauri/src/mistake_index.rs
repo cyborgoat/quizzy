@@ -10,7 +10,7 @@ use crate::goals_storage::{GoalAttempt, QuestionResult, SubmittedAnswer};
 const MISTAKE_INDEX_FILE: &str = "mistake-index.json";
 const MISTAKE_INDEX_VERSION: u32 = 1;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MistakeIndexEntry {
     pub quiz_id: String,
@@ -32,7 +32,7 @@ pub struct MistakeIndexEntry {
     pub last_incorrect_options: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MistakeIndex {
     pub version: u32,
@@ -239,6 +239,22 @@ pub fn remove_quiz_entries(app: &AppHandle, quiz_id: &str) -> Result<(), String>
     index.entries.retain(|entry| entry.quiz_id != quiz_id);
     index.scored_attempt_count = scored_attempt_count(app)?;
     write_index(&path, &index)
+}
+
+pub fn read_existing_index(app: &AppHandle) -> Result<Option<MistakeIndex>, String> {
+    let path = mistake_index_path(app)?;
+    if !path.exists() {
+        return Ok(None);
+    }
+    Ok(Some(read_index(&path)?))
+}
+
+pub fn write_index_for_sync(app: &AppHandle, index: &MistakeIndex) -> Result<(), String> {
+    write_index(&mistake_index_path(app)?, index)
+}
+
+pub fn mistake_index_relative_path() -> &'static str {
+    MISTAKE_INDEX_FILE
 }
 
 pub fn get_mistake_index(app: &AppHandle) -> Result<MistakeIndex, String> {

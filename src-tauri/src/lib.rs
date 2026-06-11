@@ -6,9 +6,11 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
+mod data_sync;
 mod goals_storage;
 mod mistake_index;
 
+use data_sync::SyncReport;
 use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
 use mistake_index::MistakeIndex;
 
@@ -188,6 +190,10 @@ fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     fs::create_dir_all(&directory)
         .map_err(|error| format!("Unable to create the app configuration directory: {error}"))?;
     Ok(directory.join(SETTINGS_FILE))
+}
+
+pub(crate) fn read_settings_for_sync(app: &AppHandle) -> Result<Settings, String> {
+    read_settings(app)
 }
 
 fn read_settings(app: &AppHandle) -> Result<Settings, String> {
@@ -600,6 +606,11 @@ fn get_mistake_index(app: AppHandle) -> Result<MistakeIndex, String> {
     mistake_index::get_mistake_index(&app)
 }
 
+#[tauri::command]
+fn synchronize_app_data(app: AppHandle) -> Result<SyncReport, String> {
+    data_sync::synchronize_app_data(&app)
+}
+
 fn focus_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
@@ -636,7 +647,8 @@ pub fn run() {
             save_goal_attempt,
             get_goal_attempt,
             delete_goal_attempt,
-            get_mistake_index
+            get_mistake_index,
+            synchronize_app_data
         ])
         .build(tauri::generate_context!())
         .expect("error while building Quizzy")

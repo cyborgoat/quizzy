@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Manager};
 
-const GOALS_DIR: &str = "goals";
+pub const GOALS_DIR: &str = "goals";
+pub const GOAL_META_FILE: &str = "goal.json";
 const LEGACY_GOALS_FILE: &str = "goals.json";
-const GOAL_META_FILE: &str = "goal.json";
 const ATTEMPTS_DIR: &str = "attempts";
 const ATTEMPTS_INDEX_FILE: &str = "index.json";
 
@@ -56,7 +57,7 @@ pub struct GoalAttempt {
     pub question_results: Vec<QuestionResult>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AttemptSummary {
     pub id: String,
@@ -120,6 +121,10 @@ impl LegacyGoal {
             completed_at: self.completed_at.clone(),
         }
     }
+}
+
+pub fn goals_storage_root(app: &AppHandle) -> Result<PathBuf, String> {
+    goals_root(app)
 }
 
 fn goals_root(app: &AppHandle) -> Result<PathBuf, String> {
@@ -264,10 +269,110 @@ fn persist_attempt(goal_dir: &Path, attempt: &GoalAttempt) -> Result<(), String>
     write_attempt_summaries(goal_dir, &summaries)
 }
 
-fn migrate_legacy_goals(app: &AppHandle) -> Result<(), String> {
+pub struct RepairAttemptSummariesResult {
+    pub rebuilt: bool,
+    pub entries_added: u32,
+    pub entries_removed: u32,
+    pub relative_index_path: String,
+}
+
+pub fn repair_attempt_summaries(
+    goals_root: &Path,
+    goal_dir: &Path,
+) -> Result<RepairAttemptSummariesResult, String> {
+    let goal_id = goal_dir
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "The goal directory name is invalid.".to_string())?;
+    let relative_index_path = format!("{GOALS_DIR}/{goal_id}/{ATTEMPTS_DIR}/{ATTEMPTS_INDEX_FILE}");
+    let attempts_dir = attempts_directory(goal_dir);
+
+    let current = read_attempt_summaries(goal_dir)?;
+    let current_ids: HashSet<String> = current.iter().map(|summary| summary.id.clone()).collect();
+
+    let mut rebuilt_summaries = Vec::new();
+    let mut disk_ids = HashSet::new();
+
+    if attempts_dir.exists() {
+        for entry in fs::read_dir(&attempts_dir)
+            .map_err(|error| format!("Unable to read {}: {error}", attempts_dir.display()))?
+        {
+            let entry = entry.map_err(|error| {
+                format!("Unable to inspect an attempts directory entry: {error}")
+            })?;
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
+                continue;
+            };
+            if file_name == ATTEMPTS_INDEX_FILE || !file_name.ends_with(".json") {
+                continue;
+            }
+            let Some(attempt_id) = file_name.strip_suffix(".json") else {
+                continue;
+            };
+            if validate_storage_id(attempt_id).is_err() {
+                continue;
+            }
+            let attempt: GoalAttempt = match read_json(&path) {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+            if attempt.id != attempt_id {
+                continue;
+            }
+            disk_ids.insert(attempt_id.to_string());
+            rebuilt_summaries.push(attempt_summary(&attempt));
+        }
+    }
+
+    rebuilt_summaries.sort_by(|left, right| left.taken_at.cmp(&right.taken_at));
+
+    let entries_added = disk_ids.difference(&current_ids).count() as u32;
+    let entries_removed = current_ids.difference(&disk_ids).count() as u32;
+    let rebuilt = current != rebuilt_summaries;
+
+    if rebuilt {
+        if !attempts_dir.exists() {
+            fs::create_dir_all(&attempts_dir)
+                .map_err(|error| format!("Unable to create {}: {error}", attempts_dir.display()))?;
+        }
+        write_attempt_summaries(goal_dir, &rebuilt_summaries)?;
+    }
+
+    let _ = goals_root;
+    Ok(RepairAttemptSummariesResult {
+        rebuilt,
+        entries_added,
+        entries_removed,
+        relative_index_path,
+    })
+}
+
+pub fn update_goal_quiz_title(goal_dir: &Path, new_title: &str) -> Result<bool, String> {
+    let mut meta = read_goal_meta(goal_dir)?;
+    if meta.quiz_title == new_title {
+        return Ok(false);
+    }
+    meta.quiz_title = new_title.to_string();
+    write_goal_meta(goal_dir, &meta)?;
+    Ok(true)
+}
+
+pub fn goal_meta_relative_path(goal_id: &str) -> String {
+    format!("{GOALS_DIR}/{goal_id}/{GOAL_META_FILE}")
+}
+
+pub fn migrate_legacy_goals_for_sync(app: &AppHandle) -> Result<bool, String> {
+    migrate_legacy_goals(app)
+}
+
+fn migrate_legacy_goals(app: &AppHandle) -> Result<bool, String> {
     let legacy_path = legacy_goals_path(app)?;
     if !legacy_path.exists() {
-        return Ok(());
+        return Ok(false);
     }
 
     let legacy_goals: Vec<LegacyGoal> = read_json(&legacy_path)?;
@@ -292,11 +397,12 @@ fn migrate_legacy_goals(app: &AppHandle) -> Result<(), String> {
             .map_err(|error| format!("Unable to remove an existing goals backup file: {error}"))?;
     }
     fs::rename(&legacy_path, &backup_path)
-        .map_err(|error| format!("Unable to archive legacy goals.json: {error}"))
+        .map_err(|error| format!("Unable to archive legacy goals.json: {error}"))?;
+    Ok(true)
 }
 
 pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
-    migrate_legacy_goals(app)?;
+    let _ = migrate_legacy_goals(app)?;
     let root = goals_root(app)?;
     if !root.exists() {
         return Ok(Vec::new());
@@ -332,7 +438,7 @@ pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
 }
 
 pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
-    migrate_legacy_goals(app)?;
+    let _ = migrate_legacy_goals(app)?;
     let root = goals_root(app)?;
     ensure_unique_quiz_goal(&root, &meta)?;
     let goal_dir = goal_directory(&root, &meta.id)?;
@@ -452,8 +558,8 @@ fn delete_attempt_from_goal_dir(goal_dir: &Path, attempt_id: &str) -> Result<(),
 mod tests {
     use super::{
         attempt_summary, attempts_directory, delete_attempt_from_goal_dir, ensure_unique_quiz_goal,
-        persist_attempt, read_attempt_summaries, write_goal_meta, AttemptSummary, GoalAttempt,
-        GoalMeta, QuestionResult,
+        persist_attempt, read_attempt_summaries, repair_attempt_summaries, update_goal_quiz_title,
+        write_goal_meta, AttemptSummary, GoalAttempt, GoalMeta, QuestionResult,
     };
     use std::fs;
 
@@ -555,6 +661,104 @@ mod tests {
         write_goal_meta(&goal_dir, &existing).expect("write goal");
 
         assert!(ensure_unique_quiz_goal(&temp, &existing).is_ok());
+
+        let _ = fs::remove_dir_all(&temp);
+    }
+
+    #[test]
+    fn repair_attempt_summaries_adds_missing_index_entries() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-repair-attempt-add-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        fs::create_dir_all(&temp).expect("create temp goal dir");
+
+        let attempt = GoalAttempt {
+            id: "attempt-1".into(),
+            taken_at: "2026-06-08T01:00:00.000Z".into(),
+            score: 1,
+            total: 1,
+            percentage: 100,
+            question_results: vec![],
+        };
+        let attempt_path = attempts_directory(&temp).join("attempt-1.json");
+        fs::create_dir_all(attempt_path.parent().unwrap()).expect("create attempts dir");
+        fs::write(
+            &attempt_path,
+            serde_json::to_string_pretty(&attempt).expect("serialize attempt"),
+        )
+        .expect("write attempt");
+
+        let result = repair_attempt_summaries(&temp, &temp).expect("repair summaries");
+        assert!(result.rebuilt);
+        assert_eq!(result.entries_added, 1);
+        assert_eq!(result.entries_removed, 0);
+
+        let summaries = read_attempt_summaries(&temp).expect("read summaries");
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].id, "attempt-1");
+
+        let _ = fs::remove_dir_all(&temp);
+    }
+
+    #[test]
+    fn repair_attempt_summaries_removes_orphan_index_entries() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-repair-attempt-remove-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        fs::create_dir_all(&temp).expect("create temp goal dir");
+
+        let summaries = vec![AttemptSummary {
+            id: "missing-attempt".into(),
+            taken_at: "2026-06-08T01:00:00.000Z".into(),
+            score: 0,
+            total: 1,
+            percentage: 0,
+            incorrect_count: 1,
+        }];
+        fs::create_dir_all(attempts_directory(&temp)).expect("create attempts dir");
+        fs::write(
+            attempts_directory(&temp).join("index.json"),
+            serde_json::to_string_pretty(&summaries).expect("serialize summaries"),
+        )
+        .expect("write index");
+
+        let result = repair_attempt_summaries(&temp, &temp).expect("repair summaries");
+        assert!(result.rebuilt);
+        assert_eq!(result.entries_added, 0);
+        assert_eq!(result.entries_removed, 1);
+        assert!(read_attempt_summaries(&temp)
+            .expect("read summaries")
+            .is_empty());
+
+        let _ = fs::remove_dir_all(&temp);
+    }
+
+    #[test]
+    fn update_goal_quiz_title_writes_when_changed() {
+        let temp = std::env::temp_dir().join(format!(
+            "quizzy-goal-title-update-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&temp);
+        let goal_dir = temp.join("goal-1");
+        fs::create_dir_all(&goal_dir).expect("create goal dir");
+        write_goal_meta(&goal_dir, &goal_meta("goal-1", "quiz-1")).expect("write goal");
+
+        let updated = update_goal_quiz_title(&goal_dir, "Updated Quiz").expect("update title");
+        assert!(updated);
+
+        let meta: GoalMeta = serde_json::from_str(
+            &fs::read_to_string(goal_dir.join("goal.json")).expect("read goal"),
+        )
+        .expect("parse goal");
+        assert_eq!(meta.quiz_title, "Updated Quiz");
+
+        let unchanged = update_goal_quiz_title(&goal_dir, "Updated Quiz").expect("update again");
+        assert!(!unchanged);
 
         let _ = fs::remove_dir_all(&temp);
     }

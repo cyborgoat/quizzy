@@ -1,6 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { FolderCog, Palette, Shuffle, User, ClipboardList } from "lucide-react";
+import { ClipboardList, FolderCog, Palette, RefreshCw, Shuffle, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -16,13 +16,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useAppSynchronize } from "@/hooks/useAppSynchronize";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useUiPreferences } from "@/hooks/useUiPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { errorMessage, nativeApi } from "@/lib/native";
+import { errorMessage, nativeApi, type SyncReport } from "@/lib/native";
+import { formatSyncSections, formatSyncSummary } from "@/lib/syncReport";
 import {
   UI_DENSITY_OPTIONS,
   UI_FONT_SIZE_MAX,
@@ -94,6 +96,8 @@ export function SettingsPage() {
   } = useMistakeLogSettings();
   const library = useQuizLibrary();
   const { refresh: refreshWorkingDirectory } = useWorkingDirectory();
+  const { synchronizeAll, isSyncing } = useAppSynchronize();
+  const [lastSyncReport, setLastSyncReport] = useState<SyncReport | null>(null);
 
   const persisted = useMemo(
     () =>
@@ -162,6 +166,32 @@ export function SettingsPage() {
 
   function updateDraft(patch: Partial<SettingsDraft>) {
     setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  const syncSections = useMemo(
+    () => (lastSyncReport ? formatSyncSections(lastSyncReport) : null),
+    [lastSyncReport],
+  );
+
+  async function handleSynchronize() {
+    const approved = await confirm(
+      "Synchronize all app data? Quizzy will rescan your quiz and knowledge folders, rebuild goal attempt indexes and the Mistake Log index, and refresh goals and mistakes in memory. Your quiz and knowledge files will not be modified.",
+      { title: "Synchronize data", kind: "warning" },
+    );
+    if (!approved) return;
+
+    try {
+      const report = await synchronizeAll();
+      setLastSyncReport(report);
+      toast.success(formatSyncSummary(report));
+      if (report.warnings.length > 0) {
+        toast.warning(
+          `${report.warnings.length} warning${report.warnings.length === 1 ? "" : "s"} — see the synchronization summary below.`,
+        );
+      }
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
   }
 
   async function handlePickDirectory() {
@@ -484,6 +514,105 @@ export function SettingsPage() {
               <p className="mt-2 text-sm text-red-600">
                 This directory is currently unavailable.
               </p>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
+            <RefreshCw className="size-4" />
+            Data synchronization
+          </h2>
+          <div className="mt-3 space-y-4 rounded-lg border border-zinc-200 bg-white p-4">
+            <div>
+              <p className="text-sm text-zinc-700">
+                Rescan your quiz folder and knowledge base, repair goal attempt indexes and the
+                Mistake Log index, and refresh in-app data after external file changes.
+              </p>
+              <p className="mt-2 text-sm text-zinc-500">
+                Quiz and knowledge files are not modified. Goals and attempts are not deleted.
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleSynchronize()}
+                  disabled={isSyncing}
+                >
+                  <RefreshCw className={`size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+                  Synchronize data
+                </Button>
+                {isSyncing && (
+                  <span className="text-sm text-zinc-500">Synchronizing…</span>
+                )}
+              </div>
+            </div>
+
+            {syncSections && (
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                <h3 className="text-sm font-semibold text-zinc-950">{syncSections.title}</h3>
+
+                <div className="mt-3 space-y-3 text-sm text-zinc-700">
+                  <div>
+                    <p className="font-medium text-zinc-800">Rescanned</p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-zinc-600">
+                      {syncSections.rescanned.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {syncSections.alreadyInSync ? (
+                    <p className="text-zinc-600">
+                      Everything was already in sync. Libraries were refreshed in memory.
+                    </p>
+                  ) : syncSections.repaired.length > 0 ? (
+                    <div>
+                      <p className="font-medium text-zinc-800">Repaired</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-5 text-zinc-600">
+                        {syncSections.repaired.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {syncSections.warnings.length > 0 && (
+                    <div>
+                      <p className="font-medium text-amber-800">Warnings</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-5 text-amber-700">
+                        {syncSections.warnings.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {lastSyncReport && lastSyncReport.changes.length > 0 && (
+                    <div>
+                      <p className="font-medium text-zinc-800">Files changed</p>
+                      <ul className="mt-1 space-y-2">
+                        {lastSyncReport.changes.map((change, index) => (
+                          <li
+                            key={`${change.kind}-${change.path ?? "none"}-${index}`}
+                            className="rounded border border-zinc-200 bg-white px-3 py-2"
+                          >
+                            {change.path && (
+                              <code className="block text-xs text-zinc-700">{change.path}</code>
+                            )}
+                            <span className="mt-1 block text-sm text-zinc-600">{change.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {lastSyncReport.changesTruncated && (
+                        <p className="mt-2 text-sm text-zinc-500">
+                          Additional changes were applied but omitted from this list.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </section>
