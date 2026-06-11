@@ -20,36 +20,6 @@ function emptyFilterMessage(filter: ReviewFilter) {
 export function QuestionReviewList({
   items,
   quizId,
-  resetKey,
-  filter,
-  onFilterChange,
-  activeQuestionIndex,
-  onActiveQuestionIndexChange,
-}: {
-  items: QuestionReviewItem[];
-  quizId?: string;
-  resetKey?: string;
-  filter: ReviewFilter;
-  onFilterChange: (filter: ReviewFilter) => void;
-  activeQuestionIndex: number;
-  onActiveQuestionIndexChange: (index: number) => void;
-}) {
-  return (
-    <QuestionReviewListBody
-      key={resetKey ?? String(items.length)}
-      items={items}
-      quizId={quizId}
-      filter={filter}
-      onFilterChange={onFilterChange}
-      activeQuestionIndex={activeQuestionIndex}
-      onActiveQuestionIndexChange={onActiveQuestionIndexChange}
-    />
-  );
-}
-
-function QuestionReviewListBody({
-  items,
-  quizId,
   filter,
   onFilterChange,
   activeQuestionIndex,

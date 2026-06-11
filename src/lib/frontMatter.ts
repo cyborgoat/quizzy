@@ -24,6 +24,15 @@ function parseScalarValue(raw: string) {
   return trimmed;
 }
 
+/** Parses `[a, b]` flow syntax. Returns `[]` for `[]`, or `undefined` when not bracketed. */
+function parseBracketedStrings(value: string): string[] | undefined {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return undefined;
+  const inner = trimmed.slice(1, -1).trim();
+  if (!inner) return [];
+  return inner.split(",").map((part) => parseScalarValue(part.trim()));
+}
+
 function parseFrontMatterYaml(yaml: string): ParsedFrontMatter {
   const result: ParsedFrontMatter = {};
   const lines = yaml.replace(/\r\n/g, "\n").split("\n");
@@ -46,29 +55,27 @@ function parseFrontMatterYaml(yaml: string): ParsedFrontMatter {
       if (!valuePart) {
         const tags: string[] = [];
         while (index < lines.length) {
-          const next = lines[index];
-          const match = next.match(/^\s*-\s*(.+)$/);
+          const match = lines[index].match(/^\s*-\s*(.+)$/);
           if (!match) break;
           tags.push(parseScalarValue(match[1]));
           index += 1;
         }
         result.tags = tags;
       } else {
-        result.tags = [parseScalarValue(valuePart)];
+        result.tags = parseBracketedStrings(valuePart) ?? [parseScalarValue(valuePart)];
       }
       continue;
     }
 
     if (key === "linkedQuizQuestions") {
-      if (valuePart === "[]") {
+      if (parseBracketedStrings(valuePart)?.length === 0) {
         result.linkedQuizQuestions = [];
         continue;
       }
 
       const links: LinkedQuizQuestion[] = [];
       while (index < lines.length) {
-        const next = lines[index];
-        const listItemMatch = next.match(/^\s*-\s*(.*)$/);
+        const listItemMatch = lines[index].match(/^\s*-\s*(.*)$/);
         if (!listItemMatch) break;
         index += 1;
 
@@ -143,12 +150,12 @@ function yamlScalar(value: string) {
 }
 
 function yamlStringList(key: string, values: string[]) {
-  if (values.length === 0) return `${key}: []`;
+  if (values.length === 0) return `${key}:`;
   return `${key}:\n${values.map((value) => `  - ${yamlScalar(value)}`).join("\n")}`;
 }
 
 function yamlLinkedQuestions(links: LinkedQuizQuestion[]) {
-  if (links.length === 0) return "linkedQuizQuestions: []";
+  if (links.length === 0) return "linkedQuizQuestions:";
   return [
     "linkedQuizQuestions:",
     ...links.map(

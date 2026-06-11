@@ -1,12 +1,11 @@
 import { useMemo } from "react";
-import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
-import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 
 export function useKnowledgeForQuestion(quizId: string, questionId: string) {
-  const knowledgeIndex = useKnowledgeIndex();
+  const { getNotesForQuestion } = useKnowledgeLibrary();
 
   return useMemo(
-    () => getKnowledgeForQuestion(knowledgeIndex, quizId, questionId),
-    [knowledgeIndex, quizId, questionId],
+    () => getNotesForQuestion(quizId, questionId),
+    [getNotesForQuestion, quizId, questionId],
   );
 }

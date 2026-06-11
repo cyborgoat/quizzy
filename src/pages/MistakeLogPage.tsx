@@ -7,6 +7,7 @@ import {
   getSortedRowModel,
   type PaginationState,
   type SortingState,
+  type Table as TanStackTable,
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, Settings } from "lucide-react";
@@ -44,21 +45,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useKnowledgeIndex } from "@/hooks/useKnowledgeIndex";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatShortDate } from "@/lib/formatDate";
-import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
 import { QUESTION_TYPE_LABELS } from "@/lib/questionOrder";
 import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { detectEmptyReason } from "@/lib/mistakeLog";
-import { mistakeEntryKey, syncTablePageForEntry } from "@/lib/mistakeLogReview";
+import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { cn } from "@/lib/utils";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizQuestion, QuizSource } from "@/types/quiz";
 
 type QuestionTypeFilter = "all" | QuizQuestion["type"];
+
+function syncTablePageForEntry(table: TanStackTable<MistakeEntry>, entry: MistakeEntry) {
+  const entryKey = questionLinkKey(entry.quizId, entry.questionId);
+  const index = table.getSortedRowModel().rows.findIndex(
+    (row) => questionLinkKey(row.original.quizId, row.original.questionId) === entryKey,
+  );
+  if (index < 0) return;
+
+  const pageSize = table.getState().pagination.pageSize;
+  const pageIndex = Math.floor(index / pageSize);
+  if (pageIndex !== table.getState().pagination.pageIndex) {
+    table.setPageIndex(pageIndex);
+  }
+}
 
 const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }[] = [
   { value: "all", label: "All types" },
@@ -195,7 +209,7 @@ export function MistakeLogPage() {
     refetch,
   } = useMistakeLog();
   const { quizzes } = useQuizLibrary();
-  const knowledgeIndex = useKnowledgeIndex();
+  const { getNotesForQuestion } = useKnowledgeLibrary();
   const [quizFilter, setQuizFilter] = useState<string>("all");
   const [questionTypeFilter, setQuestionTypeFilter] = useState<QuestionTypeFilter>("all");
   const [sorting, setSorting] = useState<SortingState>([
@@ -206,27 +220,25 @@ export function MistakeLogPage() {
     pageIndex: 0,
     pageSize: 5,
   });
-  const [activeEntry, setActiveEntry] = useState<MistakeEntry | null>(null);
+  const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const [isMistakeListExpanded, setIsMistakeListExpanded] = useState(true);
 
   const isQuizScoped = Boolean(scopedQuizId);
+  const effectiveQuizFilter =
+    quizFilter === "all" ||
+    quizzesWithMistakes.some((quiz) => quiz.quizId === quizFilter)
+      ? quizFilter
+      : "all";
   const scopedQuizTitle =
     scopedQuizId &&
     (quizzes.find((source) => source.quiz.id === scopedQuizId)?.quiz.title ??
       qualifyingEntries.find((entry) => entry.quizId === scopedQuizId)?.quizTitle);
 
-  useEffect(() => {
-    if (quizFilter === "all") return;
-    const stillExists = quizzesWithMistakes.some((quiz) => quiz.quizId === quizFilter);
-    if (!stillExists) {
-      setQuizFilter("all");
-    }
-  }, [quizFilter, quizzesWithMistakes]);
-
   const filteredEntries = useMemo(() => {
     let entries = qualifyingEntries;
 
-    const quizId = isQuizScoped ? scopedQuizId : quizFilter === "all" ? undefined : quizFilter;
+    const quizId =
+      isQuizScoped ? scopedQuizId : effectiveQuizFilter === "all" ? undefined : effectiveQuizFilter;
     if (quizId) {
       entries = entries.filter((entry) => entry.quizId === quizId);
     }
@@ -238,11 +250,11 @@ export function MistakeLogPage() {
     }
 
     return entries;
-  }, [qualifyingEntries, isQuizScoped, scopedQuizId, quizFilter, questionTypeFilter, quizzes]);
+  }, [qualifyingEntries, isQuizScoped, scopedQuizId, effectiveQuizFilter, questionTypeFilter, quizzes]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [quizFilter, questionTypeFilter, isQuizScoped, scopedQuizId]);
+  }, [effectiveQuizFilter, questionTypeFilter, isQuizScoped, scopedQuizId]);
 
   const columns = useMemo<ColumnDef<MistakeEntry>[]>(
     () => [
@@ -254,7 +266,7 @@ export function MistakeLogPage() {
           ) : (
             <MistakeLogColumnFilterHeader
               label="Quiz Name"
-              filterValue={quizFilter}
+              filterValue={effectiveQuizFilter}
               menuLabel="Filter by quiz"
               options={[
                 { value: "all", label: "All quizzes" },
@@ -300,8 +312,7 @@ export function MistakeLogPage() {
       },
       {
         id: "notes",
-        accessorFn: (row) =>
-          getKnowledgeForQuestion(knowledgeIndex, row.quizId, row.questionId).length,
+        accessorFn: (row) => getNotesForQuestion(row.quizId, row.questionId).length,
         header: ({ column }) => (
           <DataTableSortableHeader label="Notes" column={column} />
         ),
@@ -360,7 +371,7 @@ export function MistakeLogPage() {
         ),
       },
     ],
-    [isQuizScoped, knowledgeIndex, questionTypeFilter, quizFilter, quizzes, quizzesWithMistakes],
+    [effectiveQuizFilter, getNotesForQuestion, isQuizScoped, questionTypeFilter, quizzes, quizzesWithMistakes],
   );
 
   const table = useReactTable({
@@ -377,40 +388,30 @@ export function MistakeLogPage() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const sortedEntries = useMemo(
-    () => table.getSortedRowModel().rows.map((row) => row.original),
-    [filteredEntries, sorting],
-  );
+  const sortedEntries = table.getSortedRowModel().rows.map((row) => row.original);
 
   const effectiveEntry = useMemo(() => {
     if (sortedEntries.length === 0) return null;
-    if (
-      activeEntry &&
-      sortedEntries.some((entry) => mistakeEntryKey(entry) === mistakeEntryKey(activeEntry))
-    ) {
-      return activeEntry;
+    if (selectedEntryKey) {
+      const selected = sortedEntries.find(
+        (entry) => questionLinkKey(entry.quizId, entry.questionId) === selectedEntryKey,
+      );
+      if (selected) return selected;
     }
     return sortedEntries[0];
-  }, [sortedEntries, activeEntry]);
-
-  useEffect(() => {
-    setActiveEntry(null);
-  }, [quizFilter, questionTypeFilter, scopedQuizId, isQuizScoped, sorting]);
-
-  useEffect(() => {
-    if (!effectiveEntry) return;
-    syncTablePageForEntry(table, effectiveEntry);
-  }, [effectiveEntry, filteredEntries, sorting, pagination.pageSize, table]);
+  }, [sortedEntries, selectedEntryKey]);
 
   const activePosition = useMemo(() => {
     if (!effectiveEntry) return -1;
     return sortedEntries.findIndex(
-      (entry) => mistakeEntryKey(entry) === mistakeEntryKey(effectiveEntry),
+      (entry) =>
+        questionLinkKey(entry.quizId, entry.questionId) ===
+        questionLinkKey(effectiveEntry.quizId, effectiveEntry.questionId),
     );
   }, [sortedEntries, effectiveEntry]);
 
   function selectEntry(entry: MistakeEntry) {
-    setActiveEntry(entry);
+    setSelectedEntryKey(questionLinkKey(entry.quizId, entry.questionId));
     syncTablePageForEntry(table, entry);
   }
 
@@ -427,7 +428,7 @@ export function MistakeLogPage() {
   const scopedEmptyReason = useMemo(() => {
     if (filteredEntries.length > 0) return null;
 
-    if (!isQuizScoped && (quizFilter !== "all" || questionTypeFilter !== "all")) {
+    if (!isQuizScoped && (effectiveQuizFilter !== "all" || questionTypeFilter !== "all")) {
       return "no_mistakes" as const;
     }
 
@@ -444,7 +445,7 @@ export function MistakeLogPage() {
   }, [
     filteredEntries.length,
     isQuizScoped,
-    quizFilter,
+    effectiveQuizFilter,
     questionTypeFilter,
     scopedQuizId,
     attemptData,
@@ -548,7 +549,8 @@ export function MistakeLogPage() {
                       {table.getRowModel().rows.map((row) => {
                         const isActive =
                           effectiveEntry !== null &&
-                          mistakeEntryKey(row.original) === mistakeEntryKey(effectiveEntry);
+                          questionLinkKey(row.original.quizId, row.original.questionId) ===
+                          questionLinkKey(effectiveEntry.quizId, effectiveEntry.questionId);
 
                         return (
                           <TableRow

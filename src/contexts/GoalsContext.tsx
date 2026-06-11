@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { type AttemptInput, GoalsContext } from "@/contexts/goals-context";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
@@ -9,8 +9,25 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function attemptCacheKey(goalId: string, attemptId: string) {
+  return `${goalId}:${attemptId}`;
+}
+
+function normalizeAttempt(attempt: GoalAttempt): GoalAttempt {
+  return {
+    ...attempt,
+    incorrectCount: attempt.questionResults.filter((result) => !result.correct).length,
+  };
+}
+
 export function GoalsProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsVersion, setGoalsVersion] = useState(0);
+  const attemptCacheRef = useRef(new Map<string, GoalAttempt>());
+
+  const bumpGoalsVersion = useCallback(() => {
+    setGoalsVersion((current) => current + 1);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -89,6 +106,10 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     try {
       await nativeApi.saveGoalAttempt(targetGoal.id, attempt);
       const summary = toAttemptSummary(attempt);
+      attemptCacheRef.current.set(
+        attemptCacheKey(targetGoal.id, attempt.id),
+        attempt,
+      );
       setGoals((current) =>
         current.map((goal) =>
           goal.id === targetGoal.id
@@ -96,6 +117,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             : goal,
         ),
       );
+      bumpGoalsVersion();
       return { goalId: targetGoal.id, attemptId: attempt.id };
     } catch (error) {
       toast.error(errorMessage(error));
@@ -144,7 +166,13 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   async function deleteGoal(id: string) {
     try {
       await nativeApi.deleteGoal(id);
+      for (const key of attemptCacheRef.current.keys()) {
+        if (key.startsWith(`${id}:`)) {
+          attemptCacheRef.current.delete(key);
+        }
+      }
       setGoals((current) => current.filter((goal) => goal.id !== id));
+      bumpGoalsVersion();
       toast.success("Goal deleted.");
       return true;
     } catch (error) {
@@ -156,6 +184,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   async function deleteAttempt(goalId: string, attemptId: string) {
     try {
       await nativeApi.deleteGoalAttempt(goalId, attemptId);
+      attemptCacheRef.current.delete(attemptCacheKey(goalId, attemptId));
       setGoals((current) =>
         current.map((goal) =>
           goal.id === goalId
@@ -166,6 +195,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             : goal,
         ),
       );
+      bumpGoalsVersion();
       toast.success("Attempt deleted.");
     } catch (error) {
       toast.error(errorMessage(error));
@@ -173,11 +203,13 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   }
 
   async function loadGoalAttempt(goalId: string, attemptId: string) {
-    const attempt = await nativeApi.getGoalAttempt(goalId, attemptId);
-    return {
-      ...attempt,
-      incorrectCount: attempt.questionResults.filter((result) => !result.correct).length,
-    };
+    const cacheKey = attemptCacheKey(goalId, attemptId);
+    const cached = attemptCacheRef.current.get(cacheKey);
+    if (cached) return cached;
+
+    const attempt = normalizeAttempt(await nativeApi.getGoalAttempt(goalId, attemptId));
+    attemptCacheRef.current.set(cacheKey, attempt);
+    return attempt;
   }
 
   return (
@@ -185,6 +217,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       value={{
         goals,
         isLoading,
+        goalsVersion,
         addGoal,
         updateGoal,
         recordAttempt,

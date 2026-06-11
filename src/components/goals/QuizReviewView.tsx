@@ -79,9 +79,9 @@ export function QuizReviewView({
           </InlineEmptyMessage>
         ) : (
           <QuestionReviewList
+            key={resetKey}
             items={items}
             quizId={quizId}
-            resetKey={resetKey}
             filter={navigation.filter}
             onFilterChange={navigation.onFilterChange}
             activeQuestionIndex={navigation.activeQuestionIndex}

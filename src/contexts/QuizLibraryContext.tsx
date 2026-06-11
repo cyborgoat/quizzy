@@ -1,23 +1,20 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { QuizLibraryContext } from "@/contexts/quiz-library-context";
 import { parseQuizFiles } from "@/data/quizRepository";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
+import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
 
 export function QuizLibraryProvider({ children }: { children: ReactNode }) {
-  const [directoryPath, setDirectoryPath] = useState<string | null>(null);
-  const [directoryAvailable, setDirectoryAvailable] = useState(false);
+  const { directoryPath, directoryAvailable } = useWorkingDirectory();
   const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
 
   const load = useCallback(async () => {
     try {
-      const settings = await nativeApi.getSettings();
-      setDirectoryPath(settings.workingDirectory);
-      setDirectoryAvailable(settings.workingDirectoryAvailable);
-      if (!settings.workingDirectoryAvailable) {
+      if (!directoryAvailable || !directoryPath) {
         setQuizzes([]);
         setInvalidReports([]);
         return;
@@ -30,12 +27,17 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
         console.warn("Quizzy skipped invalid quiz files:", library.invalidReports);
       }
     } catch (error) {
-      setDirectoryAvailable(false);
+      setQuizzes([]);
+      setInvalidReports([]);
       toast.error(errorMessage(error));
     }
-  }, []);
+  }, [directoryAvailable, directoryPath]);
 
   const { refresh, isLoading } = useBackgroundDataLoader(load);
+
+  useEffect(() => {
+    void refresh({ background: true });
+  }, [directoryAvailable, directoryPath, refresh]);
 
   async function openQuizFolder() {
     try {

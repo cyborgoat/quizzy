@@ -25,13 +25,5 @@ export function useBackgroundDataLoader(load: () => Promise<void>) {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
-  useEffect(() => {
-    function handleFocus() {
-      void refresh({ background: true });
-    }
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [refresh]);
-
   return { refresh, isLoading };
 }

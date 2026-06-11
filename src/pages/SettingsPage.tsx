@@ -1,7 +1,7 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { FolderCog, Palette, Shuffle, User, ClipboardList } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useUiPreferences } from "@/hooks/useUiPreferences";
@@ -29,6 +30,50 @@ import {
   validateFontSizeInput,
   type UiDensity,
 } from "@/lib/uiPreferences";
+
+type SettingsDraft = {
+  name: string;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  fontSize: string;
+  density: UiDensity;
+  minMistakes: string;
+  minFlags: string;
+  maxCorrectness: string;
+  pendingDir: string | null;
+};
+
+function draftFromPersisted({
+  userName,
+  shuffleQuestions,
+  shuffleOptions,
+  fontSize,
+  density,
+  minMistakes,
+  minFlags,
+  maxCorrectnessPercentage,
+}: {
+  userName: string;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  fontSize: number;
+  density: UiDensity;
+  minMistakes: number;
+  minFlags: number;
+  maxCorrectnessPercentage: number;
+}): SettingsDraft {
+  return {
+    name: userName,
+    shuffleQuestions,
+    shuffleOptions,
+    fontSize: String(fontSize),
+    density,
+    minMistakes: String(minMistakes),
+    minFlags: String(minFlags),
+    maxCorrectness: String(maxCorrectnessPercentage),
+    pendingDir: null,
+  };
+}
 
 export function SettingsPage() {
   const { userName, setUserName } = useUserProfile();
@@ -48,79 +93,55 @@ export function SettingsPage() {
     setMaxCorrectnessPercentage,
   } = useMistakeLogSettings();
   const library = useQuizLibrary();
-  const [nameInput, setNameInput] = useState(userName);
-  const [shuffleQuestionsInput, setShuffleQuestionsInput] = useState(shuffleQuestions);
-  const [shuffleOptionsInput, setShuffleOptionsInput] = useState(shuffleOptions);
-  const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
-  const [densityInput, setDensityInput] = useState<UiDensity>(density);
-  const [minMistakesInput, setMinMistakesInput] = useState(String(minMistakes));
-  const [minFlagsInput, setMinFlagsInput] = useState(String(minFlags));
-  const [maxCorrectnessInput, setMaxCorrectnessInput] = useState(String(maxCorrectnessPercentage));
-  const [pendingDir, setPendingDir] = useState<string | null>(null);
-  const [savedUserName, setSavedUserName] = useState(userName);
-  const [savedShuffleQuestions, setSavedShuffleQuestions] = useState(shuffleQuestions);
-  const [savedShuffleOptions, setSavedShuffleOptions] = useState(shuffleOptions);
-  const [savedFontSize, setSavedFontSize] = useState(fontSize);
-  const [savedDensity, setSavedDensity] = useState<UiDensity>(density);
-  const [savedMinMistakes, setSavedMinMistakes] = useState(minMistakes);
-  const [savedMinFlags, setSavedMinFlags] = useState(minFlags);
-  const [savedMaxCorrectness, setSavedMaxCorrectness] = useState(maxCorrectnessPercentage);
+  const { refresh: refreshWorkingDirectory } = useWorkingDirectory();
+
+  const persisted = useMemo(
+    () =>
+      draftFromPersisted({
+        userName,
+        shuffleQuestions,
+        shuffleOptions,
+        fontSize,
+        density,
+        minMistakes,
+        minFlags,
+        maxCorrectnessPercentage,
+      }),
+    [
+      userName,
+      shuffleQuestions,
+      shuffleOptions,
+      fontSize,
+      density,
+      minMistakes,
+      minFlags,
+      maxCorrectnessPercentage,
+    ],
+  );
+
+  const [draft, setDraft] = useState<SettingsDraft>(persisted);
   const [fontSizeError, setFontSizeError] = useState<string | null>(null);
   const [minMistakesError, setMinMistakesError] = useState<string | null>(null);
   const [minFlagsError, setMinFlagsError] = useState<string | null>(null);
   const [maxCorrectnessError, setMaxCorrectnessError] = useState<string | null>(null);
 
-  if (userName !== savedUserName) {
-    setSavedUserName(userName);
-    setNameInput(userName);
-  }
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- reset draft when persisted settings change */
+    setDraft(persisted);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [persisted]);
 
-  if (shuffleQuestions !== savedShuffleQuestions) {
-    setSavedShuffleQuestions(shuffleQuestions);
-    setShuffleQuestionsInput(shuffleQuestions);
-  }
-
-  if (shuffleOptions !== savedShuffleOptions) {
-    setSavedShuffleOptions(shuffleOptions);
-    setShuffleOptionsInput(shuffleOptions);
-  }
-
-  if (fontSize !== savedFontSize) {
-    setSavedFontSize(fontSize);
-    setFontSizeInput(String(fontSize));
-  }
-
-  if (density !== savedDensity) {
-    setSavedDensity(density);
-    setDensityInput(density);
-  }
-
-  if (minMistakes !== savedMinMistakes) {
-    setSavedMinMistakes(minMistakes);
-    setMinMistakesInput(String(minMistakes));
-  }
-
-  if (minFlags !== savedMinFlags) {
-    setSavedMinFlags(minFlags);
-    setMinFlagsInput(String(minFlags));
-  }
-
-  if (maxCorrectnessPercentage !== savedMaxCorrectness) {
-    setSavedMaxCorrectness(maxCorrectnessPercentage);
-    setMaxCorrectnessInput(String(maxCorrectnessPercentage));
-  }
-
-  const displayDir = pendingDir ?? library.directoryPath;
+  const displayDir = draft.pendingDir ?? library.directoryPath;
   const hasChanges =
-    nameInput.trim() !== userName ||
-    pendingDir !== null ||
-    shuffleQuestionsInput !== shuffleQuestions ||
-    shuffleOptionsInput !== shuffleOptions ||
-    fontSizeInput !== String(fontSize) ||
-    densityInput !== density ||
-    minMistakesInput !== String(minMistakes) ||
-    minFlagsInput !== String(minFlags) ||
-    maxCorrectnessInput !== String(maxCorrectnessPercentage);
+    draft.name.trim() !== persisted.name ||
+    draft.pendingDir !== null ||
+    draft.shuffleQuestions !== persisted.shuffleQuestions ||
+    draft.shuffleOptions !== persisted.shuffleOptions ||
+    draft.fontSize !== persisted.fontSize ||
+    draft.density !== persisted.density ||
+    draft.minMistakes !== persisted.minMistakes ||
+    draft.minFlags !== persisted.minFlags ||
+    draft.maxCorrectness !== persisted.maxCorrectness;
 
   const { proceed, reset, status } = useBlocker({
     shouldBlockFn: () => hasChanges,
@@ -139,6 +160,10 @@ export function SettingsPage() {
     });
   }, [status, proceed, reset]);
 
+  function updateDraft(patch: Partial<SettingsDraft>) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
+
   async function handlePickDirectory() {
     try {
       const selected = await open({
@@ -148,22 +173,22 @@ export function SettingsPage() {
         title: "Choose Quizzy working directory",
       });
       if (!selected || Array.isArray(selected)) return;
-      setPendingDir(selected);
+      updateDraft({ pendingDir: selected });
     } catch (error) {
       toast.error(errorMessage(error));
     }
   }
 
   async function handleSave() {
-    const trimmed = nameInput.trim();
-    const parsedMinMistakes = Number(minMistakesInput);
-    const parsedMinFlags = Number(minFlagsInput);
-    const parsedMaxCorrectness = Number(maxCorrectnessInput);
-    const parsedFontSize = Number(fontSizeInput);
+    const trimmed = draft.name.trim();
+    const parsedMinMistakes = Number(draft.minMistakes);
+    const parsedMinFlags = Number(draft.minFlags);
+    const parsedMaxCorrectness = Number(draft.maxCorrectness);
+    const parsedFontSize = Number(draft.fontSize);
 
     let hasValidationError = false;
 
-    const nextFontSizeError = validateFontSizeInput(fontSizeInput);
+    const nextFontSizeError = validateFontSizeInput(draft.fontSize);
     if (nextFontSizeError) {
       setFontSizeError(nextFontSizeError);
       hasValidationError = true;
@@ -201,14 +226,14 @@ export function SettingsPage() {
     try {
       await nativeApi.saveSettings({
         profileName: trimmed,
-        shuffleQuestions: shuffleQuestionsInput,
-        shuffleOptions: shuffleOptionsInput,
+        shuffleQuestions: draft.shuffleQuestions,
+        shuffleOptions: draft.shuffleOptions,
         uiFontSize: parsedFontSize,
-        uiDensity: densityInput,
+        uiDensity: draft.density,
         mistakeLogMinMistakes: parsedMinMistakes,
         mistakeLogMinFlags: parsedMinFlags,
         mistakeLogMaxCorrectnessPercentage: parsedMaxCorrectness,
-        ...(pendingDir !== null ? { workingDirectory: pendingDir } : {}),
+        ...(draft.pendingDir !== null ? { workingDirectory: draft.pendingDir } : {}),
       });
     } catch (error) {
       toast.error(errorMessage(error));
@@ -216,25 +241,17 @@ export function SettingsPage() {
     }
 
     setUserName(trimmed);
-    setNameInput(trimmed);
-    setShuffleQuestions(shuffleQuestionsInput);
-    setShuffleOptions(shuffleOptionsInput);
-    setSavedShuffleQuestions(shuffleQuestionsInput);
-    setSavedShuffleOptions(shuffleOptionsInput);
+    setShuffleQuestions(draft.shuffleQuestions);
+    setShuffleOptions(draft.shuffleOptions);
     setFontSize(parsedFontSize);
-    setDensity(densityInput);
+    setDensity(draft.density);
     setMinMistakes(parsedMinMistakes);
     setMinFlags(parsedMinFlags);
     setMaxCorrectnessPercentage(parsedMaxCorrectness);
-    setSavedFontSize(parsedFontSize);
-    setSavedDensity(densityInput);
-    setSavedMinMistakes(parsedMinMistakes);
-    setSavedMinFlags(parsedMinFlags);
-    setSavedMaxCorrectness(parsedMaxCorrectness);
 
-    if (pendingDir !== null) {
+    if (draft.pendingDir !== null) {
+      await refreshWorkingDirectory();
       await library.refresh();
-      setPendingDir(null);
     }
 
     toast.success("Settings saved.");
@@ -258,8 +275,8 @@ export function SettingsPage() {
             <p className="mt-0.5 text-sm text-zinc-500">Shown on the home page.</p>
             <Input
               id="full-name"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              value={draft.name}
+              onChange={(e) => updateDraft({ name: e.target.value })}
               onKeyDown={(e) => e.key === "Enter" && hasChanges && void handleSave()}
               placeholder="Your full name"
               className="mt-3 max-w-xs"
@@ -285,9 +302,9 @@ export function SettingsPage() {
                 min={UI_FONT_SIZE_MIN}
                 max={UI_FONT_SIZE_MAX}
                 step={5}
-                value={fontSizeInput}
+                value={draft.fontSize}
                 onChange={(e) => {
-                  setFontSizeInput(e.target.value);
+                  updateDraft({ fontSize: e.target.value });
                   setFontSizeError(null);
                 }}
                 className="mt-3 max-w-xs"
@@ -302,8 +319,8 @@ export function SettingsPage() {
                 Widen content areas and add breathing room on larger displays.
               </p>
               <Select
-                value={densityInput}
-                onValueChange={(value) => setDensityInput(value as UiDensity)}
+                value={draft.density}
+                onValueChange={(value) => updateDraft({ density: value as UiDensity })}
               >
                 <SelectTrigger id="layout-density" className="mt-3 max-w-xs">
                   <SelectValue />
@@ -337,8 +354,8 @@ export function SettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={shuffleQuestionsInput}
-                onCheckedChange={setShuffleQuestionsInput}
+                checked={draft.shuffleQuestions}
+                onCheckedChange={(value) => updateDraft({ shuffleQuestions: value })}
                 aria-labelledby="shuffle-questions-label"
                 className="mt-0.5"
               />
@@ -354,8 +371,8 @@ export function SettingsPage() {
                 </p>
               </div>
               <Switch
-                checked={shuffleOptionsInput}
-                onCheckedChange={setShuffleOptionsInput}
+                checked={draft.shuffleOptions}
+                onCheckedChange={(value) => updateDraft({ shuffleOptions: value })}
                 aria-labelledby="shuffle-options-label"
                 className="mt-0.5"
               />
@@ -380,9 +397,9 @@ export function SettingsPage() {
                 type="number"
                 min={1}
                 step={1}
-                value={minMistakesInput}
+                value={draft.minMistakes}
                 onChange={(e) => {
-                  setMinMistakesInput(e.target.value);
+                  updateDraft({ minMistakes: e.target.value });
                   setMinMistakesError(null);
                 }}
                 className="mt-3 max-w-xs"
@@ -401,9 +418,9 @@ export function SettingsPage() {
                 type="number"
                 min={1}
                 step={1}
-                value={minFlagsInput}
+                value={draft.minFlags}
                 onChange={(e) => {
-                  setMinFlagsInput(e.target.value);
+                  updateDraft({ minFlags: e.target.value });
                   setMinFlagsError(null);
                 }}
                 className="mt-3 max-w-xs"
@@ -423,9 +440,9 @@ export function SettingsPage() {
                 min={0}
                 max={100}
                 step={1}
-                value={maxCorrectnessInput}
+                value={draft.maxCorrectness}
                 onChange={(e) => {
-                  setMaxCorrectnessInput(e.target.value);
+                  updateDraft({ maxCorrectness: e.target.value });
                   setMaxCorrectnessError(null);
                 }}
                 className="mt-3 max-w-xs"
@@ -463,7 +480,7 @@ export function SettingsPage() {
                 {displayDir ? "Change" : "Select folder"}
               </Button>
             </div>
-            {library.directoryPath && !library.directoryAvailable && !pendingDir && (
+            {library.directoryPath && !library.directoryAvailable && draft.pendingDir === null && (
               <p className="mt-2 text-sm text-red-600">
                 This directory is currently unavailable.
               </p>

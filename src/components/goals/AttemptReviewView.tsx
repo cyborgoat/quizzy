@@ -1,6 +1,6 @@
 import { QuizReviewView } from "@/components/goals/QuizReviewView";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import { useAttemptReviewItems } from "@/lib/attemptReview";
+import { useAttemptReviewItems } from "@/hooks/useAttemptReviewItems";
 import { reviewScoreFromAttempt } from "@/lib/quizReviewSummary";
 import type { Goal, GoalAttempt } from "@/types/goal";
 

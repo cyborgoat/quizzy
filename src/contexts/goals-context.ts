@@ -15,6 +15,7 @@ export type RecordedAttempt = {
 export type GoalsContextValue = {
   goals: Goal[];
   isLoading: boolean;
+  goalsVersion: number;
   addGoal: (goal: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) => Promise<boolean>;
   updateGoal: (id: string, data: GoalDetailsInput) => Promise<boolean>;
   recordAttempt: (quizId: string, attempt: AttemptInput) => Promise<RecordedAttempt | null>;

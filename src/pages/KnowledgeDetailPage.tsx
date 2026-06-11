@@ -1,8 +1,6 @@
-import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
 import { KnowledgeDetailViewer } from "@/components/knowledge/KnowledgeDetailViewer";
 import { PageShell } from "@/components/layout/PageShell";
@@ -11,16 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
-import {
-  clearKnowledgeDraft,
-  formatTagsInput,
-  isUnsavedKnowledgeDraft,
-  parseTagsInput,
-  resolveKnowledgeNoteSource,
-  stashKnowledgeDraft,
-  validateKnowledgeNote,
-} from "@/lib/knowledgeDraft";
-import { errorMessage } from "@/lib/native";
+import { useKnowledgeNoteEditor } from "@/hooks/useKnowledgeNoteEditor";
+import { resolveKnowledgeNoteSource } from "@/lib/knowledgeDraft";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -35,42 +25,72 @@ export function KnowledgeDetailPage() {
   const location = useLocation();
   const draftFromState = (location.state as KnowledgeDetailLocationState | undefined)
     ?.knowledgeDraft;
-  const { items, createItem, saveItem, deleteItem } = useKnowledgeLibrary();
+  const library = useKnowledgeLibrary();
+  const { items } = library;
   const fallback =
     draftFromState?.id === knowledgeId ? draftFromState : undefined;
   const source = resolveKnowledgeNoteSource(knowledgeId, items, fallback);
 
   const startsInEditMode = editParam === "1" || editParam === "true";
-  const [mode, setMode] = useState<"view" | "edit">(startsInEditMode ? "edit" : "view");
-  const [draft, setDraft] = useState<KnowledgeItem | null>(source ?? null);
-  const [tagsInput, setTagsInput] = useState(() => formatTagsInput(source?.tags ?? []));
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const previousKnowledgeIdRef = useRef<string | null>(null);
 
+  const editor = useKnowledgeNoteEditor({
+    ...library,
+    source: source ?? {
+      id: knowledgeId,
+      fileName: "",
+      title: "",
+      tags: [],
+      content: "",
+      linkedQuizQuestions: [],
+      createdAt: "",
+      updatedAt: "",
+    },
+    initialMode: startsInEditMode ? "edit" : "view",
+    onCreated: (created) => {
+      void navigate({
+        to: "/knowledge/$knowledgeId",
+        params: { knowledgeId: created.id },
+        search: {},
+        replace: true,
+      });
+    },
+    onUpdated: () => {
+      void navigate({
+        to: "/knowledge/$knowledgeId",
+        params: { knowledgeId },
+        search: {},
+        replace: true,
+      });
+    },
+    onDeleted: () => {
+      navigate({ to: "/knowledge" });
+    },
+    onDiscardNewDraft: () => {
+      navigate({ to: "/knowledge" });
+    },
+  });
+
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- keep page form aligned with library and navigation */
+    if (!source) {
+      return;
+    }
+
     const knowledgeIdChanged = previousKnowledgeIdRef.current !== knowledgeId;
     previousKnowledgeIdRef.current = knowledgeId;
 
-    const nextSource = resolveKnowledgeNoteSource(knowledgeId, items, fallback);
-    if (!nextSource) {
-      setDraft(null);
-      return;
-    }
-
     if (knowledgeIdChanged) {
-      setDraft(nextSource);
-      setTagsInput(formatTagsInput(nextSource.tags));
-      setMode(startsInEditMode ? "edit" : "view");
+      editor.resetFromSource(source, startsInEditMode ? "edit" : "view");
       return;
     }
 
-    setDraft((current) => (current?.id === knowledgeId ? current : nextSource));
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [knowledgeId, items, fallback, startsInEditMode]);
+    if (editor.draft.id !== knowledgeId) {
+      editor.resetFromSource(source);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when route/library source changes
+  }, [knowledgeId, source, startsInEditMode]);
 
-  if (!draft) {
+  if (!source) {
     return (
       <PageShell className="overflow-x-clip">
         <Alert>
@@ -92,119 +112,18 @@ export function KnowledgeDetailPage() {
     );
   }
 
-  const item = draft;
-  const isNewDraft = isUnsavedKnowledgeDraft(item);
-
-  function updateDraft(patch: Partial<KnowledgeItem> & { tagsInput?: string }) {
-    const { tagsInput: nextTagsInput, ...itemPatch } = patch;
-    if (nextTagsInput !== undefined) {
-      setTagsInput(nextTagsInput);
-    }
-    setDraft((current) => {
-      if (!current) return current;
-      const next = { ...current, ...itemPatch };
-      if (isUnsavedKnowledgeDraft(next)) {
-        stashKnowledgeDraft(next);
-      }
-      return next;
-    });
-  }
-
-  function discardDraft() {
-    clearKnowledgeDraft(knowledgeId);
-    navigate({ to: "/knowledge" });
-  }
+  const { mode, setMode, draft, tagsInput, isSaving, isDeleting, isNewDraft, updateDraft, cancelEdit, save, deleteNote } =
+    editor;
 
   function handleCancel() {
-    if (isNewDraft) {
-      discardDraft();
-      return;
-    }
-    const persisted = items.find((entry) => entry.id === knowledgeId);
-    if (persisted) {
-      setDraft(persisted);
-      setTagsInput(formatTagsInput(persisted.tags));
-    }
-    setMode("view");
-    void navigate({
-      to: "/knowledge/$knowledgeId",
-      params: { knowledgeId },
-      search: {},
-      replace: true,
-    });
-  }
-
-  async function handleSave() {
-    const validationError = validateKnowledgeNote(item);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const payload = {
-        title: item.title.trim(),
-        content: item.content.trim(),
-        tags: parseTagsInput(tagsInput),
-        linkedQuizQuestions: item.linkedQuizQuestions,
-      };
-
-      if (isNewDraft) {
-        const created = await createItem(payload);
-        clearKnowledgeDraft(knowledgeId);
-        setDraft(created);
-        setTagsInput(formatTagsInput(created.tags));
-        toast.success("Knowledge note saved.");
-        setMode("view");
-        void navigate({
-          to: "/knowledge/$knowledgeId",
-          params: { knowledgeId: created.id },
-          search: {},
-          replace: true,
-        });
-        return;
-      }
-
-      const updated = { ...item, ...payload };
-      await saveItem(updated);
-      setDraft(updated);
-      setTagsInput(formatTagsInput(updated.tags));
-      toast.success("Knowledge note saved.");
-      setMode("view");
+    cancelEdit();
+    if (!isNewDraft) {
       void navigate({
         to: "/knowledge/$knowledgeId",
         params: { knowledgeId },
         search: {},
         replace: true,
       });
-    } catch (error) {
-      toast.error(errorMessage(error));
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (isNewDraft) {
-      discardDraft();
-      return;
-    }
-
-    const approved = await confirm(
-      `Delete "${item.title}"? This cannot be undone.`,
-      { title: "Delete note?", kind: "warning" },
-    );
-    if (!approved) return;
-    setIsDeleting(true);
-    try {
-      await deleteItem(item.fileName);
-      toast.success("Knowledge note deleted.");
-      navigate({ to: "/knowledge" });
-    } catch (error) {
-      toast.error(errorMessage(error));
-    } finally {
-      setIsDeleting(false);
     }
   }
 
@@ -254,11 +173,11 @@ export function KnowledgeDetailPage() {
               <IconActionButton
                 icon={Trash2}
                 label="Delete"
-                onClick={() => void handleDelete()}
+                onClick={() => void deleteNote()}
                 disabled={isDeleting || isSaving}
               />
             )}
-            <Button size="sm" onClick={() => void handleSave()} disabled={isSaving || isDeleting}>
+            <Button size="sm" onClick={() => void save()} disabled={isSaving || isDeleting}>
               {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
@@ -266,10 +185,10 @@ export function KnowledgeDetailPage() {
       </div>
 
       {mode === "view" && !isNewDraft ? (
-        <KnowledgeDetailViewer item={item} onEdit={() => setMode("edit")} />
+        <KnowledgeDetailViewer item={draft} onEdit={() => setMode("edit")} />
       ) : (
         <KnowledgeDetailEditor
-          item={item}
+          item={draft}
           tagsInput={tagsInput}
           disabled={isSaving || isDeleting}
           fillHeight={mode === "edit"}

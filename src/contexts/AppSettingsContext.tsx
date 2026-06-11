@@ -1,25 +1,34 @@
 import { ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
+import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
+import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { errorMessage, nativeApi } from "@/lib/native";
 import {
   applyUiPreferences,
   clampFontSize,
-  parseUiDensity,
-  parseUiFontSize,
   formatZoomLimitMessage,
   formatZoomSizeMessage,
+  parseUiDensity,
+  parseUiFontSize,
   stepFontSize,
   UI_FONT_SIZE_DEFAULT,
   type UiDensity,
 } from "@/lib/uiPreferences";
 
-export function UiPreferencesProvider({ children }: { children: ReactNode }) {
+export function AppSettingsProvider({ children }: { children: ReactNode }) {
+  const [userName, setUserNameState] = useState("");
+  const [shuffleQuestions, setShuffleQuestionsState] = useState(false);
+  const [shuffleOptions, setShuffleOptionsState] = useState(false);
   const [fontSize, setFontSizeState] = useState(UI_FONT_SIZE_DEFAULT);
   const [density, setDensityState] = useState<UiDensity>("default");
+  const [minMistakes, setMinMistakesState] = useState(1);
+  const [minFlags, setMinFlagsState] = useState(1);
+  const [maxCorrectnessPercentage, setMaxCorrectnessPercentageState] = useState(100);
   const fontSizeRef = useRef(fontSize);
 
   useEffect(() => {
@@ -30,8 +39,14 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
     void loadAppSettings().then((settings) => {
       const nextFontSize = parseUiFontSize(settings.uiFontSize);
       const nextDensity = parseUiDensity(settings.uiDensity);
+      setUserNameState(settings.profileName);
+      setShuffleQuestionsState(settings.shuffleQuestions);
+      setShuffleOptionsState(settings.shuffleOptions);
       setFontSizeState(nextFontSize);
       setDensityState(nextDensity);
+      setMinMistakesState(settings.mistakeLogMinMistakes);
+      setMinFlagsState(settings.mistakeLogMinFlags);
+      setMaxCorrectnessPercentageState(settings.mistakeLogMaxCorrectnessPercentage);
       applyUiPreferences(nextFontSize, nextDensity);
     });
   }, []);
@@ -100,17 +115,43 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [notifyZoomAdjust]);
 
-  function setFontSize(value: number) {
-    setFontSizeState(clampFontSize(value));
-  }
-
-  function setDensity(value: UiDensity) {
-    setDensityState(value);
-  }
-
   return (
-    <UiPreferencesContext.Provider value={{ fontSize, density, setFontSize, setDensity }}>
-      {children}
-    </UiPreferencesContext.Provider>
+    <UserProfileContext.Provider
+      value={{
+        userName,
+        setUserName: setUserNameState,
+      }}
+    >
+      <UiPreferencesContext.Provider
+        value={{
+          fontSize,
+          density,
+          setFontSize: (value: number) => setFontSizeState(clampFontSize(value)),
+          setDensity: setDensityState,
+        }}
+      >
+        <QuizPreferencesContext.Provider
+          value={{
+            shuffleQuestions,
+            shuffleOptions,
+            setShuffleQuestions: setShuffleQuestionsState,
+            setShuffleOptions: setShuffleOptionsState,
+          }}
+        >
+          <MistakeLogSettingsContext.Provider
+            value={{
+              minMistakes,
+              minFlags,
+              maxCorrectnessPercentage,
+              setMinMistakes: setMinMistakesState,
+              setMinFlags: setMinFlagsState,
+              setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+            }}
+          >
+            {children}
+          </MistakeLogSettingsContext.Provider>
+        </QuizPreferencesContext.Provider>
+      </UiPreferencesContext.Provider>
+    </UserProfileContext.Provider>
   );
 }

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
-import { getLinkWarnings, linkWarningKey } from "@/lib/knowledgeValidation";
+import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
 
 export function LinkedQuestionPicker({
@@ -24,7 +24,9 @@ export function LinkedQuestionPicker({
     () => getLinkWarnings({ linkedQuizQuestions: value }, quizzes),
     [value, quizzes],
   );
-  const warningKeys = new Set(warnings.map(linkWarningKey));
+  const warningKeys = new Set(
+    warnings.map((warning) => questionLinkKey(warning.quizId, warning.questionId)),
+  );
 
   const selectedKeys = new Set(value.map((link) => questionLinkKey(link.quizId, link.questionId)));
 

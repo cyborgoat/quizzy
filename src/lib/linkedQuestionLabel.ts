@@ -1,3 +1,4 @@
+import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
 import type { QuizQuestion, QuizSource } from "@/types/quiz";
 
@@ -13,11 +14,9 @@ function questionNumberLabel(
   link: LinkedQuizQuestion,
   quizzes: QuizSource[],
 ): string {
-  const quiz = quizzes.find((source) => source.quiz.id === link.quizId);
-  const number = quiz
-    ? getQuestionNumber(quiz.quiz.questions, link.questionId)
-    : null;
-  return number ? `Q${number}` : link.questionId;
+  const resolved = resolveLinkedQuestion(link, quizzes);
+  if (resolved?.questionNumber) return `Q${resolved.questionNumber}`;
+  return link.questionId;
 }
 
 export type QuizQuestionLabelOptions = {
@@ -35,7 +34,7 @@ export function formatQuizQuestionLabel(
   if (options.quizScoped) return questionLabel;
 
   const quizTitle =
-    quizzes.find((source) => source.quiz.id === link.quizId)?.quiz.title ??
+    resolveLinkedQuestion(link, quizzes)?.quiz.title ??
     options.quizTitleFallback ??
     link.quizId;
   return `${quizTitle} · ${questionLabel}`;

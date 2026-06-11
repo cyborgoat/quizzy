@@ -11,12 +11,17 @@ import {
 import type { MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
 
 export function useMistakeLog() {
-  const { goals, isLoading: goalsLoading, loadGoalAttempt } = useGoals();
+  const { goals, isLoading: goalsLoading, goalsVersion, loadGoalAttempt } = useGoals();
   const { minMistakes, minFlags, maxCorrectnessPercentage } = useMistakeLogSettings();
   const [attemptData, setAttemptData] = useState<AttemptQuestionData[]>([]);
   const [isLoadingAttempts, setIsLoadingAttempts] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedAttemptsRef = useRef(false);
+  const goalsRef = useRef(goals);
+
+  useEffect(() => {
+    goalsRef.current = goals;
+  }, [goals]);
 
   const loadAttempts = useCallback(async (background = false) => {
     if (!background) {
@@ -28,7 +33,7 @@ export function useMistakeLog() {
       const seen = new Set<string>();
       const loaded: AttemptQuestionData[] = [];
 
-      for (const goal of goals) {
+      for (const goal of goalsRef.current) {
         for (const summary of goal.attempts) {
           const dedupeKey = `${goal.quizId}:${summary.id}`;
           if (seen.has(dedupeKey)) continue;
@@ -54,12 +59,12 @@ export function useMistakeLog() {
         setIsLoadingAttempts(false);
       }
     }
-  }, [goals, loadGoalAttempt]);
+  }, [loadGoalAttempt]);
 
   useEffect(() => {
     if (goalsLoading) return;
     void loadAttempts(hasLoadedAttemptsRef.current);
-  }, [goalsLoading, loadAttempts]);
+  }, [goalsLoading, goalsVersion, loadAttempts]);
 
   const thresholds = useMemo(
     () => ({ minMistakes, minFlags, maxCorrectnessPercentage }),

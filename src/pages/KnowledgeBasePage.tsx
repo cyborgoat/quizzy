@@ -52,7 +52,7 @@ export function KnowledgeBasePage() {
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(tagFilter ?? "all");
+  const selectedTag = tagFilter ?? "all";
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updatedAt", desc: true },
   ]);
@@ -241,7 +241,16 @@ export function KnowledgeBasePage() {
             </div>
             <div className="min-w-0 sm:w-48">
               <Label htmlFor="knowledge-tag-filter">Tag</Label>
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <Select
+                value={selectedTag}
+                onValueChange={(value) => {
+                  void navigate({
+                    to: "/knowledge",
+                    search: value === "all" ? {} : { tag: value },
+                    replace: true,
+                  });
+                }}
+              >
                 <SelectTrigger id="knowledge-tag-filter" className="mt-1.5">
                   <SelectValue />
                 </SelectTrigger>
@@ -272,7 +281,7 @@ export function KnowledgeBasePage() {
               actionVariant="outline"
               onAction={() => {
                 setSearchQuery("");
-                setSelectedTag("all");
+                void navigate({ to: "/knowledge", search: {}, replace: true });
               }}
             />
           ) : (

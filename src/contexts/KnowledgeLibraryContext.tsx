@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -7,31 +7,27 @@ import {
 import type { CreateKnowledgeDraft } from "@/contexts/knowledge-library-context";
 import { parseKnowledgeFiles } from "@/data/knowledgeRepository";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
+import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { validateKnowledgeNote } from "@/lib/knowledgeDraft";
+import { buildKnowledgeIndex, getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidKnowledgeReport, KnowledgeItem } from "@/types/knowledge";
 
 export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) {
-  const [directoryPath, setDirectoryPath] = useState<string | null>(null);
-  const [knowledgeDirectoryPath, setKnowledgeDirectoryPath] = useState<string | null>(null);
-  const [directoryAvailable, setDirectoryAvailable] = useState(false);
+  const { directoryPath, directoryAvailable } = useWorkingDirectory();
+  const knowledgeDirectoryPath = directoryPath
+    ? `${directoryPath}/${KNOWLEDGE_BASE_FOLDER}`
+    : null;
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidKnowledgeReport[]>([]);
 
+  const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
+
   const load = useCallback(async () => {
     try {
-      const settings = await nativeApi.getSettings();
-      setDirectoryPath(settings.workingDirectory);
-      setKnowledgeDirectoryPath(
-        settings.workingDirectory
-          ? `${settings.workingDirectory}/${KNOWLEDGE_BASE_FOLDER}`
-          : null,
-      );
-      setDirectoryAvailable(settings.workingDirectoryAvailable);
-      if (!settings.workingDirectoryAvailable) {
-        setKnowledgeDirectoryPath(null);
+      if (!directoryAvailable || !directoryPath) {
         setItems([]);
         setInvalidReports([]);
         return;
@@ -44,12 +40,23 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
         console.warn("Quizzy skipped invalid knowledge files:", library.invalidReports);
       }
     } catch (error) {
-      setDirectoryAvailable(false);
+      setItems([]);
+      setInvalidReports([]);
       toast.error(errorMessage(error));
     }
-  }, []);
+  }, [directoryAvailable, directoryPath]);
 
   const { refresh, isLoading } = useBackgroundDataLoader(load);
+
+  useEffect(() => {
+    void refresh({ background: true });
+  }, [directoryAvailable, directoryPath, refresh]);
+
+  const getNotesForQuestion = useCallback(
+    (quizId: string, questionId: string) =>
+      getKnowledgeForQuestion(knowledgeIndex, quizId, questionId),
+    [knowledgeIndex],
+  );
 
   async function createItem(draft: CreateKnowledgeDraft) {
     const title = draft.title.trim();
@@ -122,6 +129,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     saveItem,
     deleteItem,
     openKnowledgeFolder,
+    getNotesForQuestion,
   };
 
   return (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildMistakeAnswerRecord, mistakeEntryKey } from "@/lib/mistakeLogReview";
+import { questionLinkKey } from "@/lib/knowledgeLinks";
+import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizQuestion } from "@/types/quiz";
 
@@ -29,7 +30,7 @@ const question: QuizQuestion = {
 
 describe("mistakeLogReview", () => {
   it("builds a stable entry key", () => {
-    expect(mistakeEntryKey(baseEntry)).toBe("quiz-1:q1");
+    expect(questionLinkKey(baseEntry.quizId, baseEntry.questionId)).toBe("quiz-1:q1");
   });
 
   it("remaps the latest incorrect answer to the current quiz file", () => {

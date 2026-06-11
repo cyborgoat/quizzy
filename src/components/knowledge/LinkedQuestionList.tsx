@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
-import { getLinkWarnings, linkWarningKey } from "@/lib/knowledgeValidation";
+import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import { cn } from "@/lib/utils";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
 
@@ -18,7 +18,9 @@ export function LinkedQuestionList({
   const { quizzes } = useQuizLibrary();
   const [previewLink, setPreviewLink] = useState<LinkedQuizQuestion | null>(null);
   const warnings = getLinkWarnings({ linkedQuizQuestions: links }, quizzes);
-  const warningKeys = new Set(warnings.map(linkWarningKey));
+  const warningKeys = new Set(
+    warnings.map((warning) => questionLinkKey(warning.quizId, warning.questionId)),
+  );
 
   if (links.length === 0) {
     return <p className="text-sm text-zinc-500">No linked questions.</p>;

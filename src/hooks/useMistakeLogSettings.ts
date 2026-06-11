@@ -3,5 +3,5 @@ import { createContextHook } from "@/hooks/createContextHook";
 
 export const useMistakeLogSettings = createContextHook(
   MistakeLogSettingsContext,
-  "MistakeLogSettingsProvider",
+  "AppSettingsProvider",
 );

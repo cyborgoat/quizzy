@@ -58,8 +58,12 @@ export function buildKnowledgeDraft(options?: {
   };
 }
 
+export function normalizeTags(tags: string[]) {
+  return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
+}
+
 export function parseTagsInput(input: string) {
-  return [...new Set(input.split(",").map((tag) => tag.trim()).filter(Boolean))];
+  return normalizeTags(input.split(","));
 }
 
 export function formatTagsInput(tags: string[]) {

@@ -29,7 +29,6 @@ import {
   type MDXEditorMethods,
 } from "@mdxeditor/editor";
 import { CODE_BLOCK_LANGUAGES } from "@/lib/codeBlockLanguages";
-import { shouldSyncKnowledgeEditorMarkdown } from "@/lib/knowledgeMarkdownEditorSync";
 import { cn } from "@/lib/utils";
 
 function handleEditorTableWheel(wrapper: HTMLElement, event: WheelEvent) {
@@ -143,7 +142,7 @@ export function KnowledgeMarkdownEditor({
   const lastEmittedRef = useRef(value);
 
   useEffect(() => {
-    if (!shouldSyncKnowledgeEditorMarkdown(value, lastEmittedRef.current)) {
+    if (value === lastEmittedRef.current) {
       return;
     }
     editorRef.current?.setMarkdown(value);

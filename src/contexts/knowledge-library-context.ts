@@ -26,6 +26,7 @@ export type KnowledgeLibraryContextValue = {
   saveItem: (item: KnowledgeItem) => Promise<void>;
   deleteItem: (fileName: string) => Promise<void>;
   openKnowledgeFolder: () => Promise<void>;
+  getNotesForQuestion: (quizId: string, questionId: string) => KnowledgeItem[];
 };
 
 export const KnowledgeLibraryContext = createContext<KnowledgeLibraryContextValue | null>(null);

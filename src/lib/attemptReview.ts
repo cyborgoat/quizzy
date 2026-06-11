@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { GoalAttempt, QuestionResult } from "@/types/goal";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 import type { QuestionReviewItem } from "@/types/review";
@@ -28,14 +27,4 @@ function questionResultToAnswerRecord(result: QuestionResult): AnswerRecord {
     isCorrect: result.correct,
     flagged: result.flagged ?? false,
   };
-}
-
-export function useAttemptReviewItems(
-  attempt: GoalAttempt | undefined,
-  questions: QuizQuestion[] | undefined,
-) {
-  return useMemo(
-    () => (attempt && questions ? buildAttemptReviewItems(attempt, questions) : []),
-    [attempt, questions],
-  );
 }

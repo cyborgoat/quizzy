@@ -6,7 +6,8 @@ import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { LinkedQuestionList } from "@/components/knowledge/LinkedQuestionList";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { copyKnowledgeNoteMarkdown } from "@/lib/knowledgeClipboard";
+import { copyTextToClipboard } from "@/lib/clipboard";
+import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { formatShortDate } from "@/lib/formatDate";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
@@ -24,7 +25,7 @@ export function KnowledgeDetailViewer({
   async function handleCopyMarkdown() {
     setIsCopying(true);
     try {
-      await copyKnowledgeNoteMarkdown(item);
+      await copyTextToClipboard(serializeKnowledgeFile(item, item.content));
       toast.success("Markdown copied to clipboard.");
     } catch (error) {
       toast.error(errorMessage(error));
