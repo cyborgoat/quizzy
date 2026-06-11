@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github.min.css";
 
 @utility grid-center {
   display: grid;
@@ -347,15 +348,12 @@ button {
   text-underline-offset: 2px;
 }
 
-.knowledge-prose code {
+.knowledge-prose :not(pre) > code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.9em;
   color: rgb(39 39 42);
   overflow-wrap: anywhere;
-}
-
-.knowledge-prose :not(pre) > code {
   border-radius: 0.25rem;
   background: rgb(244 244 245);
   padding: 0.125rem 0.25rem;
@@ -365,23 +363,38 @@ button {
   margin-top: 0.75rem;
   max-width: 100%;
   overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.875rem;
   line-height: 1.625;
-  color: rgb(39 39 42);
 }
 
-.knowledge-prose pre code {
+.knowledge-prose pre code:not(.hljs) {
   display: block;
   max-width: 100%;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
+  color: rgb(39 39 42);
   background: transparent;
   padding: 0;
+}
+
+.knowledge-prose pre code.hljs {
+  display: block;
+  padding: 0;
+  overflow-x: auto;
+  white-space: pre;
+  background: transparent;
+}
+
+/* Fenced code blocks in quiz markdown (default variant). */
+.markdown-code-block code.hljs,
+.markdown-fenced-code code.hljs {
+  padding: 0;
+  overflow-x: auto;
+  white-space: pre;
+  background: transparent;
 }
 
 .knowledge-prose ul {
@@ -487,4 +500,48 @@ span.katex {
   display: inline-block;
   overflow: visible;
   vertical-align: baseline;
+}
+
+/* Ensure token colors win over inherited prose/quiz text colors. */
+.markdown-code-block .hljs,
+.markdown-fenced-code .hljs,
+.knowledge-prose pre .hljs {
+  color: #24292e;
+  background: transparent;
+}
+
+.markdown-code-block .hljs .hljs-keyword,
+.markdown-fenced-code .hljs .hljs-keyword,
+.knowledge-prose pre .hljs .hljs-keyword {
+  color: #d73a49;
+}
+
+.markdown-code-block .hljs .hljs-title.function_,
+.markdown-fenced-code .hljs .hljs-title.function_,
+.knowledge-prose pre .hljs .hljs-title.function_ {
+  color: #6f42c1;
+}
+
+.markdown-code-block .hljs .hljs-string,
+.markdown-fenced-code .hljs .hljs-string,
+.knowledge-prose pre .hljs .hljs-string,
+.markdown-code-block .hljs .hljs-attr,
+.markdown-fenced-code .hljs .hljs-attr,
+.knowledge-prose pre .hljs .hljs-attr,
+.markdown-code-block .hljs .hljs-number,
+.markdown-fenced-code .hljs .hljs-number,
+.knowledge-prose pre .hljs .hljs-number {
+  color: #032f62;
+}
+
+.markdown-code-block .hljs .hljs-built_in,
+.markdown-fenced-code .hljs .hljs-built_in,
+.knowledge-prose pre .hljs .hljs-built_in {
+  color: #e36209;
+}
+
+.markdown-code-block .hljs .hljs-comment,
+.markdown-fenced-code .hljs .hljs-comment,
+.knowledge-prose pre .hljs .hljs-comment {
+  color: #6a737d;
 }

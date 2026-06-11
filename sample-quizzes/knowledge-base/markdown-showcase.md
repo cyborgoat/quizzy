@@ -63,9 +63,39 @@ Indexed variables (common time-series / statistics notation):
 - Letter subscript: $S_t$, $X_t$, $Y_t$
 - Mixed: $T_1 + T_2 = S_t$ and $\bar{X}_n = \frac{1}{n}\sum_{i=1}^{n} X_i$
 
-- Bullet lists
-- Still render correctly
+## Code blocks
+
+Syntax-highlighted fenced blocks:
 
 ```js
 const total = rows.reduce((sum, row) => sum + row.value, 0);
 ```
+
+```ts
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+```
+
+```json
+{ "id": "markdown-showcase", "tags": ["markdown", "demo"] }
+```
+
+```python
+values = [1, 2, 3]
+print(sum(values))
+```
+
+```css
+.note {
+  color: #18181b;
+  background: #fafafa;
+}
+```
+
+```bash
+echo "Quizzy markdown showcase"
+```
+
+- Bullet lists
+- Still render correctly

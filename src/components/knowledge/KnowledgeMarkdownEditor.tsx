@@ -28,19 +28,9 @@ import {
   tablePlugin,
   type MDXEditorMethods,
 } from "@mdxeditor/editor";
+import { CODE_BLOCK_LANGUAGES } from "@/lib/codeBlockLanguages";
 import { shouldSyncKnowledgeEditorMarkdown } from "@/lib/knowledgeMarkdownEditorSync";
 import { cn } from "@/lib/utils";
-
-const CODE_BLOCK_LANGUAGES = {
-  txt: "Plain text",
-  js: "JavaScript",
-  ts: "TypeScript",
-  tsx: "TypeScript (React)",
-  css: "CSS",
-  json: "JSON",
-  bash: "Bash",
-  python: "Python",
-} as const;
 
 function handleEditorTableWheel(wrapper: HTMLElement, event: WheelEvent) {
   const target = event.target;

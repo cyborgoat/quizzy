@@ -1,10 +1,35 @@
+import { Children, isValidElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type { Components } from "react-markdown";
+import { MarkdownFencedCodeBlock } from "@/components/quiz/MarkdownFencedCodeBlock";
+import { cn } from "@/lib/utils";
 
 const codeFontClass = "font-mono";
+
+function fencedLanguage(className?: string) {
+  const match = /language-([\w-]+)/.exec(className ?? "");
+  return match?.[1];
+}
+
+function getFencedCodeFromPreChild(children: ReactNode) {
+  const child = Children.only(children);
+  if (!isValidElement<{ className?: string; children?: ReactNode }>(child)) {
+    return null;
+  }
+
+  const language = fencedLanguage(child.props.className);
+  if (!language) {
+    return null;
+  }
+
+  return {
+    language,
+    source: String(child.props.children ?? "").replace(/\n$/, ""),
+  };
+}
 
 function createBlockComponents(variant: "default" | "prose"): Components {
   const prose = variant === "prose";
@@ -50,14 +75,8 @@ function createBlockComponents(variant: "default" | "prose"): Components {
     strong: ({ children }) => <strong className="font-semibold text-zinc-950">{children}</strong>,
     em: ({ children }) => <em className="italic">{children}</em>,
     code: ({ className, children }) => {
-      if (className) {
-        return (
-          <code
-            className={`${codeFontClass} text-sm ${prose ? "block w-full max-w-full wrap-break-word whitespace-pre-wrap text-zinc-800" : "block max-w-full overflow-x-auto"} ${className}`}
-          >
-            {children}
-          </code>
-        );
+      if (fencedLanguage(className)) {
+        return <code className={className}>{children}</code>;
       }
       return (
         <code
@@ -71,17 +90,29 @@ function createBlockComponents(variant: "default" | "prose"): Components {
         </code>
       );
     },
-    pre: ({ children }) => (
-      <pre
-        className={`mt-3 w-full max-w-full text-sm leading-relaxed ${
-          prose
-            ? `wrap-break-word whitespace-pre-wrap ${codeFontClass} text-zinc-800`
-            : "mt-2 overflow-x-auto rounded-lg bg-zinc-100 p-3"
-        }`}
-      >
-        {children}
-      </pre>
-    ),
+    pre: ({ children }) => {
+      const fenced = getFencedCodeFromPreChild(children);
+      if (fenced) {
+        return (
+          <MarkdownFencedCodeBlock
+            language={fenced.language}
+            source={fenced.source}
+            className={prose ? "mt-3" : "mt-2"}
+          />
+        );
+      }
+
+      return (
+        <pre
+          className={cn(
+            "markdown-code-block w-full max-w-full overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm leading-relaxed",
+            prose ? "mt-3" : "mt-2",
+          )}
+        >
+          {children}
+        </pre>
+      );
+    },
     ul: ({ children }) => (
       <ul
         className={`${prose ? "mt-3 list-disc space-y-1.5 pl-5 text-base leading-7 text-zinc-700 wrap-break-word" : "mt-2 list-inside list-disc space-y-1"}`}

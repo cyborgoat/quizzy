@@ -1,7 +1,7 @@
 {
   "id": "markdown-showcase",
   "title": "Markdown Showcase",
-  "description": "Demonstrates Markdown features: math formulas, bold/italic, inline code, code blocks, and lists.",
+  "description": "Demonstrates Markdown features: math formulas, subscripts, syntax-highlighted code blocks, bold/italic, inline code, and lists.",
   "tags": ["markdown", "demo"],
   "questions": [
     {
@@ -66,6 +66,30 @@
       "options": ["$0$", "$1$", "$\\infty$", "Undefined"],
       "answerIndex": 1,
       "explanation": "This is a **standard limit**: $\\lim_{x \\to 0} \\dfrac{\\sin x}{x} = 1$. It can be proven using the squeeze theorem."
+    },
+    {
+      "id": "md-q9",
+      "type": "single_choice",
+      "prompt": "What is the `id` field in this JSON snippet?\n\n```json\n{\n  \"id\": \"markdown-showcase\",\n  \"tags\": [\"markdown\", \"demo\"]\n}\n```",
+      "options": ["`markdown`", "`markdown-showcase`", "`demo`", "`tags`"],
+      "answerIndex": 1,
+      "explanation": "The top-level `\"id\"` key is set to **`\"markdown-showcase\"`**, matching the quiz and knowledge note identifiers."
+    },
+    {
+      "id": "md-q10",
+      "type": "single_choice",
+      "prompt": "In time-series notation, if $T_1 + T_2 = S_t$, which expression identifies the value at period $t$?",
+      "options": ["$T_1$", "$T_2$", "$S_t$", "$T_1 + T_2$"],
+      "answerIndex": 2,
+      "explanation": "The subscript $t$ on $S_t$ denotes the series value **at time $t$**. Here $T_1$ and $T_2$ are fixed-period terms that sum to that indexed value."
+    },
+    {
+      "id": "md-q11",
+      "type": "single_choice",
+      "prompt": "What does this Python snippet print?\n\n```python\nvalues = [1, 2, 3]\nprint(sum(values))\n```",
+      "options": ["`6`", "`123`", "`[1, 2, 3]`", "`None`"],
+      "answerIndex": 0,
+      "explanation": "`sum(values)` adds the list elements: $1 + 2 + 3 = 6$."
     }
   ]
 }
