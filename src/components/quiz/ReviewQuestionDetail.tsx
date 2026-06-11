@@ -19,7 +19,9 @@ export function ReviewQuestionDetail({
   index,
   record,
   className,
-  variant = "review",
+  concealAnswers = false,
+  showAnswers: controlledShowAnswers,
+  onShowAnswersChange,
   showExplanation = true,
   compact = false,
 }: {
@@ -27,15 +29,21 @@ export function ReviewQuestionDetail({
   index: number;
   record?: AnswerRecord;
   className?: string;
-  variant?: "review" | "preview";
+  concealAnswers?: boolean;
+  showAnswers?: boolean;
+  onShowAnswersChange?: (show: boolean) => void;
   showExplanation?: boolean;
   compact?: boolean;
 }) {
-  const isPreview = variant === "preview";
-  const [showAnswers, setShowAnswers] = useState(false);
+  const [internalShowAnswers, setInternalShowAnswers] = useState(false);
+  const showAnswers = concealAnswers
+    ? (controlledShowAnswers ?? internalShowAnswers)
+    : true;
+  const setShowAnswers = concealAnswers
+    ? (onShowAnswersChange ?? setInternalShowAnswers)
+    : undefined;
+  const revealed = !concealAnswers || showAnswers;
   const options = getQuestionOptions(question);
-
-  const revealAnswers = isPreview && showAnswers;
 
   return (
     <article
@@ -51,7 +59,7 @@ export function ReviewQuestionDetail({
           {index + 1}
         </span>
         <div className={cn("min-w-0 flex-1", compact ? "space-y-2" : "space-y-3")}>
-          {isPreview ? (
+          {concealAnswers ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 {questionTypeHint(question.type)}
@@ -92,6 +100,25 @@ export function ReviewQuestionDetail({
             )
           )}
 
+          {concealAnswers && revealed && record && (
+            <div className="flex flex-wrap items-center gap-2">
+              {record.isCorrect ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                  <CheckCircle className="size-3.5" aria-hidden />
+                  Correct
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+                  <XCircle className="size-3.5" aria-hidden />
+                  Incorrect
+                </span>
+              )}
+              {record.flagged && (
+                <Badge className="border-amber-200 bg-amber-50 text-amber-800">Flagged</Badge>
+              )}
+            </div>
+          )}
+
           <div
             className={cn(
               "font-semibold leading-snug text-zinc-950",
@@ -108,19 +135,19 @@ export function ReviewQuestionDetail({
                 index={optionIndex}
                 text={option}
                 selected={
-                  isPreview || !record
-                    ? false
-                    : isOptionSelected(question, record.answer, optionIndex)
+                  revealed && record
+                    ? isOptionSelected(question, record.answer, optionIndex)
+                    : false
                 }
                 multiple={question.type === "multiple_choice"}
                 locked
                 isCorrectAnswer={
-                  revealAnswers || (!isPreview && record)
+                  revealed
                     ? isOptionCorrect(question, optionIndex)
                     : false
                 }
                 isIncorrectSelection={
-                  !isPreview && record
+                  revealed && record
                     ? isOptionIncorrectSelection(question, record.answer, optionIndex)
                     : false
                 }
@@ -129,7 +156,7 @@ export function ReviewQuestionDetail({
             ))}
           </div>
 
-          {showExplanation && question.explanation && (!isPreview || showAnswers) && (
+          {showExplanation && question.explanation && revealed && (
             <QuestionExplanation explanation={question.explanation} compact={compact} />
           )}
         </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QuestionKnowledgeNotesPanel } from "@/components/knowledge/QuestionKnowledgeNotesPanel";
 import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
@@ -9,14 +10,21 @@ export function ReviewQuestionSplitPanel({
   index,
   record,
   quizId,
+  currentNoteId,
   className,
+  concealAnswers = false,
 }: {
   question: QuizQuestion;
   index: number;
-  record: AnswerRecord;
+  record?: AnswerRecord;
   quizId?: string;
+  currentNoteId?: string;
   className?: string;
+  concealAnswers?: boolean;
 }) {
+  const [showAnswers, setShowAnswers] = useState(false);
+  const revealed = !concealAnswers || showAnswers;
+
   return (
     <div
       className={cn(
@@ -28,20 +36,23 @@ export function ReviewQuestionSplitPanel({
         question={question}
         index={index}
         record={record}
+        concealAnswers={concealAnswers}
+        showAnswers={concealAnswers ? showAnswers : undefined}
+        onShowAnswersChange={concealAnswers ? setShowAnswers : undefined}
         showExplanation={false}
         compact
         className="h-full"
       />
 
       <aside className="flex min-w-0 flex-col gap-3">
-        {question.explanation && (
+        {question.explanation && revealed && (
           <QuestionExplanation explanation={question.explanation} compact />
         )}
         {quizId && (
           <QuestionKnowledgeNotesPanel
             quizId={quizId}
             questionId={question.id}
-            compact
+            currentNoteId={currentNoteId}
           />
         )}
       </aside>

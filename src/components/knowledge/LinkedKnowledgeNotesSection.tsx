@@ -6,61 +6,52 @@ export function LinkedKnowledgeNotesSection({
   notes,
   onSelectNote,
   currentNoteId,
-  title,
   headerActions,
-  emptyDescription = "No knowledge notes linked to this question yet.",
-  emptyActions,
-  compact = false,
+  emptyDescription = "No linked references.",
 }: {
   notes: KnowledgeItem[];
   onSelectNote: (item: KnowledgeItem) => void;
   currentNoteId?: string;
-  title?: string;
   headerActions?: ReactNode;
   emptyDescription?: string;
-  emptyActions?: ReactNode;
-  compact?: boolean;
 }) {
-  const heading = title ?? `Knowledge notes (${notes.length})`;
-
   return (
-    <section className={compact ? "space-y-2" : "space-y-3"}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-zinc-950">{heading}</h2>
+    <section className="min-w-0">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          References{notes.length > 0 ? ` (${notes.length})` : ""}
+        </h2>
         {headerActions}
       </div>
 
       {notes.length === 0 ? (
-        <div
-          className={cn(
-            "rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-center",
-            compact ? "px-3 py-4" : "px-4 py-6",
-          )}
-        >
-          <p className="text-sm text-zinc-600">{emptyDescription}</p>
-          {emptyActions && <div className={cn("flex justify-center", compact ? "mt-2" : "mt-3")}>{emptyActions}</div>}
-        </div>
+        <p className="mt-1.5 text-xs leading-snug text-zinc-500">{emptyDescription}</p>
       ) : (
-        <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white">
-          {notes.map((item) => (
-            <li key={item.id}>
+        <ol className="mt-1.5 list-none space-y-1">
+          {notes.map((item, index) => (
+            <li key={item.id} className="flex gap-2 text-sm leading-snug">
+              <span
+                className="w-6 shrink-0 text-right font-mono text-[11px] tabular-nums text-zinc-400"
+                aria-hidden
+              >
+                [{index + 1}]
+              </span>
               <button
                 type="button"
                 onClick={() => onSelectNote(item)}
                 className={cn(
-                  "w-full text-left text-sm text-zinc-950 transition-colors hover:bg-zinc-50",
-                  compact ? "px-2.5 py-2" : "px-3 py-2.5",
-                  item.id === currentNoteId ? "font-semibold" : "font-medium",
+                  "min-w-0 text-left text-zinc-800 transition-colors hover:text-zinc-950 hover:underline",
+                  item.id === currentNoteId && "font-medium text-zinc-950",
                 )}
               >
                 {item.title}
                 {item.id === currentNoteId && (
-                  <span className="ml-2 text-xs font-normal text-zinc-500">(current note)</span>
+                  <span className="font-normal text-zinc-500"> — this note</span>
                 )}
               </button>
             </li>
           ))}
-        </ul>
+        </ol>
       )}
     </section>
   );

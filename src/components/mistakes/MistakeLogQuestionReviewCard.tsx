@@ -52,10 +52,12 @@ export function MistakeLogQuestionReviewCard({
 
         {question ? (
           <ReviewQuestionSplitPanel
+            key={`${entry.quizId}:${entry.questionId}`}
             question={question}
             index={questionIndex}
             record={record}
             quizId={entry.quizId}
+            concealAnswers
           />
         ) : (
           <article className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">

@@ -6,18 +6,15 @@ import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNot
 import { useKnowledgeForQuestion } from "@/hooks/useKnowledgeForQuestion";
 import { useKnowledgeNoteDialog } from "@/hooks/useKnowledgeNoteDialog";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
-import { cn } from "@/lib/utils";
 
 export function QuestionKnowledgeNotesPanel({
   quizId,
   questionId,
-  className,
-  compact = false,
+  currentNoteId,
 }: {
   quizId: string;
   questionId: string;
-  className?: string;
-  compact?: boolean;
+  currentNoteId?: string;
 }) {
   const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
   const {
@@ -47,15 +44,12 @@ export function QuestionKnowledgeNotesPanel({
 
   return (
     <>
-      <div className={cn(className)}>
-        <LinkedKnowledgeNotesSection
-          notes={linkedNotes}
-          onSelectNote={(item) => openNote(item, "view")}
-          headerActions={actions}
-          emptyActions={actions}
-          compact={compact}
-        />
-      </div>
+      <LinkedKnowledgeNotesSection
+        notes={linkedNotes}
+        currentNoteId={currentNoteId}
+        onSelectNote={(item) => openNote(item, "view")}
+        headerActions={actions}
+      />
 
       {linkDialogOpen && (
         <LinkKnowledgeNoteDialog
