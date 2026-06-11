@@ -7,8 +7,10 @@ use std::{
 use tauri::{AppHandle, Manager};
 
 mod goals_storage;
+mod mistake_index;
 
 use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
+use mistake_index::MistakeIndex;
 
 const SETTINGS_FILE: &str = "settings.json";
 const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
@@ -300,7 +302,7 @@ fn read_text_file(path: &Path) -> Result<String, String> {
     Ok(strip_utf8_bom(contents))
 }
 
-fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), String> {
+pub(crate) fn atomic_write(path: &Path, contents: &[u8], overwrite: bool) -> Result<(), String> {
     if path.exists() && !overwrite {
         return Err(format!("{} already exists.", path.display()));
     }
@@ -557,17 +559,25 @@ fn list_goals(app: AppHandle) -> Result<Vec<GoalListItem>, String> {
 
 #[tauri::command]
 fn upsert_goal(app: AppHandle, goal: GoalMeta) -> Result<(), String> {
-    goals_storage::upsert_goal(&app, goal)
+    let goal_id = goal.id.clone();
+    goals_storage::upsert_goal(&app, goal)?;
+    mistake_index::rebuild_for_goal(&app, &goal_id)
 }
 
 #[tauri::command]
 fn delete_goal(app: AppHandle, goal_id: String) -> Result<(), String> {
-    goals_storage::delete_goal(&app, goal_id)
+    let quiz_id = goals_storage::goal_quiz_id(&app, &goal_id)?;
+    goals_storage::delete_goal(&app, goal_id)?;
+    if let Some(quiz_id) = quiz_id {
+        mistake_index::remove_quiz_entries(&app, &quiz_id)?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
 fn save_goal_attempt(app: AppHandle, goal_id: String, attempt: GoalAttempt) -> Result<(), String> {
-    goals_storage::save_goal_attempt(&app, goal_id, attempt)
+    goals_storage::save_goal_attempt(&app, goal_id.clone(), attempt)?;
+    mistake_index::rebuild_for_goal(&app, &goal_id)
 }
 
 #[tauri::command]
@@ -581,7 +591,13 @@ fn get_goal_attempt(
 
 #[tauri::command]
 fn delete_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> Result<(), String> {
-    goals_storage::delete_goal_attempt(&app, goal_id, attempt_id)
+    goals_storage::delete_goal_attempt(&app, goal_id.clone(), attempt_id)?;
+    mistake_index::rebuild_for_goal(&app, &goal_id)
+}
+
+#[tauri::command]
+fn get_mistake_index(app: AppHandle) -> Result<MistakeIndex, String> {
+    mistake_index::get_mistake_index(&app)
 }
 
 fn focus_main_window(app: &AppHandle) {
@@ -619,7 +635,8 @@ pub fn run() {
             delete_goal,
             save_goal_attempt,
             get_goal_attempt,
-            delete_goal_attempt
+            delete_goal_attempt,
+            get_mistake_index
         ])
         .build(tauri::generate_context!())
         .expect("error while building Quizzy")

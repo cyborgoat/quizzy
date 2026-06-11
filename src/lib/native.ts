@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Goal, GoalAttempt } from "@/types/goal";
+import type { MistakeEntry } from "@/types/mistakeLog";
 
 export type AppSettings = {
   workingDirectory: string | null;
@@ -42,6 +43,12 @@ export type WriteKnowledgeFileRequest = {
 
 export type GoalMeta = Omit<Goal, "attempts">;
 
+export type MistakeIndex = {
+  version: number;
+  scoredAttemptCount: number;
+  entries: MistakeEntry[];
+};
+
 export const nativeApi = {
   getSettings: () => invoke<AppSettings>("get_settings"),
   saveSettings: (request: SaveSettingsRequest) =>
@@ -68,6 +75,7 @@ export const nativeApi = {
     invoke<GoalAttempt>("get_goal_attempt", { goalId, attemptId }),
   deleteGoalAttempt: (goalId: string, attemptId: string) =>
     invoke<void>("delete_goal_attempt", { goalId, attemptId }),
+  getMistakeIndex: () => invoke<MistakeIndex>("get_mistake_index"),
 };
 
 export function errorMessage(error: unknown) {

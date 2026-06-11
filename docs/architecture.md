@@ -143,18 +143,18 @@ tooltips.
 ### Goals state
 
 `GoalsProvider` loads goals and attempt summaries from the native layer on
-startup and refreshes them in the background when the window regains focus. It
-exposes CRUD operations for goals, enforces one goal per quiz in the frontend,
-and persists completed attempts when a quiz submission matches a goal. Full
-attempt payloads (including per-question results) are loaded on demand for the
-attempt review page and the Mistake Log.
+startup. It exposes CRUD operations for goals, enforces one goal per quiz in the
+frontend, and persists completed attempts when a quiz submission matches a goal.
+Full attempt payloads (including per-question results) are loaded on demand for
+the attempt review page only.
 
 The native `upsert_goal` command independently enforces the one-goal-per-quiz
 invariant so callers cannot bypass it.
 
-`useMistakeLog` aggregates scored attempt question results across goals,
-applies Mistake Log thresholds, and sorts mistakes by frequency. It reloads
-automatically when goals change.
+`useMistakeLog` loads the materialized mistake index from Rust in one IPC call,
+applies Mistake Log thresholds, and sorts mistakes by frequency. Rust keeps the
+index up to date when attempts are saved or deleted. The hook reloads when goals
+change and performs a background refresh when the app window regains focus.
 
 `useGoals` is the hook consumers call to read or update goals.
 
@@ -162,12 +162,10 @@ automatically when goals change.
 
 `src/lib/native.ts` is the typed frontend adapter for Tauri `invoke` calls.
 
-`src-tauri/src/lib.rs` implements:
-
-- Settings persistence
-- Working-directory validation
-- Top-level JSON scanning
-- Opening the configured quiz directory in the system file manager
+`src-tauri/src/lib.rs` implements settings, working-directory validation,
+top-level JSON scanning, and opening the configured quiz directory in the system
+file manager. Goal and attempt persistence live in `goals_storage.rs`. The
+materialized Mistake Log index lives in `mistake_index.rs`.
 
 The dialog plugin obtains the working-directory path in Settings. Quiz files are
 managed directly through the system file manager.
@@ -216,6 +214,7 @@ managed directly through the system file manager.
 7. The frozen records drive the result and review screens.
 8. If the session mode is **scored** and the quiz has a goal,
    `GoalsProvider` saves an attempt for it.
+9. Rust updates `mistake-index.json` for that quiz when the attempt is saved.
 
 ### Attempt review
 
@@ -230,13 +229,13 @@ managed directly through the system file manager.
 2. React calls `delete_goal_attempt` via the native adapter.
 3. Rust removes the attempt file and updates `attempts/index.json`.
 4. `GoalsProvider` updates in-memory goal state.
-5. The Mistake Log recomputes from the updated goals.
+5. Rust updates `mistake-index.json` for that goal's quiz.
+6. The Mistake Log reloads the index when goals change.
 
 ### Mistake Log review
 
 1. The user opens `/mistakes` or `/mistakes?quizId=...`.
-2. `useMistakeLog` loads full attempt payloads for all scored attempts linked to
-   goals.
+2. `useMistakeLog` loads `mistake-index.json` via `get_mistake_index`.
 3. Entries are filtered by configured thresholds, with flagged questions always
   included, and sorted by flagged count then mistake frequency.
 4. The first sorted row is selected by default. Clicking a row or using arrow
@@ -275,8 +274,8 @@ src/
                   preferences providers
   data/           Zod schema, repository parser, and tests
   hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
-  lib/            Native adapter, scoring, knowledge drafts, mistake aggregation,
-                  mistakeLogReview (answer remap and table page sync)
+  lib/            Native adapter, scoring, knowledge drafts, mistake threshold
+                  filtering, mistakeLogReview (answer remap and table page sync)
   pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
   test/           Vitest setup (browser API polyfills for Node)
   types/          Quiz, goal, knowledge, mistake log, and quiz session types
@@ -284,7 +283,7 @@ src/
 src-tauri/
   capabilities/   Tauri permissions
   icons/          Desktop and mobile platform icons
-  src/            Rust command implementation
+  src/            Rust commands (`lib.rs`, `goals_storage.rs`, `mistake_index.rs`)
   Cargo.toml      Rust dependencies and crate configuration
   tauri.conf.json Desktop window, build, and bundle configuration
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateQuestionResults,
   buildMistakeEntries,
+  buildQualifyingEntries,
   detectEmptyReason,
   meetsThreshold,
   sortMistakeEntries,
@@ -82,6 +83,18 @@ describe("mistakeLog", () => {
     const q1 = entries.find((entry) => entry.questionId === "q1");
     expect(q1?.lastIncorrectAnswer).toEqual({ type: "single_choice", selectedIndex: 1 });
     expect(q1?.lastIncorrectOptions).toEqual(["B", "C", "A"]);
+  });
+
+  it("filters pre-aggregated entries by configured thresholds", () => {
+    const raw = aggregateQuestionResults(attempts);
+    const entries = buildQualifyingEntries(raw, {
+      minMistakes: 2,
+      minFlags: 1,
+      maxCorrectnessPercentage: 100,
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.questionId).toBe("q1");
   });
 
   it("filters and sorts by configured thresholds", () => {

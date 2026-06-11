@@ -8,6 +8,7 @@ Quizzy stores application data in the Tauri app-config directory:
 
 ```text
 <Tauri app config directory>/settings.json
+<Tauri app config directory>/mistake-index.json
 <Tauri app config directory>/goals/
   <goal-id>/
     goal.json
@@ -24,6 +25,11 @@ Each quiz can have at most one goal. Each goal is stored in its own directory.
 `goal.json` contains its target score and description metadata. Attempt
 summaries live in `attempts/index.json`, and each full attempt (including
 per-question results) is stored separately as `attempts/<attempt-id>.json`.
+
+`mistake-index.json` is a materialized aggregate of per-question mistake
+statistics across all scored attempts. Rust rebuilds entries for a quiz when
+attempts are saved or deleted, and rebuilds the full index on first read if the
+file is missing or its version is stale.
 
 Legacy single-file `goals.json` data is migrated into this layout on first
 load and archived as `goals.json.bak`.
@@ -42,11 +48,12 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `read_working_directory` | Read top-level JSON files |
 | `open_quiz_folder` | Open the configured quiz directory in the system file manager |
 | `list_goals` | Load saved goals with attempt summaries |
-| `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz |
-| `delete_goal` | Delete a goal and its attempt files |
-| `save_goal_attempt` | Persist one attempt and update its summary index |
+| `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz; refreshes that quiz's mistake-index entries |
+| `delete_goal` | Delete a goal and its attempt files; removes that quiz from `mistake-index.json` |
+| `save_goal_attempt` | Persist one attempt, update its summary index, and refresh that quiz's mistake-index entries |
 | `get_goal_attempt` | Load one full attempt with question results |
-| `delete_goal_attempt` | Delete one attempt file and remove it from the summary index |
+| `delete_goal_attempt` | Delete one attempt file, remove it from the summary index, and refresh that quiz's mistake-index entries |
+| `get_mistake_index` | Load the materialized mistake index (rebuilds if missing, version-mismatched, or attempt-count stale) |
 
 ## Filesystem boundaries
 
@@ -64,9 +71,9 @@ filesystem plugin permissions are not granted to the webview.
 
 ## Atomic writes
 
-Quizzy uses temporary files and rename operations when writing its own settings
-and goal data. Quiz files are managed by the user through the system file
-manager and are read-only from Quizzy's perspective.
+Quizzy uses temporary files and rename operations when writing its own settings,
+goal data, and `mistake-index.json`. Quiz files are managed by the user through
+the system file manager and are read-only from Quizzy's perspective.
 
 ## Current security notes
 

@@ -42,6 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
+import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatShortDate } from "@/lib/formatDate";
@@ -206,10 +207,10 @@ function EmptyMistakeLog({
 
 export function MistakeLogPage() {
   const { quizId: scopedQuizId } = Route.useSearch();
+  const { goals } = useGoals();
   const {
     qualifyingEntries,
     rawEntries,
-    attemptData,
     emptyReason,
     quizzesWithMistakes,
     thresholds,
@@ -540,12 +541,13 @@ export function MistakeLogPage() {
     }
 
     if (isQuizScoped && scopedQuizId) {
-      const quizAttempts = attemptData.filter((attempt) => attempt.quizId === scopedQuizId);
+      const scopedGoal = goals.find((goal) => goal.quizId === scopedQuizId);
+      const hasQuizAttempts = (scopedGoal?.attempts.length ?? 0) > 0;
       const quizRaw = rawEntries.filter((entry) => entry.quizId === scopedQuizId);
       const hasQuizMistakes = quizRaw.some(
         (entry) => entry.mistakeCount > 0 || entry.flaggedCount > 0,
       );
-      return detectEmptyReason(quizAttempts.length > 0, hasQuizMistakes, filteredEntries.length);
+      return detectEmptyReason(hasQuizAttempts, hasQuizMistakes, filteredEntries.length);
     }
 
     return emptyReason;
@@ -555,7 +557,7 @@ export function MistakeLogPage() {
     effectiveQuizFilter,
     questionTypeFilter,
     scopedQuizId,
-    attemptData,
+    goals,
     rawEntries,
     emptyReason,
   ]);

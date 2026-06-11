@@ -11,7 +11,7 @@ const GOAL_META_FILE: &str = "goal.json";
 const ATTEMPTS_DIR: &str = "attempts";
 const ATTEMPTS_INDEX_FILE: &str = "index.json";
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub enum SubmittedAnswer {
     #[serde(rename = "single_choice")]
@@ -39,6 +39,8 @@ pub struct QuestionResult {
     pub correct: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub answer: Option<SubmittedAnswer>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub options: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub flagged: Option<bool>,
 }
@@ -341,6 +343,34 @@ pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
     write_goal_meta(&goal_dir, &meta)
 }
 
+pub fn goal_quiz_id(app: &AppHandle, goal_id: &str) -> Result<Option<String>, String> {
+    validate_storage_id(goal_id)?;
+    let goal_dir = goal_directory(&goals_root(app)?, goal_id)?;
+    if !goal_dir.exists() {
+        return Ok(None);
+    }
+    Ok(Some(read_goal_meta(&goal_dir)?.quiz_id))
+}
+
+pub fn load_goal_attempts(app: &AppHandle, goal_id: &str) -> Result<Vec<GoalAttempt>, String> {
+    validate_storage_id(goal_id)?;
+    let goal_dir = goal_directory(&goals_root(app)?, goal_id)?;
+    if !goal_dir.join(GOAL_META_FILE).exists() {
+        return Err(format!("Goal {goal_id} was not found."));
+    }
+
+    let summaries = read_attempt_summaries(&goal_dir)?;
+    let mut attempts = Vec::with_capacity(summaries.len());
+    for summary in summaries {
+        let attempt_path = attempts_directory(&goal_dir).join(format!("{}.json", summary.id));
+        if !attempt_path.exists() {
+            continue;
+        }
+        attempts.push(read_json(&attempt_path)?);
+    }
+    Ok(attempts)
+}
+
 pub fn delete_goal(app: &AppHandle, goal_id: String) -> Result<(), String> {
     validate_storage_id(&goal_id)?;
     let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
@@ -441,6 +471,7 @@ mod tests {
                     prompt: "One".into(),
                     correct: true,
                     answer: None,
+                    options: None,
                     flagged: None,
                 },
                 QuestionResult {
@@ -448,6 +479,7 @@ mod tests {
                     prompt: "Two".into(),
                     correct: false,
                     answer: None,
+                    options: None,
                     flagged: None,
                 },
             ],

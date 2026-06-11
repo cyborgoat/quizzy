@@ -87,7 +87,9 @@ Each saved attempt opens on a dedicated page at
 ## Mistake Log
 
 The Mistake Log aggregates incorrect answers and flagged questions from **scored attempts only**.
-Practice runs are not included. **Mistake Log** in the sidebar opens the global
+Practice runs are not included. Rust maintains a materialized `mistake-index.json`
+in the app-config directory; the UI loads that index in one native call instead of
+re-reading every attempt file. **Mistake Log** in the sidebar opens the global
 view at `/mistakes`; an existing quiz goal's menu can open the same view scoped
 to that quiz.
 
@@ -119,7 +121,8 @@ when available.
 Mistake Log review always uses the original quiz file order; shuffle settings
 from **Settings → Quiz preferences** do not apply here.
 The Mistake Log refreshes automatically when goals change (for example after a
-scored quiz), when attempts are deleted, and when the app window regains focus.
+scored quiz or attempt deletion) and when the app window regains focus. Threshold
+changes in Settings apply immediately without reloading attempts.
 
 Configure thresholds under **Settings → Mistake Log**.
 

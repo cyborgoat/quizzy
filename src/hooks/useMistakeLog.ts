@@ -2,69 +2,58 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import {
-  aggregateQuestionResults,
-  buildMistakeEntries,
+  buildQualifyingEntries,
   detectEmptyReason,
   summarizeMistakeEntries,
-  type AttemptQuestionData,
 } from "@/lib/mistakeLog";
-import type { MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
+import { nativeApi } from "@/lib/native";
+import type { MistakeEntry, MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
 
 export function useMistakeLog() {
-  const { goals, isLoading: goalsLoading, goalsVersion, loadGoalAttempt } = useGoals();
+  const { isLoading: goalsLoading, goalsVersion } = useGoals();
   const { minMistakes, minFlags, maxCorrectnessPercentage } = useMistakeLogSettings();
-  const [attemptData, setAttemptData] = useState<AttemptQuestionData[]>([]);
-  const [isLoadingAttempts, setIsLoadingAttempts] = useState(true);
+  const [rawEntries, setRawEntries] = useState<MistakeEntry[]>([]);
+  const [scoredAttemptCount, setScoredAttemptCount] = useState(0);
+  const [isLoadingIndex, setIsLoadingIndex] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const hasLoadedAttemptsRef = useRef(false);
-  const goalsRef = useRef(goals);
+  const hasLoadedIndexRef = useRef(false);
 
-  useEffect(() => {
-    goalsRef.current = goals;
-  }, [goals]);
-
-  const loadAttempts = useCallback(async (background = false) => {
+  const loadIndex = useCallback(async (background = false) => {
     if (!background) {
-      setIsLoadingAttempts(true);
+      setIsLoadingIndex(true);
     }
     setError(null);
 
     try {
-      const seen = new Set<string>();
-      const loaded: AttemptQuestionData[] = [];
-
-      for (const goal of goalsRef.current) {
-        for (const summary of goal.attempts) {
-          const dedupeKey = `${goal.quizId}:${summary.id}`;
-          if (seen.has(dedupeKey)) continue;
-          seen.add(dedupeKey);
-
-          const attempt = await loadGoalAttempt(goal.id, summary.id);
-          loaded.push({
-            quizId: goal.quizId,
-            quizTitle: goal.quizTitle,
-            takenAt: attempt.takenAt,
-            questionResults: attempt.questionResults,
-          });
-        }
-      }
-
-      setAttemptData(loaded);
-      hasLoadedAttemptsRef.current = true;
+      const index = await nativeApi.getMistakeIndex();
+      setRawEntries(index.entries);
+      setScoredAttemptCount(index.scoredAttemptCount);
+      hasLoadedIndexRef.current = true;
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : String(loadError));
-      setAttemptData([]);
+      setRawEntries([]);
+      setScoredAttemptCount(0);
     } finally {
       if (!background) {
-        setIsLoadingAttempts(false);
+        setIsLoadingIndex(false);
       }
     }
-  }, [loadGoalAttempt]);
+  }, []);
 
   useEffect(() => {
     if (goalsLoading) return;
-    void loadAttempts(hasLoadedAttemptsRef.current);
-  }, [goalsLoading, goalsVersion, loadAttempts]);
+    void loadIndex(hasLoadedIndexRef.current);
+  }, [goalsLoading, goalsVersion, loadIndex]);
+
+  useEffect(() => {
+    function handleFocus() {
+      if (goalsLoading) return;
+      void loadIndex(true);
+    }
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [goalsLoading, loadIndex]);
 
   const thresholds = useMemo(
     () => ({ minMistakes, minFlags, maxCorrectnessPercentage }),
@@ -72,13 +61,11 @@ export function useMistakeLog() {
   );
 
   const qualifyingEntries = useMemo(
-    () => buildMistakeEntries(attemptData, thresholds),
-    [attemptData, thresholds],
+    () => buildQualifyingEntries(rawEntries, thresholds),
+    [rawEntries, thresholds],
   );
 
-  const rawEntries = useMemo(() => aggregateQuestionResults(attemptData), [attemptData]);
-
-  const hasScoredAttempts = attemptData.length > 0;
+  const hasScoredAttempts = scoredAttemptCount > 0;
   const hasAnyMistakes = rawEntries.some(
     (entry) => entry.mistakeCount > 0 || entry.flaggedCount > 0,
   );
@@ -106,13 +93,13 @@ export function useMistakeLog() {
   return {
     qualifyingEntries,
     rawEntries,
-    attemptData,
+    scoredAttemptCount,
     summary,
     emptyReason,
     quizzesWithMistakes,
     thresholds,
-    isLoading: goalsLoading || isLoadingAttempts,
+    isLoading: goalsLoading || isLoadingIndex,
     error,
-    refetch: () => loadAttempts(false),
+    refetch: () => loadIndex(false),
   };
 }

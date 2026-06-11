@@ -124,13 +124,19 @@ export function aggregateQuestionResults(
   }));
 }
 
+export function buildQualifyingEntries(
+  entries: Omit<MistakeEntry, "meetsThreshold">[],
+  thresholds: MistakeLogThresholds,
+): MistakeEntry[] {
+  const qualifying = entries.filter((entry) => meetsThreshold(entry, thresholds));
+  return sortMistakeEntries(qualifying);
+}
+
 export function buildMistakeEntries(
   attempts: AttemptQuestionData[],
   thresholds: MistakeLogThresholds,
 ): MistakeEntry[] {
-  const raw = aggregateQuestionResults(attempts);
-  const qualifying = raw.filter((entry) => meetsThreshold(entry, thresholds));
-  return sortMistakeEntries(qualifying);
+  return buildQualifyingEntries(aggregateQuestionResults(attempts), thresholds);
 }
 
 export function summarizeMistakeEntries(entries: MistakeEntry[]): MistakeLogSummary {

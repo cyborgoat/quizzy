@@ -28,7 +28,8 @@ Tests currently cover:
 - Navigation boundary handling
 - Early submission with unanswered questions
 - Frozen submitted results and complete restart behavior
-- Mistake Log aggregation, threshold filtering, sorting, and empty-state detection
+- Mistake Log threshold filtering, sorting, and empty-state detection (aggregation
+  is covered by Rust `mistake_index` tests)
 - Knowledge note drafts, front matter parsing, link validation, question label formatting, linked-question lookup, and clipboard export
 
 Vitest loads `src/test/setup.ts` to polyfill browser APIs such as `sessionStorage`
@@ -47,6 +48,7 @@ Native tests cover:
 - JSON extension and UTF-8 BOM handling
 - Atomic settings writes
 - Goal and attempt persistence invariants
+- Mistake index aggregation, rebuild, and staleness detection
 
 Run:
 
@@ -99,7 +101,9 @@ Use the narrowest appropriate layer:
 - Knowledge Base workflow: `KnowledgeLibraryProvider`, `src/lib/knowledgeDraft.ts`,
   and `src/components/knowledge`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
-- Filesystem behavior: typed native adapter plus a Rust command
+- Filesystem behavior: typed native adapter plus a Rust command (goal and mistake
+  index updates are handled in `src-tauri/src/goals_storage.rs` and
+  `src-tauri/src/mistake_index.rs`)
 - Presentation: a focused component under `src/components`
 
 Add tests at the domain boundary affected by the change. Filesystem changes
