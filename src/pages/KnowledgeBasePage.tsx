@@ -3,12 +3,14 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/index";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +19,7 @@ import {
   dataTableCellMutedClass,
   dataTableCellTextClass,
 } from "@/components/ui/data-table";
+import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
@@ -53,6 +56,10 @@ export function KnowledgeBasePage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updatedAt", desc: true },
   ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
     "Knowledge base refreshed.",
@@ -75,6 +82,10 @@ export function KnowledgeBasePage() {
       return haystack.includes(normalized);
     });
   }, [library.items, searchQuery, selectedTag]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [searchQuery, selectedTag]);
 
   const columns = useMemo<ColumnDef<KnowledgeItem>[]>(
     () => [
@@ -138,10 +149,12 @@ export function KnowledgeBasePage() {
   const table = useReactTable({
     data: filteredItems,
     columns,
-    state: { sorting },
+    state: { sorting, pagination },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   function handleNewNote() {
@@ -263,50 +276,53 @@ export function KnowledgeBasePage() {
               }}
             />
           ) : (
-            <div className="min-w-0 w-full max-w-full overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-              <Table className="table-fixed w-full min-w-0">
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead
-                          key={header.id}
-                          className={
-                            header.column.id === "title"
-                              ? "w-[38%]"
-                              : header.column.id === "tags"
-                                ? "w-[28%]"
-                                : header.column.id === "links"
-                                  ? "w-[14%]"
-                                  : "w-[20%]"
-                          }
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className="cursor-pointer">
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="min-w-0 max-w-0">
-                          <Link
-                            to="/knowledge/$knowledgeId"
-                            params={{ knowledgeId: row.original.id }}
-                            className="block min-w-0"
+            <div className="min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-zinc-200 bg-white">
+              <div className="overflow-x-auto">
+                <Table className="table-fixed w-full min-w-0">
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            className={
+                              header.column.id === "title"
+                                ? "w-[38%]"
+                                : header.column.id === "tags"
+                                  ? "w-[28%]"
+                                  : header.column.id === "links"
+                                    ? "w-[14%]"
+                                    : "w-[20%]"
+                            }
                           >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </Link>
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(header.column.columnDef.header, header.getContext())}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id} className="cursor-pointer">
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="min-w-0 max-w-0">
+                            <Link
+                              to="/knowledge/$knowledgeId"
+                              params={{ knowledgeId: row.original.id }}
+                              className="block min-w-0"
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </Link>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <DataTablePaginationFooter table={table} />
             </div>
           )}
         </>

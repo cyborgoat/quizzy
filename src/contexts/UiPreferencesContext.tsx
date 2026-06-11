@@ -1,3 +1,4 @@
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
@@ -9,6 +10,8 @@ import {
   clampFontSize,
   parseUiDensity,
   parseUiFontSize,
+  formatZoomLimitMessage,
+  formatZoomSizeMessage,
   stepFontSize,
   UI_FONT_SIZE_DEFAULT,
   type UiDensity,
@@ -46,13 +49,34 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const adjustFontSize = useCallback(
-    (direction: "up" | "down") => {
+    (direction: "up" | "down"): number | null => {
       const next = stepFontSize(fontSizeRef.current, direction);
-      if (next === null) return;
+      if (next === null) return null;
       setFontSizeState(next);
       void persistFontSize(next);
+      return next;
     },
     [persistFontSize],
+  );
+
+  const notifyZoomAdjust = useCallback(
+    (direction: "up" | "down") => {
+      const next = adjustFontSize(direction);
+      if (next !== null) {
+        toast.success(formatZoomSizeMessage(next));
+        return;
+      }
+
+      toast.warning(formatZoomLimitMessage(direction), {
+        icon:
+          direction === "up" ? (
+            <ZoomIn className="size-4 shrink-0 text-amber-600" />
+          ) : (
+            <ZoomOut className="size-4 shrink-0 text-amber-600" />
+          ),
+      });
+    },
+    [adjustFontSize],
   );
 
   useEffect(() => {
@@ -62,19 +86,19 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
 
       if (event.key === "=" || event.key === "+") {
         event.preventDefault();
-        adjustFontSize("up");
+        notifyZoomAdjust("up");
         return;
       }
 
       if (event.key === "-") {
         event.preventDefault();
-        adjustFontSize("down");
+        notifyZoomAdjust("down");
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [adjustFontSize]);
+  }, [notifyZoomAdjust]);
 
   function setFontSize(value: number) {
     setFontSizeState(clampFontSize(value));

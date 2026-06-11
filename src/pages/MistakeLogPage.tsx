@@ -17,7 +17,6 @@ import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/quiz/EmptyState";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,15 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
   DataTableColumnHeader,
   DataTableNumericCell,
   DataTableSortableHeader,
@@ -44,6 +34,7 @@ import {
   dataTableCellTextClass,
   dataTableHeadClass,
 } from "@/components/ui/data-table";
+import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import {
   Table,
   TableBody,
@@ -60,26 +51,6 @@ import { getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { detectEmptyReason } from "@/lib/mistakeLog";
 import type { MistakeEntry } from "@/types/mistakeLog";
-
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
-const PAGE_JUMP_THRESHOLD = 15;
-
-function getPaginationItems(currentPage: number, totalPages: number): Array<number | "ellipsis"> {
-  // Keep pagination predictable: full list for small sets, sliding window for larger sets.
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, "ellipsis", totalPages];
-  }
-
-  if (currentPage >= totalPages - 3) {
-    return [1, "ellipsis", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-  }
-
-  return [1, "ellipsis", currentPage - 1, currentPage, currentPage + 1, "ellipsis", totalPages];
-}
 
 function SummaryCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -163,7 +134,6 @@ export function MistakeLogPage() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [pageJumpValue, setPageJumpValue] = useState("1");
   const [activeEntry, setActiveEntry] = useState<MistakeEntry | null>(null);
 
   const isQuizScoped = Boolean(scopedQuizId);
@@ -189,10 +159,6 @@ export function MistakeLogPage() {
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [quizFilter, isQuizScoped, scopedQuizId]);
-
-  useEffect(() => {
-    setPageJumpValue(String(pagination.pageIndex + 1));
-  }, [pagination.pageIndex]);
 
   const columns = useMemo<ColumnDef<MistakeEntry>[]>(
     () => [
@@ -338,20 +304,6 @@ export function MistakeLogPage() {
     return { question, questionIndex: questionIndex >= 0 ? questionIndex : 0 };
   }, [activeEntry, quizzes]);
 
-  const pageCount = table.getPageCount();
-
-  const commitPageJump = () => {
-    const parsed = Number(pageJumpValue);
-    if (!Number.isFinite(parsed)) {
-      setPageJumpValue(String(pagination.pageIndex + 1));
-      return;
-    }
-
-    const nextPage = Math.min(Math.max(1, Math.trunc(parsed)), pageCount);
-    table.setPageIndex(nextPage - 1);
-    setPageJumpValue(String(nextPage));
-  };
-
   return (
     <PageShell className="flex h-[calc(100svh-(var(--app-page-py)*2))] flex-col overflow-hidden">
       <div className="mb-4 shrink-0 lg:mb-5">
@@ -460,103 +412,7 @@ export function MistakeLogPage() {
               </TableBody>
             </Table>
           </div>
-          <div className="shrink-0 border-t border-zinc-200/55 px-2 py-2 sm:px-3 sm:py-3">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-              <div aria-hidden="true" />
-
-              {pageCount > 1 ? (
-                <Pagination className="mx-0 w-auto justify-center">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                      />
-                    </PaginationItem>
-                    {getPaginationItems(table.getState().pagination.pageIndex + 1, pageCount).map(
-                      (item, index) => (
-                        <PaginationItem key={`${String(item)}-${index}`}>
-                          {item === "ellipsis" ? (
-                            <PaginationEllipsis />
-                          ) : (
-                            <PaginationLink
-                              isActive={item === table.getState().pagination.pageIndex + 1}
-                              onClick={() => table.setPageIndex(item - 1)}
-                            >
-                              {item}
-                            </PaginationLink>
-                          )}
-                        </PaginationItem>
-                      ),
-                    )}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              ) : (
-                <div aria-hidden="true" />
-              )}
-
-              <div className="justify-self-end">
-                <div className="flex items-center gap-4">
-                  {pageCount >= PAGE_JUMP_THRESHOLD && (
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="go-to-page" className="text-xs text-zinc-600">
-                        Go to page
-                      </Label>
-                      <Input
-                        id="go-to-page"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="h-7 w-14 px-2 text-center text-xs"
-                        value={pageJumpValue}
-                        onChange={(event) => {
-                          const digitsOnly = event.target.value.replace(/\D+/g, "");
-                          setPageJumpValue(digitsOnly);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            commitPageJump();
-                          }
-                        }}
-                        onBlur={commitPageJump}
-                        aria-label="Go to page"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="rows-per-page" className="text-xs text-zinc-600">
-                      Rows per page
-                    </Label>
-                    <Select
-                      value={String(table.getState().pagination.pageSize)}
-                      onValueChange={(value) => {
-                        table.setPageSize(Number(value));
-                        table.setPageIndex(0);
-                      }}
-                    >
-                      <SelectTrigger id="rows-per-page" className="h-7 w-20 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAGE_SIZE_OPTIONS.map((size) => (
-                          <SelectItem key={size} value={String(size)}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DataTablePaginationFooter table={table} />
         </div>
       )}
 

@@ -35,6 +35,17 @@ export function clampFontSize(value: number): number {
   return Math.min(UI_FONT_SIZE_MAX, Math.max(UI_FONT_SIZE_MIN, Math.round(value)));
 }
 
+export function formatZoomSizeMessage(fontSize: number) {
+  return `Zoom size set to ${clampFontSize(fontSize)}%.`;
+}
+
+export function formatZoomLimitMessage(direction: "up" | "down") {
+  if (direction === "up") {
+    return `Cannot zoom in further. Maximum zoom is ${UI_FONT_SIZE_MAX}%.`;
+  }
+  return `Cannot zoom out further. Minimum zoom is ${UI_FONT_SIZE_MIN}%.`;
+}
+
 export function parseUiFontSize(value: unknown): number {
   if (typeof value === "number") {
     return clampFontSize(value);

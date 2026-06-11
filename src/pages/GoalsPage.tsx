@@ -1,7 +1,8 @@
 import { Route } from "@/routes/_app/goals/index";
 import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
+import { RecentAttemptsCard } from "@/components/goals/RecentAttemptsCard";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { collectRecentAttempts } from "@/lib/recentAttempts";
 import {
   detailsFormToGoalInput,
   type GoalDetailsFormValues,
@@ -48,6 +50,11 @@ export function GoalsPage() {
 
   const accordionValue =
     expandedGoalId !== null ? expandedGoalId : defaultExpandedGoalId;
+  const recentAttempts = useMemo(() => collectRecentAttempts(goals), [goals]);
+  const recentAttemptsKey = useMemo(
+    () => recentAttempts.map((entry) => entry.attemptId).join(","),
+    [recentAttempts],
+  );
 
   function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -184,6 +191,12 @@ export function GoalsPage() {
               </Accordion>
             </section>
           )}
+
+          <RecentAttemptsCard
+            key={recentAttemptsKey}
+            attempts={recentAttempts}
+            onSelectGoal={(goalId) => setExpandedGoalId(goalId)}
+          />
 
           {completedGoals.length > 0 && (
             <section>
