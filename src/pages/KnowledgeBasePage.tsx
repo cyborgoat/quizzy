@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   type ColumnDef,
   flexRender,
@@ -9,30 +9,33 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/index";
-import { Badge } from "@/components/ui/badge";
 import {
+  DataTableColumnFilterHeader,
+  DataTableColumnHeader,
+  DataTableNumericCell,
   DataTableSortableHeader,
+  dataTableCellClass,
   dataTableCellMutedClass,
   dataTableCellTextClass,
+  dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
+import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
+import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
+import { formatShortDate } from "@/lib/formatDate";
+import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
+import { cn } from "@/lib/utils";
+import type { KnowledgeItem } from "@/types/knowledge";
 import {
   Table,
   TableBody,
@@ -41,11 +44,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
-import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
-import { formatShortDate } from "@/lib/formatDate";
-import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
-import type { KnowledgeItem } from "@/types/knowledge";
+
+function formatTagsLabel(tags: string[]) {
+  if (tags.length === 0) return "—";
+  return tags.join(", ");
+}
 
 export function KnowledgeBasePage() {
   const { tag: tagFilter } = Route.useSearch();
@@ -58,8 +61,9 @@ export function KnowledgeBasePage() {
   ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 5,
   });
+  const [isNotesListExpanded, setIsNotesListExpanded] = useState(true);
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
     "Knowledge base refreshed.",
@@ -72,6 +76,14 @@ export function KnowledgeBasePage() {
     }
     return [...tags].sort();
   }, [library.items]);
+
+  const tagFilterOptions = useMemo(
+    () => [
+      { value: "all", label: "All tags" },
+      ...allTags.map((tag) => ({ value: tag, label: tag })),
+    ],
+    [allTags],
+  );
 
   const filteredItems = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -87,48 +99,54 @@ export function KnowledgeBasePage() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [searchQuery, selectedTag]);
 
+  const handleTagFilterChange = useCallback(
+    (value: string) => {
+      void navigate({
+        to: "/knowledge",
+        search: value === "all" ? {} : { tag: value },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
   const columns = useMemo<ColumnDef<KnowledgeItem>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Title",
+        header: () => <DataTableColumnHeader label="Title" />,
         cell: ({ row }) => (
-          <div className="min-w-0 max-w-full">
-            <span className={`${dataTableCellTextClass} truncate font-medium`}>
-              {row.original.title}
-            </span>
-            <span className={`${dataTableCellMutedClass} mt-0.5 truncate text-zinc-500`}>
-              {row.original.fileName}
-            </span>
-          </div>
+          <span className={`${dataTableCellTextClass} truncate font-medium`}>
+            {row.original.title}
+          </span>
         ),
       },
       {
         accessorKey: "tags",
-        header: "Tags",
+        header: () => (
+          <DataTableColumnFilterHeader
+            label="Tags"
+            filterValue={selectedTag}
+            menuLabel="Filter by tag"
+            options={tagFilterOptions}
+            onFilterChange={handleTagFilterChange}
+          />
+        ),
         cell: ({ row }) => (
-          <div className="flex min-w-0 max-w-full flex-wrap gap-1">
-            {row.original.tags.length === 0 ? (
-              <span className="text-xs text-zinc-400">—</span>
-            ) : (
-              row.original.tags.map((tag) => (
-                <Badge key={tag} className="max-w-full truncate">
-                  {tag}
-                </Badge>
-              ))
-            )}
-          </div>
+          <span className={`${dataTableCellMutedClass} truncate`}>
+            {formatTagsLabel(row.original.tags)}
+          </span>
         ),
       },
       {
         id: "links",
         accessorFn: (row) => row.linkedQuizQuestions.length,
-        header: "Links",
+        header: () => <DataTableColumnHeader label="Links" />,
         cell: ({ row }) => (
-          <span className={dataTableCellMutedClass}>
-            {row.original.linkedQuizQuestions.length} Q
-            {row.original.linkedQuizQuestions.length === 1 ? "" : "s"}
-          </span>
+          <DataTableNumericCell
+            value={row.original.linkedQuizQuestions.length}
+            mutedWhenZero
+          />
         ),
       },
       {
@@ -143,7 +161,7 @@ export function KnowledgeBasePage() {
         ),
       },
     ],
-    [],
+    [handleTagFilterChange, selectedTag, tagFilterOptions],
   );
 
   const table = useReactTable({
@@ -167,20 +185,26 @@ export function KnowledgeBasePage() {
     });
   }
 
+  function openNote(item: KnowledgeItem) {
+    navigate({
+      to: "/knowledge/$knowledgeId",
+      params: { knowledgeId: item.id },
+    });
+  }
+
   return (
-    <PageShell className="overflow-x-clip">
-      <div className="min-w-0 w-full max-w-full">
-      <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between lg:mb-5">
+    <PageShell className="space-y-3 overflow-x-clip">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">
             Knowledge Base
           </h1>
-          <p className="mt-1 text-sm wrap-break-word text-zinc-500 lg:text-base">
-            Markdown notes live in the knowledge-base folder inside your working directory. Link them
-            to quiz questions and review them from the Mistake Log.
+          <p className="mt-0.5 text-sm text-zinc-500">
+            Markdown notes in your knowledge-base folder. Link them to quiz questions and review
+            them from the Mistake Log.
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-1">
           <IconActionButton
             icon={FolderOpen}
             label="Open folder"
@@ -195,7 +219,7 @@ export function KnowledgeBasePage() {
             onClick={() => void handleRefresh()}
             disabled={isRefreshing}
           >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
           </IconActionButton>
           <IconActionButton
             icon={Plus}
@@ -222,49 +246,20 @@ export function KnowledgeBasePage() {
           <InvalidFileReportsAlert
             reports={library.invalidReports}
             entityLabel="knowledge"
-            className="mb-4 min-w-0 lg:mb-5"
           />
 
-          <div className="mb-4 flex min-w-0 flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-3 sm:flex-row sm:items-end lg:mb-5 lg:p-4">
-            <div className="min-w-0 flex-1">
-              <Label htmlFor="knowledge-search">Search</Label>
-              <div className="mt-1.5 flex items-center gap-2 rounded-md border border-zinc-200 px-3">
-                <Search className="size-4 text-zinc-400" />
-                <Input
-                  id="knowledge-search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search notes"
-                  className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
-                />
-              </div>
+          {library.items.length > 0 && (
+            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
+              <Search className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search notes"
+                aria-label="Search notes"
+                className="h-7 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0"
+              />
             </div>
-            <div className="min-w-0 sm:w-48">
-              <Label htmlFor="knowledge-tag-filter">Tag</Label>
-              <Select
-                value={selectedTag}
-                onValueChange={(value) => {
-                  void navigate({
-                    to: "/knowledge",
-                    search: value === "all" ? {} : { tag: value },
-                    replace: true,
-                  });
-                }}
-              >
-                <SelectTrigger id="knowledge-tag-filter" className="mt-1.5">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tags</SelectItem>
-                  {allTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          )}
 
           {library.items.length === 0 ? (
             <EmptyState
@@ -285,59 +280,70 @@ export function KnowledgeBasePage() {
               }}
             />
           ) : (
-            <div className="min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-zinc-200 bg-white">
-              <div className="overflow-x-auto">
-                <Table className="table-fixed w-full min-w-0">
-                  <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead
-                            key={header.id}
-                            className={
-                              header.column.id === "title"
-                                ? "w-[38%]"
-                                : header.column.id === "tags"
-                                  ? "w-[28%]"
-                                  : header.column.id === "links"
-                                    ? "w-[14%]"
-                                    : "w-[20%]"
-                            }
+            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 border-b border-zinc-200/55 px-3 py-2 text-left transition-colors hover:bg-zinc-50"
+                aria-expanded={isNotesListExpanded}
+                onClick={() => setIsNotesListExpanded((expanded) => !expanded)}
+              >
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
+                    isNotesListExpanded && "rotate-180",
+                  )}
+                />
+                <span className="text-sm font-semibold text-zinc-950">Notes</span>
+                <span className="text-xs text-zinc-500">({filteredItems.length})</span>
+              </button>
+
+              {isNotesListExpanded && (
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <TableHead key={header.id} className={dataTableHeadClass}>
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext(),
+                                    )}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            className="cursor-pointer"
+                            onClick={() => openNote(row.original)}
                           >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(header.column.columnDef.header, header.getContext())}
-                          </TableHead>
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id} className={dataTableCellClass}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </TableCell>
+                            ))}
+                          </TableRow>
                         ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id} className="cursor-pointer">
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="min-w-0 max-w-0">
-                            <Link
-                              to="/knowledge/$knowledgeId"
-                              params={{ knowledgeId: row.original.id }}
-                              className="block min-w-0"
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </Link>
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <DataTablePaginationFooter table={table} />
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <DataTablePaginationFooter
+                    table={table}
+                    pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
+                  />
+                </>
+              )}
             </div>
           )}
         </>
       </WorkingDirectoryGate>
-
-      </div>
     </PageShell>
   );
 }

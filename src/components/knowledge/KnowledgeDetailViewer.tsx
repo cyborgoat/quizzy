@@ -6,6 +6,7 @@ import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { LinkedQuestionList } from "@/components/knowledge/LinkedQuestionList";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { KNOWLEDGE_BASE_FOLDER } from "@/contexts/knowledge-library-context";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { formatShortDate } from "@/lib/formatDate";
@@ -21,6 +22,9 @@ export function KnowledgeDetailViewer({
 }) {
   const hasContent = item.content.trim().length > 0;
   const [isCopying, setIsCopying] = useState(false);
+  const fileLocation = item.fileName
+    ? `${KNOWLEDGE_BASE_FOLDER}/${item.fileName}`
+    : null;
 
   async function handleCopyMarkdown() {
     setIsCopying(true);
@@ -43,6 +47,15 @@ export function KnowledgeDetailViewer({
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
             Updated {formatShortDate(item.updatedAt)}
+            {fileLocation && (
+              <>
+                {" "}
+                ·{" "}
+                <span className="font-mono text-xs text-zinc-400" title={fileLocation}>
+                  {fileLocation}
+                </span>
+              </>
+            )}
           </p>
         </header>
 

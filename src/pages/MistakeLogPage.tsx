@@ -17,17 +17,9 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import {
+  DataTableColumnFilterHeader,
   DataTableColumnHeader,
   DataTableNumericCell,
   DataTableSortableHeader,
@@ -80,51 +72,6 @@ const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }
   { value: "multiple_choice", label: QUESTION_TYPE_LABELS.multiple_choice },
   { value: "true_false", label: QUESTION_TYPE_LABELS.true_false },
 ];
-
-function MistakeLogColumnFilterHeader({
-  label,
-  filterValue,
-  menuLabel,
-  options,
-  onFilterChange,
-}: {
-  label: string;
-  filterValue: string;
-  menuLabel: string;
-  options: { value: string; label: string }[];
-  onFilterChange: (value: string) => void;
-}) {
-  const isFiltered = filterValue !== "all";
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-auto w-full justify-start gap-1 rounded-none p-0 text-left text-xs font-medium hover:bg-transparent",
-            isFiltered ? "text-zinc-950" : "text-zinc-600 hover:text-zinc-950",
-          )}
-        >
-          {label}
-          <ChevronDown className="size-3 shrink-0 opacity-60" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
-        <DropdownMenuLabel>{menuLabel}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value={filterValue} onValueChange={onFilterChange}>
-          {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function formatMistakeQuestionLabel(entry: MistakeEntry, quizzes: QuizSource[]) {
   const quiz = quizzes.find((source) => source.quiz.id === entry.quizId);
@@ -264,7 +211,7 @@ export function MistakeLogPage() {
           isQuizScoped ? (
             <DataTableColumnHeader label="Quiz Name" />
           ) : (
-            <MistakeLogColumnFilterHeader
+            <DataTableColumnFilterHeader
               label="Quiz Name"
               filterValue={effectiveQuizFilter}
               menuLabel="Filter by quiz"

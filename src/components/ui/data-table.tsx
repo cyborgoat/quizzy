@@ -1,6 +1,16 @@
 import { type Column } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export const dataTableHeadClass = "h-auto px-3 py-2 text-left align-middle";
@@ -19,6 +29,76 @@ export const dataTableCellMutedClass =
 
 export function DataTableColumnHeader({ label }: { label: string }) {
   return <span className={headerTextClass}>{label}</span>;
+}
+
+export function DataTableColumnFilterHeader({
+  label,
+  filterValue,
+  menuLabel,
+  options,
+  onFilterChange,
+}: {
+  label: string;
+  filterValue: string;
+  menuLabel: string;
+  options: { value: string; label: string }[];
+  onFilterChange: (value: string) => void;
+}) {
+  const isFiltered = filterValue !== "all";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            sortButtonClass,
+            isFiltered && "text-zinc-950",
+          )}
+        >
+          {label}
+          <ChevronDown className="size-3 shrink-0 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+        <DropdownMenuLabel>{menuLabel}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup value={filterValue} onValueChange={onFilterChange}>
+          {options.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function DataTableSearchHeader({
+  value,
+  onChange,
+  placeholder = "Search…",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-1.5">
+      <Search className="size-3 shrink-0 text-zinc-400" aria-hidden="true" />
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      />
+    </div>
+  );
 }
 
 export function DataTableSortableHeader<T>({
