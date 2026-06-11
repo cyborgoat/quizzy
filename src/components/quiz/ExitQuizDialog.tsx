@@ -20,8 +20,8 @@ export function ExitQuizDialog({
       leading={<AlertTriangle className="size-8 text-amber-500" aria-hidden="true" />}
       title="Leave this quiz?"
       description="Going back to home will end your current attempt. Any answers you have entered so far will not be saved."
-      cancelLabel="Continue quiz"
-      confirmLabel="Back to home"
+      cancelLabel="Continue"
+      confirmLabel="Leave"
       onCancel={onCancel}
       onConfirm={onConfirm}
     >

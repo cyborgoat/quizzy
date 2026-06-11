@@ -23,7 +23,7 @@ export function ReviewHeader({
           className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
         >
           <ArrowLeft className="size-4" />
-          Back to goals
+          Goals
         </Link>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -44,7 +44,7 @@ export function ReviewHeader({
             className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-md bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
           >
             <RotateCcw className="size-4" />
-            Retake quiz
+            Retake
           </Link>
         </div>
       </header>
@@ -58,7 +58,7 @@ export function ReviewHeader({
         className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
       >
         <Home className="size-4" />
-        Return home
+        Home
       </Link>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -82,7 +82,7 @@ export function ReviewHeader({
             onClick={practiceContext.onRestart}
           >
             <RotateCcw className="size-4" />
-            Restart quiz
+            Restart
           </Button>
         )}
       </div>

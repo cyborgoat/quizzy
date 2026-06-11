@@ -34,7 +34,7 @@ export function WorkingDirectoryGate({
       <EmptyState
         title={directoryPath ? unavailableTitle : noDirectoryTitle}
         description={directoryPath ? unavailableDescription : noDirectoryDescription}
-        actionLabel="Open Settings"
+        actionLabel="Settings"
         onAction={onOpenSettings}
       />
     );

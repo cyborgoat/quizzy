@@ -56,7 +56,7 @@ function AttemptReviewLoader({
         <ErrorState
           title="Attempt unavailable"
           description={error ?? "Attempt details are unavailable."}
-          actionLabel="Back to goals"
+          actionLabel="Goals"
           onAction={() => navigate({ to: "/goals" })}
         />
       </PageShell>
@@ -84,7 +84,7 @@ export function AttemptReviewPage() {
         <ErrorState
           title="Invalid review link"
           description="This attempt review link is missing required information."
-          actionLabel="Back to goals"
+          actionLabel="Goals"
           onAction={() => navigate({ to: "/goals" })}
         />
       </PageShell>
@@ -97,7 +97,7 @@ export function AttemptReviewPage() {
         <ErrorState
           title="Goal or attempt not found"
           description="This goal or attempt may have been deleted or is no longer available."
-          actionLabel="Back to goals"
+          actionLabel="Goals"
           onAction={() => navigate({ to: "/goals" })}
         />
       </PageShell>

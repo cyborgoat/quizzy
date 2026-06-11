@@ -33,7 +33,7 @@ export function QuestionContent({
         </p>
         <IconActionButton
           icon={Flag}
-          label={flagged ? "Unflag question" : "Flag for review"}
+          label={flagged ? "Unflag" : "Flag"}
           variant={flagged ? "default" : "outline"}
           aria-pressed={flagged}
           onClick={onToggleFlag}

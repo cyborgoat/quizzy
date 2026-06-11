@@ -81,14 +81,14 @@ export function AddGoalDialog({ quiz }: { quiz: Quiz }) {
           </Dialog.Trigger>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Add to goal</p>
+          <p>Add goal</p>
         </TooltipContent>
       </Tooltip>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-zinc-950/50" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl focus:outline-none">
           <Dialog.Title className="text-xl font-semibold text-zinc-950">
-            Add to goal
+            New goal
           </Dialog.Title>
           <Dialog.Description className="mt-1 text-sm text-zinc-500">
             Set a goal for <span className="font-medium text-zinc-700">{quiz.title}</span>.
@@ -122,7 +122,7 @@ export function AddGoalDialog({ quiz }: { quiz: Quiz }) {
               <IconActionButton icon={X} label="Cancel" variant="outline" disabled={isSaving} />
             </Dialog.Close>
             <Button onClick={() => void handleCreate()} disabled={isSaving}>
-              {isSaving ? "Creating..." : "Create goal"}
+              {isSaving ? "Creating..." : "Create"}
             </Button>
           </div>
         </Dialog.Content>

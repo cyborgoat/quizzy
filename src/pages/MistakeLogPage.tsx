@@ -153,7 +153,7 @@ function EmptyMistakeLog({
         to="/settings"
         className="mt-6 inline-flex h-8 items-center justify-center rounded-md bg-zinc-900 px-3 text-sm font-medium text-white hover:bg-zinc-800"
       >
-        Open Settings
+        Settings
       </Link>
     </section>
   );

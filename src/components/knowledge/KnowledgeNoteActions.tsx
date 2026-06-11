@@ -12,12 +12,12 @@ export function KnowledgeNoteActions({
     <div className="flex shrink-0 items-center gap-1">
       <IconActionButton
         icon={Link2}
-        label="Link existing note"
+        label="Link"
         onClick={onLink}
       />
       <IconActionButton
         icon={FilePlus}
-        label="Add new note"
+        label="New note"
         onClick={onAdd}
       />
     </div>

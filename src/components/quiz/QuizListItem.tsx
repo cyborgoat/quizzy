@@ -10,7 +10,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddGoalDialog } from "@/components/goals/AddGoalDialog";
-import { EditGoalDialog } from "@/components/goals/EditGoalDialog";
+import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
 import { quizCardActionClass } from "@/components/quiz/quiz-card-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,18 +89,18 @@ export function QuizListItem({ source }: { source: QuizSource }) {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={handleEditGoal}>
                   <Pencil />
-                  Edit goal
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/goals" search={{ expand: goal.id }}>
                     <ListChecks />
-                    View attempts
+                    Attempts
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/mistakes" search={{ quizId: source.quiz.id }}>
                     <ClipboardList />
-                    View mistake log
+                    Mistakes
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -110,7 +110,7 @@ export function QuizListItem({ source }: { source: QuizSource }) {
                   disabled={isDeletingGoal}
                 >
                   <Trash2 />
-                  {isDeletingGoal ? "Deleting goal..." : "Delete goal"}
+                  {isDeletingGoal ? "Deleting..." : "Delete"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -118,7 +118,7 @@ export function QuizListItem({ source }: { source: QuizSource }) {
             <AddGoalDialog quiz={source.quiz} />
           )}
           {goal && (
-            <EditGoalDialog
+            <GoalSettingsDialog
               goal={goal}
               open={isEditingGoal}
               onOpenChange={setIsEditingGoal}
@@ -145,7 +145,7 @@ export function QuizListItem({ source }: { source: QuizSource }) {
             params={{ quizId: source.quiz.id }}
             search={{ from: "home" }}
           >
-            Start quiz <ArrowRight className="size-4" />
+            Start <ArrowRight className="size-4" />
           </Link>
         </div>
       </div>

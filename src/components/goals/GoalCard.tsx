@@ -220,7 +220,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
           <GoalCompactMeta goal={goal} />
           <IconActionButton
             icon={Settings}
-            label="Goal settings"
+            label="Settings"
             variant="ghost"
             className={goalRowHoverActionClass}
             onClick={openSettings}
@@ -239,7 +239,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
           {goal.completed && (
             <IconActionButton
               icon={RotateCcw}
-              label="Reopen goal"
+              label="Reopen"
               variant="ghost"
               className="size-7 text-zinc-500"
               onClick={(event) => void handleReopen(event)}

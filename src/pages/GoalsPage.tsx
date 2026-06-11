@@ -179,7 +179,7 @@ export function GoalsPage() {
               onClick={() => void handleCreate()}
               disabled={!form.quizId || isCreating}
             >
-              {isCreating ? "Creating..." : "Create goal"}
+              {isCreating ? "Creating..." : "Create"}
             </Button>
             <IconActionButton
               icon={X}

@@ -288,7 +288,7 @@ export function KnowledgeBasePage() {
             <EmptyState
               title="No notes match your filters"
               description="Try another search term or clear the tag filter."
-              actionLabel="Clear filters"
+              actionLabel="Clear"
               actionVariant="outline"
               onAction={() => {
                 setSearchQuery("");

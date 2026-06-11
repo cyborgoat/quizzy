@@ -64,7 +64,7 @@ export function KnowledgeDetailViewer({
             {hasContent && (
               <IconActionButton
                 icon={Copy}
-                label="Copy markdown file"
+                label="Copy"
                 onClick={() => void handleCopyMarkdown()}
                 disabled={isCopying}
               />

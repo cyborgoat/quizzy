@@ -120,7 +120,7 @@ export function GoalSettingsDialog({
           <div className="flex items-center gap-1">
             <IconActionButton
               icon={Trash2}
-              label="Delete goal"
+              label="Delete"
               className="text-zinc-500 hover:text-red-700"
               disabled={isSaving}
               onClick={() => void handleDelete()}
@@ -128,7 +128,7 @@ export function GoalSettingsDialog({
             {!goal.completed && (
               <IconActionButton
                 icon={CheckCircle2}
-                label="Mark as complete"
+                label="Complete"
                 variant="outline"
                 disabled={isSaving}
                 onClick={() => void handleComplete()}
@@ -141,7 +141,7 @@ export function GoalSettingsDialog({
             disabled={isSaving}
             onClick={() => void handleSave()}
           >
-            {isSaving ? "Saving..." : "Save changes"}
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>
       </DialogContent>

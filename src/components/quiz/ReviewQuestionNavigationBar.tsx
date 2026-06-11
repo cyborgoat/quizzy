@@ -42,7 +42,7 @@ export function ReviewQuestionNavigationBar({
     <div className="flex items-center justify-center gap-2">
       <IconActionButton
         icon={ChevronLeft}
-        label="Previous question"
+        label="Previous"
         onClick={onPrevious}
         disabled={disablePrevious}
       />
@@ -51,7 +51,7 @@ export function ReviewQuestionNavigationBar({
       </p>
       <IconActionButton
         icon={ChevronRight}
-        label="Next question"
+        label="Next"
         onClick={onNext}
         disabled={disableNext}
       />

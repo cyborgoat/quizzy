@@ -16,7 +16,7 @@ export function QuizActionBar({
     <footer className={`${quizChromeFooterClass} sticky bottom-0 z-20 bg-white/95 backdrop-blur`}>
       <div className={cn(quizChromeInnerClass, "flex h-full items-center justify-between")}>
         <IconActionButton icon={Home} label="Home" onClick={onExitQuiz} />
-        <Button onClick={onSubmitQuiz}>Submit quiz</Button>
+        <Button onClick={onSubmitQuiz}>Submit</Button>
       </div>
     </footer>
   );

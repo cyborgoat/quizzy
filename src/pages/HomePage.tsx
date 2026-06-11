@@ -114,7 +114,7 @@ export function HomePage() {
               </IconActionButton>
               <IconActionButton
                 icon={FolderOpen}
-                label="Open quiz folder"
+                label="Open folder"
                 variant="outline"
                 onClick={() => void library.openQuizFolder()}
               />
@@ -148,7 +148,7 @@ export function HomePage() {
               <EmptyState
                 title="No quizzes match your search"
                 description="Try another keyword or clear the search to see all quizzes."
-                actionLabel="Clear search"
+                actionLabel="Clear"
                 actionVariant="outline"
                 onAction={() => setSearchQuery("")}
               />
@@ -157,7 +157,7 @@ export function HomePage() {
             <EmptyState
               title="No valid quizzes yet"
               description="Add one or more quiz JSON files to the configured quiz folder."
-              actionLabel="Open quiz folder"
+              actionLabel="Open folder"
               actionIcon={<FolderOpen className="size-4" />}
               actionVariant="outline"
               onAction={() => void library.openQuizFolder()}

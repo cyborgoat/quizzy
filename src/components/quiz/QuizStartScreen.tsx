@@ -59,7 +59,7 @@ export function QuizStartScreen({
               onSelect={() => setMode("practice")}
             />
             <ModeOption
-              label="Scored attempt"
+              label="Scored"
               description="All questions. Counts toward your goals."
               selected={mode === "scored"}
               onSelect={() => setMode("scored")}

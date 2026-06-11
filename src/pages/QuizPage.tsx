@@ -52,7 +52,7 @@ function resolveSessionConfig(
 }
 
 function sessionModeLabel(config: QuizSessionConfig, totalQuestions: number) {
-  if (config.mode === "scored") return "Scored attempt";
+  if (config.mode === "scored") return "Scored";
   return `Practice · ${totalQuestions} question${totalQuestions !== 1 ? "s" : ""}`;
 }
 
@@ -109,7 +109,7 @@ function ScoredAttemptRedirect({
         <ErrorState
           title="No goal for this quiz"
           description="Scored attempts are saved to a goal. Create a goal for this quiz to review your attempt."
-          actionLabel="Return home"
+          actionLabel="Home"
           onAction={() => navigate({ to: "/" })}
         />
       </PageShell>
@@ -291,7 +291,7 @@ export function QuizPage() {
         <ErrorState
           title="Quiz not found"
           description="This quiz is unavailable or its file is no longer valid."
-          actionLabel="Return home"
+          actionLabel="Home"
           onAction={() => navigate({ to: "/" })}
         />
       </PageShell>

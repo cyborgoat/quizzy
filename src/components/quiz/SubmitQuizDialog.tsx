@@ -22,8 +22,8 @@ export function SubmitQuizDialog({
       leading={<AlertTriangle className="size-8 text-amber-500" aria-hidden="true" />}
       title="Submit this quiz?"
       description="Submission is final. Correct answers and explanations will be shown after you submit."
-      cancelLabel="Continue quiz"
-      confirmLabel="Submit quiz"
+      cancelLabel="Continue"
+      confirmLabel="Submit"
       onCancel={onCancel}
       onConfirm={onConfirm}
     >
