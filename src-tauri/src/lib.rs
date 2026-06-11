@@ -587,9 +587,26 @@ fn delete_goal_attempt(app: AppHandle, goal_id: String, attempt_id: String) -> R
     goals_storage::delete_goal_attempt(&app, goal_id, attempt_id)
 }
 
+fn focus_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            focus_main_window(&app);
+        }));
+    }
+
+    builder
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             get_settings,
@@ -607,8 +624,14 @@ pub fn run() {
             get_goal_attempt,
             delete_goal_attempt
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Quizzy");
+        .build(tauri::generate_context!())
+        .expect("error while building Quizzy")
+        .run(|app_handle, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                focus_main_window(app_handle);
+            }
+        });
 }
 
 #[cfg(test)]
