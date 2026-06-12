@@ -24,6 +24,7 @@ export type KnowledgeLibraryContextValue = {
   refresh: (options?: KnowledgeLibraryRefreshOptions) => Promise<void>;
   createItem: (draft: CreateKnowledgeDraft) => Promise<KnowledgeItem>;
   saveItem: (item: KnowledgeItem) => Promise<void>;
+  recordView: (id: string) => Promise<void>;
   deleteItem: (fileName: string) => Promise<void>;
   openKnowledgeFolder: () => Promise<void>;
   getNotesForQuestion: (quizId: string, questionId: string) => KnowledgeItem[];

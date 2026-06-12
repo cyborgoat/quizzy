@@ -8,6 +8,7 @@ const sampleMeta = {
   linkedQuizQuestions: [
     { quizId: "react-basics", questionId: "useeffect-cleanup" },
   ],
+  views: 3,
   createdAt: "2026-06-09T10:00:00.000Z",
   updatedAt: "2026-06-09T10:00:00.000Z",
 };
@@ -23,6 +24,7 @@ describe("splitFrontMatter", () => {
     expect(result.frontMatter.title).toBe(sampleMeta.title);
     expect(result.frontMatter.tags).toEqual(sampleMeta.tags);
     expect(result.frontMatter.linkedQuizQuestions).toEqual(sampleMeta.linkedQuizQuestions);
+    expect(result.frontMatter.views).toBe(sampleMeta.views);
     expect(result.content).toContain("## Key idea");
   });
 
@@ -42,6 +44,7 @@ describe("serializeKnowledgeFile", () => {
     if ("error" in parsed) return;
     expect(parsed.content).toBe("Body text");
     expect(parsed.frontMatter.updatedAt).toBe(sampleMeta.updatedAt);
+    expect(parsed.frontMatter.views).toBe(sampleMeta.views);
   });
 
   it("serializes empty tags as a block list header", () => {

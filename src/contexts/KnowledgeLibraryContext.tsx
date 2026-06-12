@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -22,6 +22,8 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     : null;
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidKnowledgeReport[]>([]);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
@@ -73,6 +75,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       title,
       tags: draft.tags ?? [],
       linkedQuizQuestions: draft.linkedQuizQuestions ?? [],
+      views: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
       fileName,
@@ -86,8 +89,10 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   }
 
   async function saveItem(item: KnowledgeItem) {
+    const current = itemsRef.current.find((entry) => entry.id === item.id);
     const updated: KnowledgeItem = {
       ...item,
+      views: current?.views ?? item.views,
       updatedAt: new Date().toISOString(),
     };
     const contents = serializeKnowledgeFile(updated, updated.content);
@@ -102,6 +107,35 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
         .sort((a, b) => a.title.localeCompare(b.title)),
     );
     await refresh({ background: true });
+  }
+
+  async function recordView(id: string) {
+    const item = itemsRef.current.find((entry) => entry.id === id);
+    if (!item || item.fileName === "") {
+      return;
+    }
+
+    const updated: KnowledgeItem = {
+      ...item,
+      views: item.views + 1,
+    };
+
+    setItems((current) =>
+      current.map((entry) => (entry.id === id ? updated : entry)),
+    );
+
+    try {
+      const contents = serializeKnowledgeFile(updated, updated.content);
+      await nativeApi.writeKnowledgeFile({
+        fileName: updated.fileName,
+        contents,
+        overwrite: true,
+      });
+    } catch {
+      setItems((current) =>
+        current.map((entry) => (entry.id === id ? item : entry)),
+      );
+    }
   }
 
   async function deleteItem(fileName: string) {
@@ -127,6 +161,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     refresh,
     createItem,
     saveItem,
+    recordView,
     deleteItem,
     openKnowledgeFolder,
     getNotesForQuestion,

@@ -12,6 +12,7 @@ linkedQuizQuestions:
     questionId: stress-sc-01
   - quizId: comprehensive-stress-test
     questionId: stress-sc-08
+views: 4
 createdAt: "2026-06-10T12:00:00.000Z"
 updatedAt: "2026-06-12T01:14:42.198Z"
 ---

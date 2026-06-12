@@ -11,9 +11,12 @@ import { sectionLabelClassName } from "@/components/ui/section-label";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { KNOWLEDGE_BASE_FOLDER } from "@/contexts/knowledge-library-context";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
+import { useRecordKnowledgeView } from "@/hooks/useRecordKnowledgeView";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { formatShortDate } from "@/lib/formatDate";
+import { formatViewCount } from "@/lib/formatViewCount";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -21,13 +24,18 @@ export function KnowledgeDetailViewer({
   item,
   onEdit,
   stackedLinkedQuestionPreview = false,
+  recordView = false,
 }: {
   item: KnowledgeItem;
   onEdit?: () => void;
   stackedLinkedQuestionPreview?: boolean;
+  recordView?: boolean;
 }) {
+  const { items } = useKnowledgeLibrary();
+  const liveItem = items.find((entry) => entry.id === item.id) ?? item;
   const hasContent = item.content.trim().length > 0;
   const [isCopying, setIsCopying] = useState(false);
+  useRecordKnowledgeView(liveItem, recordView);
   const fileLocation = item.fileName
     ? `${KNOWLEDGE_BASE_FOLDER}/${item.fileName}`
     : null;
@@ -53,6 +61,8 @@ export function KnowledgeDetailViewer({
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
             Updated {formatShortDate(item.updatedAt)}
+            {" · "}
+            {formatViewCount(liveItem.views)}
             {fileLocation && (
               <>
                 {" "}

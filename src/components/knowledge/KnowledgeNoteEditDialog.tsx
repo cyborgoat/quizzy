@@ -141,6 +141,7 @@ export function KnowledgeNoteEditDialog({
           item={draft}
           onEdit={() => setMode("edit")}
           stackedLinkedQuestionPreview
+          recordView
         />
       ) : (
         <KnowledgeDetailEditor
