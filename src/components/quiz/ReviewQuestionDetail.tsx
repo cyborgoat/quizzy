@@ -170,7 +170,7 @@ export function ReviewQuestionDetail({
           )}
 
           {showExplanation && question.explanation && revealed && (
-            <QuestionExplanation explanation={question.explanation} compact={compact} />
+            <QuestionExplanation explanation={question.explanation} />
           )}
         </div>
       </div>

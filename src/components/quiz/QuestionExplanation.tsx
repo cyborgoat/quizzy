@@ -1,30 +1,23 @@
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
-import { cn } from "@/lib/utils";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 
 export function QuestionExplanation({
   explanation,
-  compact = false,
   placeholder,
 }: {
   explanation: string;
-  compact?: boolean;
   placeholder?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border border-zinc-200 bg-zinc-50", compact ? "p-3" : "p-4")}>
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Explanation</p>
-      <div
-        className={cn(
-          compact ? "mt-1.5 leading-5" : "mt-2 leading-6",
-          placeholder ? "text-sm text-zinc-500" : "text-sm text-zinc-700",
-        )}
-      >
-        {placeholder ? (
-          <p>{placeholder}</p>
-        ) : (
+    <section className="min-w-0">
+      <h2 className={sectionLabelClassName}>Explanation</h2>
+      {placeholder ? (
+        <p className="mt-1.5 text-xs leading-snug text-zinc-500">{placeholder}</p>
+      ) : (
+        <div className="mt-1.5 text-sm text-zinc-700">
           <MarkdownContent>{explanation}</MarkdownContent>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </section>
   );
 }

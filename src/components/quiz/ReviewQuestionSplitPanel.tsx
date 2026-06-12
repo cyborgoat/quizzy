@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 
 const STUDY_EXPLANATION_PLACEHOLDER =
-  "Answer the question and submit to see the explanation, or turn off Study mode.";
+  "Submit your answer to see the explanation.";
+const STUDY_REFERENCES_PLACEHOLDER =
+  "Submit your answer to see the references.";
 
 export function ReviewQuestionSplitPanel({
   question,
@@ -30,6 +32,7 @@ export function ReviewQuestionSplitPanel({
 }) {
   const [studyRevealed, setStudyRevealed] = useState(!concealAnswers);
   const revealed = studyRevealed;
+  const studyPlaceholder = concealAnswers && !revealed;
 
   return (
     <div
@@ -49,14 +52,11 @@ export function ReviewQuestionSplitPanel({
         className="h-full"
       />
 
-      <aside className="flex min-w-0 flex-col gap-3">
+      <aside className="flex min-w-0 flex-col gap-3 pt-3">
         {question.explanation && (
           <QuestionExplanation
             explanation={question.explanation}
-            compact
-            placeholder={
-              concealAnswers && !revealed ? STUDY_EXPLANATION_PLACEHOLDER : undefined
-            }
+            placeholder={studyPlaceholder ? STUDY_EXPLANATION_PLACEHOLDER : undefined}
           />
         )}
         {quizId && (
@@ -65,6 +65,7 @@ export function ReviewQuestionSplitPanel({
             questionId={question.id}
             currentNoteId={currentNoteId}
             noteDialogLayer={noteDialogLayer}
+            placeholder={studyPlaceholder ? STUDY_REFERENCES_PLACEHOLDER : undefined}
           />
         )}
       </aside>

@@ -13,11 +13,13 @@ export function QuestionKnowledgeNotesPanel({
   questionId,
   currentNoteId,
   noteDialogLayer,
+  placeholder,
 }: {
   quizId: string;
   questionId: string;
   currentNoteId?: string;
   noteDialogLayer?: DialogStackLayer;
+  placeholder?: string;
 }) {
   const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
   const {
@@ -52,6 +54,7 @@ export function QuestionKnowledgeNotesPanel({
         currentNoteId={currentNoteId}
         onSelectNote={(item) => openNote(item, "view")}
         headerActions={actions}
+        placeholder={placeholder}
       />
 
       {linkDialogOpen && (

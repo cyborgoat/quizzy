@@ -10,23 +10,27 @@ export function LinkedKnowledgeNotesSection({
   currentNoteId,
   headerActions,
   emptyDescription = "No linked references.",
+  placeholder,
 }: {
   notes: KnowledgeItem[];
   onSelectNote: (item: KnowledgeItem) => void;
   currentNoteId?: string;
   headerActions?: ReactNode;
   emptyDescription?: string;
+  placeholder?: string;
 }) {
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className={sectionLabelClassName}>
-          References{notes.length > 0 ? ` (${notes.length})` : ""}
+          References{!placeholder && notes.length > 0 ? ` (${notes.length})` : ""}
         </h2>
-        {headerActions}
+        {!placeholder && headerActions}
       </div>
 
-      {notes.length === 0 ? (
+      {placeholder ? (
+        <p className="mt-1.5 text-xs leading-snug text-zinc-500">{placeholder}</p>
+      ) : notes.length === 0 ? (
         <p className="mt-1.5 text-xs leading-snug text-zinc-500">{emptyDescription}</p>
       ) : (
         <ol className="mt-1.5 list-none space-y-1">
