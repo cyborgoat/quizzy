@@ -179,7 +179,7 @@ export function KnowledgeMarkdownEditor({
         markdown={value}
         onChange={handleChange}
         readOnly={disabled}
-        placeholder="Write your notes… Use $…$ or $$…$$ for math (rendered in view mode)."
+        placeholder="Write your notes…"
         contentEditableClassName="knowledge-prose knowledge-mdx-content"
         className="knowledge-mdx-root"
         plugins={editorPlugins}
