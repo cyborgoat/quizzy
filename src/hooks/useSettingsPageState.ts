@@ -28,7 +28,7 @@ export function useSettingsPageState() {
     setShuffleQuestions,
     setShuffleOptions,
   } = useQuizPreferences();
-  const { fontSize, density, setFontSize, setDensity } = useUiPreferences();
+  const { fontSize, setFontSize } = useUiPreferences();
   const {
     minMistakes,
     minFlags,
@@ -50,7 +50,6 @@ export function useSettingsPageState() {
         shuffleQuestions,
         shuffleOptions,
         fontSize,
-        density,
         minMistakes,
         minFlags,
         maxCorrectnessPercentage,
@@ -60,7 +59,6 @@ export function useSettingsPageState() {
       shuffleQuestions,
       shuffleOptions,
       fontSize,
-      density,
       minMistakes,
       minFlags,
       maxCorrectnessPercentage,
@@ -166,7 +164,6 @@ export function useSettingsPageState() {
         shuffleQuestions: parsed.shuffleQuestions,
         shuffleOptions: parsed.shuffleOptions,
         uiFontSize: parsed.fontSize,
-        uiDensity: parsed.density,
         mistakeLogMinMistakes: parsed.minMistakes,
         mistakeLogMinFlags: parsed.minFlags,
         mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,
@@ -181,7 +178,6 @@ export function useSettingsPageState() {
     setShuffleQuestions(parsed.shuffleQuestions);
     setShuffleOptions(parsed.shuffleOptions);
     setFontSize(parsed.fontSize);
-    setDensity(parsed.density);
     setMinMistakes(parsed.minMistakes);
     setMinFlags(parsed.minFlags);
     setMaxCorrectnessPercentage(parsed.maxCorrectness);

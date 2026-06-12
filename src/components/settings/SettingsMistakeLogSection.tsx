@@ -1,5 +1,5 @@
 import { ClipboardList } from "lucide-react";
-import { SettingsField } from "@/components/settings/SettingsField";
+import { SettingsField, settingsAlignedFieldGridClassName } from "@/components/settings/SettingsField";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import type { SettingsDraft, SettingsDraftErrors } from "@/lib/settingsDraft";
@@ -19,12 +19,13 @@ export function SettingsMistakeLogSection({
 }) {
   return (
     <SettingsSection icon={ClipboardList} title="Mistake Log">
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className={settingsAlignedFieldGridClassName}>
         <SettingsField
           id="min-mistakes"
           label="Min mistakes"
           hint="Required mistakes when correctness is below the max."
           error={errors.minMistakes}
+          alignInGrid
         >
           <Input
             id="min-mistakes"
@@ -41,6 +42,7 @@ export function SettingsMistakeLogSection({
           label="Min flags"
           hint="Flagged questions need at least this many flags."
           error={errors.minFlags}
+          alignInGrid
         >
           <Input
             id="min-flags"
@@ -57,6 +59,7 @@ export function SettingsMistakeLogSection({
           label="Max correctness %"
           hint="Per-question correctness across scored attempts."
           error={errors.maxCorrectness}
+          alignInGrid
         >
           <Input
             id="max-correctness"

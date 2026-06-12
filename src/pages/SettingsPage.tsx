@@ -59,7 +59,6 @@ export function SettingsPage() {
           updateDraft({ fontSize });
           clearFieldError("fontSize");
         }}
-        onDensityChange={(density) => updateDraft({ density })}
       />
 
       <SettingsQuizPreferencesSection

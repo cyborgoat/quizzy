@@ -1,33 +1,13 @@
-export type UiDensity = "default" | "comfortable" | "spacious";
-
 export const UI_FONT_SIZE_MIN = 75;
 export const UI_FONT_SIZE_MAX = 150;
 export const UI_FONT_SIZE_DEFAULT = 100;
 export const UI_FONT_SIZE_STEP = 5;
-
-export const UI_DENSITY_OPTIONS: { value: UiDensity; label: string }[] = [
-  { value: "default", label: "Default" },
-  { value: "comfortable", label: "Comfortable" },
-  { value: "spacious", label: "Spacious" },
-];
 
 const LEGACY_FONT_SIZE: Record<string, number> = {
   small: 88,
   default: 100,
   large: 113,
   "extra-large": 125,
-};
-
-const DENSITY_WIDTH_SCALE: Record<UiDensity, number> = {
-  default: 1,
-  comfortable: 1.08,
-  spacious: 1.15,
-};
-
-const DENSITY_PADDING_SCALE: Record<UiDensity, number> = {
-  default: 1,
-  comfortable: 1.15,
-  spacious: 1.3,
 };
 
 export function clampFontSize(value: number): number {
@@ -90,20 +70,10 @@ export function validateFontSizeInput(value: string): string | null {
   return null;
 }
 
-export function applyUiPreferences(fontSize: number, density: UiDensity) {
+export function applyUiPreferences(fontSize: number) {
   const root = document.documentElement;
   const fontScale = clampFontSize(fontSize) / 100;
-  const widthScale = DENSITY_WIDTH_SCALE[density];
-  const paddingScale = DENSITY_PADDING_SCALE[density];
 
   root.style.setProperty("--app-font-scale", String(fontScale));
-  root.style.setProperty("--app-density-width-scale", String(widthScale));
-  root.style.setProperty("--app-density-padding-scale", String(paddingScale));
   root.dataset.uiFontSize = String(clampFontSize(fontSize));
-  root.dataset.uiDensity = density;
-}
-
-export function parseUiDensity(value: string | undefined): UiDensity {
-  if (value === "comfortable" || value === "spacious") return value;
-  return "default";
 }

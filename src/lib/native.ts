@@ -12,7 +12,6 @@ export type AppSettings = {
   mistakeLogMinFlags: number;
   mistakeLogMaxCorrectnessPercentage: number;
   uiFontSize: number;
-  uiDensity: string;
 };
 
 export type SaveSettingsRequest = {
@@ -24,7 +23,6 @@ export type SaveSettingsRequest = {
   mistakeLogMinFlags?: number;
   mistakeLogMaxCorrectnessPercentage?: number;
   uiFontSize?: number;
-  uiDensity?: string;
 };
 
 export type NativeQuizFile = {

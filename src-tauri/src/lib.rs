@@ -33,10 +33,6 @@ fn default_ui_font_size() -> u32 {
     100
 }
 
-fn default_ui_density() -> String {
-    "default".to_string()
-}
-
 const UI_FONT_SIZE_MIN: u32 = 75;
 const UI_FONT_SIZE_MAX: u32 = 150;
 
@@ -108,13 +104,6 @@ where
     deserializer.deserialize_any(UiFontSizeVisitor)
 }
 
-fn validate_ui_density(value: &str) -> Result<(), String> {
-    match value {
-        "default" | "comfortable" | "spacious" => Ok(()),
-        _ => Err("Layout density must be default, comfortable, or spacious.".to_string()),
-    }
-}
-
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Settings {
@@ -138,8 +127,6 @@ struct Settings {
         deserialize_with = "deserialize_ui_font_size"
     )]
     ui_font_size: u32,
-    #[serde(default = "default_ui_density")]
-    ui_density: String,
 }
 
 #[derive(Serialize)]
@@ -154,7 +141,6 @@ struct AppSettings {
     mistake_log_min_flags: u32,
     mistake_log_max_correctness_percentage: u32,
     ui_font_size: u32,
-    ui_density: String,
 }
 
 #[derive(Deserialize)]
@@ -170,7 +156,6 @@ struct SaveSettingsRequest {
     mistake_log_min_flags: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
     ui_font_size: Option<u32>,
-    ui_density: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -369,7 +354,6 @@ fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         mistake_log_min_flags: settings.mistake_log_min_flags,
         mistake_log_max_correctness_percentage: settings.mistake_log_max_correctness_percentage,
         ui_font_size: settings.ui_font_size,
-        ui_density: settings.ui_density,
     })
 }
 
@@ -415,11 +399,6 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
     if let Some(font_size) = request.ui_font_size {
         validate_ui_font_size(font_size)?;
         settings.ui_font_size = font_size;
-    }
-
-    if let Some(density) = request.ui_density {
-        validate_ui_density(&density)?;
-        settings.ui_density = density;
     }
 
     if let Some(path) = request.working_directory {

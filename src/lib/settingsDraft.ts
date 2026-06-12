@@ -1,11 +1,10 @@
-import { validateFontSizeInput, type UiDensity } from "@/lib/uiPreferences";
+import { validateFontSizeInput } from "@/lib/uiPreferences";
 
 export type SettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   fontSize: string;
-  density: UiDensity;
   minMistakes: string;
   minFlags: string;
   maxCorrectness: string;
@@ -25,7 +24,6 @@ export type ParsedSettingsDraft = {
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   fontSize: number;
-  density: UiDensity;
   minMistakes: number;
   minFlags: number;
   maxCorrectness: number;
@@ -37,7 +35,6 @@ export type PersistedSettingsSnapshot = {
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   fontSize: number;
-  density: UiDensity;
   minMistakes: number;
   minFlags: number;
   maxCorrectnessPercentage: number;
@@ -48,7 +45,6 @@ export function draftFromPersisted({
   shuffleQuestions,
   shuffleOptions,
   fontSize,
-  density,
   minMistakes,
   minFlags,
   maxCorrectnessPercentage,
@@ -58,7 +54,6 @@ export function draftFromPersisted({
     shuffleQuestions,
     shuffleOptions,
     fontSize: String(fontSize),
-    density,
     minMistakes: String(minMistakes),
     minFlags: String(minFlags),
     maxCorrectness: String(maxCorrectnessPercentage),
@@ -73,7 +68,6 @@ export function hasSettingsChanges(draft: SettingsDraft, persisted: SettingsDraf
     draft.shuffleQuestions !== persisted.shuffleQuestions ||
     draft.shuffleOptions !== persisted.shuffleOptions ||
     draft.fontSize !== persisted.fontSize ||
-    draft.density !== persisted.density ||
     draft.minMistakes !== persisted.minMistakes ||
     draft.minFlags !== persisted.minFlags ||
     draft.maxCorrectness !== persisted.maxCorrectness
@@ -120,7 +114,6 @@ export function validateSettingsDraft(
       shuffleQuestions: draft.shuffleQuestions,
       shuffleOptions: draft.shuffleOptions,
       fontSize: Number(draft.fontSize),
-      density: draft.density,
       minMistakes: parsedMinMistakes,
       minFlags: parsedMinFlags,
       maxCorrectness: parsedMaxCorrectness,

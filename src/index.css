@@ -31,20 +31,13 @@
   --sidebar-ring:
     hsl(217.2 91.2% 59.8%);
   --app-font-scale: 1;
-  --app-density-width-scale: 1;
-  --app-density-padding-scale: 1;
   --app-font-size-base: 14px;
   --app-font-size: calc(var(--app-font-size-base) * var(--app-font-scale));
-  --app-content-max-wide-base: 64rem;
-  --app-content-max-narrow-base: 42rem;
-  --app-content-max-quiz-base: 48rem;
-  --app-content-max-wide: calc(var(--app-content-max-wide-base) * var(--app-density-width-scale));
-  --app-content-max-narrow: calc(var(--app-content-max-narrow-base) * var(--app-density-width-scale));
-  --app-content-max-quiz: calc(var(--app-content-max-quiz-base) * var(--app-density-width-scale));
-  --app-page-py-base: 1.5rem;
-  --app-page-px-base: 1rem;
-  --app-page-py: calc(var(--app-page-py-base) * var(--app-density-padding-scale));
-  --app-page-px: calc(var(--app-page-px-base) * var(--app-density-padding-scale));
+  --app-content-max-wide: 64rem;
+  --app-content-max-narrow: 42rem;
+  --app-content-max-quiz: 48rem;
+  --app-page-py: 1.5rem;
+  --app-page-px: 1rem;
   --app-sidebar-width: 14rem;
 }
 
@@ -73,25 +66,25 @@ body {
 @media (min-width: 1024px) {
   :root {
     --app-font-size-base: 15px;
-    --app-content-max-quiz-base: 52rem;
+    --app-content-max-quiz: 52rem;
   }
 }
 
 @media (min-width: 1280px) {
   :root {
     --app-font-size-base: 16px;
-    --app-content-max-wide-base: 72rem;
-    --app-content-max-narrow-base: 48rem;
-    --app-content-max-quiz-base: 56rem;
-    --app-page-py-base: 2rem;
+    --app-content-max-wide: 72rem;
+    --app-content-max-narrow: 48rem;
+    --app-content-max-quiz: 56rem;
+    --app-page-py: 2rem;
     --app-sidebar-width: 15rem;
   }
 }
 
 @media (min-width: 1536px) {
   :root {
-    --app-content-max-wide-base: 80rem;
-    --app-content-max-narrow-base: 56rem;
+    --app-content-max-wide: 80rem;
+    --app-content-max-narrow: 56rem;
   }
 }
 
