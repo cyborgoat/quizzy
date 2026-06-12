@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -22,8 +22,6 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     : null;
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidKnowledgeReport[]>([]);
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
@@ -89,40 +87,50 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   }
 
   async function saveItem(item: KnowledgeItem) {
-    const current = itemsRef.current.find((entry) => entry.id === item.id);
-    const updated: KnowledgeItem = {
-      ...item,
-      views: current?.views ?? item.views,
-      updatedAt: new Date().toISOString(),
-    };
+    const draft = { updated: undefined as KnowledgeItem | undefined };
+    setItems((current) => {
+      const existing = current.find((entry) => entry.id === item.id);
+      draft.updated = {
+        ...item,
+        views: existing?.views ?? item.views,
+        updatedAt: new Date().toISOString(),
+      };
+      return current
+        .map((entry) => (entry.id === draft.updated!.id ? draft.updated! : entry))
+        .sort((a, b) => a.title.localeCompare(b.title));
+    });
+    const updated = draft.updated;
+    if (!updated) {
+      return;
+    }
+
     const contents = serializeKnowledgeFile(updated, updated.content);
     await nativeApi.writeKnowledgeFile({
       fileName: updated.fileName,
       contents,
       overwrite: true,
     });
-    setItems((current) =>
-      current
-        .map((entry) => (entry.id === updated.id ? updated : entry))
-        .sort((a, b) => a.title.localeCompare(b.title)),
-    );
     await refresh({ background: true });
   }
 
   async function recordView(id: string) {
-    const item = itemsRef.current.find((entry) => entry.id === id);
-    if (!item || item.fileName === "") {
+    const draft = {
+      previous: undefined as KnowledgeItem | undefined,
+      updated: undefined as KnowledgeItem | undefined,
+    };
+    setItems((current) => {
+      const item = current.find((entry) => entry.id === id);
+      if (!item || item.fileName === "") {
+        return current;
+      }
+      draft.previous = item;
+      draft.updated = { ...item, views: item.views + 1 };
+      return current.map((entry) => (entry.id === id ? draft.updated! : entry));
+    });
+    const { previous, updated } = draft;
+    if (!previous || !updated) {
       return;
     }
-
-    const updated: KnowledgeItem = {
-      ...item,
-      views: item.views + 1,
-    };
-
-    setItems((current) =>
-      current.map((entry) => (entry.id === id ? updated : entry)),
-    );
 
     try {
       const contents = serializeKnowledgeFile(updated, updated.content);
@@ -133,7 +141,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       });
     } catch {
       setItems((current) =>
-        current.map((entry) => (entry.id === id ? item : entry)),
+        current.map((entry) => (entry.id === id ? previous : entry)),
       );
     }
   }
