@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Trash2, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ResizableDialogShell,
   type DialogStackLayer,
@@ -17,6 +17,7 @@ import {
   isUnsavedKnowledgeDraft,
   resolveKnowledgeNoteSource,
 } from "@/lib/knowledgeDraft";
+import { getKnowledgeNoteDialogSizeConstraints } from "@/lib/resizableDialogFrame";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
 export function KnowledgeNoteEditDialog({
@@ -85,6 +86,10 @@ export function KnowledgeNoteEditDialog({
   }
 
   const isViewMode = mode === "view" && !isNewDraft;
+  const dialogConstraints = useMemo(
+    () => (open ? getKnowledgeNoteDialogSizeConstraints() : undefined),
+    [open],
+  );
 
   return (
     <ResizableDialogShell
@@ -92,6 +97,7 @@ export function KnowledgeNoteEditDialog({
       onOpenChange={handleOpenChange}
       layer={layer}
       resizeDisabled={isSaving || isDeleting}
+      constraints={dialogConstraints}
       title={isViewMode ? "Knowledge note" : "Edit knowledge note"}
       description={
         isViewMode

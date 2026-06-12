@@ -15,12 +15,18 @@ export type DialogSizeConstraints = {
   defaultWidth?: number;
   defaultHeight?: number;
   margin?: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
 };
 
 export function getDialogSizeLimits(constraints: DialogSizeConstraints = {}) {
   const margin = constraints.margin ?? DIALOG_VIEWPORT_MARGIN;
-  const viewportWidth = typeof window === "undefined" ? 1280 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
+  const viewportWidth =
+    constraints.viewportWidth ??
+    (typeof window === "undefined" ? 1280 : window.innerWidth);
+  const viewportHeight =
+    constraints.viewportHeight ??
+    (typeof window === "undefined" ? 800 : window.innerHeight);
   const availableWidth = viewportWidth - margin * 2;
   const availableHeight = viewportHeight - margin * 2;
   const maxWidth = constraints.maxWidth
@@ -79,3 +85,39 @@ export const DEFAULT_RESIZABLE_DIALOG_SIZE_CONSTRAINTS = {
   maxWidth: 1536,
   defaultWidth: 1024,
 };
+
+export const KNOWLEDGE_NOTE_DIALOG_MARGIN = 32;
+const KNOWLEDGE_NOTE_DIALOG_MAX_WIDTH = 2048;
+const KNOWLEDGE_NOTE_DIALOG_MAX_HEIGHT = 1400;
+const KNOWLEDGE_NOTE_DIALOG_DEFAULT_WIDTH_CAP = 1600;
+const KNOWLEDGE_NOTE_DIALOG_DEFAULT_HEIGHT_CAP = 1000;
+
+export function getKnowledgeNoteDialogSizeConstraints(viewport?: {
+  width: number;
+  height: number;
+}): DialogSizeConstraints {
+  const margin = KNOWLEDGE_NOTE_DIALOG_MARGIN;
+  const viewportWidth =
+    viewport?.width ?? (typeof window === "undefined" ? 1280 : window.innerWidth);
+  const viewportHeight =
+    viewport?.height ?? (typeof window === "undefined" ? 800 : window.innerHeight);
+
+  const availableWidth = viewportWidth - margin * 2;
+  const availableHeight = viewportHeight - margin * 2;
+
+  return {
+    margin,
+    viewportWidth,
+    viewportHeight,
+    maxWidth: Math.min(KNOWLEDGE_NOTE_DIALOG_MAX_WIDTH, availableWidth),
+    maxHeight: Math.min(KNOWLEDGE_NOTE_DIALOG_MAX_HEIGHT, availableHeight),
+    defaultWidth: Math.min(
+      KNOWLEDGE_NOTE_DIALOG_DEFAULT_WIDTH_CAP,
+      Math.max(1024, Math.round(availableWidth * 0.65)),
+    ),
+    defaultHeight: Math.min(
+      KNOWLEDGE_NOTE_DIALOG_DEFAULT_HEIGHT_CAP,
+      Math.max(560, Math.round(availableHeight * 0.85)),
+    ),
+  };
+}

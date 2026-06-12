@@ -3,6 +3,7 @@ import {
   applyDialogResizeDelta,
   clampDialogSize,
   getDefaultDialogSize,
+  getKnowledgeNoteDialogSizeConstraints,
 } from "@/lib/resizableDialogFrame";
 
 const constraints = {
@@ -60,5 +61,33 @@ describe("resizableDialogFrame", () => {
       width: 1248,
       height: 768,
     });
+  });
+
+  it("uses larger defaults on wide viewports for knowledge note dialogs", () => {
+    const largeScreen = getKnowledgeNoteDialogSizeConstraints({
+      width: 2560,
+      height: 1440,
+    });
+
+    expect(getDefaultDialogSize(largeScreen)).toEqual({
+      width: 1600,
+      height: 1000,
+    });
+    expect(largeScreen.maxWidth).toBe(2048);
+    expect(largeScreen.maxHeight).toBe(1376);
+  });
+
+  it("keeps knowledge note dialogs within viewport margins", () => {
+    const laptop = getKnowledgeNoteDialogSizeConstraints({
+      width: 1280,
+      height: 800,
+    });
+
+    expect(getDefaultDialogSize(laptop)).toEqual({
+      width: 1024,
+      height: 626,
+    });
+    expect(laptop.maxWidth).toBe(1216);
+    expect(laptop.maxHeight).toBe(736);
   });
 });
