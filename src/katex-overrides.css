@@ -1,0 +1,32 @@
+/* Loaded after katex.min.css so these rules win the cascade. */
+
+/* KaTeX: avoid nested overflow scroll regions — they show spurious scrollbar
+   arrows on some formulas (sums, fractions, limits) even when content fits.
+   Do not change display on span.katex; KaTeX needs its default layout for
+   underline/subscript vlist positioning. */
+span.katex {
+  overflow: visible;
+}
+
+.katex-display {
+  display: block;
+  max-width: 100%;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.katex-display::-webkit-scrollbar {
+  display: none;
+}
+
+.katex-display > .katex {
+  display: inline-block;
+  font-size: 1.4em;
+  overflow: visible;
+  vertical-align: baseline;
+  text-align: initial;
+}

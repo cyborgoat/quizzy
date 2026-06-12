@@ -16,7 +16,13 @@ describe("normalizeMarkdownMathEscapes", () => {
 
   it("normalizes block math delimiters", () => {
     expect(normalizeMarkdownMathEscapes(String.raw`$$\sum_{i=1}^{n} x\_i$$`)).toBe(
-      "$$\\sum_{i=1}^{n} x_i$$",
+      "\n\n$$\n\\sum_{i=1}^{n} x_i\n$$\n\n",
+    );
+  });
+
+  it("isolates double-dollar math on its own line", () => {
+    expect(normalizeMarkdownMathEscapes("Text $$x^2$$ more")).toBe(
+      "Text \n\n$$\nx^2\n$$\n\n more",
     );
   });
 });

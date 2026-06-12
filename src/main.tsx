@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "@/index.css";
 import "@mdxeditor/editor/style.css";
 import "katex/dist/katex.min.css";
+import "@/katex-overrides.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

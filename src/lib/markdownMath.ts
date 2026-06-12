@@ -4,10 +4,19 @@ function normalizeMathBody(body: string) {
   return body.replace(/\\([^a-zA-Z])/g, "$1");
 }
 
+function formatBlockMath(body: string) {
+  const normalized = normalizeMathBody(body).trim();
+  if (!normalized) {
+    return "\n\n$$\n$$\n\n";
+  }
+  // remark-math only treats $$ as display math when it starts a line.
+  return `\n\n$$\n${normalized}\n$$\n\n`;
+}
+
 export function normalizeMarkdownMathEscapes(markdown: string) {
   const withBlockMath = markdown.replace(
     /\$\$([\s\S]*?)\$\$/g,
-    (_match, body: string) => `$$${normalizeMathBody(body)}$$`,
+    (_match, body: string) => formatBlockMath(body),
   );
 
   return withBlockMath.replace(

@@ -77,6 +77,16 @@ describe("MarkdownContent", () => {
     expect(html).toContain("underline-line");
   });
 
+  it("renders inline double-dollar math as a centered display block", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownContent variant="prose">{"Text $$x^2$$ more"}</MarkdownContent>,
+    );
+
+    expect(html).toContain("katex-display");
+    expect(html).toContain("x^2");
+    expect(html).not.toMatch(/<p[^>]*>[^<]*Text[^<]*katex-display/);
+  });
+
   it("highlights fenced code blocks but not inline code", () => {
     const html = renderToStaticMarkup(
       <MarkdownContent variant="prose">
