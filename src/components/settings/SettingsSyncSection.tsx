@@ -1,7 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { SyncReportCard } from "@/components/settings/SyncReportCard";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { IconActionButton } from "@/components/ui/icon-action-button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SyncReport } from "@/lib/native";
 import type { SyncReportSections } from "@/lib/syncReport";
@@ -23,17 +23,16 @@ export function SettingsSyncSection({
         Rescan quiz and knowledge folders, repair indexes, and refresh in-app data after external
         file changes. Quiz and knowledge files are not modified.
       </p>
-      <div className="mt-2 flex items-center gap-2">
-        <IconActionButton
-          icon={RefreshCw}
-          label="Synchronize data"
+      <div className="mt-2">
+        <Button
           variant="outline"
+          size="sm"
           onClick={onSynchronize}
           disabled={isSyncing}
         >
-          <RefreshCw className={cn("size-4", isSyncing && "animate-spin")} />
-        </IconActionButton>
-        {isSyncing && <span className="text-xs text-zinc-500">Synchronizing…</span>}
+          <RefreshCw className={cn("size-3.5", isSyncing && "animate-spin")} />
+          {isSyncing ? "Synchronizing…" : "Synchronize data"}
+        </Button>
       </div>
 
       {syncSections && lastSyncReport && (

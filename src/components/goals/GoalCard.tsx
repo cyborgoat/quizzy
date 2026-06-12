@@ -1,5 +1,5 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { ArrowRight, ChevronDown, RotateCcw, Settings, Trash2 } from "lucide-react";
+import { ChevronDown, RotateCcw, Settings, Trash2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useState, type MouseEvent } from "react";
 import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
@@ -17,11 +17,6 @@ import {
   goalRowHoverActionClass,
 } from "@/components/goals/goalListStyles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useGoals } from "@/hooks/useGoals";
 import type { AttemptSummary, Goal } from "@/types/goal";
@@ -70,9 +65,6 @@ function GoalCompactMeta({ goal }: { goal: Goal }) {
   );
 }
 
-const goalAttemptReviewClass =
-  "inline-flex size-7 shrink-0 items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100/60 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2";
-
 function attemptPassed(
   attempt: AttemptSummary,
   targetScore: number | undefined,
@@ -115,6 +107,7 @@ function AttemptRow({
   });
 
   async function handleDelete(event: MouseEvent) {
+    event.preventDefault();
     event.stopPropagation();
     const ok = await confirm(
       "Delete this attempt? This cannot be undone.",
@@ -126,7 +119,11 @@ function AttemptRow({
   const passed = attemptPassed(attempt, targetScore);
 
   return (
-    <div className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-zinc-50">
+    <Link
+      to="/goals/$goalId/attempts/$attemptId"
+      params={{ goalId, attemptId: attempt.id }}
+      className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-zinc-50"
+    >
       <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <p className="text-xs text-zinc-600">{date}</p>
@@ -134,48 +131,33 @@ function AttemptRow({
           <IconActionButton
             icon={Trash2}
             label={`Delete attempt from ${date}`}
+            showTooltip={false}
             className="size-7 shrink-0 pointer-events-none text-zinc-500 opacity-0 transition-opacity hover:text-red-700 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
             onClick={(event) => void handleDelete(event)}
           />
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <span>
-              <span className="font-medium tabular-nums text-zinc-900">
-                {attempt.percentage}%
-              </span>{" "}
-              correct
-            </span>
-            <span>
-              <span className="font-medium tabular-nums text-zinc-900">
-                {attempt.incorrectCount}
-              </span>{" "}
-              incorrect
-            </span>
-            <span>
-              <span className="font-medium tabular-nums text-zinc-900">
-                {attempt.total}
-              </span>{" "}
-              questions
-            </span>
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to="/goals/$goalId/attempts/$attemptId"
-                params={{ goalId, attemptId: attempt.id }}
-                className={goalAttemptReviewClass}
-                aria-label={`Review attempt from ${date}`}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <ArrowRight className="size-3.5" aria-hidden="true" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="left">Review attempt</TooltipContent>
-          </Tooltip>
+        <div className="flex shrink-0 items-center gap-2 text-xs text-zinc-500">
+          <span>
+            <span className="font-medium tabular-nums text-zinc-900">
+              {attempt.percentage}%
+            </span>{" "}
+            correct
+          </span>
+          <span>
+            <span className="font-medium tabular-nums text-zinc-900">
+              {attempt.incorrectCount}
+            </span>{" "}
+            incorrect
+          </span>
+          <span>
+            <span className="font-medium tabular-nums text-zinc-900">
+              {attempt.total}
+            </span>{" "}
+            questions
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

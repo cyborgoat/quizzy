@@ -11,6 +11,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddGoalDialog } from "@/components/goals/AddGoalDialog";
 import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
+import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { quizCardActionClass } from "@/components/quiz/quiz-card-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,9 +130,11 @@ export function QuizListItem({ source }: { source: QuizSource }) {
       <p className="mt-3 flex-1 text-xs leading-5 text-zinc-600">
         {source.quiz.description ?? "No description provided."}
       </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-1">
         {source.quiz.tags.map((tag) => (
-          <Badge key={tag}>{tag}</Badge>
+          <Badge key={tag} className={knowledgeTagBadgeClassName}>
+            {tag}
+          </Badge>
         ))}
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-zinc-100 pt-3">

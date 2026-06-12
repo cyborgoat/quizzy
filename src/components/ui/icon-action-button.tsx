@@ -18,6 +18,7 @@ type IconActionButtonProps = {
   variant?: "ghost" | "outline" | "default";
   className?: string;
   tooltipSide?: "bottom" | "top" | "left" | "right";
+  showTooltip?: boolean;
   type?: "button" | "submit";
   children?: ReactNode;
 } & Omit<ComponentProps<typeof Button>, "children" | "size" | "variant" | "type">;
@@ -30,6 +31,7 @@ export function IconActionButton({
   variant = "ghost",
   className,
   tooltipSide = "bottom",
+  showTooltip = true,
   type = "button",
   children,
   ...props
@@ -52,6 +54,8 @@ export function IconActionButton({
       {children ?? <Icon className="size-4" />}
     </Button>
   );
+
+  if (!showTooltip) return button;
 
   return (
     <Tooltip>

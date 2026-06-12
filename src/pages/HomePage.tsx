@@ -1,4 +1,4 @@
-import { ArrowRight, FolderOpen, RefreshCw, Search, Target } from "lucide-react";
+import { ArrowRight, FolderOpen, History, RefreshCw, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { PageShell } from "@/components/layout/PageShell";
@@ -12,14 +12,14 @@ import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { latestAttempt, type Goal } from "@/types/goal";
+import { formatShortDate } from "@/lib/formatDate";
+import type { AttemptSummary } from "@/types/goal";
 
 export function HomePage() {
   const library = useQuizLibrary();
   const { userName } = useUserProfile();
   const { goals } = useGoals();
   const navigate = useNavigate();
-  const activeGoals = goals.filter((g) => !g.completed);
   const [searchQuery, setSearchQuery] = useState("");
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
@@ -43,6 +43,23 @@ export function HomePage() {
     });
   }, [library.quizzes, normalizedQuery]);
 
+  const recentAttempts = useMemo(() => {
+    return goals
+      .flatMap((goal) =>
+        goal.attempts.map((attempt) => ({
+          goalId: goal.id,
+          quizTitle: goal.quizTitle,
+          attempt,
+        })),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.attempt.takenAt).getTime() -
+          new Date(a.attempt.takenAt).getTime(),
+      )
+      .slice(0, 3);
+  }, [goals]);
+
   return (
     <PageShell>
       <div className="mb-8 flex items-center gap-4 lg:gap-5">
@@ -61,12 +78,12 @@ export function HomePage() {
         </div>
       </div>
 
-      {activeGoals.length > 0 && (
+      {recentAttempts.length > 0 && (
         <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-              <Target className="size-4 shrink-0 text-zinc-500" />
-              Your goals
+              <History className="size-4 shrink-0 text-zinc-500" />
+              Recent attempts
             </div>
             <Link
               to="/goals"
@@ -76,8 +93,13 @@ export function HomePage() {
             </Link>
           </div>
           <ul className="mt-3 space-y-2">
-            {activeGoals.slice(0, 3).map((goal) => (
-              <HomeGoalSummary key={goal.id} goal={goal} />
+            {recentAttempts.map(({ goalId, quizTitle, attempt }) => (
+              <HomeRecentAttemptSummary
+                key={attempt.id}
+                goalId={goalId}
+                quizTitle={quizTitle}
+                attempt={attempt}
+              />
             ))}
           </ul>
         </div>
@@ -169,29 +191,31 @@ export function HomePage() {
   );
 }
 
-function HomeGoalSummary({ goal }: { goal: Goal }) {
-  const latest = latestAttempt(goal);
-  const description = goal.description.trim();
+function HomeRecentAttemptSummary({
+  goalId,
+  quizTitle,
+  attempt,
+}: {
+  goalId: string;
+  quizTitle: string;
+  attempt: AttemptSummary;
+}) {
+  const dateLabel = formatShortDate(attempt.takenAt);
 
   return (
-    <li className="flex items-start gap-2 text-xs">
-      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-zinc-400" />
-      <div className="min-w-0">
+    <li>
+      <Link
+        to="/goals/$goalId/attempts/$attemptId"
+        params={{ goalId, attemptId: attempt.id }}
+        className="block rounded-md px-1 py-0.5 text-xs text-zinc-950 transition-colors hover:bg-zinc-50 hover:text-zinc-950"
+      >
         <p className="truncate">
-          <span className="font-medium text-zinc-950">{goal.quizTitle}</span>
-          {goal.targetScore !== undefined && (
-            <span className="text-zinc-500">{` · Target: ${goal.targetScore}%`}</span>
-          )}
-          {latest && (
-            <span className="text-zinc-500">
-              {` · Latest: ${latest.percentage}% (${latest.score}/${latest.total})`}
-            </span>
-          )}
+          <span className="font-medium">{quizTitle}</span>
+          <span className="text-zinc-500">
+            {` · ${dateLabel} · ${attempt.percentage}% (${attempt.score}/${attempt.total})`}
+          </span>
         </p>
-        {description && (
-          <p className="mt-0.5 truncate text-zinc-500">{description}</p>
-        )}
-      </div>
+      </Link>
     </li>
   );
 }
