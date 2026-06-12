@@ -92,3 +92,11 @@ export function anyAttemptMetTarget(goal: Goal): boolean {
 export function latestAttempt(goal: Goal): AttemptSummary | undefined {
   return goal.attempts.at(-1);
 }
+
+export function attemptPassed(
+  attempt: AttemptSummary,
+  targetScore: number | undefined,
+): boolean {
+  if (targetScore !== undefined) return attempt.percentage >= targetScore;
+  return attempt.incorrectCount === 0;
+}

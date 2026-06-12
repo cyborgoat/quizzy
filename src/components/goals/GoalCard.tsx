@@ -1,7 +1,8 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { ChevronDown, RotateCcw, Settings, Trash2 } from "lucide-react";
+import { ChevronDown, RotateCcw, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useState, type MouseEvent } from "react";
+import { GoalAttemptRow } from "@/components/goals/GoalAttemptRow";
 import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
 import {
   AccordionContent,
@@ -14,12 +15,13 @@ import {
   goalListRowMetaClass,
   goalListSubtitleClass,
   goalListTitleClass,
+  goalListTriggerClass,
   goalRowHoverActionClass,
 } from "@/components/goals/goalListStyles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { cn } from "@/lib/utils";
 import { useGoals } from "@/hooks/useGoals";
-import type { AttemptSummary, Goal } from "@/types/goal";
+import type { Goal } from "@/types/goal";
 
 function scoreTextClass(percentage: number, targetScore: number | undefined) {
   if (targetScore === undefined) return "text-zinc-600";
@@ -65,104 +67,8 @@ function GoalCompactMeta({ goal }: { goal: Goal }) {
   );
 }
 
-function attemptPassed(
-  attempt: AttemptSummary,
-  targetScore: number | undefined,
-) {
-  if (targetScore !== undefined) return attempt.percentage >= targetScore;
-  return attempt.incorrectCount === 0;
-}
-
-function AttemptResultBadge({
-  passed,
-}: {
-  passed: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-        passed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600",
-      )}
-    >
-      {passed ? "Pass" : "Fail"}
-    </span>
-  );
-}
-
-function AttemptRow({
-  attempt,
-  goalId,
-  targetScore,
-}: {
-  attempt: AttemptSummary;
-  goalId: string;
-  targetScore?: number;
-}) {
-  const { deleteAttempt } = useGoals();
-  const date = new Date(attempt.takenAt).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  async function handleDelete(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    const ok = await confirm(
-      "Delete this attempt? This cannot be undone.",
-      { title: "Delete attempt?", kind: "warning" },
-    );
-    if (ok) await deleteAttempt(goalId, attempt.id);
-  }
-
-  const passed = attemptPassed(attempt, targetScore);
-
-  return (
-    <Link
-      to="/goals/$goalId/attempts/$attemptId"
-      params={{ goalId, attemptId: attempt.id }}
-      className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-zinc-50"
-    >
-      <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="text-xs text-zinc-600">{date}</p>
-          <AttemptResultBadge passed={passed} />
-          <IconActionButton
-            icon={Trash2}
-            label={`Delete attempt from ${date}`}
-            showTooltip={false}
-            className="size-7 shrink-0 pointer-events-none text-zinc-500 opacity-0 transition-opacity hover:text-red-700 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
-            onClick={(event) => void handleDelete(event)}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2 text-xs text-zinc-500">
-          <span>
-            <span className="font-medium tabular-nums text-zinc-900">
-              {attempt.percentage}%
-            </span>{" "}
-            correct
-          </span>
-          <span>
-            <span className="font-medium tabular-nums text-zinc-900">
-              {attempt.incorrectCount}
-            </span>{" "}
-            incorrect
-          </span>
-          <span>
-            <span className="font-medium tabular-nums text-zinc-900">
-              {attempt.total}
-            </span>{" "}
-            questions
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 export function GoalCard({ goal }: { goal: Goal }) {
-  const { reopenGoal } = useGoals();
+  const { reopenGoal, deleteAttempt } = useGoals();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const attempts = [...goal.attempts].reverse();
 
@@ -176,6 +82,16 @@ export function GoalCard({ goal }: { goal: Goal }) {
     await reopenGoal(goal.id);
   }
 
+  async function handleDeleteAttempt(attemptId: string, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const ok = await confirm(
+      "Delete this attempt? This cannot be undone.",
+      { title: "Delete attempt?", kind: "warning" },
+    );
+    if (ok) await deleteAttempt(goal.id, attemptId);
+  }
+
   return (
     <AccordionItem
       value={goal.id}
@@ -184,8 +100,8 @@ export function GoalCard({ goal }: { goal: Goal }) {
         goal.completed && "opacity-60",
       )}
     >
-      <div className={goalListRowClass}>
-        <AccordionTrigger className="min-w-0 flex-1 gap-1.5 px-0 py-0 hover:no-underline">
+      <div className={cn(goalListRowClass, "group")}>
+        <AccordionTrigger className={cn(goalListTriggerClass, "col-start-1 row-start-1")}>
           <ChevronDown className="accordion-chevron size-3.5 shrink-0 text-zinc-400 transition-transform duration-200" />
           <div className="min-w-0 flex-1 text-left">
             <h3 className={goalListTitleClass}>{goal.quizTitle}</h3>
@@ -193,13 +109,17 @@ export function GoalCard({ goal }: { goal: Goal }) {
               <p className={goalListSubtitleClass}>{goal.description.trim()}</p>
             )}
           </div>
-        </AccordionTrigger>
-
-        <div className="flex shrink-0 items-center gap-2">
           <span className="whitespace-nowrap text-xs text-zinc-400">
             {goal.attempts.length}×
           </span>
           <GoalCompactMeta goal={goal} />
+        </AccordionTrigger>
+
+        <div
+          className="col-start-2 row-start-1 flex shrink-0 items-center gap-2 pr-3"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
           <IconActionButton
             icon={Settings}
             label="Settings"
@@ -215,6 +135,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
             params={{ quizId: goal.quizId }}
             search={{ from: "goals" }}
             onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
           >
             Start
           </Link>
@@ -246,16 +167,19 @@ export function GoalCard({ goal }: { goal: Goal }) {
               No attempts yet. Take the quiz to track progress.
             </p>
           ) : (
-            <div className="mt-1.5 divide-y divide-zinc-100 rounded border border-zinc-100">
+            <ul className="-mx-3 mt-1.5 divide-y divide-zinc-100">
               {attempts.map((attempt) => (
-                <AttemptRow
-                  key={attempt.id}
-                  attempt={attempt}
-                  goalId={goal.id}
-                  targetScore={goal.targetScore}
-                />
+                <li key={attempt.id}>
+                  <GoalAttemptRow
+                    goalId={goal.id}
+                    targetScore={goal.targetScore}
+                    attempt={attempt}
+                    showQuizTitle={false}
+                    onDelete={(event) => void handleDeleteAttempt(attempt.id, event)}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </AccordionContent>

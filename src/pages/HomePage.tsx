@@ -1,6 +1,7 @@
 import { ArrowRight, FolderOpen, History, RefreshCw, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,12 @@ import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { formatShortDate } from "@/lib/formatDate";
-import type { AttemptSummary } from "@/types/goal";
+import {
+  collectRecentAttempts,
+  HOME_RECENT_ATTEMPTS_PREVIEW_COUNT,
+  type RecentAttemptEntry,
+} from "@/lib/recentAttempts";
+import { attemptPassed } from "@/types/goal";
 
 export function HomePage() {
   const library = useQuizLibrary();
@@ -43,22 +49,10 @@ export function HomePage() {
     });
   }, [library.quizzes, normalizedQuery]);
 
-  const recentAttempts = useMemo(() => {
-    return goals
-      .flatMap((goal) =>
-        goal.attempts.map((attempt) => ({
-          goalId: goal.id,
-          quizTitle: goal.quizTitle,
-          attempt,
-        })),
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.attempt.takenAt).getTime() -
-          new Date(a.attempt.takenAt).getTime(),
-      )
-      .slice(0, 3);
-  }, [goals]);
+  const recentAttempts = useMemo(
+    () => collectRecentAttempts(goals).slice(0, HOME_RECENT_ATTEMPTS_PREVIEW_COUNT),
+    [goals],
+  );
 
   return (
     <PageShell>
@@ -93,13 +87,8 @@ export function HomePage() {
             </Link>
           </div>
           <ul className="mt-3 space-y-2">
-            {recentAttempts.map(({ goalId, quizTitle, attempt }) => (
-              <HomeRecentAttemptSummary
-                key={attempt.id}
-                goalId={goalId}
-                quizTitle={quizTitle}
-                attempt={attempt}
-              />
+            {recentAttempts.map((entry) => (
+              <HomeRecentAttemptRow key={entry.attempt.id} {...entry} />
             ))}
           </ul>
         </div>
@@ -191,30 +180,29 @@ export function HomePage() {
   );
 }
 
-function HomeRecentAttemptSummary({
+function HomeRecentAttemptRow({
   goalId,
   quizTitle,
+  targetScore,
   attempt,
-}: {
-  goalId: string;
-  quizTitle: string;
-  attempt: AttemptSummary;
-}) {
+}: RecentAttemptEntry) {
   const dateLabel = formatShortDate(attempt.takenAt);
+  const passed = attemptPassed(attempt, targetScore);
 
   return (
     <li>
       <Link
         to="/goals/$goalId/attempts/$attemptId"
         params={{ goalId, attemptId: attempt.id }}
-        className="block rounded-md px-1 py-0.5 text-xs text-zinc-950 transition-colors hover:bg-zinc-50 hover:text-zinc-950"
+        className="flex items-center gap-2 rounded-md px-1 py-0.5 text-xs text-zinc-950 transition-colors hover:bg-zinc-50 hover:text-zinc-950"
       >
-        <p className="truncate">
+        <p className="min-w-0 flex-1 truncate">
           <span className="font-medium">{quizTitle}</span>
           <span className="text-zinc-500">
             {` · ${dateLabel} · ${attempt.percentage}% (${attempt.score}/${attempt.total})`}
           </span>
         </p>
+        <AttemptResultBadge passed={passed} className="shrink-0" />
       </Link>
     </li>
   );

@@ -1,14 +1,15 @@
 import { Route } from "@/routes/_app/goals/index";
-import { Plus, X } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, Plus, Target, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
+import { GoalsPanelSection } from "@/components/goals/GoalsPanelSection";
+import { GoalsRecentAttemptsSection } from "@/components/goals/GoalsRecentAttemptsSection";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { sectionLabelClassName } from "@/components/ui/section-label";
 import {
   Tooltip,
   TooltipContent,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import { cn } from "@/lib/utils";
+import { collectRecentAttempts } from "@/lib/recentAttempts";
 import {
   detailsFormToGoalInput,
   type GoalDetailsFormValues,
@@ -49,6 +50,7 @@ export function GoalsPage() {
 
   const activeGoals = goals.filter((g) => !g.completed);
   const completedGoals = goals.filter((g) => g.completed);
+  const recentAttempts = useMemo(() => collectRecentAttempts(goals), [goals]);
   const availableQuizzes = quizzes.filter(
     (quiz) => !goals.some((goal) => goal.quizId === quiz.quiz.id),
   );
@@ -90,11 +92,11 @@ export function GoalsPage() {
   };
 
   return (
-    <PageShell>
-      <div className="mb-8 flex items-start justify-between gap-4">
+    <PageShell className="space-y-3">
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">Goals</h1>
-          <p className="mt-1 text-sm text-zinc-500 lg:text-base">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Goals</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">
             Set quiz goals to track your progress and stay motivated.
           </p>
         </div>
@@ -121,7 +123,7 @@ export function GoalsPage() {
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-5">
+        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-950">New goal</h2>
             <IconActionButton
@@ -196,37 +198,35 @@ export function GoalsPage() {
           onAction={() => setShowForm(true)}
         />
       ) : (
-        <div className="space-y-8">
+        <>
           {activeGoals.length > 0 && (
-            <section>
-              <h2 className={cn("mb-2", sectionLabelClassName)}>
-                Active · {activeGoals.length}
-              </h2>
-              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-                <Accordion {...accordionProps}>
-                  {activeGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} />
-                  ))}
-                </Accordion>
-              </div>
-            </section>
+            <GoalsPanelSection icon={Target} title="Active goals" count={activeGoals.length}>
+              <Accordion {...accordionProps}>
+                {activeGoals.map((goal) => (
+                  <GoalCard key={goal.id} goal={goal} />
+                ))}
+              </Accordion>
+            </GoalsPanelSection>
           )}
 
           {completedGoals.length > 0 && (
-            <section>
-              <h2 className={cn("mb-2", sectionLabelClassName)}>
-                Complete · {completedGoals.length}
-              </h2>
-              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-                <Accordion {...accordionProps}>
-                  {completedGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} />
-                  ))}
-                </Accordion>
-              </div>
-            </section>
+            <GoalsPanelSection
+              icon={CheckCircle2}
+              title="Completed goals"
+              count={completedGoals.length}
+            >
+              <Accordion {...accordionProps}>
+                {completedGoals.map((goal) => (
+                  <GoalCard key={goal.id} goal={goal} />
+                ))}
+              </Accordion>
+            </GoalsPanelSection>
           )}
-        </div>
+
+          {recentAttempts.length > 0 && (
+            <GoalsRecentAttemptsSection attempts={recentAttempts} />
+          )}
+        </>
       )}
     </PageShell>
   );
