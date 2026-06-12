@@ -1,14 +1,14 @@
 import { Route } from "@/routes/_app/goals/index";
 import { Plus, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
-import { RecentAttemptsCard } from "@/components/goals/RecentAttemptsCard";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import {
   Tooltip,
   TooltipContent,
@@ -24,10 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import {
-  collectRecentAttempts,
-  RECENT_ATTEMPTS_INITIAL_COUNT,
-} from "@/lib/recentAttempts";
+import { cn } from "@/lib/utils";
 import {
   detailsFormToGoalInput,
   type GoalDetailsFormValues,
@@ -64,10 +61,6 @@ export function GoalsPage() {
 
   const accordionValue =
     expandedGoalId !== null ? expandedGoalId : defaultExpandedGoalId;
-  const recentAttempts = useMemo(
-    () => collectRecentAttempts(goals, RECENT_ATTEMPTS_INITIAL_COUNT),
-    [goals],
-  );
 
   function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -206,7 +199,7 @@ export function GoalsPage() {
         <div className="space-y-8">
           {activeGoals.length > 0 && (
             <section>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <h2 className={cn("mb-2", sectionLabelClassName)}>
                 Active · {activeGoals.length}
               </h2>
               <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
@@ -221,7 +214,7 @@ export function GoalsPage() {
 
           {completedGoals.length > 0 && (
             <section>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <h2 className={cn("mb-2", sectionLabelClassName)}>
                 Complete · {completedGoals.length}
               </h2>
               <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
@@ -231,15 +224,6 @@ export function GoalsPage() {
                   ))}
                 </Accordion>
               </div>
-            </section>
-          )}
-
-          {recentAttempts.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Recent · {recentAttempts.length}
-              </h2>
-              <RecentAttemptsCard attempts={recentAttempts} />
             </section>
           )}
         </div>

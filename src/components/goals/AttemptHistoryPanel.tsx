@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { formatShortDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
@@ -57,7 +58,7 @@ export function AttemptHistoryCard({
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="border-b border-zinc-100 px-5 py-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className={sectionLabelClassName}>
           Attempt history
         </h2>
       </div>

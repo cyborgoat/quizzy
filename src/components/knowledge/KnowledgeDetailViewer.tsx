@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { LinkedQuestionList } from "@/components/knowledge/LinkedQuestionList";
+import {
+  knowledgeTagBadgeClassName,
+} from "@/components/knowledge/knowledgeStyles";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { KNOWLEDGE_BASE_FOLDER } from "@/contexts/knowledge-library-context";
@@ -77,19 +81,19 @@ export function KnowledgeDetailViewer({
       </div>
 
       {item.tags.length > 0 && (
-        <div className="mt-4 flex min-w-0 flex-wrap gap-1.5">
+        <div className="mt-3 flex min-w-0 flex-wrap gap-1">
           {item.tags.map((tag) => (
-            <Badge key={tag}>{tag}</Badge>
+            <Badge key={tag} className={knowledgeTagBadgeClassName}>
+              {tag}
+            </Badge>
           ))}
         </div>
       )}
 
       {item.linkedQuizQuestions.length > 0 && (
-        <section className="mt-6 min-w-0">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Linked questions
-          </h2>
-          <div className="mt-2">
+        <section className="mt-5 min-w-0">
+          <h2 className={sectionLabelClassName}>Linked questions</h2>
+          <div className="mt-1.5">
             <LinkedQuestionList links={item.linkedQuizQuestions} currentNoteId={item.id} />
           </div>
         </section>

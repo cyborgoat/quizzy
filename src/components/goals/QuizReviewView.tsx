@@ -5,7 +5,9 @@ import { ReviewScoreSummary } from "@/components/goals/ReviewScoreSummary";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
 import { Button } from "@/components/ui/button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { useAttemptReviewNavigation } from "@/hooks/useAttemptReviewNavigation";
+import { cn } from "@/lib/utils";
 import {
   getFilteredPosition,
   getReviewFilterCounts,
@@ -114,7 +116,7 @@ export function QuizReviewView({
       </div>
 
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className={cn("mb-3", sectionLabelClassName)}>
           Answer review
         </h2>
         {!quizAvailable ? (

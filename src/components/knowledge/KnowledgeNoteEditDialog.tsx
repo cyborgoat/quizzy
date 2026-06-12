@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Trash2, X } from "lucide-react";
+import { MoveDiagonal, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
 import { KnowledgeDetailViewer } from "@/components/knowledge/KnowledgeDetailViewer";
@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useKnowledgeNoteEditor } from "@/hooks/useKnowledgeNoteEditor";
+import { useResizableDialogSize } from "@/hooks/useResizableDialogSize";
 import {
   clearKnowledgeDraft,
   isUnsavedKnowledgeDraft,
   resolveKnowledgeNoteSource,
 } from "@/lib/knowledgeDraft";
+import { KNOWLEDGE_NOTE_DIALOG_SIZE_CONSTRAINTS } from "@/lib/resizableDialogFrame";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
@@ -22,7 +24,6 @@ export function KnowledgeNoteEditDialog({
   initialMode = "view",
   onSaved,
   readOnlyLinkedQuestion,
-  stacked = false,
 }: {
   item: KnowledgeItem;
   open: boolean;
@@ -30,7 +31,6 @@ export function KnowledgeNoteEditDialog({
   initialMode?: "view" | "edit";
   onSaved?: (item: KnowledgeItem) => void;
   readOnlyLinkedQuestion?: LinkedQuizQuestion;
-  stacked?: boolean;
 }) {
   const library = useKnowledgeLibrary();
   const { items } = library;
@@ -80,19 +80,23 @@ export function KnowledgeNoteEditDialog({
     onOpenChange(nextOpen);
   }
 
+  const { size, startResizeDrag } = useResizableDialogSize({
+    enabled: open,
+    constraints: KNOWLEDGE_NOTE_DIALOG_SIZE_CONSTRAINTS,
+  });
+
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className={cn("fixed inset-0 bg-zinc-950/50", stacked ? "z-80" : "z-60")}
-        />
+        <Dialog.Overlay className="fixed inset-0 z-60 bg-zinc-950/50" />
         <Dialog.Content
-          className={cn(
-            "fixed left-1/2 top-1/2 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[min(100%,64rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none",
-            stacked ? "z-80" : "z-60",
-          )}
+          className="fixed left-1/2 top-1/2 z-60 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none"
+          style={{
+            width: size.width,
+            height: size.height,
+          }}
         >
-          <div className="shrink-0 border-b border-zinc-100 px-6 py-3">
+          <div className="relative shrink-0 border-b border-zinc-100 px-6 py-3 pr-14">
             <Dialog.Title className="text-base font-semibold text-zinc-950">
               {mode === "view" && !isNewDraft ? "Knowledge note" : "Edit knowledge note"}
             </Dialog.Title>
@@ -101,17 +105,14 @@ export function KnowledgeNoteEditDialog({
                 Review the note and return to the question when you are done.
               </Dialog.Description>
             ) : null}
-            <Dialog.Close asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute right-4 top-4 text-zinc-900 hover:bg-zinc-100/60"
-                aria-label="Close"
-                disabled={isSaving || isDeleting}
-              >
-                <X className="size-4" />
-              </Button>
-            </Dialog.Close>
+            <IconActionButton
+              icon={MoveDiagonal}
+              label="Drag to resize"
+              tooltipOnHoverOnly
+              className="absolute right-4 top-3 cursor-nwse-resize active:cursor-nwse-resize"
+              disabled={isSaving || isDeleting}
+              onPointerDown={startResizeDrag}
+            />
           </div>
 
           <div
@@ -142,7 +143,12 @@ export function KnowledgeNoteEditDialog({
           <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-3">
             {mode === "view" && !isNewDraft ? (
               <Dialog.Close asChild>
-                <Button size="sm" variant="ghost" disabled={isSaving || isDeleting}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-950"
+                  disabled={isSaving || isDeleting}
+                >
                   Close
                 </Button>
               </Dialog.Close>

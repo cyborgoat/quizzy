@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LinkedQuestionPreviewDialog } from "@/components/knowledge/LinkedQuestionPreviewDialog";
-import { Badge } from "@/components/ui/badge";
+import { numberedListLinkClassName, NumberedListRow } from "@/components/ui/numbered-list-row";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
@@ -28,32 +28,31 @@ export function LinkedQuestionList({
 
   return (
     <>
-      <div className="flex min-w-0 flex-wrap gap-2">
-        {links.map((link) => {
+      <ol className="list-none space-y-1">
+        {links.map((link, index) => {
           const key = questionLinkKey(link.quizId, link.questionId);
           const hasWarning = warningKeys.has(key);
           const label = formatQuizQuestionLabel(link, quizzes);
 
           return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setPreviewLink(link)}
-              title={label}
-              className="max-w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2"
-            >
-              <Badge
+            <NumberedListRow key={key} index={index}>
+              <button
+                type="button"
+                onClick={() => setPreviewLink(link)}
+                title={label}
                 className={cn(
-                  "max-w-full cursor-pointer transition-colors hover:bg-zinc-200/70",
-                  hasWarning ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100" : "",
+                  numberedListLinkClassName,
+                  hasWarning
+                    ? "text-amber-800 hover:text-amber-950"
+                    : undefined,
                 )}
               >
                 <span className="truncate">{label}</span>
-              </Badge>
-            </button>
+              </button>
+            </NumberedListRow>
           );
         })}
-      </div>
+      </ol>
 
       <LinkedQuestionPreviewDialog
         link={previewLink}

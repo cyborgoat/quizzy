@@ -6,6 +6,7 @@ import { UnavailableQuestionAlert } from "@/components/quiz/UnavailableQuestionM
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
@@ -67,7 +68,7 @@ export function LinkedQuestionPreviewDialog({
             ) : (
               <div className="space-y-6">
                 <section className="min-w-0">
-                  <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <h2 className={sectionLabelClassName}>
                     Quiz
                   </h2>
                   <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">

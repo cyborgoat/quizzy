@@ -1,14 +1,12 @@
 import { LinkedQuestionPicker } from "@/components/knowledge/LinkedQuestionPicker";
 import { LinkedQuestionReadOnlyField } from "@/components/knowledge/LinkedQuestionReadOnlyField";
 import { KnowledgeMarkdownEditorLazy } from "@/components/knowledge/KnowledgeMarkdownEditor";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
 const fieldClassName =
   "w-full max-w-full border-0 border-b border-zinc-200 bg-transparent px-0 shadow-none outline-none transition-colors placeholder:text-zinc-400 focus-visible:border-zinc-400 focus-visible:ring-0 disabled:opacity-50";
-
-const sectionLabelClassName =
-  "text-xs font-semibold uppercase tracking-wide text-zinc-500";
 
 export function KnowledgeDetailEditor({
   item,
