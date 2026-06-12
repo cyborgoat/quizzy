@@ -143,13 +143,7 @@ export function KnowledgeBasePage() {
         ),
         cell: ({ row }) => {
           const tagsLabel = formatTagsLabel(row.original.tags);
-          return (
-            <DataTableTruncatedCell
-              value={tagsLabel}
-              variant="muted"
-              showTooltip={tagsLabel !== "—"}
-            />
-          );
+          return <DataTableTruncatedCell value={tagsLabel} variant="muted" />;
         },
       },
       {

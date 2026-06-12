@@ -68,12 +68,7 @@ export function buildMistakeLogColumns({
       header: () => <DataTableColumnHeader label="Question" />,
       cell: ({ row }) => {
         const label = formatMistakeQuestionLabel(row.original, quizzes);
-        return (
-          <DataTableTruncatedCell
-            value={label}
-            showTooltip={label === row.original.questionId}
-          />
-        );
+        return <DataTableTruncatedCell value={label} />;
       },
     },
     {
@@ -90,13 +85,7 @@ export function buildMistakeLogColumns({
       ),
       cell: ({ row }) => {
         const typeLabel = formatMistakeQuestionType(row.original, quizzes);
-        return (
-          <DataTableTruncatedCell
-            value={typeLabel}
-            variant="muted"
-            showTooltip={typeLabel !== "—"}
-          />
-        );
+        return <DataTableTruncatedCell value={typeLabel} variant="muted" />;
       },
     },
     {
