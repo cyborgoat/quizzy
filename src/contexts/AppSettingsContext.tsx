@@ -70,10 +70,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   );
 
   const notifyZoomAdjust = useCallback(
-    (direction: "up" | "down") => {
+    (direction: "up" | "down", options?: { silent?: boolean }) => {
       const next = adjustFontSize(direction);
       if (next !== null) {
-        toast.success(formatZoomSizeMessage(next));
+        if (!options?.silent) {
+          toast.success(formatZoomSizeMessage(next));
+        }
         return;
       }
 
@@ -106,8 +108,21 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    function handleWheel(event: WheelEvent) {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (isEditableKeyboardTarget(event.target)) return;
+      if (event.deltaY === 0) return;
+
+      event.preventDefault();
+      notifyZoomAdjust(event.deltaY < 0 ? "up" : "down", { silent: true });
+    }
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
   }, [notifyZoomAdjust]);
 
   return (

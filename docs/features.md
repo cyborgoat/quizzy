@@ -168,7 +168,7 @@ The **Full name** field sets the name displayed in the home page greeting.
 
 Customize readability:
 
-- **Font size** — Percentage from 75 to 150 (default 100). Use **Ctrl/Cmd +** or **Ctrl/Cmd −** to step by 5; changes save immediately and sync with this field.
+- **Font size** — Percentage from 75 to 150 (default 100). Use **Ctrl/Cmd +** or **Ctrl/Cmd −** to step by 5, or **Ctrl/Cmd + scroll wheel**; changes save immediately and sync with this field.
 
 Preferences are saved to `settings.json` and applied immediately after Save.
 

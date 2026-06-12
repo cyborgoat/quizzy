@@ -19,7 +19,7 @@ export function SettingsAppearanceSection({
       <SettingsField
         id="font-size"
         label="Font size (%)"
-        hint={`${UI_FONT_SIZE_MIN}–${UI_FONT_SIZE_MAX}%. Ctrl/Cmd +/− steps by 5.`}
+        hint={`${UI_FONT_SIZE_MIN}–${UI_FONT_SIZE_MAX}%. Ctrl/Cmd +/− or scroll wheel steps by 5.`}
         error={errors.fontSize}
       >
         <Input
