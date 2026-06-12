@@ -18,7 +18,6 @@ type IconActionButtonProps = {
   variant?: "ghost" | "outline" | "default";
   className?: string;
   tooltipSide?: "bottom" | "top" | "left" | "right";
-  tooltipOnHoverOnly?: boolean;
   type?: "button" | "submit";
   children?: ReactNode;
 } & Omit<ComponentProps<typeof Button>, "children" | "size" | "variant" | "type">;
@@ -31,7 +30,6 @@ export function IconActionButton({
   variant = "ghost",
   className,
   tooltipSide = "bottom",
-  tooltipOnHoverOnly = false,
   type = "button",
   children,
   ...props
@@ -57,18 +55,7 @@ export function IconActionButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger
-        asChild
-        onFocus={
-          tooltipOnHoverOnly
-            ? (event) => {
-                if (!event.currentTarget.matches(":focus-visible")) {
-                  event.preventDefault();
-                }
-              }
-            : undefined
-        }
-      >
+      <TooltipTrigger asChild>
         {button}
       </TooltipTrigger>
       <TooltipContent side={tooltipSide}>{label}</TooltipContent>

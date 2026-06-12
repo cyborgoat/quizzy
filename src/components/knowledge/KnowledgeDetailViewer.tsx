@@ -20,9 +20,11 @@ import type { KnowledgeItem } from "@/types/knowledge";
 export function KnowledgeDetailViewer({
   item,
   onEdit,
+  stackedLinkedQuestionPreview = false,
 }: {
   item: KnowledgeItem;
   onEdit?: () => void;
+  stackedLinkedQuestionPreview?: boolean;
 }) {
   const hasContent = item.content.trim().length > 0;
   const [isCopying, setIsCopying] = useState(false);
@@ -94,7 +96,11 @@ export function KnowledgeDetailViewer({
         <section className="mt-5 min-w-0">
           <h2 className={sectionLabelClassName}>Linked questions</h2>
           <div className="mt-1.5">
-            <LinkedQuestionList links={item.linkedQuizQuestions} currentNoteId={item.id} />
+            <LinkedQuestionList
+              links={item.linkedQuizQuestions}
+              currentNoteId={item.id}
+              previewLayer={stackedLinkedQuestionPreview ? "stacked" : "default"}
+            />
           </div>
         </section>
       )}

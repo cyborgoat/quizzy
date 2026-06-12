@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { DialogStackLayer } from "@/components/ui/resizable-dialog-shell";
 import { KnowledgeNoteActions } from "@/components/knowledge/KnowledgeNoteActions";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
 import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
@@ -11,10 +12,12 @@ export function QuestionKnowledgeNotesPanel({
   quizId,
   questionId,
   currentNoteId,
+  noteDialogLayer,
 }: {
   quizId: string;
   questionId: string;
   currentNoteId?: string;
+  noteDialogLayer?: DialogStackLayer;
 }) {
   const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
   const {
@@ -68,6 +71,7 @@ export function QuestionKnowledgeNotesPanel({
           readOnlyLinkedQuestion={{ quizId, questionId }}
           onSaved={handleSaved}
           onOpenChange={handleOpenChange}
+          layer={noteDialogLayer}
         />
       )}
     </>

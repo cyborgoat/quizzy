@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { DialogStackLayer } from "@/components/ui/resizable-dialog-shell";
 import { QuestionKnowledgeNotesPanel } from "@/components/knowledge/QuestionKnowledgeNotesPanel";
 import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
@@ -14,6 +15,7 @@ export function ReviewQuestionSplitPanel({
   record,
   quizId,
   currentNoteId,
+  noteDialogLayer,
   className,
   concealAnswers = false,
 }: {
@@ -22,6 +24,7 @@ export function ReviewQuestionSplitPanel({
   record?: AnswerRecord;
   quizId?: string;
   currentNoteId?: string;
+  noteDialogLayer?: DialogStackLayer;
   className?: string;
   concealAnswers?: boolean;
 }) {
@@ -61,6 +64,7 @@ export function ReviewQuestionSplitPanel({
             quizId={quizId}
             questionId={question.id}
             currentNoteId={currentNoteId}
+            noteDialogLayer={noteDialogLayer}
           />
         )}
       </aside>

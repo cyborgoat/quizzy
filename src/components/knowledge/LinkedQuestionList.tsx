@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { LinkedQuestionPreviewDialog } from "@/components/knowledge/LinkedQuestionPreviewDialog";
+import {
+  LinkedQuestionPreviewDialog,
+} from "@/components/knowledge/LinkedQuestionPreviewDialog";
+import type { DialogStackLayer } from "@/components/ui/resizable-dialog-shell";
 import { numberedListLinkClassName, NumberedListRow } from "@/components/ui/numbered-list-row";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
@@ -11,9 +14,11 @@ import type { LinkedQuizQuestion } from "@/types/knowledge";
 export function LinkedQuestionList({
   links,
   currentNoteId,
+  previewLayer = "default",
 }: {
   links: LinkedQuizQuestion[];
   currentNoteId?: string;
+  previewLayer?: DialogStackLayer;
 }) {
   const { quizzes } = useQuizLibrary();
   const [previewLink, setPreviewLink] = useState<LinkedQuizQuestion | null>(null);
@@ -58,6 +63,7 @@ export function LinkedQuestionList({
         link={previewLink}
         open={previewLink !== null}
         currentNoteId={currentNoteId}
+        layer={previewLayer}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setPreviewLink(null);

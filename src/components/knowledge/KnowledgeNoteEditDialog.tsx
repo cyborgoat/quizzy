@@ -1,20 +1,22 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { MoveDiagonal, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useEffect } from "react";
+import {
+  ResizableDialogShell,
+  type DialogStackLayer,
+} from "@/components/ui/resizable-dialog-shell";
 import { KnowledgeDetailEditor } from "@/components/knowledge/KnowledgeDetailEditor";
 import { KnowledgeDetailViewer } from "@/components/knowledge/KnowledgeDetailViewer";
+import { knowledgeDialogCloseButtonClassName } from "@/components/knowledge/knowledgeStyles";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useKnowledgeNoteEditor } from "@/hooks/useKnowledgeNoteEditor";
-import { useResizableDialogSize } from "@/hooks/useResizableDialogSize";
 import {
   clearKnowledgeDraft,
   isUnsavedKnowledgeDraft,
   resolveKnowledgeNoteSource,
 } from "@/lib/knowledgeDraft";
-import { KNOWLEDGE_NOTE_DIALOG_SIZE_CONSTRAINTS } from "@/lib/resizableDialogFrame";
-import { cn } from "@/lib/utils";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
 
 export function KnowledgeNoteEditDialog({
@@ -24,6 +26,7 @@ export function KnowledgeNoteEditDialog({
   initialMode = "view",
   onSaved,
   readOnlyLinkedQuestion,
+  layer = "default",
 }: {
   item: KnowledgeItem;
   open: boolean;
@@ -31,6 +34,7 @@ export function KnowledgeNoteEditDialog({
   initialMode?: "view" | "edit";
   onSaved?: (item: KnowledgeItem) => void;
   readOnlyLinkedQuestion?: LinkedQuizQuestion;
+  layer?: DialogStackLayer;
 }) {
   const library = useKnowledgeLibrary();
   const { items } = library;
@@ -80,102 +84,74 @@ export function KnowledgeNoteEditDialog({
     onOpenChange(nextOpen);
   }
 
-  const { size, startResizeDrag } = useResizableDialogSize({
-    enabled: open,
-    constraints: KNOWLEDGE_NOTE_DIALOG_SIZE_CONSTRAINTS,
-  });
+  const isViewMode = mode === "view" && !isNewDraft;
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-60 bg-zinc-950/50" />
-        <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-60 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none"
-          style={{
-            width: size.width,
-            height: size.height,
-          }}
-        >
-          <div className="relative shrink-0 border-b border-zinc-100 px-6 py-3 pr-14">
-            <Dialog.Title className="text-base font-semibold text-zinc-950">
-              {mode === "view" && !isNewDraft ? "Knowledge note" : "Edit knowledge note"}
-            </Dialog.Title>
-            {mode === "view" && !isNewDraft ? (
-              <Dialog.Description className="mt-0.5 text-sm text-zinc-500">
-                Review the note and return to the question when you are done.
-              </Dialog.Description>
-            ) : null}
-            <IconActionButton
-              icon={MoveDiagonal}
-              label="Drag to resize"
-              tooltipOnHoverOnly
-              className="absolute right-4 top-3 cursor-nwse-resize active:cursor-nwse-resize"
+    <ResizableDialogShell
+      open={open}
+      onOpenChange={handleOpenChange}
+      layer={layer}
+      resizeDisabled={isSaving || isDeleting}
+      title={isViewMode ? "Knowledge note" : "Edit knowledge note"}
+      description={
+        isViewMode
+          ? "Review the note and return to the question when you are done."
+          : undefined
+      }
+      bodyClassName={
+        isViewMode ? undefined : "flex flex-col overflow-hidden py-4"
+      }
+      footer={
+        isViewMode ? (
+          <Dialog.Close asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={knowledgeDialogCloseButtonClassName}
               disabled={isSaving || isDeleting}
-              onPointerDown={startResizeDrag}
+            >
+              Close
+            </Button>
+          </Dialog.Close>
+        ) : (
+          <>
+            <IconActionButton
+              icon={X}
+              label="Cancel"
+              onClick={cancelEdit}
+              disabled={isSaving || isDeleting}
             />
-          </div>
-
-          <div
-            className={cn(
-              "min-h-0 flex-1 px-6",
-              mode === "view" && !isNewDraft
-                ? "overflow-y-auto py-5"
-                : "flex flex-col overflow-hidden py-4",
-            )}
-          >
-            {mode === "view" && !isNewDraft ? (
-              <KnowledgeDetailViewer
-                item={draft}
-                onEdit={() => setMode("edit")}
-              />
-            ) : (
-              <KnowledgeDetailEditor
-                item={draft}
-                tagsInput={tagsInput}
-                disabled={isSaving || isDeleting}
-                fillHeight
-                readOnlyLinkedQuestion={readOnlyLinkedQuestion}
-                onChange={updateDraft}
+            {!isNewDraft && (
+              <IconActionButton
+                icon={Trash2}
+                label="Delete"
+                onClick={() => void deleteNote()}
+                disabled={isDeleting || isSaving}
               />
             )}
-          </div>
-
-          <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-3">
-            {mode === "view" && !isNewDraft ? (
-              <Dialog.Close asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="bg-zinc-100 text-zinc-700 hover:bg-zinc-200 hover:text-zinc-950"
-                  disabled={isSaving || isDeleting}
-                >
-                  Close
-                </Button>
-              </Dialog.Close>
-            ) : (
-              <>
-                <IconActionButton
-                  icon={X}
-                  label="Cancel"
-                  onClick={cancelEdit}
-                  disabled={isSaving || isDeleting}
-                />
-                {!isNewDraft && (
-                  <IconActionButton
-                    icon={Trash2}
-                    label="Delete"
-                    onClick={() => void deleteNote()}
-                    disabled={isDeleting || isSaving}
-                  />
-                )}
-                <Button size="sm" onClick={() => void save()} disabled={isSaving || isDeleting}>
-                  {isSaving ? "Saving..." : "Save"}
-                </Button>
-              </>
-            )}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            <Button size="sm" onClick={() => void save()} disabled={isSaving || isDeleting}>
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+          </>
+        )
+      }
+    >
+      {isViewMode ? (
+        <KnowledgeDetailViewer
+          item={draft}
+          onEdit={() => setMode("edit")}
+          stackedLinkedQuestionPreview
+        />
+      ) : (
+        <KnowledgeDetailEditor
+          item={draft}
+          tagsInput={tagsInput}
+          disabled={isSaving || isDeleting}
+          fillHeight
+          readOnlyLinkedQuestion={readOnlyLinkedQuestion}
+          onChange={updateDraft}
+        />
+      )}
+    </ResizableDialogShell>
   );
 }

@@ -1,6 +1,10 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import { useMemo } from "react";
+import {
+  ResizableDialogShell,
+  type DialogStackLayer,
+} from "@/components/ui/resizable-dialog-shell";
+import { knowledgeDialogCloseButtonClassName } from "@/components/knowledge/knowledgeStyles";
 import { ReviewQuestionSplitPanel } from "@/components/quiz/ReviewQuestionSplitPanel";
 import { UnavailableQuestionAlert } from "@/components/quiz/UnavailableQuestionMessage";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
@@ -13,16 +17,24 @@ import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
 import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
 
+function noteDialogLayerForPreview(
+  previewLayer: DialogStackLayer,
+): DialogStackLayer {
+  return previewLayer === "default" ? "stacked" : "elevated";
+}
+
 export function LinkedQuestionPreviewDialog({
   link,
   open,
   onOpenChange,
   currentNoteId,
+  layer = "default",
 }: {
   link: LinkedQuizQuestion | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentNoteId?: string;
+  layer?: DialogStackLayer;
 }) {
   const { quizzes } = useQuizLibrary();
 
@@ -41,76 +53,60 @@ export function LinkedQuestionPreviewDialog({
   if (!link) return null;
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-70 bg-zinc-950/50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-70 flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[min(100%,48rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none">
-          <div className="shrink-0 border-b border-zinc-100 px-6 py-4">
-            <Dialog.Title className="text-lg font-semibold text-zinc-950">
-              Linked question
-            </Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm text-zinc-500">{label}</Dialog.Description>
-            <Dialog.Close asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute right-4 top-4 text-zinc-900 hover:bg-zinc-100/60"
-                aria-label="Close"
-              >
-                <X className="size-4" />
-              </Button>
-            </Dialog.Close>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-            {!resolved ? (
-              <UnavailableQuestionAlert />
-            ) : (
-              <div className="space-y-6">
-                <section className="min-w-0">
-                  <h2 className={sectionLabelClassName}>
-                    Quiz
-                  </h2>
-                  <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
-                    {resolved.quiz.title}
-                  </p>
-                  {resolved.quiz.description && (
-                    <div className="mt-3 text-sm leading-6 text-zinc-600">
-                      <MarkdownContent>{resolved.quiz.description}</MarkdownContent>
-                    </div>
-                  )}
-                </section>
-
-                <ReviewQuestionSplitPanel
-                  key={resolved.question.id}
-                  question={resolved.question}
-                  index={Math.max((resolved.questionNumber ?? 1) - 1, 0)}
-                  quizId={link.quizId}
-                  currentNoteId={currentNoteId}
-                />
-
-                {hasLinkWarning && (
-                  <Alert>
-                    <AlertTitle>Outdated link</AlertTitle>
-                    <AlertDescription>
-                      This link may be outdated because the quiz or question could not be fully
-                      verified.
-                    </AlertDescription>
-                  </Alert>
-                )}
+    <ResizableDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      layer={layer}
+      title="Linked question"
+      description={label}
+      footer={
+        <Dialog.Close asChild>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={knowledgeDialogCloseButtonClassName}
+          >
+            Close
+          </Button>
+        </Dialog.Close>
+      }
+    >
+      {!resolved ? (
+        <UnavailableQuestionAlert />
+      ) : (
+        <div className="space-y-6">
+          <section className="min-w-0">
+            <h2 className={sectionLabelClassName}>Quiz</h2>
+            <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+              {resolved.quiz.title}
+            </p>
+            {resolved.quiz.description && (
+              <div className="mt-3 text-sm leading-6 text-zinc-600">
+                <MarkdownContent>{resolved.quiz.description}</MarkdownContent>
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="flex shrink-0 justify-end border-t border-zinc-100 px-6 py-4">
-            <Dialog.Close asChild>
-              <Button size="sm" variant="ghost">
-                Close
-              </Button>
-            </Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          <ReviewQuestionSplitPanel
+            key={resolved.question.id}
+            question={resolved.question}
+            index={Math.max((resolved.questionNumber ?? 1) - 1, 0)}
+            quizId={link.quizId}
+            currentNoteId={currentNoteId}
+            noteDialogLayer={noteDialogLayerForPreview(layer)}
+          />
+
+          {hasLinkWarning && (
+            <Alert>
+              <AlertTitle>Outdated link</AlertTitle>
+              <AlertDescription>
+                This link may be outdated because the quiz or question could not be fully
+                verified.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+    </ResizableDialogShell>
   );
 }

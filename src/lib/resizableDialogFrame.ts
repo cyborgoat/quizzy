@@ -75,7 +75,7 @@ export function applyDialogResizeDelta(
   );
 }
 
-export const KNOWLEDGE_NOTE_DIALOG_SIZE_CONSTRAINTS = {
+export const DEFAULT_RESIZABLE_DIALOG_SIZE_CONSTRAINTS = {
   maxWidth: 1536,
   defaultWidth: 1024,
 };
