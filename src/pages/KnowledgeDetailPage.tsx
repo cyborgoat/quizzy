@@ -43,7 +43,6 @@ export function KnowledgeDetailPage() {
       tags: [],
       content: "",
       linkedQuizQuestions: [],
-      views: 0,
       createdAt: "",
       updatedAt: "",
     },
@@ -186,7 +185,7 @@ export function KnowledgeDetailPage() {
       </div>
 
       {mode === "view" && !isNewDraft ? (
-        <KnowledgeDetailViewer item={draft} onEdit={() => setMode("edit")} recordView />
+        <KnowledgeDetailViewer item={draft} onEdit={() => setMode("edit")} />
       ) : (
         <KnowledgeDetailEditor
           item={draft}

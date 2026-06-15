@@ -54,11 +54,10 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  title: "w-[32%]",
-  tags: "w-[24%]",
-  links: "w-[12%]",
-  views: "w-[12%]",
-  updatedAt: "w-[20%]",
+  title: "w-[36%]",
+  tags: "w-[26%]",
+  links: "w-[14%]",
+  updatedAt: "w-[24%]",
 };
 
 function knowledgeColumnWidth(columnId: string) {
@@ -165,15 +164,6 @@ export function KnowledgeBasePage() {
             value={row.original.linkedQuizQuestions.length}
             mutedWhenZero
           />
-        ),
-      },
-      {
-        accessorKey: "views",
-        header: ({ column }) => (
-          <DataTableSortableHeader label="Views" column={column} />
-        ),
-        cell: ({ row }) => (
-          <DataTableNumericCell value={row.original.views} mutedWhenZero />
         ),
       },
       {

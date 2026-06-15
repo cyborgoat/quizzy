@@ -12,7 +12,6 @@ function makeItem(
   return {
     tags: [],
     linkedQuizQuestions: [],
-    views: 0,
     createdAt: "2026-06-01T10:00:00.000Z",
     updatedAt: "2026-06-01T10:00:00.000Z",
     fileName: `${overrides.id}.md`,

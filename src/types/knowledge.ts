@@ -5,7 +5,6 @@ export type KnowledgeItemMeta = {
   title: string;
   tags: string[];
   linkedQuizQuestions: LinkedQuizQuestion[];
-  views: number;
   createdAt: string;
   updatedAt: string;
 };

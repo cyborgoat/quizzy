@@ -7,7 +7,6 @@ const baseMeta = {
   title: "First note",
   tags: ["react"],
   linkedQuizQuestions: [{ quizId: "react-basics", questionId: "q1" }],
-  views: 0,
   createdAt: "2026-06-09T10:00:00.000Z",
   updatedAt: "2026-06-09T10:00:00.000Z",
 };
@@ -55,7 +54,7 @@ describe("parseKnowledgeFiles", () => {
     expect(library.invalidReports[0]?.issues[0]).toContain("must match the filename stem");
   });
 
-  it("defaults views to zero when omitted from front matter", () => {
+  it("ignores legacy views field in front matter", () => {
     const contents = `---
 id: note-one
 title: First note
@@ -64,6 +63,7 @@ tags:
 linkedQuizQuestions:
   - quizId: react-basics
     questionId: q1
+views: 12
 createdAt: "2026-06-09T10:00:00.000Z"
 updatedAt: "2026-06-09T10:00:00.000Z"
 ---
@@ -77,6 +77,6 @@ Hello`;
     ]);
 
     expect(library.invalidReports).toHaveLength(0);
-    expect(library.items[0]?.views).toBe(0);
+    expect(library.items[0]?.title).toBe("First note");
   });
 });

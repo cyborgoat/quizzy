@@ -53,7 +53,6 @@ export function buildKnowledgeDraft(options?: {
     tags: [],
     content: "",
     linkedQuizQuestions: options?.linkedQuizQuestions ?? [],
-    views: 0,
     createdAt: now,
     updatedAt: now,
   };

@@ -73,7 +73,6 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       title,
       tags: draft.tags ?? [],
       linkedQuizQuestions: draft.linkedQuizQuestions ?? [],
-      views: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
       fileName,
@@ -89,10 +88,8 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   async function saveItem(item: KnowledgeItem) {
     const draft = { updated: undefined as KnowledgeItem | undefined };
     setItems((current) => {
-      const existing = current.find((entry) => entry.id === item.id);
       draft.updated = {
         ...item,
-        views: existing?.views ?? item.views,
         updatedAt: new Date().toISOString(),
       };
       return current
@@ -111,39 +108,6 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       overwrite: true,
     });
     await refresh({ background: true });
-  }
-
-  async function recordView(id: string) {
-    const draft = {
-      previous: undefined as KnowledgeItem | undefined,
-      updated: undefined as KnowledgeItem | undefined,
-    };
-    setItems((current) => {
-      const item = current.find((entry) => entry.id === id);
-      if (!item || item.fileName === "") {
-        return current;
-      }
-      draft.previous = item;
-      draft.updated = { ...item, views: item.views + 1 };
-      return current.map((entry) => (entry.id === id ? draft.updated! : entry));
-    });
-    const { previous, updated } = draft;
-    if (!previous || !updated) {
-      return;
-    }
-
-    try {
-      const contents = serializeKnowledgeFile(updated, updated.content);
-      await nativeApi.writeKnowledgeFile({
-        fileName: updated.fileName,
-        contents,
-        overwrite: true,
-      });
-    } catch {
-      setItems((current) =>
-        current.map((entry) => (entry.id === id ? previous : entry)),
-      );
-    }
   }
 
   async function deleteItem(fileName: string) {
@@ -169,7 +133,6 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     refresh,
     createItem,
     saveItem,
-    recordView,
     deleteItem,
     openKnowledgeFolder,
     getNotesForQuestion,
