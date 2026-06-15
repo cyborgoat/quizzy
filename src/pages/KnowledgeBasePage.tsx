@@ -81,7 +81,7 @@ export function KnowledgeBasePage() {
   ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
   const [isNotesListExpanded, setIsNotesListExpanded] = useState(true);
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
