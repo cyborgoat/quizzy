@@ -1,6 +1,7 @@
 import { BookOpen, Shuffle } from "lucide-react";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { toggleOutlineButtonClass } from "@/components/ui/button";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
 import type { MistakeEntry } from "@/types/mistakeLog";
@@ -59,13 +60,15 @@ export function MistakeLogReviewSection({
           <IconActionButton
             icon={Shuffle}
             label={shuffleEnabled ? "Sorted order" : "Shuffle order"}
-            variant={shuffleEnabled ? "default" : "outline"}
+            variant="outline"
+            className={toggleOutlineButtonClass(shuffleEnabled)}
             onClick={onToggleShuffle}
           />
           <IconActionButton
             icon={BookOpen}
             label={studyMode ? "Review mode" : "Study mode"}
-            variant={studyMode ? "default" : "outline"}
+            variant="outline"
+            className={toggleOutlineButtonClass(studyMode)}
             onClick={() => onStudyModeChange(!studyMode)}
           />
         </>

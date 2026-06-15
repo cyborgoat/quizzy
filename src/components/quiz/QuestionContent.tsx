@@ -2,6 +2,7 @@ import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { toggleOutlineButtonClass } from "@/components/ui/button";
 import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { isOptionSelected } from "@/lib/quizReview";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
@@ -34,7 +35,8 @@ export function QuestionContent({
         <IconActionButton
           icon={Flag}
           label={flagged ? "Unflag" : "Flag"}
-          variant={flagged ? "default" : "outline"}
+          variant="outline"
+          className={toggleOutlineButtonClass(flagged)}
           aria-pressed={flagged}
           onClick={onToggleFlag}
         />

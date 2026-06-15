@@ -4,7 +4,7 @@ import { ReviewHeader } from "@/components/goals/ReviewHeader";
 import { ReviewScoreSummary } from "@/components/goals/ReviewScoreSummary";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
-import { Button } from "@/components/ui/button";
+import { Button, toggleOutlineButtonClass } from "@/components/ui/button";
 import { sectionLabelClassName } from "@/components/ui/section-label";
 import { useAttemptReviewNavigation } from "@/hooks/useAttemptReviewNavigation";
 import { cn } from "@/lib/utils";
@@ -149,7 +149,8 @@ export function QuizReviewView({
                     key={value}
                     aria-pressed={isActive}
                     size="sm"
-                    variant={isActive ? "default" : "outline"}
+                    variant="outline"
+                    className={toggleOutlineButtonClass(isActive)}
                     onClick={() => navigation.onFilterToggle(value)}
                   >
                     {label} ({count})

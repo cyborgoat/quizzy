@@ -10,10 +10,10 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants: Record<ButtonVariant, string> = {
-  default: "bg-zinc-900 text-white hover:bg-zinc-800",
+  default: "border border-transparent bg-zinc-900 text-white hover:bg-zinc-800",
   outline: "border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100",
-  ghost: "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950",
-  destructive: "bg-red-600 text-white hover:bg-red-700",
+  ghost: "border border-transparent text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950",
+  destructive: "border border-transparent bg-red-600 text-white hover:bg-red-700",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -48,3 +48,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
+
+export function toggleOutlineButtonClass(active: boolean) {
+  return cn(
+    active &&
+      "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800 hover:text-white",
+  );
+}
