@@ -1,24 +1,55 @@
 import type { QuestionReviewItem } from "@/types/review";
 import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
-export type ReviewFilter = "incorrect" | "correct" | "flagged" | "all";
+export type ReviewFilterKind = "incorrect" | "correct" | "flagged";
+export type ReviewFilters = Set<ReviewFilterKind>;
 
-export function matchesReviewFilter(record: AnswerRecord, filter: ReviewFilter) {
-  if (filter === "correct") return record.isCorrect;
-  if (filter === "incorrect") return !record.isCorrect;
-  if (filter === "flagged") return record.flagged;
-  return true;
+export const REVIEW_FILTER_KINDS: ReviewFilterKind[] = ["incorrect", "correct", "flagged"];
+
+export function allReviewFilters(): ReviewFilters {
+  return new Set(REVIEW_FILTER_KINDS);
 }
 
-export function defaultReviewFilter(items: { record: AnswerRecord }[]) {
-  return items.some((item) => !item.record.isCorrect) ? "incorrect" : "all";
+export function isShowingAllReviewFilters(filters: ReviewFilters) {
+  return REVIEW_FILTER_KINDS.every((kind) => filters.has(kind));
+}
+
+export function matchesReviewFilter(record: AnswerRecord, filters: ReviewFilters) {
+  if (filters.size === 0) return false;
+  if (isShowingAllReviewFilters(filters)) return true;
+  if (filters.has("correct") && record.isCorrect) return true;
+  if (filters.has("incorrect") && !record.isCorrect) return true;
+  if (filters.has("flagged") && record.flagged) return true;
+  return false;
+}
+
+export function toggleReviewFilter(
+  filters: ReviewFilters,
+  kind: ReviewFilterKind | "all",
+): ReviewFilters {
+  if (kind === "all") {
+    return isShowingAllReviewFilters(filters) ? new Set() : allReviewFilters();
+  }
+  const next = new Set(filters);
+  if (next.has(kind)) {
+    next.delete(kind);
+  } else {
+    next.add(kind);
+  }
+  return next;
+}
+
+export function defaultReviewFilters(items: { record: AnswerRecord }[]): ReviewFilters {
+  return items.some((item) => !item.record.isCorrect)
+    ? new Set<ReviewFilterKind>(["incorrect"])
+    : allReviewFilters();
 }
 
 export function initialReviewQuestionIndex(
   items: { index: number; record: AnswerRecord }[],
-  filter: ReviewFilter = defaultReviewFilter(items),
+  filters: ReviewFilters = defaultReviewFilters(items),
 ) {
-  const filtered = items.filter((item) => matchesReviewFilter(item.record, filter));
+  const filtered = items.filter((item) => matchesReviewFilter(item.record, filters));
   return filtered[0]?.index ?? items[0]?.index ?? 0;
 }
 

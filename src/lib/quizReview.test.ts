@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { matchesReviewFilter, remapAnswerToFileQuestion, defaultReviewFilter, initialReviewQuestionIndex } from "@/lib/quizReview";
+import {
+  allReviewFilters,
+  defaultReviewFilters,
+  initialReviewQuestionIndex,
+  isShowingAllReviewFilters,
+  matchesReviewFilter,
+  remapAnswerToFileQuestion,
+  toggleReviewFilter,
+} from "@/lib/quizReview";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 
 const fileQuestion: QuizQuestion = {
@@ -48,42 +56,77 @@ describe("matchesReviewFilter", () => {
   };
 
   it("filters correct answers", () => {
-    expect(matchesReviewFilter(correct, "correct")).toBe(true);
-    expect(matchesReviewFilter(incorrect, "correct")).toBe(false);
+    expect(matchesReviewFilter(correct, new Set(["correct"]))).toBe(true);
+    expect(matchesReviewFilter(incorrect, new Set(["correct"]))).toBe(false);
   });
 
   it("filters incorrect answers", () => {
-    expect(matchesReviewFilter(incorrect, "incorrect")).toBe(true);
-    expect(matchesReviewFilter(correct, "incorrect")).toBe(false);
+    expect(matchesReviewFilter(incorrect, new Set(["incorrect"]))).toBe(true);
+    expect(matchesReviewFilter(correct, new Set(["incorrect"]))).toBe(false);
   });
 
   it("filters flagged answers", () => {
-    expect(matchesReviewFilter(flagged, "flagged")).toBe(true);
-    expect(matchesReviewFilter(correct, "flagged")).toBe(false);
+    expect(matchesReviewFilter(flagged, new Set(["flagged"]))).toBe(true);
+    expect(matchesReviewFilter(correct, new Set(["flagged"]))).toBe(false);
   });
 
-  it("includes all answers for the all filter", () => {
-    expect(matchesReviewFilter(correct, "all")).toBe(true);
-    expect(matchesReviewFilter(incorrect, "all")).toBe(true);
-    expect(matchesReviewFilter(flagged, "all")).toBe(true);
+  it("includes all answers when every filter is active", () => {
+    const filters = allReviewFilters();
+    expect(matchesReviewFilter(correct, filters)).toBe(true);
+    expect(matchesReviewFilter(incorrect, filters)).toBe(true);
+    expect(matchesReviewFilter(flagged, filters)).toBe(true);
+  });
+
+  it("excludes answers when no filters are active", () => {
+    expect(matchesReviewFilter(correct, new Set())).toBe(false);
+  });
+
+  it("matches when any active filter applies", () => {
+    const filters = new Set(["incorrect", "flagged"] as const);
+    expect(matchesReviewFilter(incorrect, filters)).toBe(true);
+    expect(matchesReviewFilter(flagged, filters)).toBe(true);
+    expect(matchesReviewFilter(correct, filters)).toBe(false);
   });
 });
 
-describe("defaultReviewFilter", () => {
+describe("defaultReviewFilters", () => {
   it("defaults to incorrect when mistakes exist", () => {
     expect(
-      defaultReviewFilter([
+      defaultReviewFilters([
         { record: { questionId: "q1", answer: undefined, isCorrect: false, flagged: false } },
       ]),
-    ).toBe("incorrect");
+    ).toEqual(new Set(["incorrect"]));
   });
 
-  it("defaults to all for a perfect attempt", () => {
+  it("defaults to all filters for a perfect attempt", () => {
     expect(
-      defaultReviewFilter([
+      defaultReviewFilters([
         { record: { questionId: "q1", answer: undefined, isCorrect: true, flagged: false } },
       ]),
-    ).toBe("all");
+    ).toEqual(allReviewFilters());
+  });
+});
+
+describe("isShowingAllReviewFilters", () => {
+  it("is true only when every filter kind is active", () => {
+    expect(isShowingAllReviewFilters(allReviewFilters())).toBe(true);
+    expect(isShowingAllReviewFilters(new Set(["incorrect", "correct", "flagged"]))).toBe(true);
+    expect(isShowingAllReviewFilters(new Set(["incorrect", "flagged"]))).toBe(false);
+    expect(isShowingAllReviewFilters(new Set())).toBe(false);
+  });
+});
+
+describe("toggleReviewFilter", () => {
+  it("activates every filter when all is toggled on", () => {
+    expect(toggleReviewFilter(new Set(["incorrect"]), "all")).toEqual(allReviewFilters());
+  });
+
+  it("clears every filter when all is toggled off", () => {
+    expect(toggleReviewFilter(allReviewFilters(), "all")).toEqual(new Set());
+  });
+
+  it("allows deselecting the last active filter", () => {
+    expect(toggleReviewFilter(new Set(["incorrect"]), "incorrect")).toEqual(new Set());
   });
 });
 
@@ -94,6 +137,6 @@ describe("initialReviewQuestionIndex", () => {
   ];
 
   it("selects the first filtered question", () => {
-    expect(initialReviewQuestionIndex(items, "incorrect")).toBe(1);
+    expect(initialReviewQuestionIndex(items, new Set(["incorrect"]))).toBe(1);
   });
 });

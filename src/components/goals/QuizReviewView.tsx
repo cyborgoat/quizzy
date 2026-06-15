@@ -11,8 +11,10 @@ import { cn } from "@/lib/utils";
 import {
   getFilteredPosition,
   getReviewFilterCounts,
+  isShowingAllReviewFilters,
   matchesReviewFilter,
-  type ReviewFilter,
+  type ReviewFilterKind,
+  type ReviewFilters,
 } from "@/lib/quizReview";
 import type {
   ReviewGoalContext,
@@ -21,10 +23,17 @@ import type {
 } from "@/lib/quizReviewSummary";
 import type { QuestionReviewItem } from "@/types/review";
 
-function emptyFilterMessage(filter: ReviewFilter) {
-  if (filter === "incorrect") return "Perfect score — no incorrect answers.";
-  if (filter === "flagged") return "No flagged questions in this attempt.";
-  return "No questions to show.";
+function emptyFilterMessage(filters: ReviewFilters) {
+  if (filters.size === 0) {
+    return "No filters selected.";
+  }
+  if (filters.size === 1) {
+    const [kind] = filters;
+    if (kind === "incorrect") return "Perfect score — no incorrect answers.";
+    if (kind === "flagged") return "No flagged questions in this attempt.";
+    if (kind === "correct") return "No correct answers in this attempt.";
+  }
+  return "No questions match the selected filters.";
 }
 
 export function QuizReviewView({
@@ -51,8 +60,8 @@ export function QuizReviewView({
   const hasAttemptHistory = Boolean(attemptHistory);
 
   const filteredItems = useMemo(
-    () => items.filter((item) => matchesReviewFilter(item.record, navigation.filter)),
-    [items, navigation.filter],
+    () => items.filter((item) => matchesReviewFilter(item.record, navigation.filters)),
+    [items, navigation.filters],
   );
 
   const filterCounts = useMemo(() => getReviewFilterCounts(items), [items]);
@@ -77,7 +86,7 @@ export function QuizReviewView({
     );
   }
 
-  const filters: { value: ReviewFilter; label: string; count: number }[] = [
+  const filters: { value: ReviewFilterKind | "all"; label: string; count: number }[] = [
     { value: "incorrect", label: "Incorrect", count: filterCounts.incorrect },
     { value: "correct", label: "Correct", count: filterCounts.correct },
     { value: "flagged", label: "Flagged", count: filterCounts.flagged },
@@ -129,23 +138,28 @@ export function QuizReviewView({
           </InlineEmptyMessage>
         ) : (
           <div key={resetKey} className="space-y-3">
-            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter questions">
-              {filters.map(({ value, label, count }) => (
-                <Button
-                  key={value}
-                  role="tab"
-                  aria-selected={navigation.filter === value}
-                  size="sm"
-                  variant={navigation.filter === value ? "default" : "outline"}
-                  onClick={() => navigation.onFilterChange(value)}
-                >
-                  {label} ({count})
-                </Button>
-              ))}
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter questions">
+              {filters.map(({ value, label, count }) => {
+                const isActive =
+                  value === "all"
+                    ? isShowingAllReviewFilters(navigation.filters)
+                    : navigation.filters.has(value);
+                return (
+                  <Button
+                    key={value}
+                    aria-pressed={isActive}
+                    size="sm"
+                    variant={isActive ? "default" : "outline"}
+                    onClick={() => navigation.onFilterToggle(value)}
+                  >
+                    {label} ({count})
+                  </Button>
+                );
+              })}
             </div>
 
             {filteredItems.length === 0 ? (
-              <InlineEmptyMessage>{emptyFilterMessage(navigation.filter)}</InlineEmptyMessage>
+              <InlineEmptyMessage>{emptyFilterMessage(navigation.filters)}</InlineEmptyMessage>
             ) : (
               currentItem && (
                 <QuestionReviewCard

@@ -1,22 +1,24 @@
 import { useState } from "react";
 import type { QuestionReviewItem } from "@/types/review";
 import {
-  defaultReviewFilter,
+  allReviewFilters,
+  defaultReviewFilters,
   initialReviewQuestionIndex,
   matchesReviewFilter,
-  type ReviewFilter,
+  toggleReviewFilter,
 } from "@/lib/quizReview";
 
 export function useAttemptReviewNavigation(items: QuestionReviewItem[]) {
-  const [filter, setFilter] = useState<ReviewFilter>(() => defaultReviewFilter(items));
+  const [filters, setFilters] = useState(() => defaultReviewFilters(items));
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(() =>
     initialReviewQuestionIndex(items),
   );
 
-  function handleFilterChange(nextFilter: ReviewFilter) {
-    setFilter(nextFilter);
+  function handleFilterToggle(kind: Parameters<typeof toggleReviewFilter>[1]) {
+    const nextFilters = toggleReviewFilter(filters, kind);
+    setFilters(nextFilters);
     const nextFilteredItems = items.filter((item) =>
-      matchesReviewFilter(item.record, nextFilter),
+      matchesReviewFilter(item.record, nextFilters),
     );
     if (!nextFilteredItems.some((item) => item.index === activeQuestionIndex)) {
       setActiveQuestionIndex(nextFilteredItems[0]?.index ?? 0);
@@ -25,15 +27,15 @@ export function useAttemptReviewNavigation(items: QuestionReviewItem[]) {
 
   function selectQuestion(index: number) {
     const item = items.find((entry) => entry.index === index);
-    if (item && !matchesReviewFilter(item.record, filter)) {
-      setFilter("all");
+    if (item && !matchesReviewFilter(item.record, filters)) {
+      setFilters(allReviewFilters());
     }
     setActiveQuestionIndex(index);
   }
 
   return {
-    filter,
-    onFilterChange: handleFilterChange,
+    filters,
+    onFilterToggle: handleFilterToggle,
     activeQuestionIndex,
     onActiveQuestionIndexChange: setActiveQuestionIndex,
     selectQuestion,
