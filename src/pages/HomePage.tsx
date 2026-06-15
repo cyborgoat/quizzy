@@ -1,5 +1,5 @@
 import { ArrowRight, FolderOpen, History, RefreshCw, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
@@ -19,6 +19,8 @@ import {
   HOME_RECENT_ATTEMPTS_PREVIEW_COUNT,
   type RecentAttemptEntry,
 } from "@/lib/recentAttempts";
+import { searchQuizSources } from "@/lib/quizSearch";
+import { cn } from "@/lib/utils";
 import { attemptPassed } from "@/types/goal";
 
 export function HomePage() {
@@ -27,27 +29,17 @@ export function HomePage() {
   const { goals } = useGoals();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const isSearchPending = searchQuery !== deferredSearchQuery;
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
     "Library refreshed.",
   );
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredQuizzes = useMemo(() => {
-    if (!normalizedQuery) return library.quizzes;
-
-    return library.quizzes.filter((source) => {
-      const title = source.quiz.title.toLowerCase();
-      const description = (source.quiz.description ?? "").toLowerCase();
-      const tags = source.quiz.tags.join(" ").toLowerCase();
-
-      return (
-        title.includes(normalizedQuery) ||
-        description.includes(normalizedQuery) ||
-        tags.includes(normalizedQuery)
-      );
-    });
-  }, [library.quizzes, normalizedQuery]);
+  const filteredQuizzes = useMemo(
+    () => searchQuizSources(library.quizzes, deferredSearchQuery),
+    [library.quizzes, deferredSearchQuery],
+  );
 
   const recentAttempts = useMemo(
     () => collectRecentAttempts(goals).slice(0, HOME_RECENT_ATTEMPTS_PREVIEW_COUNT),
@@ -154,7 +146,14 @@ export function HomePage() {
 
           {library.quizzes.length > 0 ? (
             filteredQuizzes.length > 0 ? (
-              <QuizList quizzes={filteredQuizzes} />
+              <div
+                className={cn(
+                  "transition-opacity",
+                  isSearchPending && "opacity-70",
+                )}
+              >
+                <QuizList quizzes={filteredQuizzes} />
+              </div>
             ) : (
               <EmptyState
                 title="No quizzes match your search"

@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/index";
 import {
@@ -36,6 +36,7 @@ import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
+import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 import {
@@ -64,11 +65,16 @@ function knowledgeColumnWidth(columnId: string) {
   return KNOWLEDGE_COLUMN_WIDTHS[columnId] ?? "";
 }
 
+const coreRowModel = getCoreRowModel();
+const sortedRowModel = getSortedRowModel();
+const paginationRowModel = getPaginationRowModel();
+
 export function KnowledgeBasePage() {
   const { tag: tagFilter } = Route.useSearch();
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const selectedTag = tagFilter ?? "all";
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updatedAt", desc: true },
@@ -99,19 +105,20 @@ export function KnowledgeBasePage() {
     [allTags],
   );
 
-  const filteredItems = useMemo(() => {
-    const normalized = searchQuery.trim().toLowerCase();
-    return library.items.filter((item) => {
-      if (selectedTag !== "all" && !item.tags.includes(selectedTag)) return false;
-      if (!normalized) return true;
-      const haystack = `${item.title} ${item.tags.join(" ")} ${item.content}`.toLowerCase();
-      return haystack.includes(normalized);
-    });
-  }, [library.items, searchQuery, selectedTag]);
+  const isSearchActive = deferredSearchQuery.trim().length > 0;
+  const isSearchPending = searchQuery !== deferredSearchQuery;
+
+  const filteredItems = useMemo(
+    () =>
+      searchKnowledgeItems(library.items, deferredSearchQuery, {
+        tagFilter: selectedTag,
+      }),
+    [library.items, deferredSearchQuery, selectedTag],
+  );
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [searchQuery, selectedTag]);
+  }, [deferredSearchQuery, selectedTag]);
 
   const handleTagFilterChange = useCallback(
     (value: string) => {
@@ -187,12 +194,13 @@ export function KnowledgeBasePage() {
   const table = useReactTable({
     data: filteredItems,
     columns,
-    state: { sorting, pagination },
+    state: { sorting: isSearchActive ? [] : sorting, pagination },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getCoreRowModel: coreRowModel,
+    getSortedRowModel: sortedRowModel,
+    getPaginationRowModel: paginationRowModel,
+    manualSorting: isSearchActive,
   });
 
   function handleNewNote() {
@@ -300,7 +308,12 @@ export function KnowledgeBasePage() {
               }}
             />
           ) : (
-            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+            <div
+              className={cn(
+                "overflow-hidden rounded-lg border border-zinc-200 bg-white transition-opacity",
+                isSearchPending && "opacity-70",
+              )}
+            >
               <button
                 type="button"
                 className="flex w-full items-center gap-2 border-b border-zinc-200/55 px-3 py-2 text-left transition-colors hover:bg-zinc-50"

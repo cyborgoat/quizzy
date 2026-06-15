@@ -1,12 +1,13 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
+import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -23,6 +24,7 @@ export function LinkKnowledgeNoteDialog({
 }) {
   const { items, saveItem } = useKnowledgeLibrary();
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [isLinking, setIsLinking] = useState(false);
 
   const questionKey = questionLinkKey(quizId, questionId);
@@ -39,16 +41,10 @@ export function LinkKnowledgeNoteDialog({
   );
 
   const options = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    if (!normalized) return [];
+    if (!deferredSearch.trim()) return [];
 
-    return linkableItems
-      .filter((item) => {
-        const haystack = `${item.title} ${item.tags.join(" ")} ${item.content}`.toLowerCase();
-        return haystack.includes(normalized);
-      })
-      .slice(0, 8);
-  }, [linkableItems, search]);
+    return searchKnowledgeItems(linkableItems, deferredSearch, { limit: 8 });
+  }, [linkableItems, deferredSearch]);
 
   const showSuggestions = search.trim().length > 0;
 
