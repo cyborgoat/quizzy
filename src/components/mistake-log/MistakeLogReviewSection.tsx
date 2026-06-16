@@ -1,7 +1,7 @@
 import { BookOpen, Shuffle } from "lucide-react";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { toggleOutlineButtonClass } from "@/components/ui/button";
+import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
 import type { MistakeEntry } from "@/types/mistakeLog";

@@ -1,20 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { QuizStartDialog } from "@/components/quiz/QuizStartDialog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
-import type { QuizSessionMode } from "@/types/quizSession";
-
-export type QuizStartRequest = {
-  quizId: string;
-  defaultMode: QuizSessionMode;
-  from?: "home" | "goals";
-};
-
-type QuizStartDialogContextValue = {
-  openQuizStart: (request: QuizStartRequest) => void;
-  closeQuizStart: () => void;
-};
-
-const QuizStartDialogContext = createContext<QuizStartDialogContextValue | null>(null);
+import {
+  QuizStartDialogContext,
+  type QuizStartRequest,
+} from "@/contexts/quiz-start-dialog-context";
 
 export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
   const { quizzes } = useQuizLibrary();
@@ -43,6 +33,7 @@ export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
       {children}
       {request && quiz && (
         <QuizStartDialog
+          key={`${request.quizId}-${request.defaultMode}`}
           open
           onOpenChange={(open) => {
             if (!open) closeQuizStart();
@@ -54,12 +45,4 @@ export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
       )}
     </QuizStartDialogContext.Provider>
   );
-}
-
-export function useQuizStartDialog() {
-  const context = useContext(QuizStartDialogContext);
-  if (!context) {
-    throw new Error("useQuizStartDialog must be used within QuizStartDialogProvider");
-  }
-  return context;
 }

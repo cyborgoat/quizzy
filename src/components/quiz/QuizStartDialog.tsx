@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Button, toggleOutlineButtonClass } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import {
   defaultPracticeQuestionCount,
   type QuizSessionMode,
@@ -36,12 +37,6 @@ export function QuizStartDialog({
   const [questionCount, setQuestionCount] = useState(() =>
     defaultPracticeQuestionCount(totalQuestions),
   );
-
-  useEffect(() => {
-    if (!open) return;
-    setMode(defaultMode);
-    setQuestionCount(defaultPracticeQuestionCount(totalQuestions));
-  }, [open, defaultMode, totalQuestions]);
 
   function handleBegin() {
     onOpenChange(false);

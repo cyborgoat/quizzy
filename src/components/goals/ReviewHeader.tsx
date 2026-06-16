@@ -1,7 +1,7 @@
 import { ArrowLeft, Home, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
+import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import type { ReviewGoalContext, ReviewPracticeContext } from "@/lib/quizReviewSummary";
 
 export function ReviewHeader({

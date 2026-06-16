@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
+import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import type { QuizSessionMode } from "@/types/quizSession";
 
 export function useQuizStartFromSearch(options: {

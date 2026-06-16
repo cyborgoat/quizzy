@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
+import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
 import type { QuizSource } from "@/types/quiz";
 

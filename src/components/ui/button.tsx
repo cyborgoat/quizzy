@@ -48,10 +48,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
-
-export function toggleOutlineButtonClass(active: boolean) {
-  return cn(
-    active &&
-      "border-zinc-900 bg-zinc-900 text-white hover:bg-zinc-800 hover:text-white",
-  );
-}

@@ -19,7 +19,7 @@ import {
 } from "@/components/goals/goalListStyles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { cn } from "@/lib/utils";
-import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
+import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
 import type { Goal } from "@/types/goal";
 

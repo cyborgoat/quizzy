@@ -2,7 +2,7 @@ import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { toggleOutlineButtonClass } from "@/components/ui/button";
+import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { isOptionSelected } from "@/lib/quizReview";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
