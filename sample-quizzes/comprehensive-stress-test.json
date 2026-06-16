@@ -347,7 +347,7 @@
     {
       "id": "stress-tf-14",
       "type": "true_false",
-      "prompt": "The QuizStartScreen practice slider maximum equals the total number of questions in the selected quiz file.",
+      "prompt": "The quiz start dialog practice slider maximum equals the total number of questions in the selected quiz file.",
       "answer": true,
       "explanation": "Practice count is bounded from 1 through the full quiz length."
     },

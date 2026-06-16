@@ -1,9 +1,16 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { Target, X } from "lucide-react";
+import { Target } from "lucide-react";
 import { useState } from "react";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { Button } from "@/components/ui/button";
-import { IconActionButton } from "@/components/ui/icon-action-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -66,10 +73,10 @@ export function AddGoalDialog({ quiz }: { quiz: Quiz }) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Dialog.Trigger asChild>
+          <DialogTrigger asChild>
             <Button
               size="icon"
               variant="ghost"
@@ -78,55 +85,39 @@ export function AddGoalDialog({ quiz }: { quiz: Quiz }) {
             >
               <Target className="size-4" />
             </Button>
-          </Dialog.Trigger>
+          </DialogTrigger>
         </TooltipTrigger>
         <TooltipContent>
           <p>Add goal</p>
         </TooltipContent>
       </Tooltip>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-zinc-950/50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl focus:outline-none">
-          <Dialog.Title className="text-xl font-semibold text-zinc-950">
-            New goal
-          </Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-zinc-500">
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>New goal</DialogTitle>
+          <DialogDescription>
             Set a goal for <span className="font-medium text-zinc-700">{quiz.title}</span>.
-          </Dialog.Description>
-          <Dialog.Close asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="absolute right-4 top-4 text-zinc-500"
-              aria-label="Close"
-              disabled={isSaving}
-            >
-              <X className="size-4" />
-            </Button>
-          </Dialog.Close>
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="mt-5">
-            <GoalDetailsFields
-              idPrefix={`quick-goal-${quiz.id}`}
-              values={form}
-              onChange={handleField}
-              disabled={isSaving}
-            />
-            {validationError && (
-              <p className="mt-2 text-xs text-red-600">{validationError}</p>
-            )}
-          </div>
+        <GoalDetailsFields
+          idPrefix={`quick-goal-${quiz.id}`}
+          values={form}
+          onChange={handleField}
+          disabled={isSaving}
+        />
+        {validationError && (
+          <p className="mt-2 text-xs text-red-600">{validationError}</p>
+        )}
 
-          <div className="mt-6 flex justify-end gap-2">
-            <Dialog.Close asChild>
-              <IconActionButton icon={X} label="Cancel" variant="outline" disabled={isSaving} />
-            </Dialog.Close>
-            <Button onClick={() => void handleCreate()} disabled={isSaving}>
-              {isSaving ? "Creating..." : "Create"}
-            </Button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        <DialogFooter className="sm:justify-end">
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleCreate()} disabled={isSaving}>
+            {isSaving ? "Creating..." : "Create"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

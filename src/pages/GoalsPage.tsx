@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
+import { useQuizStartFromSearch } from "@/hooks/useQuizStartFromSearch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { collectRecentAttempts } from "@/lib/recentAttempts";
 import {
@@ -40,7 +41,14 @@ const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
 export function GoalsPage() {
   const { goals, addGoal } = useGoals();
   const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
-  const { expand: expandParam } = Route.useSearch();
+  const { expand: expandParam, startQuiz, from } = Route.useSearch();
+  useQuizStartFromSearch({
+    startQuiz,
+    from,
+    defaultMode: "scored",
+    clearSearch: expandParam ? { expand: expandParam } : {},
+    clearTo: "/goals",
+  });
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [isCreating, setIsCreating] = useState(false);

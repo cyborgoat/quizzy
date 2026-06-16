@@ -7,6 +7,7 @@ import {
   DEFAULT_RESIZABLE_DIALOG_SIZE_CONSTRAINTS,
   type DialogSizeConstraints,
 } from "@/lib/resizableDialogFrame";
+import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
 import { cn } from "@/lib/utils";
 
 export type DialogStackLayer = "default" | "stacked" | "elevated";
@@ -50,7 +51,7 @@ export function ResizableDialogShell({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className={cn("fixed inset-0 bg-zinc-950/50", layers.overlay)}
+          className={cn(dialogOverlayClassName, layers.overlay)}
         />
         <Dialog.Content
           className={cn(

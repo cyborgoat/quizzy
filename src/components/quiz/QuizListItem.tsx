@@ -22,11 +22,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
 import { useGoals } from "@/hooks/useGoals";
 import type { QuizSource } from "@/types/quiz";
 
 export function QuizListItem({ source }: { source: QuizSource }) {
   const { goals, deleteGoal } = useGoals();
+  const { openQuizStart } = useQuizStartDialog();
   const goal = goals.find((item) => item.quizId === source.quiz.id);
   const [isDeletingGoal, setIsDeletingGoal] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -142,14 +144,19 @@ export function QuizListItem({ source }: { source: QuizSource }) {
           {source.quiz.questions.length} questions
         </span>
         <div className="flex items-center gap-1">
-          <Link
+          <button
+            type="button"
             className={quizCardActionClass}
-            to="/quiz/$quizId"
-            params={{ quizId: source.quiz.id }}
-            search={{ from: "home" }}
+            onClick={() =>
+              openQuizStart({
+                quizId: source.quiz.id,
+                defaultMode: "practice",
+                from: "home",
+              })
+            }
           >
             Start <ArrowRight className="size-4" />
-          </Link>
+          </button>
         </div>
       </div>
     </article>

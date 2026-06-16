@@ -3,6 +3,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
 import { cn } from "@/lib/utils";
 
 export const Dialog = DialogPrimitive.Root;
@@ -16,7 +17,7 @@ export function DialogOverlay({
 }: ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
-      className={cn("fixed inset-0 z-50 bg-zinc-950/50", className)}
+      className={cn(dialogOverlayClassName, "z-50", className)}
       {...props}
     />
   );
@@ -24,13 +25,17 @@ export function DialogOverlay({
 
 export function DialogContent({
   className,
+  overlayClassName,
   children,
   showClose = true,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & { showClose?: boolean }) {
+}: ComponentProps<typeof DialogPrimitive.Content> & {
+  showClose?: boolean;
+  overlayClassName?: string;
+}) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         className={cn(
           "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-2xl focus:outline-none",

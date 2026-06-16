@@ -1,21 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { IconActionButton } from "@/components/ui/icon-action-button";
+import { Button, toggleOutlineButtonClass } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 import {
   defaultPracticeQuestionCount,
   type QuizSessionMode,
 } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
 
-export function QuizStartScreen({
+export function QuizStartDialog({
+  open,
+  onOpenChange,
   quiz,
   defaultMode,
+  from,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   quiz: Quiz;
   defaultMode: QuizSessionMode;
+  from?: "home" | "goals";
 }) {
   const navigate = useNavigate();
   const totalQuestions = quiz.questions.length;
@@ -24,32 +37,38 @@ export function QuizStartScreen({
     defaultPracticeQuestionCount(totalQuestions),
   );
 
+  useEffect(() => {
+    if (!open) return;
+    setMode(defaultMode);
+    setQuestionCount(defaultPracticeQuestionCount(totalQuestions));
+  }, [open, defaultMode, totalQuestions]);
+
   function handleBegin() {
+    onOpenChange(false);
     navigate({
       to: "/quiz/$quizId",
       params: { quizId: quiz.id },
       search:
         mode === "practice"
-          ? { mode: "practice", count: questionCount }
-          : { mode: "scored" },
-      replace: true,
+          ? { mode: "practice", count: questionCount, from }
+          : { mode: "scored", from },
     });
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col justify-center px-4 py-10 sm:px-6">
-      <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Start quiz
-        </p>
-        <h1 className="mt-1 text-xl font-bold tracking-tight text-zinc-950">
-          {quiz.title}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          {totalQuestions} question{totalQuestions !== 1 ? "s" : ""} in this quiz
-        </p>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg" showClose={false}>
+        <DialogHeader>
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Start quiz
+          </p>
+          <DialogTitle className="mt-1">{quiz.title}</DialogTitle>
+          <DialogDescription>
+            {totalQuestions} question{totalQuestions !== 1 ? "s" : ""} in this quiz
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="mt-6">
+        <div className="mt-2">
           <p className="text-xs font-medium text-zinc-700">Mode</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <ModeOption
@@ -99,17 +118,14 @@ export function QuizStartScreen({
           </p>
         )}
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <DialogFooter className="mt-6 sm:justify-start">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={handleBegin}>Begin</Button>
-          <IconActionButton
-            icon={X}
-            label="Cancel"
-            variant="outline"
-            onClick={() => navigate({ to: "/" })}
-          />
-        </div>
-      </div>
-    </main>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -128,17 +144,18 @@ function ModeOption({
     <button
       type="button"
       onClick={onSelect}
-      className={`rounded-md border px-3 py-2.5 text-left transition-colors ${
-        selected
-          ? "border-zinc-900 bg-zinc-900 text-white"
-          : "border-zinc-200 bg-white text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50"
-      }`}
+      className={cn(
+        "rounded-md border border-zinc-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-zinc-300 hover:bg-zinc-50",
+        toggleOutlineButtonClass(selected),
+        selected && "hover:bg-zinc-800 hover:text-white",
+      )}
     >
       <span className="block text-sm font-semibold">{label}</span>
       <span
-        className={`mt-1 block text-xs leading-5 ${
-          selected ? "text-zinc-300" : "text-zinc-500"
-        }`}
+        className={cn(
+          "mt-1 block text-xs leading-5",
+          selected ? "text-zinc-300" : "text-zinc-500",
+        )}
       >
         {description}
       </span>

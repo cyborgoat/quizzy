@@ -202,19 +202,21 @@ managed directly through the system file manager.
 
 ### Quiz attempt
 
-1. The user opens `/quiz/:quizId` and picks **Practice** or **Scored attempt** on
-   `QuizStartScreen`. Practice passes `?mode=practice&count=N`; scored passes
-   `?mode=scored`.
-2. `useQuizSession` selects a type-balanced subset for practice (or all questions
-  for scored), then applies question-order and option-order shuffle settings.
-3. Editable drafts and flags are stored per question.
-4. Direct, previous, and next navigation preserve those drafts.
-5. Final submission freezes one answer record per question in the session.
-6. Pure scoring functions evaluate answered questions; blanks score as incorrect.
-7. The frozen records drive the result and review screens.
-8. If the session mode is **scored** and the quiz has a goal,
+1. The user clicks **Start** on the home page, a goal row, or **Retake** on
+   attempt review. A modal dialog opens over the current page (blurred backdrop)
+   with **Practice** and **Scored** modes. Practice passes
+   `?mode=practice&count=N`; scored passes `?mode=scored`.
+2. **Begin** navigates to `/quiz/:quizId` with the chosen search params.
+3. `useQuizSession` selects a type-balanced subset for practice (or all questions
+   for scored), then applies question-order and option-order shuffle settings.
+4. Editable drafts and flags are stored per question.
+5. Direct, previous, and next navigation preserve those drafts.
+6. Final submission freezes one answer record per question in the session.
+7. Pure scoring functions evaluate answered questions; blanks score as incorrect.
+8. The frozen records drive the result and review screens.
+9. If the session mode is **scored** and the quiz has a goal,
    `GoalsProvider` saves an attempt for it.
-9. Rust updates `mistake-index.json` for that quiz when the attempt is saved.
+10. Rust updates `mistake-index.json` for that quiz when the attempt is saved.
 
 ### Attempt review
 

@@ -35,8 +35,9 @@ application, and opens the desktop window.
 3. Click **Save** to apply both settings.
 4. Return to the home page, click **Open quiz folder**, and add one or more quiz
    JSON files with the system file manager.
-5. Click **Start quiz** and choose **Practice** or **Scored attempt** on the
-   mode picker. In Practice, use the slider to set how many questions to take.
+5. Click **Start** on a quiz card. A dialog opens over the home page with
+   **Practice** and **Scored** modes. In Practice, use the slider to set how many
+   questions to take.
 6. Answer in any order, use flags for questions to revisit, and submit the quiz
    when ready.
 7. Review the final score, correct answers, and explanations.

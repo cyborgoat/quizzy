@@ -1,6 +1,7 @@
 import { ArrowLeft, Home, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
 import type { ReviewGoalContext, ReviewPracticeContext } from "@/lib/quizReviewSummary";
 
 export function ReviewHeader({
@@ -12,6 +13,8 @@ export function ReviewHeader({
   goalContext: ReviewGoalContext | null;
   practiceContext: ReviewPracticeContext | null;
 }) {
+  const { openQuizStart } = useQuizStartDialog();
+
   if (goalContext) {
     const { goal } = goalContext;
 
@@ -37,15 +40,19 @@ export function ReviewHeader({
             )}
           </div>
 
-          <Link
-            to="/quiz/$quizId"
-            params={{ quizId: goal.quizId }}
-            search={{ from: "goals" }}
-            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded-md bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+          <Button
+            className="shrink-0 self-start"
+            onClick={() =>
+              openQuizStart({
+                quizId: goal.quizId,
+                defaultMode: "scored",
+                from: "goals",
+              })
+            }
           >
             <RotateCcw className="size-4" />
             Retake
-          </Link>
+          </Button>
         </div>
       </header>
     );

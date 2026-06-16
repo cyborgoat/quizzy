@@ -1,6 +1,5 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { ChevronDown, RotateCcw, Settings } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { useState, type MouseEvent } from "react";
 import { GoalAttemptRow } from "@/components/goals/GoalAttemptRow";
 import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
@@ -20,6 +19,7 @@ import {
 } from "@/components/goals/goalListStyles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { cn } from "@/lib/utils";
+import { useQuizStartDialog } from "@/contexts/QuizStartDialogContext";
 import { useGoals } from "@/hooks/useGoals";
 import type { Goal } from "@/types/goal";
 
@@ -69,6 +69,7 @@ function GoalCompactMeta({ goal }: { goal: Goal }) {
 
 export function GoalCard({ goal }: { goal: Goal }) {
   const { reopenGoal, deleteAttempt } = useGoals();
+  const { openQuizStart } = useQuizStartDialog();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const attempts = [...goal.attempts].reverse();
 
@@ -129,16 +130,21 @@ export function GoalCard({ goal }: { goal: Goal }) {
           >
             <Settings className="size-3.5" aria-hidden="true" />
           </IconActionButton>
-          <Link
+          <button
+            type="button"
             className={goalActionLinkPrimaryClass}
-            to="/quiz/$quizId"
-            params={{ quizId: goal.quizId }}
-            search={{ from: "goals" }}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              openQuizStart({
+                quizId: goal.quizId,
+                defaultMode: "scored",
+                from: "goals",
+              });
+            }}
             onPointerDown={(event) => event.stopPropagation()}
           >
             Start
-          </Link>
+          </button>
           {goal.completed && (
             <IconActionButton
               icon={RotateCcw}

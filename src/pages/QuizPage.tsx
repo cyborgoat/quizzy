@@ -11,7 +11,6 @@ import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
 import { QuizQuestionSidebar } from "@/components/quiz/QuizQuestionSidebar";
-import { QuizStartScreen } from "@/components/quiz/QuizStartScreen";
 import { SubmitQuizDialog } from "@/components/quiz/SubmitQuizDialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { quizChromeInnerClass } from "@/components/layout/pageShellClasses";
@@ -282,6 +281,19 @@ export function QuizPage() {
     [library.quizzes, quizId],
   );
 
+  const sessionConfig = quiz ? resolveSessionConfig(quiz, search) : null;
+
+  useEffect(() => {
+    if (!quiz || sessionConfig) return;
+
+    const from = search.from === "goals" ? "goals" : "home";
+    void navigate({
+      to: from === "goals" ? "/goals" : "/",
+      search: { startQuiz: quizId, from },
+      replace: true,
+    });
+  }, [quiz, sessionConfig, search.from, quizId, navigate]);
+
   if (library.isLoading && !quiz) {
     return <LoadingState message="Loading quiz…" />;
   }
@@ -298,10 +310,8 @@ export function QuizPage() {
     );
   }
 
-  const sessionConfig = resolveSessionConfig(quiz, search);
   if (!sessionConfig) {
-    const defaultMode = search.from === "goals" ? "scored" : "practice";
-    return <QuizStartScreen quiz={quiz} defaultMode={defaultMode} />;
+    return <LoadingState message="Opening quiz setup…" />;
   }
 
   const sessionKey =
