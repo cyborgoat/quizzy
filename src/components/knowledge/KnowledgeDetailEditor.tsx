@@ -1,4 +1,5 @@
 import { LinkedQuestionPicker } from "@/components/knowledge/LinkedQuestionPicker";
+import { KnowledgeTagsInput } from "@/components/knowledge/KnowledgeTagsInput";
 import { LinkedQuestionReadOnlyField } from "@/components/knowledge/LinkedQuestionReadOnlyField";
 import { KnowledgeMarkdownEditorLazy } from "@/components/knowledge/KnowledgeMarkdownEditor";
 import { sectionLabelClassName } from "@/components/ui/section-label";
@@ -52,11 +53,10 @@ export function KnowledgeDetailEditor({
               (optional)
             </span>
           </label>
-          <input
+          <KnowledgeTagsInput
             id="detail-tags"
             value={tagsInput}
-            onChange={(event) => onChange({ tagsInput: event.target.value })}
-            placeholder="e.g. react, hooks"
+            onChange={(tagsInput) => onChange({ tagsInput })}
             disabled={disabled}
             className={`${fieldClassName} mt-1 text-sm text-zinc-950`}
           />

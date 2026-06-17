@@ -37,6 +37,7 @@ import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
+import { collectKnowledgeTags } from "@/lib/knowledgeTags";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 import {
@@ -88,13 +89,7 @@ export function KnowledgeBasePage() {
     "Knowledge base refreshed.",
   );
 
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    for (const item of library.items) {
-      for (const tag of item.tags) tags.add(tag);
-    }
-    return [...tags].sort();
-  }, [library.items]);
+  const allTags = useMemo(() => collectKnowledgeTags(library.items), [library.items]);
 
   const tagFilterOptions = useMemo(
     () => [
