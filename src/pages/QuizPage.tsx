@@ -24,6 +24,7 @@ import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
 import { buildSessionReviewItems } from "@/lib/quizReview";
 import { reviewScoreFromSession } from "@/lib/quizReviewSummary";
+import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
 import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
@@ -171,6 +172,38 @@ function QuizSessionPage({
   const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const disablePrevious = session.currentQuestionIndex === 0;
+  const disableNext =
+    session.currentQuestionIndex === session.totalQuestions - 1;
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      if (submitDialogOpen || exitDialogOpen) return;
+      if (isEditableKeyboardTarget(event.target)) return;
+      if (session.totalQuestions === 0) return;
+
+      event.preventDefault();
+
+      if (event.key === "ArrowUp" && !disablePrevious) {
+        session.goToPreviousQuestion();
+      }
+      if (event.key === "ArrowDown" && !disableNext) {
+        session.goToNextQuestion();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    submitDialogOpen,
+    exitDialogOpen,
+    disablePrevious,
+    disableNext,
+    session.totalQuestions,
+    session.goToPreviousQuestion,
+    session.goToNextQuestion,
+  ]);
 
   if (session.isComplete && config.mode === "scored") {
     return (
@@ -226,7 +259,7 @@ function QuizSessionPage({
             <Button
               variant="outline"
               onClick={session.goToPreviousQuestion}
-              disabled={session.currentQuestionIndex === 0}
+              disabled={disablePrevious}
             >
               <ChevronLeft className="size-4" />
               Previous
@@ -234,7 +267,7 @@ function QuizSessionPage({
             <Button
               variant="outline"
               onClick={session.goToNextQuestion}
-              disabled={session.currentQuestionIndex === session.totalQuestions - 1}
+              disabled={disableNext}
             >
               Next
               <ChevronRight className="size-4" />
