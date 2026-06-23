@@ -1,4 +1,5 @@
 import { Flag } from "lucide-react";
+import { useEffect, useRef } from "react";
 import {
   groupQuestionsByType,
   QUESTION_TYPE_LABELS,
@@ -25,13 +26,23 @@ export function QuestionNavigator({
   currentIndex: number;
   onSelectQuestion: (index: number) => void;
 }) {
+  const navRef = useRef<HTMLElement>(null);
+  const activeButtonRef = useRef<HTMLButtonElement>(null);
   const questionIndexById = new Map(
     questions.map((question, index) => [question.id, index]),
   );
   const groups = groupQuestionsByType(questions);
 
+  useEffect(() => {
+    activeButtonRef.current?.scrollIntoView({ block: "nearest" });
+    const nav = navRef.current;
+    if (nav?.contains(document.activeElement)) {
+      activeButtonRef.current?.focus();
+    }
+  }, [currentIndex]);
+
   return (
-    <nav aria-label="Quiz questions">
+    <nav ref={navRef} aria-label="Quiz questions">
       {groups.map((group) => (
         <SidebarGroup key={group.type} className="p-0">
           <SidebarGroupLabel className="px-2">
@@ -58,6 +69,7 @@ export function QuestionNavigator({
                 return (
                   <SidebarMenuItem key={question.id}>
                     <SidebarMenuButton
+                      ref={current ? activeButtonRef : undefined}
                       type="button"
                       size="default"
                       isActive={current}
