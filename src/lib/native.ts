@@ -12,6 +12,11 @@ export type AppSettings = {
   mistakeLogMinFlags: number;
   mistakeLogMaxCorrectnessPercentage: number;
   uiFontSize: number;
+  knowledgeLinkShortcutKey: string;
+  knowledgeNewNoteShortcutKey: string;
+  zoomInShortcutKey: string;
+  zoomOutShortcutKey: string;
+  toggleSidebarShortcutKey: string;
 };
 
 export type SaveSettingsRequest = {
@@ -23,6 +28,11 @@ export type SaveSettingsRequest = {
   mistakeLogMinFlags?: number;
   mistakeLogMaxCorrectnessPercentage?: number;
   uiFontSize?: number;
+  knowledgeLinkShortcutKey?: string;
+  knowledgeNewNoteShortcutKey?: string;
+  zoomInShortcutKey?: string;
+  zoomOutShortcutKey?: string;
+  toggleSidebarShortcutKey?: string;
 };
 
 export type NativeQuizFile = {

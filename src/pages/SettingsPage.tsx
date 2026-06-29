@@ -1,9 +1,9 @@
 import { PageShell } from "@/components/layout/PageShell";
-import { SettingsAppearanceSection } from "@/components/settings/SettingsAppearanceSection";
 import { SettingsDirectorySection } from "@/components/settings/SettingsDirectorySection";
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
+import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { Button } from "@/components/ui/button";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
@@ -32,7 +32,7 @@ export function SettingsPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Settings</h1>
           <p className="mt-0.5 text-sm text-zinc-500">
-            Configure your profile, appearance, quiz preferences, and directory.
+            Configure your profile, shortcuts, and directory.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -52,19 +52,43 @@ export function SettingsPage() {
         onSave={() => void handleSave()}
       />
 
-      <SettingsAppearanceSection
-        draft={draft}
-        errors={errors}
-        onFontSizeChange={(fontSize) => {
-          updateDraft({ fontSize });
-          clearFieldError("fontSize");
-        }}
+      <SettingsDirectorySection
+        displayDir={displayDir}
+        directoryPath={directoryPath}
+        directoryAvailable={directoryAvailable}
+        hasPendingDirChange={draft.pendingDir !== null}
+        onPickDirectory={() => void handlePickDirectory()}
       />
 
       <SettingsQuizPreferencesSection
         draft={draft}
         onShuffleQuestionsChange={(shuffleQuestions) => updateDraft({ shuffleQuestions })}
         onShuffleOptionsChange={(shuffleOptions) => updateDraft({ shuffleOptions })}
+      />
+
+      <SettingsShortcutsSection
+        draft={draft}
+        errors={errors}
+        onKnowledgeLinkShortcutChange={(knowledgeLinkShortcut) => {
+          updateDraft({ knowledgeLinkShortcut });
+          clearFieldError("knowledgeLinkShortcut");
+        }}
+        onKnowledgeNewNoteShortcutChange={(knowledgeNewNoteShortcut) => {
+          updateDraft({ knowledgeNewNoteShortcut });
+          clearFieldError("knowledgeNewNoteShortcut");
+        }}
+        onZoomInShortcutChange={(zoomInShortcut) => {
+          updateDraft({ zoomInShortcut });
+          clearFieldError("zoomInShortcut");
+        }}
+        onZoomOutShortcutChange={(zoomOutShortcut) => {
+          updateDraft({ zoomOutShortcut });
+          clearFieldError("zoomOutShortcut");
+        }}
+        onToggleSidebarShortcutChange={(toggleSidebarShortcut) => {
+          updateDraft({ toggleSidebarShortcut });
+          clearFieldError("toggleSidebarShortcut");
+        }}
       />
 
       <SettingsMistakeLogSection
@@ -82,14 +106,6 @@ export function SettingsPage() {
           updateDraft({ maxCorrectness });
           clearFieldError("maxCorrectness");
         }}
-      />
-
-      <SettingsDirectorySection
-        displayDir={displayDir}
-        directoryPath={directoryPath}
-        directoryAvailable={directoryAvailable}
-        hasPendingDirChange={draft.pendingDir !== null}
-        onPickDirectory={() => void handlePickDirectory()}
       />
 
       <SettingsSyncSection

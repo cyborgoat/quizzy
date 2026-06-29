@@ -13,6 +13,11 @@ const persistedSnapshot = {
   minMistakes: 2,
   minFlags: 1,
   maxCorrectnessPercentage: 40,
+  knowledgeLinkShortcut: "mod+l",
+  knowledgeNewNoteShortcut: "mod+n",
+  zoomInShortcut: "mod+=",
+  zoomOutShortcut: "mod+-",
+  toggleSidebarShortcut: "mod+b",
 };
 
 describe("settingsDraft", () => {
@@ -25,6 +30,11 @@ describe("settingsDraft", () => {
       minMistakes: "2",
       minFlags: "1",
       maxCorrectness: "40",
+      knowledgeLinkShortcut: "mod+l",
+      knowledgeNewNoteShortcut: "mod+n",
+      zoomInShortcut: "mod+=",
+      zoomOutShortcut: "mod+-",
+      toggleSidebarShortcut: "mod+b",
       pendingDir: null,
     });
   });
@@ -54,6 +64,11 @@ describe("settingsDraft", () => {
         minMistakes: 2,
         minFlags: 1,
         maxCorrectness: 40,
+        knowledgeLinkShortcut: "mod+l",
+        knowledgeNewNoteShortcut: "mod+n",
+        zoomInShortcut: "mod+=",
+        zoomOutShortcut: "mod+-",
+        toggleSidebarShortcut: "mod+b",
         pendingDir: null,
       });
     }

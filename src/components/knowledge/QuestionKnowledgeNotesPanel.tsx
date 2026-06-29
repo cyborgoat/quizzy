@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import type { DialogStackLayer } from "@/components/ui/resizable-dialog-shell";
 import { KnowledgeNoteActions } from "@/components/knowledge/KnowledgeNoteActions";
 import { KnowledgeNoteEditDialog } from "@/components/knowledge/KnowledgeNoteEditDialog";
 import { LinkedKnowledgeNotesSection } from "@/components/knowledge/LinkedKnowledgeNotesSection";
-import { LinkKnowledgeNoteDialog } from "@/components/knowledge/LinkKnowledgeNoteDialog";
+import { LinkKnowledgeNoteSearch } from "@/components/knowledge/LinkKnowledgeNoteSearch";
+import { useAppShortcuts } from "@/hooks/useAppShortcuts";
 import { useKnowledgeForQuestion } from "@/hooks/useKnowledgeForQuestion";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useKnowledgeNoteDialog } from "@/hooks/useKnowledgeNoteDialog";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
+import { questionLinkKey } from "@/lib/knowledgeLinks";
+import { formatKeybind, matchesKeybind } from "@/lib/keybinds";
+import { isEditableKeyboardTarget } from "@/lib/keyboard";
+import { errorMessage } from "@/lib/native";
+import type { KnowledgeItem } from "@/types/knowledge";
 
 export function QuestionKnowledgeNotesPanel({
   quizId,
@@ -22,6 +30,8 @@ export function QuestionKnowledgeNotesPanel({
   placeholder?: string;
 }) {
   const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
+  const { items, saveItem } = useKnowledgeLibrary();
+  const { knowledgeLink, knowledgeNewNote } = useAppShortcuts();
   const {
     activeNote,
     noteDialogOpen,
@@ -30,20 +40,87 @@ export function QuestionKnowledgeNotesPanel({
     handleOpenChange,
     handleSaved,
   } = useKnowledgeNoteDialog();
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSearchOpen, setLinkSearchOpen] = useState(false);
+  const questionKey = questionLinkKey(quizId, questionId);
+  const hasLinkableNotes = useMemo(
+    () =>
+      items.some(
+        (item) =>
+          !item.linkedQuizQuestions.some(
+            (link) => questionLinkKey(link.quizId, link.questionId) === questionKey,
+          ),
+      ),
+    [items, questionKey],
+  );
 
-  function handleAddNote() {
+  const handleAddNote = useCallback(() => {
+    setLinkSearchOpen(false);
     const draft = buildKnowledgeDraft({
       linkedQuizQuestions: [{ quizId, questionId }],
     });
     stashKnowledgeDraft(draft);
     openNote(draft, "edit");
-  }
+  }, [openNote, questionId, quizId]);
+
+  const handleOpenLinkSearch = useCallback(() => {
+    if (!hasLinkableNotes) return;
+    setLinkSearchOpen(true);
+  }, [hasLinkableNotes]);
+
+  const handleUnlinkNote = useCallback(
+    async (item: KnowledgeItem) => {
+      try {
+        await saveItem({
+          ...item,
+          linkedQuizQuestions: item.linkedQuizQuestions.filter(
+            (link) => questionLinkKey(link.quizId, link.questionId) !== questionKey,
+          ),
+        });
+      } catch (error) {
+        toast.error(errorMessage(error));
+      }
+    },
+    [questionKey, saveItem],
+  );
+
+  useEffect(() => {
+    if (placeholder) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (isEditableKeyboardTarget(event.target)) return;
+      if (linkSearchOpen || noteDialogOpen) return;
+
+      if (matchesKeybind(event, knowledgeLink)) {
+        event.preventDefault();
+        handleOpenLinkSearch();
+        return;
+      }
+
+      if (matchesKeybind(event, knowledgeNewNote)) {
+        event.preventDefault();
+        handleAddNote();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    placeholder,
+    linkSearchOpen,
+    noteDialogOpen,
+    knowledgeLink,
+    knowledgeNewNote,
+    handleAddNote,
+    handleOpenLinkSearch,
+  ]);
 
   const actions = (
     <KnowledgeNoteActions
-      onLink={() => setLinkDialogOpen(true)}
+      onLink={handleOpenLinkSearch}
       onAdd={handleAddNote}
+      linkDisabled={!hasLinkableNotes}
+      linkLabel={`Link (${formatKeybind(knowledgeLink)})`}
+      newNoteLabel={`New note (${formatKeybind(knowledgeNewNote)})`}
     />
   );
 
@@ -53,18 +130,17 @@ export function QuestionKnowledgeNotesPanel({
         notes={linkedNotes}
         currentNoteId={currentNoteId}
         onSelectNote={(item) => openNote(item, "view")}
+        onUnlinkNote={handleUnlinkNote}
         headerActions={actions}
         placeholder={placeholder}
       />
 
-      {linkDialogOpen && (
-        <LinkKnowledgeNoteDialog
-          open={linkDialogOpen}
-          onOpenChange={setLinkDialogOpen}
-          quizId={quizId}
-          questionId={questionId}
-        />
-      )}
+      <LinkKnowledgeNoteSearch
+        open={linkSearchOpen}
+        onOpenChange={setLinkSearchOpen}
+        quizId={quizId}
+        questionId={questionId}
+      />
 
       {activeNote && (
         <KnowledgeNoteEditDialog

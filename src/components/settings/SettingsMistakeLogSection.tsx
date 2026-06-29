@@ -1,8 +1,11 @@
 import { ClipboardList } from "lucide-react";
-import { SettingsField, settingsAlignedFieldGridClassName } from "@/components/settings/SettingsField";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
 import { Input } from "@/components/ui/input";
+import { settingsControlSizeClassName } from "@/components/settings/settingsControlStyles";
 import type { SettingsDraft, SettingsDraftErrors } from "@/lib/settingsDraft";
+
+const mistakeLogInputClassName = `${settingsControlSizeClassName} px-1 py-0 shadow-none focus-visible:border-zinc-500 focus-visible:ring-0`;
 
 export function SettingsMistakeLogSection({
   draft,
@@ -19,59 +22,54 @@ export function SettingsMistakeLogSection({
 }) {
   return (
     <SettingsSection icon={ClipboardList} title="Mistake Log">
-      <div className={settingsAlignedFieldGridClassName}>
-        <SettingsField
+      <SettingsSettingRow
+        label="Min mistakes"
+        description="Required mistakes when correctness is below the max."
+        error={errors.minMistakes}
+      >
+        <Input
           id="min-mistakes"
-          label="Min mistakes"
-          hint="Required mistakes when correctness is below the max."
-          error={errors.minMistakes}
-          alignInGrid
-        >
-          <Input
-            id="min-mistakes"
-            type="number"
-            min={1}
-            step={1}
-            value={draft.minMistakes}
-            onChange={(e) => onMinMistakesChange(e.target.value)}
-          />
-        </SettingsField>
+          type="number"
+          min={1}
+          step={1}
+          value={draft.minMistakes}
+          onChange={(e) => onMinMistakesChange(e.target.value)}
+          className={mistakeLogInputClassName}
+        />
+      </SettingsSettingRow>
 
-        <SettingsField
+      <SettingsSettingRow
+        label="Min flags"
+        description="Flagged questions need at least this many flags."
+        error={errors.minFlags}
+      >
+        <Input
           id="min-flags"
-          label="Min flags"
-          hint="Flagged questions need at least this many flags."
-          error={errors.minFlags}
-          alignInGrid
-        >
-          <Input
-            id="min-flags"
-            type="number"
-            min={1}
-            step={1}
-            value={draft.minFlags}
-            onChange={(e) => onMinFlagsChange(e.target.value)}
-          />
-        </SettingsField>
+          type="number"
+          min={1}
+          step={1}
+          value={draft.minFlags}
+          onChange={(e) => onMinFlagsChange(e.target.value)}
+          className={mistakeLogInputClassName}
+        />
+      </SettingsSettingRow>
 
-        <SettingsField
+      <SettingsSettingRow
+        label="Max correctness %"
+        description="Per-question correctness across scored attempts."
+        error={errors.maxCorrectness}
+      >
+        <Input
           id="max-correctness"
-          label="Max correctness %"
-          hint="Per-question correctness across scored attempts."
-          error={errors.maxCorrectness}
-          alignInGrid
-        >
-          <Input
-            id="max-correctness"
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            value={draft.maxCorrectness}
-            onChange={(e) => onMaxCorrectnessChange(e.target.value)}
-          />
-        </SettingsField>
-      </div>
+          type="number"
+          min={0}
+          max={100}
+          step={1}
+          value={draft.maxCorrectness}
+          onChange={(e) => onMaxCorrectnessChange(e.target.value)}
+          className={mistakeLogInputClassName}
+        />
+      </SettingsSettingRow>
     </SettingsSection>
   );
 }

@@ -1,22 +1,31 @@
-import { ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { AppShortcutsContext } from "@/contexts/app-shortcuts-context";
 import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
 import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
+import {
+  DEFAULT_KEYBINDS,
+  matchesKeybind,
+  parseKeybind,
+  serializeKeybind,
+  type Keybind,
+} from "@/lib/keybinds";
 import { errorMessage, nativeApi } from "@/lib/native";
 import {
   applyUiPreferences,
   clampFontSize,
-  formatZoomLimitMessage,
-  formatZoomSizeMessage,
   parseUiFontSize,
   stepFontSize,
   UI_FONT_SIZE_DEFAULT,
 } from "@/lib/uiPreferences";
+
+function loadShortcut(raw: string | undefined, fallback: string) {
+  return parseKeybind(raw, parseKeybind(fallback, DEFAULT_KEYBINDS.knowledgeLink));
+}
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [userName, setUserNameState] = useState("");
@@ -26,11 +35,37 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [minMistakes, setMinMistakesState] = useState(1);
   const [minFlags, setMinFlagsState] = useState(1);
   const [maxCorrectnessPercentage, setMaxCorrectnessPercentageState] = useState(100);
+  const [knowledgeLinkShortcut, setKnowledgeLinkShortcutState] = useState(
+    serializeKeybind(DEFAULT_KEYBINDS.knowledgeLink),
+  );
+  const [knowledgeNewNoteShortcut, setKnowledgeNewNoteShortcutState] = useState(
+    serializeKeybind(DEFAULT_KEYBINDS.knowledgeNewNote),
+  );
+  const [zoomInShortcut, setZoomInShortcutState] = useState(
+    serializeKeybind(DEFAULT_KEYBINDS.zoomIn),
+  );
+  const [zoomOutShortcut, setZoomOutShortcutState] = useState(
+    serializeKeybind(DEFAULT_KEYBINDS.zoomOut),
+  );
+  const [toggleSidebarShortcut, setToggleSidebarShortcutState] = useState(
+    serializeKeybind(DEFAULT_KEYBINDS.toggleSidebar),
+  );
   const fontSizeRef = useRef(fontSize);
+  const shortcutsRef = useRef<{ zoomIn: Keybind; zoomOut: Keybind }>({
+    zoomIn: DEFAULT_KEYBINDS.zoomIn,
+    zoomOut: DEFAULT_KEYBINDS.zoomOut,
+  });
 
   useEffect(() => {
     fontSizeRef.current = fontSize;
   }, [fontSize]);
+
+  useEffect(() => {
+    shortcutsRef.current = {
+      zoomIn: loadShortcut(zoomInShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomIn)),
+      zoomOut: loadShortcut(zoomOutShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomOut)),
+    };
+  }, [zoomInShortcut, zoomOutShortcut]);
 
   useEffect(() => {
     void loadAppSettings().then((settings) => {
@@ -42,6 +77,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setMinMistakesState(settings.mistakeLogMinMistakes);
       setMinFlagsState(settings.mistakeLogMinFlags);
       setMaxCorrectnessPercentageState(settings.mistakeLogMaxCorrectnessPercentage);
+      setKnowledgeLinkShortcutState(settings.knowledgeLinkShortcutKey);
+      setKnowledgeNewNoteShortcutState(settings.knowledgeNewNoteShortcutKey);
+      setZoomInShortcutState(settings.zoomInShortcutKey);
+      setZoomOutShortcutState(settings.zoomOutShortcutKey);
+      setToggleSidebarShortcutState(settings.toggleSidebarShortcutKey);
       applyUiPreferences(nextFontSize);
     });
   }, []);
@@ -69,42 +109,20 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     [persistFontSize],
   );
 
-  const notifyZoomAdjust = useCallback(
-    (direction: "up" | "down", options?: { silent?: boolean }) => {
-      const next = adjustFontSize(direction);
-      if (next !== null) {
-        if (!options?.silent) {
-          toast.success(formatZoomSizeMessage(next));
-        }
-        return;
-      }
-
-      toast.warning(formatZoomLimitMessage(direction), {
-        icon:
-          direction === "up" ? (
-            <ZoomIn className="size-4 shrink-0 text-amber-600" />
-          ) : (
-            <ZoomOut className="size-4 shrink-0 text-amber-600" />
-          ),
-      });
-    },
-    [adjustFontSize],
-  );
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       if (isEditableKeyboardTarget(event.target)) return;
 
-      if (event.key === "=" || event.key === "+") {
+      const { zoomIn, zoomOut } = shortcutsRef.current;
+      if (matchesKeybind(event, zoomIn)) {
         event.preventDefault();
-        notifyZoomAdjust("up");
+        adjustFontSize("up");
         return;
       }
 
-      if (event.key === "-") {
+      if (matchesKeybind(event, zoomOut)) {
         event.preventDefault();
-        notifyZoomAdjust("down");
+        adjustFontSize("down");
       }
     }
 
@@ -114,7 +132,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       if (event.deltaY === 0) return;
 
       event.preventDefault();
-      notifyZoomAdjust(event.deltaY < 0 ? "up" : "down", { silent: true });
+      adjustFontSize(event.deltaY < 0 ? "up" : "down");
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -123,7 +141,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wheel", handleWheel);
     };
-  }, [notifyZoomAdjust]);
+  }, [adjustFontSize]);
 
   return (
     <UserProfileContext.Provider
@@ -146,18 +164,42 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             setShuffleOptions: setShuffleOptionsState,
           }}
         >
-          <MistakeLogSettingsContext.Provider
+          <AppShortcutsContext.Provider
             value={{
-              minMistakes,
-              minFlags,
-              maxCorrectnessPercentage,
-              setMinMistakes: setMinMistakesState,
-              setMinFlags: setMinFlagsState,
-              setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+              knowledgeLink: loadShortcut(
+                knowledgeLinkShortcut,
+                serializeKeybind(DEFAULT_KEYBINDS.knowledgeLink),
+              ),
+              knowledgeNewNote: loadShortcut(
+                knowledgeNewNoteShortcut,
+                serializeKeybind(DEFAULT_KEYBINDS.knowledgeNewNote),
+              ),
+              zoomIn: loadShortcut(zoomInShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomIn)),
+              zoomOut: loadShortcut(zoomOutShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomOut)),
+              toggleSidebar: loadShortcut(
+                toggleSidebarShortcut,
+                serializeKeybind(DEFAULT_KEYBINDS.toggleSidebar),
+              ),
+              setKnowledgeLink: setKnowledgeLinkShortcutState,
+              setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
+              setZoomIn: setZoomInShortcutState,
+              setZoomOut: setZoomOutShortcutState,
+              setToggleSidebar: setToggleSidebarShortcutState,
             }}
           >
-            {children}
-          </MistakeLogSettingsContext.Provider>
+            <MistakeLogSettingsContext.Provider
+              value={{
+                minMistakes,
+                minFlags,
+                maxCorrectnessPercentage,
+                setMinMistakes: setMinMistakesState,
+                setMinFlags: setMinFlagsState,
+                setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+              }}
+            >
+              {children}
+            </MistakeLogSettingsContext.Provider>
+          </AppShortcutsContext.Provider>
         </QuizPreferencesContext.Provider>
       </UiPreferencesContext.Provider>
     </UserProfileContext.Provider>

@@ -3,12 +3,14 @@ import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAppSynchronize } from "@/hooks/useAppSynchronize";
+import { useAppShortcuts } from "@/hooks/useAppShortcuts";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useUiPreferences } from "@/hooks/useUiPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
+import { serializeKeybind } from "@/lib/keybinds";
 import { errorMessage, nativeApi, type SyncReport } from "@/lib/native";
 import {
   draftFromPersisted,
@@ -29,6 +31,18 @@ export function useSettingsPageState() {
     setShuffleOptions,
   } = useQuizPreferences();
   const { fontSize, setFontSize } = useUiPreferences();
+  const {
+    knowledgeLink,
+    knowledgeNewNote,
+    zoomIn,
+    zoomOut,
+    toggleSidebar,
+    setKnowledgeLink,
+    setKnowledgeNewNote,
+    setZoomIn,
+    setZoomOut,
+    setToggleSidebar,
+  } = useAppShortcuts();
   const {
     minMistakes,
     minFlags,
@@ -53,6 +67,11 @@ export function useSettingsPageState() {
         minMistakes,
         minFlags,
         maxCorrectnessPercentage,
+        knowledgeLinkShortcut: serializeKeybind(knowledgeLink),
+        knowledgeNewNoteShortcut: serializeKeybind(knowledgeNewNote),
+        zoomInShortcut: serializeKeybind(zoomIn),
+        zoomOutShortcut: serializeKeybind(zoomOut),
+        toggleSidebarShortcut: serializeKeybind(toggleSidebar),
       }),
     [
       userName,
@@ -62,6 +81,11 @@ export function useSettingsPageState() {
       minMistakes,
       minFlags,
       maxCorrectnessPercentage,
+      knowledgeLink,
+      knowledgeNewNote,
+      zoomIn,
+      zoomOut,
+      toggleSidebar,
     ],
   );
 
@@ -167,6 +191,11 @@ export function useSettingsPageState() {
         mistakeLogMinMistakes: parsed.minMistakes,
         mistakeLogMinFlags: parsed.minFlags,
         mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,
+        knowledgeLinkShortcutKey: parsed.knowledgeLinkShortcut,
+        knowledgeNewNoteShortcutKey: parsed.knowledgeNewNoteShortcut,
+        zoomInShortcutKey: parsed.zoomInShortcut,
+        zoomOutShortcutKey: parsed.zoomOutShortcut,
+        toggleSidebarShortcutKey: parsed.toggleSidebarShortcut,
         ...(parsed.pendingDir !== null ? { workingDirectory: parsed.pendingDir } : {}),
       });
     } catch (error) {
@@ -181,6 +210,11 @@ export function useSettingsPageState() {
     setMinMistakes(parsed.minMistakes);
     setMinFlags(parsed.minFlags);
     setMaxCorrectnessPercentage(parsed.maxCorrectness);
+    setKnowledgeLink(parsed.knowledgeLinkShortcut);
+    setKnowledgeNewNote(parsed.knowledgeNewNoteShortcut);
+    setZoomIn(parsed.zoomInShortcut);
+    setZoomOut(parsed.zoomOutShortcut);
+    setToggleSidebar(parsed.toggleSidebarShortcut);
 
     if (parsed.pendingDir !== null) {
       await refreshWorkingDirectory();

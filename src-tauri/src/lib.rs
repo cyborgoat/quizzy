@@ -33,6 +33,59 @@ fn default_ui_font_size() -> u32 {
     100
 }
 
+fn default_knowledge_link_shortcut_key() -> String {
+    "mod+l".to_string()
+}
+
+fn default_knowledge_new_note_shortcut_key() -> String {
+    "mod+n".to_string()
+}
+
+fn default_zoom_in_shortcut_key() -> String {
+    "mod+=".to_string()
+}
+
+fn default_zoom_out_shortcut_key() -> String {
+    "mod+-".to_string()
+}
+
+fn default_toggle_sidebar_shortcut_key() -> String {
+    "mod+b".to_string()
+}
+
+fn normalize_keybind(raw: &str) -> Result<String, String> {
+    let trimmed = raw.trim().to_lowercase();
+    if trimmed.is_empty() {
+        return Err("Shortcut is required.".to_string());
+    }
+
+    if !trimmed.contains('+') {
+        if trimmed.len() == 1 && trimmed.chars().next().is_some_and(|c| c.is_ascii_alphabetic()) {
+            return Ok(format!("mod+{}", trimmed));
+        }
+        return Err("Shortcut format is invalid.".to_string());
+    }
+
+    let parts: Vec<&str> = trimmed.split('+').filter(|part| !part.is_empty()).collect();
+    if parts.is_empty() {
+        return Err("Shortcut format is invalid.".to_string());
+    }
+
+    let key = parts[parts.len() - 1];
+    if key.is_empty() {
+        return Err("Shortcut must include a key.".to_string());
+    }
+
+    let has_modifier = parts[..parts.len() - 1]
+        .iter()
+        .any(|part| matches!(*part, "mod" | "ctrl" | "meta" | "alt" | "shift"));
+    if !has_modifier {
+        return Err("Shortcut must include at least one modifier.".to_string());
+    }
+
+    Ok(parts.join("+"))
+}
+
 const UI_FONT_SIZE_MIN: u32 = 75;
 const UI_FONT_SIZE_MAX: u32 = 150;
 
@@ -127,6 +180,16 @@ struct Settings {
         deserialize_with = "deserialize_ui_font_size"
     )]
     ui_font_size: u32,
+    #[serde(default = "default_knowledge_link_shortcut_key")]
+    knowledge_link_shortcut_key: String,
+    #[serde(default = "default_knowledge_new_note_shortcut_key")]
+    knowledge_new_note_shortcut_key: String,
+    #[serde(default = "default_zoom_in_shortcut_key")]
+    zoom_in_shortcut_key: String,
+    #[serde(default = "default_zoom_out_shortcut_key")]
+    zoom_out_shortcut_key: String,
+    #[serde(default = "default_toggle_sidebar_shortcut_key")]
+    toggle_sidebar_shortcut_key: String,
 }
 
 #[derive(Serialize)]
@@ -141,6 +204,11 @@ struct AppSettings {
     mistake_log_min_flags: u32,
     mistake_log_max_correctness_percentage: u32,
     ui_font_size: u32,
+    knowledge_link_shortcut_key: String,
+    knowledge_new_note_shortcut_key: String,
+    zoom_in_shortcut_key: String,
+    zoom_out_shortcut_key: String,
+    toggle_sidebar_shortcut_key: String,
 }
 
 #[derive(Deserialize)]
@@ -156,6 +224,11 @@ struct SaveSettingsRequest {
     mistake_log_min_flags: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
     ui_font_size: Option<u32>,
+    knowledge_link_shortcut_key: Option<String>,
+    knowledge_new_note_shortcut_key: Option<String>,
+    zoom_in_shortcut_key: Option<String>,
+    zoom_out_shortcut_key: Option<String>,
+    toggle_sidebar_shortcut_key: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -354,6 +427,11 @@ fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         mistake_log_min_flags: settings.mistake_log_min_flags,
         mistake_log_max_correctness_percentage: settings.mistake_log_max_correctness_percentage,
         ui_font_size: settings.ui_font_size,
+        knowledge_link_shortcut_key: settings.knowledge_link_shortcut_key.clone(),
+        knowledge_new_note_shortcut_key: settings.knowledge_new_note_shortcut_key.clone(),
+        zoom_in_shortcut_key: settings.zoom_in_shortcut_key.clone(),
+        zoom_out_shortcut_key: settings.zoom_out_shortcut_key.clone(),
+        toggle_sidebar_shortcut_key: settings.toggle_sidebar_shortcut_key.clone(),
     })
 }
 
@@ -399,6 +477,39 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
     if let Some(font_size) = request.ui_font_size {
         validate_ui_font_size(font_size)?;
         settings.ui_font_size = font_size;
+    }
+
+    if let Some(link_key) = request.knowledge_link_shortcut_key {
+        settings.knowledge_link_shortcut_key = normalize_keybind(&link_key)?;
+    }
+
+    if let Some(new_note_key) = request.knowledge_new_note_shortcut_key {
+        settings.knowledge_new_note_shortcut_key = normalize_keybind(&new_note_key)?;
+    }
+
+    if let Some(zoom_in_key) = request.zoom_in_shortcut_key {
+        settings.zoom_in_shortcut_key = normalize_keybind(&zoom_in_key)?;
+    }
+
+    if let Some(zoom_out_key) = request.zoom_out_shortcut_key {
+        settings.zoom_out_shortcut_key = normalize_keybind(&zoom_out_key)?;
+    }
+
+    if let Some(toggle_sidebar_key) = request.toggle_sidebar_shortcut_key {
+        settings.toggle_sidebar_shortcut_key = normalize_keybind(&toggle_sidebar_key)?;
+    }
+
+    let shortcut_values = [
+        settings.knowledge_link_shortcut_key.clone(),
+        settings.knowledge_new_note_shortcut_key.clone(),
+        settings.zoom_in_shortcut_key.clone(),
+        settings.zoom_out_shortcut_key.clone(),
+        settings.toggle_sidebar_shortcut_key.clone(),
+    ];
+    for (index, value) in shortcut_values.iter().enumerate() {
+        if shortcut_values[..index].contains(value) || shortcut_values[index + 1..].contains(value) {
+            return Err("Shortcuts must be unique.".to_string());
+        }
     }
 
     if let Some(path) = request.working_directory {
