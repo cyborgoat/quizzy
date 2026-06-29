@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_KEYBINDS,
+  DEFAULT_SHORTCUT_SERIALIZED,
   findDuplicateKeybind,
   formatKeybind,
   keybindFromKeyboardEvent,
@@ -7,7 +9,6 @@ import {
   parseKeybind,
   serializeKeybind,
   validateKeybindSerialized,
-  DEFAULT_KEYBINDS,
 } from "@/lib/keybinds";
 
 describe("keybinds", () => {
@@ -93,5 +94,15 @@ describe("keybinds", () => {
     expect(matchesKeybind(ctrlEvent, bind)).toBe(true);
     expect(matchesKeybind(metaEvent, bind)).toBe(true);
     expect(matchesKeybind(shiftEvent, bind)).toBe(false);
+  });
+
+  it("exposes defaults that match the Rust backend", () => {
+    expect(DEFAULT_SHORTCUT_SERIALIZED).toEqual({
+      knowledgeLinkShortcutKey: "mod+l",
+      knowledgeNewNoteShortcutKey: "mod+n",
+      zoomInShortcutKey: "mod+=",
+      zoomOutShortcutKey: "mod+-",
+      toggleSidebarShortcutKey: "mod+b",
+    });
   });
 });

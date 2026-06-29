@@ -2,10 +2,8 @@ import { ClipboardList } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
 import { Input } from "@/components/ui/input";
-import { settingsControlSizeClassName } from "@/components/settings/settingsControlStyles";
+import { settingsCompactInputClassName } from "@/components/settings/settingsControlStyles";
 import type { SettingsDraft, SettingsDraftErrors } from "@/lib/settingsDraft";
-
-const mistakeLogInputClassName = `${settingsControlSizeClassName} px-1 py-0 shadow-none focus-visible:border-zinc-500 focus-visible:ring-0`;
 
 export function SettingsMistakeLogSection({
   draft,
@@ -34,7 +32,7 @@ export function SettingsMistakeLogSection({
           step={1}
           value={draft.minMistakes}
           onChange={(e) => onMinMistakesChange(e.target.value)}
-          className={mistakeLogInputClassName}
+          className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>
 
@@ -50,7 +48,7 @@ export function SettingsMistakeLogSection({
           step={1}
           value={draft.minFlags}
           onChange={(e) => onMinFlagsChange(e.target.value)}
-          className={mistakeLogInputClassName}
+          className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>
 
@@ -67,7 +65,7 @@ export function SettingsMistakeLogSection({
           step={1}
           value={draft.maxCorrectness}
           onChange={(e) => onMaxCorrectnessChange(e.target.value)}
-          className={mistakeLogInputClassName}
+          className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>
     </SettingsSection>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   draftFromPersisted,
   hasSettingsChanges,
+  toSaveSettingsRequest,
   validateSettingsDraft,
 } from "@/lib/settingsDraft";
 
@@ -9,7 +10,6 @@ const persistedSnapshot = {
   userName: "Alex",
   shuffleQuestions: false,
   shuffleOptions: true,
-  fontSize: 100,
   minMistakes: 2,
   minFlags: 1,
   maxCorrectnessPercentage: 40,
@@ -26,7 +26,6 @@ describe("settingsDraft", () => {
       name: "Alex",
       shuffleQuestions: false,
       shuffleOptions: true,
-      fontSize: "100",
       minMistakes: "2",
       minFlags: "1",
       maxCorrectness: "40",
@@ -60,7 +59,6 @@ describe("settingsDraft", () => {
         name: "Alex",
         shuffleQuestions: false,
         shuffleOptions: true,
-        fontSize: 100,
         minMistakes: 2,
         minFlags: 1,
         maxCorrectness: 40,
@@ -74,10 +72,30 @@ describe("settingsDraft", () => {
     }
   });
 
+  it("maps parsed settings to a save request", () => {
+    const draft = draftFromPersisted(persistedSnapshot);
+    const result = validateSettingsDraft(draft);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(toSaveSettingsRequest(result.parsed)).toEqual({
+      profileName: "Alex",
+      shuffleQuestions: false,
+      shuffleOptions: true,
+      mistakeLogMinMistakes: 2,
+      mistakeLogMinFlags: 1,
+      mistakeLogMaxCorrectnessPercentage: 40,
+      knowledgeLinkShortcutKey: "mod+l",
+      knowledgeNewNoteShortcutKey: "mod+n",
+      zoomInShortcutKey: "mod+=",
+      zoomOutShortcutKey: "mod+-",
+      toggleSidebarShortcutKey: "mod+b",
+    });
+  });
+
   it("returns field errors when threshold values are invalid", () => {
     const draft = {
       ...draftFromPersisted(persistedSnapshot),
-      fontSize: "50",
       minMistakes: "0",
       minFlags: "x",
       maxCorrectness: "120",

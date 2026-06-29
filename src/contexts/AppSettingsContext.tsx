@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AppShortcutsContext } from "@/contexts/app-shortcuts-context";
 import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
@@ -15,6 +15,7 @@ import {
   type Keybind,
 } from "@/lib/keybinds";
 import { errorMessage, nativeApi } from "@/lib/native";
+import { toggleSidebarFromShortcut } from "@/lib/sidebarToggleRegistry";
 import {
   applyUiPreferences,
   clampFontSize,
@@ -23,8 +24,8 @@ import {
   UI_FONT_SIZE_DEFAULT,
 } from "@/lib/uiPreferences";
 
-function loadShortcut(raw: string | undefined, fallback: string) {
-  return parseKeybind(raw, parseKeybind(fallback, DEFAULT_KEYBINDS.knowledgeLink));
+function loadShortcut(raw: string | undefined, fallback: Keybind) {
+  return parseKeybind(raw, fallback);
 }
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
@@ -51,10 +52,28 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     serializeKeybind(DEFAULT_KEYBINDS.toggleSidebar),
   );
   const fontSizeRef = useRef(fontSize);
-  const shortcutsRef = useRef<{ zoomIn: Keybind; zoomOut: Keybind }>({
+  const shortcutsRef = useRef<{ zoomIn: Keybind; zoomOut: Keybind; toggleSidebar: Keybind }>({
     zoomIn: DEFAULT_KEYBINDS.zoomIn,
     zoomOut: DEFAULT_KEYBINDS.zoomOut,
+    toggleSidebar: DEFAULT_KEYBINDS.toggleSidebar,
   });
+
+  const parsedShortcuts = useMemo(
+    () => ({
+      knowledgeLink: loadShortcut(knowledgeLinkShortcut, DEFAULT_KEYBINDS.knowledgeLink),
+      knowledgeNewNote: loadShortcut(knowledgeNewNoteShortcut, DEFAULT_KEYBINDS.knowledgeNewNote),
+      zoomIn: loadShortcut(zoomInShortcut, DEFAULT_KEYBINDS.zoomIn),
+      zoomOut: loadShortcut(zoomOutShortcut, DEFAULT_KEYBINDS.zoomOut),
+      toggleSidebar: loadShortcut(toggleSidebarShortcut, DEFAULT_KEYBINDS.toggleSidebar),
+    }),
+    [
+      knowledgeLinkShortcut,
+      knowledgeNewNoteShortcut,
+      zoomInShortcut,
+      zoomOutShortcut,
+      toggleSidebarShortcut,
+    ],
+  );
 
   useEffect(() => {
     fontSizeRef.current = fontSize;
@@ -62,10 +81,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     shortcutsRef.current = {
-      zoomIn: loadShortcut(zoomInShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomIn)),
-      zoomOut: loadShortcut(zoomOutShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomOut)),
+      zoomIn: parsedShortcuts.zoomIn,
+      zoomOut: parsedShortcuts.zoomOut,
+      toggleSidebar: parsedShortcuts.toggleSidebar,
     };
-  }, [zoomInShortcut, zoomOutShortcut]);
+  }, [parsedShortcuts]);
 
   useEffect(() => {
     void loadAppSettings().then((settings) => {
@@ -113,7 +133,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     function handleKeyDown(event: KeyboardEvent) {
       if (isEditableKeyboardTarget(event.target)) return;
 
-      const { zoomIn, zoomOut } = shortcutsRef.current;
+      const { zoomIn, zoomOut, toggleSidebar } = shortcutsRef.current;
       if (matchesKeybind(event, zoomIn)) {
         event.preventDefault();
         adjustFontSize("up");
@@ -123,6 +143,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       if (matchesKeybind(event, zoomOut)) {
         event.preventDefault();
         adjustFontSize("down");
+        return;
+      }
+
+      if (matchesKeybind(event, toggleSidebar)) {
+        event.preventDefault();
+        toggleSidebarFromShortcut();
       }
     }
 
@@ -153,7 +179,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       <UiPreferencesContext.Provider
         value={{
           fontSize,
-          setFontSize: (value: number) => setFontSizeState(clampFontSize(value)),
         }}
       >
         <QuizPreferencesContext.Provider
@@ -166,20 +191,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         >
           <AppShortcutsContext.Provider
             value={{
-              knowledgeLink: loadShortcut(
-                knowledgeLinkShortcut,
-                serializeKeybind(DEFAULT_KEYBINDS.knowledgeLink),
-              ),
-              knowledgeNewNote: loadShortcut(
-                knowledgeNewNoteShortcut,
-                serializeKeybind(DEFAULT_KEYBINDS.knowledgeNewNote),
-              ),
-              zoomIn: loadShortcut(zoomInShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomIn)),
-              zoomOut: loadShortcut(zoomOutShortcut, serializeKeybind(DEFAULT_KEYBINDS.zoomOut)),
-              toggleSidebar: loadShortcut(
-                toggleSidebarShortcut,
-                serializeKeybind(DEFAULT_KEYBINDS.toggleSidebar),
-              ),
+              ...parsedShortcuts,
               setKnowledgeLink: setKnowledgeLinkShortcutState,
               setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
               setZoomIn: setZoomInShortcutState,

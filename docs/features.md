@@ -9,7 +9,7 @@ screen. It contains:
 - **Goals** — study goals and attempt history
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
 - **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
-- **Settings** — profile, appearance, quiz preferences, Mistake Log thresholds, and working directory (pinned to the bottom)
+- **Settings** — profile, quiz directory, quiz preferences, shortcuts, Mistake Log thresholds, and synchronization (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
 collapses to icon-only mode. On desktop the trigger button sits in the sidebar
@@ -164,13 +164,16 @@ with unsaved changes opens a confirmation dialog.
 
 The **Full name** field sets the name displayed in the home page greeting.
 
-### Appearance
+### Shortcuts
 
-Customize readability:
+Customize keyboard shortcuts for common actions. Click a shortcut field and press
+the desired key combination to record it. Duplicate shortcuts are rejected on
+Save.
 
-- **Font size** — Percentage from 75 to 150 (default 100). Use **Ctrl/Cmd +** or **Ctrl/Cmd −** to step by 5, or **Ctrl/Cmd + scroll wheel**; changes save immediately and sync with this field.
-
-Preferences are saved to `settings.json` and applied immediately after Save.
+- **Link knowledge note** — opens the link search from the references panel
+- **New knowledge note** — creates a note linked to the current question
+- **Zoom in** / **Zoom out** — step font size by 5% (also **Ctrl/Cmd + scroll wheel**); zoom changes save immediately
+- **Toggle question sidebar** — shows or hides the question navigator during a quiz (default **Ctrl/Cmd + B**)
 
 ### Quiz preferences
 
@@ -293,7 +296,7 @@ The sticky footer contains **Home** (exit with confirmation) on the left and
 
 On desktop, question navigation is displayed in a collapsible left sidebar. On
 narrow screens, the same shadcn sidebar opens as an accessible off-canvas sheet.
-The sidebar can also be toggled with `Cmd+B` on macOS or `Ctrl+B` on Windows.
+The sidebar can also be toggled with the shortcut configured in **Settings → Shortcuts** (default **Ctrl/Cmd + B**).
 
 ## Results and review
 

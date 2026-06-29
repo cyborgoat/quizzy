@@ -69,25 +69,9 @@ export function SettingsPage() {
       <SettingsShortcutsSection
         draft={draft}
         errors={errors}
-        onKnowledgeLinkShortcutChange={(knowledgeLinkShortcut) => {
-          updateDraft({ knowledgeLinkShortcut });
-          clearFieldError("knowledgeLinkShortcut");
-        }}
-        onKnowledgeNewNoteShortcutChange={(knowledgeNewNoteShortcut) => {
-          updateDraft({ knowledgeNewNoteShortcut });
-          clearFieldError("knowledgeNewNoteShortcut");
-        }}
-        onZoomInShortcutChange={(zoomInShortcut) => {
-          updateDraft({ zoomInShortcut });
-          clearFieldError("zoomInShortcut");
-        }}
-        onZoomOutShortcutChange={(zoomOutShortcut) => {
-          updateDraft({ zoomOutShortcut });
-          clearFieldError("zoomOutShortcut");
-        }}
-        onToggleSidebarShortcutChange={(toggleSidebarShortcut) => {
-          updateDraft({ toggleSidebarShortcut });
-          clearFieldError("toggleSidebarShortcut");
+        onShortcutChange={(field, value) => {
+          updateDraft({ [field]: value });
+          clearFieldError(field);
         }}
       />
 

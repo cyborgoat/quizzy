@@ -13,7 +13,50 @@ export const DEFAULT_KEYBINDS = {
   toggleSidebar: { key: "b", mod: true, alt: false, shift: false },
 } as const satisfies Record<string, Keybind>;
 
-export type KeybindId = keyof typeof DEFAULT_KEYBINDS;
+export const SHORTCUT_FIELDS = [
+  {
+    draftKey: "knowledgeLinkShortcut",
+    apiKey: "knowledgeLinkShortcutKey",
+    contextBindKey: "knowledgeLink",
+    defaultBind: DEFAULT_KEYBINDS.knowledgeLink,
+    label: "Link knowledge note",
+    description: "Opens the link search from the references panel.",
+  },
+  {
+    draftKey: "knowledgeNewNoteShortcut",
+    apiKey: "knowledgeNewNoteShortcutKey",
+    contextBindKey: "knowledgeNewNote",
+    defaultBind: DEFAULT_KEYBINDS.knowledgeNewNote,
+    label: "New knowledge note",
+    description: "Creates a note linked to the current question.",
+  },
+  {
+    draftKey: "zoomInShortcut",
+    apiKey: "zoomInShortcutKey",
+    contextBindKey: "zoomIn",
+    defaultBind: DEFAULT_KEYBINDS.zoomIn,
+    label: "Zoom in",
+    description: "Increases app font size in 5% steps.",
+  },
+  {
+    draftKey: "zoomOutShortcut",
+    apiKey: "zoomOutShortcutKey",
+    contextBindKey: "zoomOut",
+    defaultBind: DEFAULT_KEYBINDS.zoomOut,
+    label: "Zoom out",
+    description: "Decreases app font size in 5% steps. Ctrl/Cmd + scroll wheel also works.",
+  },
+  {
+    draftKey: "toggleSidebarShortcut",
+    apiKey: "toggleSidebarShortcutKey",
+    contextBindKey: "toggleSidebar",
+    defaultBind: DEFAULT_KEYBINDS.toggleSidebar,
+    label: "Toggle question sidebar",
+    description: "Shows or hides the question navigator during a quiz.",
+  },
+] as const;
+
+export type ShortcutDraftKey = (typeof SHORTCUT_FIELDS)[number]["draftKey"];
 
 const MODIFIER_ONLY_KEYS = new Set(["Control", "Meta", "Alt", "Shift"]);
 
@@ -161,7 +204,9 @@ export function findDuplicateKeybind(
   const seen = new Map<string, string>();
 
   for (const [field, raw] of Object.entries(values)) {
-    const serialized = serializeKeybind(parseKeybind(raw, DEFAULT_KEYBINDS.knowledgeLink));
+    const fieldConfig = SHORTCUT_FIELDS.find((config) => config.draftKey === field);
+    const fallback = fieldConfig?.defaultBind ?? DEFAULT_KEYBINDS.knowledgeLink;
+    const serialized = serializeKeybind(parseKeybind(raw, fallback));
     const previous = seen.get(serialized);
     if (previous) {
       return {
@@ -174,3 +219,8 @@ export function findDuplicateKeybind(
 
   return null;
 }
+
+// Keep in sync with default_*_shortcut_key() in src-tauri/src/lib.rs.
+export const DEFAULT_SHORTCUT_SERIALIZED = Object.fromEntries(
+  SHORTCUT_FIELDS.map((field) => [field.apiKey, serializeKeybind(field.defaultBind)]),
+) as Record<(typeof SHORTCUT_FIELDS)[number]["apiKey"], string>;

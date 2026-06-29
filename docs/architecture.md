@@ -10,8 +10,8 @@ User
   |
 React pages and components
   |
-UserProfileProvider / QuizPreferencesProvider / MistakeLogSettingsProvider /
-QuizLibraryProvider / KnowledgeLibraryProvider / GoalsProvider / useQuizSession
+AppSettingsProvider / QuizLibraryProvider / KnowledgeLibraryProvider /
+GoalsProvider / useQuizSession
   |
 Zod validation and scoring
   |
@@ -54,15 +54,19 @@ its own `SidebarProvider` for the question navigator.
 
 ### User profile and preferences state
 
-`UserProfileProvider` and `QuizPreferencesProvider` load profile name and split
-shuffle preferences (question order and option order) from `settings.json` via
-`loadAppSettings`. `MistakeLogSettingsProvider`
-loads Mistake Log threshold settings from the same file. Settings changes are
-committed through `nativeApi.saveSettings` on the Settings page; providers update
-their in-memory state after a successful save.
+`AppSettingsProvider` loads profile name, quiz shuffle preferences, Mistake Log
+thresholds, UI font size, and keyboard shortcuts from `settings.json` via
+`loadAppSettings`. It exposes focused context hooks:
 
-`useUserProfile`, `useQuizPreferences`, and `useMistakeLogSettings` are the hooks
-consumers call to read or update these values.
+- `useUserProfile` — display name
+- `useQuizPreferences` — shuffle questions and options
+- `useMistakeLogSettings` — Mistake Log thresholds
+- `useUiPreferences` — current font size (read-only; zoom shortcuts persist immediately)
+- `useAppShortcuts` — parsed keybinds and shortcut setters
+
+Settings changes are committed through `nativeApi.saveSettings` on the Settings
+page; providers update their in-memory state after a successful save. Font size
+from zoom shortcuts is persisted immediately without visiting Settings.
 
 ### Library state
 
@@ -122,8 +126,8 @@ counter, and answered-count progress bar. Previous and Next buttons appear inlin
 below each question. The sticky footer holds Home (exit) and Submit quiz.
 
 Both sidebars use the same shadcn `Sidebar` primitive. The primitive owns desktop
-collapse state, the mobile sheet, keyboard toggle (`Cmd+B` / `Ctrl+B`), and focus
-management.
+collapse state, the mobile sheet, a configurable keyboard toggle (via
+`AppSettingsProvider` and `registerSidebarToggle`), and focus management.
 
 Other quiz components are split by responsibility:
 
@@ -135,7 +139,7 @@ Goal components cover shared add/edit dialogs, accordion goal cards, attempt
 history, score summaries, and the dedicated attempt review page layout. Quiz
 cards reuse the goal dialogs so goal changes do not require navigation.
 
-Knowledge components cover note browse/detail views, edit and link dialogs,
+Knowledge components cover note browse/detail views, the link search palette,
 linked-question preview, clipboard export, and shared linked-notes lists reused
 by the Mistake Log inline review card. Secondary actions use `IconActionButton` with
 tooltips.
@@ -285,7 +289,7 @@ src/
     mistake-log/  Mistake Log table, review section, and status badges
     settings/     Settings section cards and sync report UI
     quiz/         Quiz UI, QuestionReviewCard, ReviewQuestionSplitPanel
-    ui/           shadcn-style local primitives (including Drawer and Slider)
+    ui/           shadcn-style local primitives (including Slider)
   contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
                   preferences providers
   data/           Zod schema, repository parser, and tests

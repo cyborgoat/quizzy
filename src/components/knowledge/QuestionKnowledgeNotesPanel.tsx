@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { DialogStackLayer } from "@/components/ui/resizable-dialog-shell";
 import { KnowledgeNoteActions } from "@/components/knowledge/KnowledgeNoteActions";
@@ -11,8 +11,8 @@ import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useKnowledgeNoteDialog } from "@/hooks/useKnowledgeNoteDialog";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
-import { formatKeybind, matchesKeybind } from "@/lib/keybinds";
-import { isEditableKeyboardTarget } from "@/lib/keyboard";
+import { formatKeybind } from "@/lib/keybinds";
+import { useShortcutHandler } from "@/hooks/useShortcutHandler";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -83,36 +83,13 @@ export function QuestionKnowledgeNotesPanel({
     [questionKey, saveItem],
   );
 
-  useEffect(() => {
-    if (placeholder) return;
+  useShortcutHandler(knowledgeLink, handleOpenLinkSearch, {
+    enabled: !placeholder && !linkSearchOpen && !noteDialogOpen,
+  });
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (isEditableKeyboardTarget(event.target)) return;
-      if (linkSearchOpen || noteDialogOpen) return;
-
-      if (matchesKeybind(event, knowledgeLink)) {
-        event.preventDefault();
-        handleOpenLinkSearch();
-        return;
-      }
-
-      if (matchesKeybind(event, knowledgeNewNote)) {
-        event.preventDefault();
-        handleAddNote();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    placeholder,
-    linkSearchOpen,
-    noteDialogOpen,
-    knowledgeLink,
-    knowledgeNewNote,
-    handleAddNote,
-    handleOpenLinkSearch,
-  ]);
+  useShortcutHandler(knowledgeNewNote, handleAddNote, {
+    enabled: !placeholder && !linkSearchOpen && !noteDialogOpen,
+  });
 
   const actions = (
     <KnowledgeNoteActions

@@ -1,18 +1,18 @@
 import {
-  DEFAULT_KEYBINDS,
   findDuplicateKeybind,
   parseKeybind,
   serializeKeybind,
+  SHORTCUT_FIELDS,
   validateKeybindSerialized,
   type Keybind,
+  type ShortcutDraftKey,
 } from "@/lib/keybinds";
-import { validateFontSizeInput } from "@/lib/uiPreferences";
+import type { SaveSettingsRequest } from "@/lib/native";
 
 export type SettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
-  fontSize: string;
   minMistakes: string;
   minFlags: string;
   maxCorrectness: string;
@@ -25,15 +25,10 @@ export type SettingsDraft = {
 };
 
 export type SettingsFieldKey =
-  | "fontSize"
   | "minMistakes"
   | "minFlags"
   | "maxCorrectness"
-  | "knowledgeLinkShortcut"
-  | "knowledgeNewNoteShortcut"
-  | "zoomInShortcut"
-  | "zoomOutShortcut"
-  | "toggleSidebarShortcut";
+  | ShortcutDraftKey;
 
 export type SettingsDraftErrors = Partial<Record<SettingsFieldKey, string>>;
 
@@ -41,7 +36,6 @@ export type ParsedSettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
-  fontSize: number;
   minMistakes: number;
   minFlags: number;
   maxCorrectness: number;
@@ -57,16 +51,10 @@ export type PersistedSettingsSnapshot = {
   userName: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
-  fontSize: number;
   minMistakes: number;
   minFlags: number;
   maxCorrectnessPercentage: number;
-  knowledgeLinkShortcut: string;
-  knowledgeNewNoteShortcut: string;
-  zoomInShortcut: string;
-  zoomOutShortcut: string;
-  toggleSidebarShortcut: string;
-};
+} & Record<ShortcutDraftKey, string>;
 
 function normalizeShortcutDraftValue(value: string, fallback: Keybind) {
   return serializeKeybind(parseKeybind(value, fallback));
@@ -76,64 +64,47 @@ export function draftFromPersisted({
   userName,
   shuffleQuestions,
   shuffleOptions,
-  fontSize,
   minMistakes,
   minFlags,
   maxCorrectnessPercentage,
-  knowledgeLinkShortcut,
-  knowledgeNewNoteShortcut,
-  zoomInShortcut,
-  zoomOutShortcut,
-  toggleSidebarShortcut,
+  ...shortcutValues
 }: PersistedSettingsSnapshot): SettingsDraft {
+  const shortcuts = Object.fromEntries(
+    SHORTCUT_FIELDS.map((field) => [
+      field.draftKey,
+      normalizeShortcutDraftValue(
+        shortcutValues[field.draftKey],
+        field.defaultBind,
+      ),
+    ]),
+  ) as Pick<SettingsDraft, ShortcutDraftKey>;
+
   return {
     name: userName,
     shuffleQuestions,
     shuffleOptions,
-    fontSize: String(fontSize),
     minMistakes: String(minMistakes),
     minFlags: String(minFlags),
     maxCorrectness: String(maxCorrectnessPercentage),
-    knowledgeLinkShortcut: normalizeShortcutDraftValue(
-      knowledgeLinkShortcut,
-      DEFAULT_KEYBINDS.knowledgeLink,
-    ),
-    knowledgeNewNoteShortcut: normalizeShortcutDraftValue(
-      knowledgeNewNoteShortcut,
-      DEFAULT_KEYBINDS.knowledgeNewNote,
-    ),
-    zoomInShortcut: normalizeShortcutDraftValue(
-      zoomInShortcut,
-      DEFAULT_KEYBINDS.zoomIn,
-    ),
-    zoomOutShortcut: normalizeShortcutDraftValue(
-      zoomOutShortcut,
-      DEFAULT_KEYBINDS.zoomOut,
-    ),
-    toggleSidebarShortcut: normalizeShortcutDraftValue(
-      toggleSidebarShortcut,
-      DEFAULT_KEYBINDS.toggleSidebar,
-    ),
+    ...shortcuts,
     pendingDir: null,
   };
 }
 
 export function hasSettingsChanges(draft: SettingsDraft, persisted: SettingsDraft) {
-  return (
+  if (
     draft.name.trim() !== persisted.name ||
     draft.pendingDir !== null ||
     draft.shuffleQuestions !== persisted.shuffleQuestions ||
     draft.shuffleOptions !== persisted.shuffleOptions ||
-    draft.fontSize !== persisted.fontSize ||
     draft.minMistakes !== persisted.minMistakes ||
     draft.minFlags !== persisted.minFlags ||
-    draft.maxCorrectness !== persisted.maxCorrectness ||
-    draft.knowledgeLinkShortcut !== persisted.knowledgeLinkShortcut ||
-    draft.knowledgeNewNoteShortcut !== persisted.knowledgeNewNoteShortcut ||
-    draft.zoomInShortcut !== persisted.zoomInShortcut ||
-    draft.zoomOutShortcut !== persisted.zoomOutShortcut ||
-    draft.toggleSidebarShortcut !== persisted.toggleSidebarShortcut
-  );
+    draft.maxCorrectness !== persisted.maxCorrectness
+  ) {
+    return true;
+  }
+
+  return SHORTCUT_FIELDS.some((field) => draft[field.draftKey] !== persisted[field.draftKey]);
 }
 
 export function validateSettingsDraft(
@@ -142,9 +113,6 @@ export function validateSettingsDraft(
   | { ok: true; parsed: ParsedSettingsDraft }
   | { ok: false; errors: SettingsDraftErrors } {
   const errors: SettingsDraftErrors = {};
-
-  const fontSizeError = validateFontSizeInput(draft.fontSize);
-  if (fontSizeError) errors.fontSize = fontSizeError;
 
   const parsedMinMistakes = Number(draft.minMistakes);
   if (!Number.isInteger(parsedMinMistakes) || parsedMinMistakes < 1) {
@@ -165,19 +133,13 @@ export function validateSettingsDraft(
     errors.maxCorrectness = "Enter a number between 0 and 100.";
   }
 
-  const shortcutFields = {
-    knowledgeLinkShortcut: draft.knowledgeLinkShortcut,
-    knowledgeNewNoteShortcut: draft.knowledgeNewNoteShortcut,
-    zoomInShortcut: draft.zoomInShortcut,
-    zoomOutShortcut: draft.zoomOutShortcut,
-    toggleSidebarShortcut: draft.toggleSidebarShortcut,
-  } as const;
+  const shortcutFields = Object.fromEntries(
+    SHORTCUT_FIELDS.map((field) => [field.draftKey, draft[field.draftKey]]),
+  ) as Record<ShortcutDraftKey, string>;
 
-  for (const [field, value] of Object.entries(shortcutFields) as Array<
-    [SettingsFieldKey, string]
-  >) {
-    const error = validateKeybindSerialized(value);
-    if (error) errors[field] = error;
+  for (const field of SHORTCUT_FIELDS) {
+    const error = validateKeybindSerialized(draft[field.draftKey]);
+    if (error) errors[field.draftKey] = error;
   }
 
   const duplicate = findDuplicateKeybind(shortcutFields);
@@ -189,37 +151,45 @@ export function validateSettingsDraft(
     return { ok: false, errors };
   }
 
+  const normalizedShortcuts = Object.fromEntries(
+    SHORTCUT_FIELDS.map((field) => [
+      field.draftKey,
+      normalizeShortcutDraftValue(draft[field.draftKey], field.defaultBind),
+    ]),
+  ) as Pick<ParsedSettingsDraft, ShortcutDraftKey>;
+
   return {
     ok: true,
     parsed: {
       name: draft.name.trim(),
       shuffleQuestions: draft.shuffleQuestions,
       shuffleOptions: draft.shuffleOptions,
-      fontSize: Number(draft.fontSize),
       minMistakes: parsedMinMistakes,
       minFlags: parsedMinFlags,
       maxCorrectness: parsedMaxCorrectness,
-      knowledgeLinkShortcut: normalizeShortcutDraftValue(
-        draft.knowledgeLinkShortcut,
-        DEFAULT_KEYBINDS.knowledgeLink,
-      ),
-      knowledgeNewNoteShortcut: normalizeShortcutDraftValue(
-        draft.knowledgeNewNoteShortcut,
-        DEFAULT_KEYBINDS.knowledgeNewNote,
-      ),
-      zoomInShortcut: normalizeShortcutDraftValue(
-        draft.zoomInShortcut,
-        DEFAULT_KEYBINDS.zoomIn,
-      ),
-      zoomOutShortcut: normalizeShortcutDraftValue(
-        draft.zoomOutShortcut,
-        DEFAULT_KEYBINDS.zoomOut,
-      ),
-      toggleSidebarShortcut: normalizeShortcutDraftValue(
-        draft.toggleSidebarShortcut,
-        DEFAULT_KEYBINDS.toggleSidebar,
-      ),
+      ...normalizedShortcuts,
       pendingDir: draft.pendingDir,
     },
   };
+}
+
+export function toSaveSettingsRequest(parsed: ParsedSettingsDraft): SaveSettingsRequest {
+  const request: SaveSettingsRequest = {
+    profileName: parsed.name,
+    shuffleQuestions: parsed.shuffleQuestions,
+    shuffleOptions: parsed.shuffleOptions,
+    mistakeLogMinMistakes: parsed.minMistakes,
+    mistakeLogMinFlags: parsed.minFlags,
+    mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,
+  };
+
+  for (const field of SHORTCUT_FIELDS) {
+    request[field.apiKey] = parsed[field.draftKey];
+  }
+
+  if (parsed.pendingDir !== null) {
+    request.workingDirectory = parsed.pendingDir;
+  }
+
+  return request;
 }

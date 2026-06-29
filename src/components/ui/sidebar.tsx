@@ -5,8 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useAppShortcuts } from "@/hooks/useAppShortcuts"
-import { matchesKeybind } from "@/lib/keybinds"
+import { registerSidebarToggle } from "@/lib/sidebarToggleRegistry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -83,7 +82,6 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobile = useIsMobile()
-    const { toggleSidebar: toggleSidebarShortcut } = useAppShortcuts()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     // This is the internal state of the sidebar.
@@ -113,18 +111,9 @@ const SidebarProvider = React.forwardRef<
         : setOpen((open) => !open)
     }, [isMobile, setOpen, setOpenMobile])
 
-    // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (matchesKeybind(event, toggleSidebarShortcut)) {
-          event.preventDefault()
-          toggleSidebar()
-        }
-      }
-
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar, toggleSidebarShortcut])
+      return registerSidebarToggle(toggleSidebar)
+    }, [toggleSidebar])
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.

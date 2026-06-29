@@ -3,13 +3,6 @@ export const UI_FONT_SIZE_MAX = 150;
 export const UI_FONT_SIZE_DEFAULT = 100;
 export const UI_FONT_SIZE_STEP = 5;
 
-const LEGACY_FONT_SIZE: Record<string, number> = {
-  small: 88,
-  default: 100,
-  large: 113,
-  "extra-large": 125,
-};
-
 export function clampFontSize(value: number): number {
   if (!Number.isFinite(value)) return UI_FONT_SIZE_DEFAULT;
   return Math.min(UI_FONT_SIZE_MAX, Math.max(UI_FONT_SIZE_MIN, Math.round(value)));
@@ -21,9 +14,6 @@ export function parseUiFontSize(value: unknown): number {
   }
 
   if (typeof value === "string") {
-    const legacy = LEGACY_FONT_SIZE[value];
-    if (legacy !== undefined) return legacy;
-
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
       return clampFontSize(parsed);
@@ -46,17 +36,6 @@ export function stepFontSize(
   }
 
   return next;
-}
-
-export function validateFontSizeInput(value: string): string | null {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed)) {
-    return `Enter a whole number between ${UI_FONT_SIZE_MIN} and ${UI_FONT_SIZE_MAX}.`;
-  }
-  if (parsed < UI_FONT_SIZE_MIN || parsed > UI_FONT_SIZE_MAX) {
-    return `Font size must be between ${UI_FONT_SIZE_MIN} and ${UI_FONT_SIZE_MAX} percent.`;
-  }
-  return null;
 }
 
 export function applyUiPreferences(fontSize: number) {

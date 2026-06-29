@@ -6,7 +6,7 @@ import {
   serializeKeybind,
 } from "@/lib/keybinds";
 import { cn } from "@/lib/utils";
-import { settingsControlSizeClassName } from "@/components/settings/settingsControlStyles";
+import { settingsCompactButtonClassName } from "@/components/settings/settingsControlStyles";
 
 export function HotkeyRecorder({
   value,
@@ -72,8 +72,7 @@ export function HotkeyRecorder({
       aria-pressed={recording}
       onClick={() => setRecording(true)}
       className={cn(
-        settingsControlSizeClassName,
-        "truncate px-1 py-0 font-medium text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        settingsCompactButtonClassName,
         recording ? "border-zinc-700" : "border-zinc-200",
         className,
       )}

@@ -7,14 +7,15 @@ import { useAppShortcuts } from "@/hooks/useAppShortcuts";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
-import { useUiPreferences } from "@/hooks/useUiPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
-import { serializeKeybind } from "@/lib/keybinds";
+import { serializeKeybind, SHORTCUT_FIELDS, type ShortcutDraftKey } from "@/lib/keybinds";
 import { errorMessage, nativeApi, type SyncReport } from "@/lib/native";
 import {
   draftFromPersisted,
   hasSettingsChanges,
+  toSaveSettingsRequest,
+  type PersistedSettingsSnapshot,
   type SettingsDraft,
   type SettingsDraftErrors,
   type SettingsFieldKey,
@@ -30,7 +31,6 @@ export function useSettingsPageState() {
     setShuffleQuestions,
     setShuffleOptions,
   } = useQuizPreferences();
-  const { fontSize, setFontSize } = useUiPreferences();
   const {
     knowledgeLink,
     knowledgeNewNote,
@@ -57,27 +57,33 @@ export function useSettingsPageState() {
   const [lastSyncReport, setLastSyncReport] = useState<SyncReport | null>(null);
   const [errors, setErrors] = useState<SettingsDraftErrors>({});
 
-  const persisted = useMemo(
-    () =>
-      draftFromPersisted({
-        userName,
-        shuffleQuestions,
-        shuffleOptions,
-        fontSize,
-        minMistakes,
-        minFlags,
-        maxCorrectnessPercentage,
-        knowledgeLinkShortcut: serializeKeybind(knowledgeLink),
-        knowledgeNewNoteShortcut: serializeKeybind(knowledgeNewNote),
-        zoomInShortcut: serializeKeybind(zoomIn),
-        zoomOutShortcut: serializeKeybind(zoomOut),
-        toggleSidebarShortcut: serializeKeybind(toggleSidebar),
-      }),
-    [
+  const persisted = useMemo(() => {
+    const shortcutBinds = {
+      knowledgeLink,
+      knowledgeNewNote,
+      zoomIn,
+      zoomOut,
+      toggleSidebar,
+    };
+
+    return draftFromPersisted({
       userName,
       shuffleQuestions,
       shuffleOptions,
-      fontSize,
+      minMistakes,
+      minFlags,
+      maxCorrectnessPercentage,
+      ...(Object.fromEntries(
+        SHORTCUT_FIELDS.map((field) => [
+          field.draftKey,
+          serializeKeybind(shortcutBinds[field.contextBindKey]),
+        ]),
+      ) as Pick<PersistedSettingsSnapshot, ShortcutDraftKey>),
+    });
+  }, [
+      userName,
+      shuffleQuestions,
+      shuffleOptions,
       minMistakes,
       minFlags,
       maxCorrectnessPercentage,
@@ -86,8 +92,7 @@ export function useSettingsPageState() {
       zoomIn,
       zoomOut,
       toggleSidebar,
-    ],
-  );
+  ]);
 
   const [draft, setDraft] = useState<SettingsDraft>(persisted);
 
@@ -183,21 +188,7 @@ export function useSettingsPageState() {
     const { parsed } = validation;
 
     try {
-      await nativeApi.saveSettings({
-        profileName: parsed.name,
-        shuffleQuestions: parsed.shuffleQuestions,
-        shuffleOptions: parsed.shuffleOptions,
-        uiFontSize: parsed.fontSize,
-        mistakeLogMinMistakes: parsed.minMistakes,
-        mistakeLogMinFlags: parsed.minFlags,
-        mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,
-        knowledgeLinkShortcutKey: parsed.knowledgeLinkShortcut,
-        knowledgeNewNoteShortcutKey: parsed.knowledgeNewNoteShortcut,
-        zoomInShortcutKey: parsed.zoomInShortcut,
-        zoomOutShortcutKey: parsed.zoomOutShortcut,
-        toggleSidebarShortcutKey: parsed.toggleSidebarShortcut,
-        ...(parsed.pendingDir !== null ? { workingDirectory: parsed.pendingDir } : {}),
-      });
+      await nativeApi.saveSettings(toSaveSettingsRequest(parsed));
     } catch (error) {
       toast.error(errorMessage(error));
       return;
@@ -206,7 +197,6 @@ export function useSettingsPageState() {
     setUserName(parsed.name);
     setShuffleQuestions(parsed.shuffleQuestions);
     setShuffleOptions(parsed.shuffleOptions);
-    setFontSize(parsed.fontSize);
     setMinMistakes(parsed.minMistakes);
     setMinFlags(parsed.minFlags);
     setMaxCorrectnessPercentage(parsed.maxCorrectness);

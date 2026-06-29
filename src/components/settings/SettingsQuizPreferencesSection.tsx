@@ -1,6 +1,7 @@
 import { Shuffle } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { SettingsSwitchRow } from "@/components/settings/SettingsSwitchRow";
+import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
+import { Switch } from "@/components/ui/switch";
 import type { SettingsDraft } from "@/lib/settingsDraft";
 
 export function SettingsQuizPreferencesSection({
@@ -14,23 +15,27 @@ export function SettingsQuizPreferencesSection({
 }) {
   return (
     <SettingsSection icon={Shuffle} title="Quiz preferences">
-      <div className="space-y-3">
-        <SettingsSwitchRow
-          id="shuffle-questions-label"
-          label="Shuffle questions"
-          hint="Randomize order within each question type group. Mistake Log review keeps file order."
+      <SettingsSettingRow
+        label="Shuffle questions"
+        description="Randomize order within each question type group. Mistake Log review keeps file order."
+      >
+        <Switch
           checked={draft.shuffleQuestions}
           onCheckedChange={onShuffleQuestionsChange}
+          aria-label="Shuffle questions"
         />
-        <SettingsSwitchRow
-          id="shuffle-options-label"
-          label="Shuffle options"
-          hint="Randomize answer order while keeping correct answers mapped. Mistake Log keeps file order."
+      </SettingsSettingRow>
+
+      <SettingsSettingRow
+        label="Shuffle options"
+        description="Randomize answer order while keeping correct answers mapped. Mistake Log keeps file order."
+      >
+        <Switch
           checked={draft.shuffleOptions}
           onCheckedChange={onShuffleOptionsChange}
-          divider
+          aria-label="Shuffle options"
         />
-      </div>
+      </SettingsSettingRow>
     </SettingsSection>
   );
 }

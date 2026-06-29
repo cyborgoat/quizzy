@@ -218,8 +218,6 @@ struct SaveSettingsRequest {
     profile_name: Option<String>,
     shuffle_questions: Option<bool>,
     shuffle_options: Option<bool>,
-    #[serde(alias = "shuffleMode")]
-    legacy_shuffle_mode: Option<bool>,
     mistake_log_min_mistakes: Option<u32>,
     mistake_log_min_flags: Option<u32>,
     mistake_log_max_correctness_percentage: Option<u32>,
@@ -445,8 +443,6 @@ fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), Str
 
     if let Some(shuffle_questions) = request.shuffle_questions {
         settings.shuffle_questions = shuffle_questions;
-    } else if let Some(legacy_shuffle_mode) = request.legacy_shuffle_mode {
-        settings.shuffle_questions = legacy_shuffle_mode;
     }
 
     if let Some(shuffle_options) = request.shuffle_options {
@@ -753,7 +749,7 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        atomic_write, is_json_extension, resolve_knowledge_path, strip_utf8_bom,
+        atomic_write, is_json_extension, normalize_keybind, resolve_knowledge_path, strip_utf8_bom,
         KNOWLEDGE_BASE_FOLDER,
     };
     use std::{fs, path::PathBuf};
@@ -806,5 +802,24 @@ mod tests {
         assert_eq!(path, knowledge_base.join("note-one.md"));
 
         fs::remove_dir_all(root).expect("remove test directory");
+    }
+
+    #[test]
+    fn normalize_keybind_accepts_legacy_single_letter_shortcuts() {
+        assert_eq!(normalize_keybind("l").expect("normalize"), "mod+l");
+    }
+
+    #[test]
+    fn normalize_keybind_rejects_invalid_formats() {
+        assert!(normalize_keybind("").is_err());
+        assert!(normalize_keybind("notvalid").is_err());
+    }
+
+    #[test]
+    fn normalize_keybind_preserves_full_shortcuts() {
+        assert_eq!(
+            normalize_keybind("mod+shift+k").expect("normalize"),
+            "mod+shift+k"
+        );
     }
 }
