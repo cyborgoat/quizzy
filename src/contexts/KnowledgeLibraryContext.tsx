@@ -73,6 +73,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       title,
       tags: draft.tags ?? [],
       linkedQuizQuestions: draft.linkedQuizQuestions ?? [],
+      favorite: false,
       createdAt: timestamp,
       updatedAt: timestamp,
       fileName,
@@ -85,12 +86,15 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     return item;
   }
 
-  async function saveItem(item: KnowledgeItem) {
+  async function saveItem(
+    item: KnowledgeItem,
+    options?: { preserveUpdatedAt?: boolean },
+  ) {
     const draft = { updated: undefined as KnowledgeItem | undefined };
     setItems((current) => {
       draft.updated = {
         ...item,
-        updatedAt: new Date().toISOString(),
+        updatedAt: options?.preserveUpdatedAt ? item.updatedAt : new Date().toISOString(),
       };
       return current
         .map((entry) => (entry.id === draft.updated!.id ? draft.updated! : entry))
@@ -108,6 +112,10 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       overwrite: true,
     });
     await refresh({ background: true });
+  }
+
+  async function toggleFavorite(item: KnowledgeItem) {
+    await saveItem({ ...item, favorite: !item.favorite }, { preserveUpdatedAt: true });
   }
 
   async function deleteItem(fileName: string) {
@@ -133,6 +141,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     refresh,
     createItem,
     saveItem,
+    toggleFavorite,
     deleteItem,
     openKnowledgeFolder,
     getNotesForQuestion,

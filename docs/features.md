@@ -136,6 +136,7 @@ Available actions:
 - **New note** opens an in-memory draft in edit mode; the file is written only when you **Save**
 - **Open folder** opens the `knowledge-base` folder in the system file manager
 - **Refresh** rescans knowledge files from disk
+- **Favorite** notes from the list or detail view; use **Show favorites** to filter the table
 - Note detail pages and the Mistake Log inline review card default to a read-only markdown viewer for linked notes
 - **Edit** and **Copy** icon actions in the viewer header open edit mode or copy the full serialized `.md` file to the clipboard
 - **Linked questions** appear as clickable chips; clicking opens a preview dialog (not a route change) with the quiz title, question prompt, options, correct answers, explanation, and related knowledge notes

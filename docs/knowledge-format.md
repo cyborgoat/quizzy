@@ -32,6 +32,7 @@ Always return a cleanup function when subscribing to external resources.
 | `id` | Yes | Stable identifier. Must match the filename stem (`react-useeffect-cleanup` for `react-useeffect-cleanup.md`). |
 | `title` | Yes | Display title shown in the Knowledge Base and Mistake Log review. |
 | `tags` | No | Free-form labels used for filtering. |
+| `favorite` | No | When `true`, marks the note as a favorite in the Knowledge Base. Omitted when not favorited. |
 | `linkedQuizQuestions` | No | Question-level links to quiz content. Each entry contains `quizId` and `questionId`. |
 | `createdAt` | Yes | ISO 8601 timestamp set when the note is created. |
 | `updatedAt` | Yes | ISO 8601 timestamp updated on each save. |

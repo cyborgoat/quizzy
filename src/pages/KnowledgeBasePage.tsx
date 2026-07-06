@@ -9,9 +9,10 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
+import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
+import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
 import { Route } from "@/routes/_app/knowledge/index";
 import {
   DataTableColumnFilterHeader,
@@ -28,6 +29,8 @@ import {
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
@@ -55,14 +58,49 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  title: "w-[36%]",
+  favorite: "w-10",
+  title: "w-[34%]",
   tags: "w-[26%]",
   links: "w-[14%]",
   updatedAt: "w-[24%]",
 };
 
+const favoriteColumnHeadClass = "px-1 py-2";
+const favoriteColumnCellClass = "px-1 py-2 text-center align-middle";
+
 function knowledgeColumnWidth(columnId: string) {
   return KNOWLEDGE_COLUMN_WIDTHS[columnId] ?? "";
+}
+
+function noMatchingNotesMessage(
+  showFavoritesOnly: boolean,
+  isSearchActive: boolean,
+  selectedTag: string,
+) {
+  if (showFavoritesOnly) {
+    if (isSearchActive && selectedTag !== "all") {
+      return "No favorite notes match your search and tag filter.";
+    }
+    if (isSearchActive) {
+      return "No favorite notes match your search.";
+    }
+    if (selectedTag !== "all") {
+      return "No favorite notes match the selected tag.";
+    }
+    return "No favorite notes yet. Star notes from the list or detail page.";
+  }
+
+  if (isSearchActive && selectedTag !== "all") {
+    return "No notes match your search and tag filter.";
+  }
+  if (isSearchActive) {
+    return "No notes match your search.";
+  }
+  if (selectedTag !== "all") {
+    return "No notes match the selected tag.";
+  }
+
+  return "No matching notes.";
 }
 
 const coreRowModel = getCoreRowModel();
@@ -73,6 +111,7 @@ export function KnowledgeBasePage() {
   const { tag: tagFilter } = Route.useSearch();
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
+  const { toggleFavorite } = library;
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const selectedTag = tagFilter ?? "all";
@@ -83,7 +122,7 @@ export function KnowledgeBasePage() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [isNotesListExpanded, setIsNotesListExpanded] = useState(true);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
     "Knowledge base refreshed.",
@@ -102,17 +141,17 @@ export function KnowledgeBasePage() {
   const isSearchActive = deferredSearchQuery.trim().length > 0;
   const isSearchPending = searchQuery !== deferredSearchQuery;
 
-  const filteredItems = useMemo(
-    () =>
-      searchKnowledgeItems(library.items, deferredSearchQuery, {
-        tagFilter: selectedTag,
-      }),
-    [library.items, deferredSearchQuery, selectedTag],
-  );
+  const filteredItems = useMemo(() => {
+    const searched = searchKnowledgeItems(library.items, deferredSearchQuery, {
+      tagFilter: selectedTag,
+    });
+    if (!showFavoritesOnly) return searched;
+    return searched.filter((item) => item.favorite);
+  }, [library.items, deferredSearchQuery, selectedTag, showFavoritesOnly]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [deferredSearchQuery, selectedTag]);
+  }, [deferredSearchQuery, selectedTag, showFavoritesOnly]);
 
   const handleTagFilterChange = useCallback(
     (value: string) => {
@@ -127,6 +166,20 @@ export function KnowledgeBasePage() {
 
   const columns = useMemo<ColumnDef<KnowledgeItem>[]>(
     () => [
+      {
+        id: "favorite",
+        accessorKey: "favorite",
+        header: () => <span className="sr-only">Favorite</span>,
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <KnowledgeFavoriteButton
+              favorite={row.original.favorite}
+              onToggle={() => void toggleFavorite(row.original)}
+            />
+          </div>
+        ),
+        enableSorting: false,
+      },
       {
         accessorKey: "title",
         header: () => <DataTableColumnHeader label="Title" />,
@@ -173,7 +226,7 @@ export function KnowledgeBasePage() {
         ),
       },
     ],
-    [handleTagFilterChange, selectedTag, tagFilterOptions],
+    [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite],
   );
 
   const table = useReactTable({
@@ -281,17 +334,6 @@ export function KnowledgeBasePage() {
               actionLabel="New note"
               onAction={handleNewNote}
             />
-          ) : filteredItems.length === 0 ? (
-            <EmptyState
-              title="No notes match your filters"
-              description="Try another search term or clear the tag filter."
-              actionLabel="Clear"
-              actionVariant="outline"
-              onAction={() => {
-                setSearchQuery("");
-                void navigate({ to: "/knowledge", search: {}, replace: true });
-              }}
-            />
           ) : (
             <div
               className={cn(
@@ -299,78 +341,88 @@ export function KnowledgeBasePage() {
                 isSearchPending && "opacity-70",
               )}
             >
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 border-b border-zinc-200/55 px-3 py-2 text-left transition-colors hover:bg-zinc-50"
-                aria-expanded={isNotesListExpanded}
-                onClick={() => setIsNotesListExpanded((expanded) => !expanded)}
-              >
-                <ChevronDown
-                  className={cn(
-                    "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
-                    isNotesListExpanded && "rotate-180",
-                  )}
-                />
-                <span className="text-sm font-semibold text-zinc-950">Notes</span>
-                <span className="text-xs text-zinc-500">({filteredItems.length})</span>
-              </button>
-
-              {isNotesListExpanded && (
-                <>
-                  <div className="overflow-x-auto">
-                    <Table className={dataTableFixedLayoutClass}>
-                      <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                          <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                              <TableHead
-                                key={header.id}
-                                className={cn(
-                                  dataTableHeadClass,
-                                  dataTableFixedCellClass,
-                                  knowledgeColumnWidth(header.column.id),
-                                )}
-                              >
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext(),
-                                    )}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableHeader>
-                      <TableBody>
-                        {table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className="cursor-pointer"
-                            onClick={() => openNote(row.original)}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell
-                                key={cell.id}
-                                className={cn(
-                                  dataTableCellClass,
-                                  dataTableFixedCellClass,
-                                  knowledgeColumnWidth(cell.column.id),
-                                )}
-                              >
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <DataTablePaginationFooter
-                    table={table}
-                    pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
+              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/55 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-zinc-950">Notes</span>
+                  <span className="text-xs text-zinc-500">({filteredItems.length})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="knowledge-show-favorites"
+                    className="cursor-pointer text-xs font-normal text-zinc-600"
+                  >
+                    Show favorites
+                  </Label>
+                  <Switch
+                    id="knowledge-show-favorites"
+                    checked={showFavoritesOnly}
+                    onCheckedChange={setShowFavoritesOnly}
+                    aria-label="Show favorites only"
                   />
-                </>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <Table className={dataTableFixedLayoutClass}>
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            className={cn(
+                              dataTableHeadClass,
+                              dataTableFixedCellClass,
+                              knowledgeColumnWidth(header.column.id),
+                              header.column.id === "favorite" && favoriteColumnHeadClass,
+                            )}
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        className="cursor-pointer"
+                        onClick={() => openNote(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              dataTableCellClass,
+                              dataTableFixedCellClass,
+                              knowledgeColumnWidth(cell.column.id),
+                              cell.column.id === "favorite" && favoriteColumnCellClass,
+                            )}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {filteredItems.length > 0 ? (
+                <DataTablePaginationFooter
+                  table={table}
+                  pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
+                />
+              ) : (
+                <div className="border-t border-zinc-200/55 px-3 py-8 text-center">
+                  <p className="text-sm text-zinc-500">
+                    {noMatchingNotesMessage(showFavoritesOnly, isSearchActive, selectedTag)}
+                  </p>
+                </div>
               )}
             </div>
           )}

@@ -5,6 +5,7 @@ export type ParsedFrontMatter = {
   title?: string;
   tags?: string[];
   linkedQuizQuestions?: LinkedQuizQuestion[];
+  favorite?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -113,6 +114,11 @@ function parseFrontMatterYaml(yaml: string): ParsedFrontMatter {
     if (key === "title") result.title = scalar;
     if (key === "createdAt") result.createdAt = scalar;
     if (key === "updatedAt") result.updatedAt = scalar;
+    if (key === "favorite") {
+      const lower = scalar.toLowerCase();
+      if (lower === "true") result.favorite = true;
+      if (lower === "false") result.favorite = false;
+    }
   }
 
   return result;
@@ -171,6 +177,7 @@ export function serializeKnowledgeFile(
     title: string;
     tags: string[];
     linkedQuizQuestions: LinkedQuizQuestion[];
+    favorite?: boolean;
     createdAt: string;
     updatedAt: string;
   },
@@ -182,6 +189,7 @@ export function serializeKnowledgeFile(
     `title: ${yamlScalar(meta.title)}`,
     yamlStringList("tags", meta.tags),
     yamlLinkedQuestions(meta.linkedQuizQuestions),
+    ...(meta.favorite ? ["favorite: true"] : []),
     `createdAt: ${yamlScalar(meta.createdAt)}`,
     `updatedAt: ${yamlScalar(meta.updatedAt)}`,
     "---",

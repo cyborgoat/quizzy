@@ -23,7 +23,8 @@ export type KnowledgeLibraryContextValue = {
   isLoading: boolean;
   refresh: (options?: KnowledgeLibraryRefreshOptions) => Promise<void>;
   createItem: (draft: CreateKnowledgeDraft) => Promise<KnowledgeItem>;
-  saveItem: (item: KnowledgeItem) => Promise<void>;
+  saveItem: (item: KnowledgeItem, options?: { preserveUpdatedAt?: boolean }) => Promise<void>;
+  toggleFavorite: (item: KnowledgeItem) => Promise<void>;
   deleteItem: (fileName: string) => Promise<void>;
   openKnowledgeFolder: () => Promise<void>;
   getNotesForQuestion: (quizId: string, questionId: string) => KnowledgeItem[];

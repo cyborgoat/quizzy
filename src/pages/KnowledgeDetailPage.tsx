@@ -41,6 +41,7 @@ export function KnowledgeDetailPage() {
       fileName: "",
       title: "",
       tags: [],
+      favorite: false,
       content: "",
       linkedQuizQuestions: [],
       createdAt: "",
@@ -86,9 +87,18 @@ export function KnowledgeDetailPage() {
 
     if (editor.draft.id !== knowledgeId) {
       editor.resetFromSource(source);
+      return;
+    }
+
+    if (
+      editor.mode === "view" &&
+      (source.favorite !== editor.draft.favorite ||
+        source.updatedAt !== editor.draft.updatedAt)
+    ) {
+      editor.resetFromSource(source, "view");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when route/library source changes
-  }, [knowledgeId, source, startsInEditMode]);
+  }, [knowledgeId, source, startsInEditMode, editor.mode]);
 
   if (!source) {
     return (

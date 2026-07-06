@@ -60,6 +60,27 @@ describe("serializeKnowledgeFile", () => {
     expect(parsed.frontMatter.tags).toEqual([]);
     expect(parsed.frontMatter.linkedQuizQuestions).toEqual([]);
   });
+
+  it("serializes favorite notes with a favorite front matter field", () => {
+    const serialized = serializeKnowledgeFile(
+      { ...sampleMeta, favorite: true },
+      "Body text",
+    );
+    expect(serialized).toContain("favorite: true");
+
+    const parsed = splitFrontMatter(serialized);
+    expect("error" in parsed).toBe(false);
+    if ("error" in parsed) return;
+    expect(parsed.frontMatter.favorite).toBe(true);
+  });
+
+  it("omits favorite from front matter when false", () => {
+    const serialized = serializeKnowledgeFile(
+      { ...sampleMeta, favorite: false },
+      "Body text",
+    );
+    expect(serialized).not.toContain("favorite:");
+  });
 });
 
 describe("inline YAML flow sequences", () => {

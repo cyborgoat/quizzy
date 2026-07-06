@@ -1,6 +1,7 @@
 import { Copy, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { LinkedQuestionList } from "@/components/knowledge/LinkedQuestionList";
@@ -11,9 +12,11 @@ import { sectionLabelClassName } from "@/components/ui/section-label";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { KNOWLEDGE_BASE_FOLDER } from "@/contexts/knowledge-library-context";
+import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { formatShortDate } from "@/lib/formatDate";
+import { isUnsavedKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
 
@@ -26,8 +29,13 @@ export function KnowledgeDetailViewer({
   onEdit?: () => void;
   stackedLinkedQuestionPreview?: boolean;
 }) {
+  const { toggleFavorite, items } = useKnowledgeLibrary();
+  const persistedItem = items.find((entry) => entry.id === item.id);
+  const favorite = persistedItem?.favorite ?? item.favorite;
   const hasContent = item.content.trim().length > 0;
   const [isCopying, setIsCopying] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const canFavorite = !isUnsavedKnowledgeDraft(item);
   const fileLocation = item.fileName
     ? `${KNOWLEDGE_BASE_FOLDER}/${item.fileName}`
     : null;
@@ -41,6 +49,17 @@ export function KnowledgeDetailViewer({
       toast.error(errorMessage(error));
     } finally {
       setIsCopying(false);
+    }
+  }
+
+  async function handleToggleFavorite() {
+    setIsTogglingFavorite(true);
+    try {
+      await toggleFavorite(persistedItem ?? item);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setIsTogglingFavorite(false);
     }
   }
 
@@ -65,8 +84,16 @@ export function KnowledgeDetailViewer({
           </p>
         </header>
 
-        {(onEdit || hasContent) && (
+        {(canFavorite || onEdit || hasContent) && (
           <div className="flex shrink-0 items-center gap-1">
+            {canFavorite && (
+              <KnowledgeFavoriteButton
+                favorite={favorite}
+                disabled={isTogglingFavorite}
+                showTooltip
+                onToggle={() => void handleToggleFavorite()}
+              />
+            )}
             {hasContent && (
               <IconActionButton
                 icon={Copy}

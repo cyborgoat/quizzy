@@ -51,6 +51,7 @@ export function buildKnowledgeDraft(options?: {
     fileName: "",
     title: "",
     tags: [],
+    favorite: false,
     content: "",
     linkedQuizQuestions: options?.linkedQuizQuestions ?? [],
     createdAt: now,

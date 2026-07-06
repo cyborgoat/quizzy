@@ -11,6 +11,7 @@ export const knowledgeMetaSchema = z.object({
   title: z.string().trim().min(1, "title is required."),
   tags: z.array(z.string()).default([]).transform(normalizeTags),
   linkedQuizQuestions: z.array(linkedQuizQuestionSchema).default([]),
+  favorite: z.boolean().default(false),
   createdAt: z.string().min(1, "createdAt is required."),
   updatedAt: z.string().min(1, "updatedAt is required."),
 });
