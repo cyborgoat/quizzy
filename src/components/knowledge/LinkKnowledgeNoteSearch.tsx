@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,10 @@ import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { errorMessage } from "@/lib/native";
+import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
+
+const linkKnowledgeNoteListboxId = "link-knowledge-note-options";
 
 export function LinkKnowledgeNoteSearch({
   open,
@@ -24,7 +27,9 @@ export function LinkKnowledgeNoteSearch({
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [isLinking, setIsLinking] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const questionKey = questionLinkKey(quizId, questionId);
 
@@ -46,6 +51,13 @@ export function LinkKnowledgeNoteSearch({
   }, [linkableItems, deferredSearch]);
 
   const showSuggestions = search.trim().length > 0;
+  const activeIndex =
+    options.length === 0 ? -1 : Math.min(Math.max(0, highlightedIndex), options.length - 1);
+
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, options]);
 
   useEffect(() => {
     if (!open) return;
@@ -57,8 +69,32 @@ export function LinkKnowledgeNoteSearch({
 
   function handleOpenChange(nextOpen: boolean) {
     if (isLinking) return;
-    if (!nextOpen) setSearch("");
+    if (!nextOpen) {
+      setSearch("");
+      setHighlightedIndex(-1);
+    }
     onOpenChange(nextOpen);
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (!showSuggestions || options.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex(activeIndex < 0 ? 0 : Math.min(options.length - 1, activeIndex + 1));
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex(activeIndex <= 0 ? 0 : activeIndex - 1);
+      return;
+    }
+
+    if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      void handleLink(options[activeIndex]!);
+    }
   }
 
   async function handleLink(item: KnowledgeItem) {
@@ -93,25 +129,52 @@ export function LinkKnowledgeNoteSearch({
           <Input
             ref={inputRef}
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setHighlightedIndex(0);
+            }}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Search knowledge notes"
             className="h-11 rounded-none border-0 bg-transparent pl-10 shadow-none focus-visible:ring-0"
             disabled={isLinking}
             autoComplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+            aria-controls={showSuggestions ? linkKnowledgeNoteListboxId : undefined}
+            aria-activedescendant={
+              showSuggestions && activeIndex >= 0
+                ? `${linkKnowledgeNoteListboxId}-${options[activeIndex]?.id}`
+                : undefined
+            }
             aria-label="Search knowledge notes to link"
           />
         </div>
 
         {showSuggestions && (
-          <ul className="max-h-64 overflow-y-auto py-1">
+          <ul
+            id={linkKnowledgeNoteListboxId}
+            role="listbox"
+            className="max-h-64 overflow-y-auto py-1"
+          >
             {options.length === 0 ? (
               <li className="px-3 py-2.5 text-sm text-zinc-500">No matching notes.</li>
             ) : (
-              options.map((item) => (
-                <li key={item.id}>
+              options.map((item, index) => (
+                <li key={item.id} role="presentation">
                   <button
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
                     type="button"
-                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-zinc-50 disabled:opacity-50"
+                    id={`${linkKnowledgeNoteListboxId}-${item.id}`}
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    className={cn(
+                      "w-full px-3 py-2.5 text-left text-sm hover:bg-zinc-50 disabled:opacity-50",
+                      index === activeIndex && "bg-zinc-50",
+                    )}
+                    onMouseEnter={() => setHighlightedIndex(index)}
                     onClick={() => void handleLink(item)}
                     disabled={isLinking}
                   >
