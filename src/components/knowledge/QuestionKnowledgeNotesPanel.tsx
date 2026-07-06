@@ -63,9 +63,13 @@ export function QuestionKnowledgeNotesPanel({
   }, [openNote, questionId, quizId]);
 
   const handleOpenLinkSearch = useCallback(() => {
+    if (placeholder) {
+      toast.info("Exit study mode or submit your answer first to link a knowledge note.");
+      return;
+    }
     if (!hasLinkableNotes) return;
     setLinkSearchOpen(true);
-  }, [hasLinkableNotes]);
+  }, [hasLinkableNotes, placeholder]);
 
   const handleUnlinkNote = useCallback(
     async (item: KnowledgeItem) => {
@@ -84,7 +88,7 @@ export function QuestionKnowledgeNotesPanel({
   );
 
   useShortcutHandler(knowledgeLink, handleOpenLinkSearch, {
-    enabled: !placeholder && !linkSearchOpen && !noteDialogOpen,
+    enabled: !linkSearchOpen && !noteDialogOpen,
   });
 
   useShortcutHandler(knowledgeNewNote, handleAddNote, {
