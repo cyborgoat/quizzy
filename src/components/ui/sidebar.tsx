@@ -268,26 +268,39 @@ Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
-  React.ComponentProps<typeof Button>
->(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  React.ComponentProps<typeof Button> & {
+    tooltip?: string
+    tooltipSide?: "top" | "bottom" | "left" | "right"
+  }
+>(({ className, onClick, tooltip, tooltipSide = "right", "aria-label": ariaLabel, ...props }, ref) => {
+  const { toggleSidebar, state } = useSidebar()
+  const label = tooltip ?? (state === "expanded" ? "Close sidebar" : "Open sidebar")
 
   return (
-    <Button
-      ref={ref}
-      data-sidebar="trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
-      {...props}
-    >
-      <PanelLeft />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          ref={ref}
+          data-sidebar="trigger"
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "size-8 shrink-0 rounded-md p-2 hover:bg-zinc-100 [&>svg]:size-4",
+            className
+          )}
+          onClick={(event) => {
+            onClick?.(event)
+            toggleSidebar()
+          }}
+          aria-label={ariaLabel ?? label}
+          {...props}
+        >
+          <PanelLeft />
+          <span className="sr-only">{label}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
+    </Tooltip>
   )
 })
 SidebarTrigger.displayName = "SidebarTrigger"

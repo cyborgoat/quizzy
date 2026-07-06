@@ -26,7 +26,8 @@ export function QuizHeader({
         {isMobile && (
           <SidebarTrigger
             className="size-9 shrink-0 border border-zinc-200 bg-white hover:bg-zinc-100"
-            aria-label="Open question sidebar"
+            tooltip="Open question sidebar"
+            tooltipSide="bottom"
           />
         )}
         <div className="min-w-0 flex-1">

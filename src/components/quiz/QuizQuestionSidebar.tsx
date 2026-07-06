@@ -45,11 +45,8 @@ export function QuizQuestionSidebar({
   return (
     <Sidebar side="left" collapsible="icon">
       <SidebarHeader className={`gap-0 p-0 ${quizChromeHeaderClass}`}>
-        <div className="flex h-full items-center gap-1.5 px-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <SidebarTrigger
-            className="size-8 shrink-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
-            aria-label="Toggle question sidebar"
-          />
+        <div className="flex h-full items-center gap-2 px-1">
+          <SidebarTrigger tooltipSide="left" />
           <h2 className="truncate text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
             Questions
           </h2>
