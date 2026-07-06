@@ -20,11 +20,9 @@ import {
   DataTableNumericCell,
   DataTableSortableHeader,
   DataTableTruncatedCell,
-  dataTableCellClass,
   dataTableCellMutedClass,
   dataTableFixedCellClass,
   dataTableFixedLayoutClass,
-  dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { IconActionButton } from "@/components/ui/icon-action-button";
@@ -58,15 +56,19 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  favorite: "w-10",
-  title: "w-[34%]",
+  title: "w-[36%]",
   tags: "w-[26%]",
   links: "w-[14%]",
   updatedAt: "w-[24%]",
+  favorite: "w-10",
 };
 
-const favoriteColumnHeadClass = "px-1 py-2";
-const favoriteColumnCellClass = "px-1 py-2 text-center align-middle";
+const favoriteColumnHeadClass = "px-2 py-2 pl-2 pr-0";
+const favoriteColumnCellClass = "px-2 py-2 pl-2 pr-0 text-center align-middle";
+const knowledgeTableInsetClass = "px-4";
+const knowledgeTableHeadClass = "h-auto px-4 py-2 text-left align-middle";
+const knowledgeTableCellClass = "px-4 py-2 text-left align-middle";
+const knowledgeTableEdgeStartClass = "pl-0";
 
 function knowledgeColumnWidth(columnId: string) {
   return KNOWLEDGE_COLUMN_WIDTHS[columnId] ?? "";
@@ -167,20 +169,6 @@ export function KnowledgeBasePage() {
   const columns = useMemo<ColumnDef<KnowledgeItem>[]>(
     () => [
       {
-        id: "favorite",
-        accessorKey: "favorite",
-        header: () => <span className="sr-only">Favorite</span>,
-        cell: ({ row }) => (
-          <div className="flex justify-center">
-            <KnowledgeFavoriteButton
-              favorite={row.original.favorite}
-              onToggle={() => void toggleFavorite(row.original)}
-            />
-          </div>
-        ),
-        enableSorting: false,
-      },
-      {
         accessorKey: "title",
         header: () => <DataTableColumnHeader label="Title" />,
         cell: ({ row }) => <DataTableTruncatedCell value={row.original.title} />,
@@ -224,6 +212,20 @@ export function KnowledgeBasePage() {
             {formatShortDate(row.original.updatedAt)}
           </span>
         ),
+      },
+      {
+        id: "favorite",
+        accessorKey: "favorite",
+        header: () => <span className="sr-only">Favorite</span>,
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <KnowledgeFavoriteButton
+              favorite={row.original.favorite}
+              onToggle={() => void toggleFavorite(row.original)}
+            />
+          </div>
+        ),
+        enableSorting: false,
       },
     ],
     [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite],
@@ -341,89 +343,93 @@ export function KnowledgeBasePage() {
                 isSearchPending && "opacity-70",
               )}
             >
-              <div className="flex items-center justify-between gap-3 border-b border-zinc-200/55 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-zinc-950">Notes</span>
-                  <span className="text-xs text-zinc-500">({filteredItems.length})</span>
+              <div className={knowledgeTableInsetClass}>
+                <div className="flex items-center justify-between gap-3 border-b border-zinc-200/55 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-950">Notes</span>
+                    <span className="text-xs text-zinc-500">({filteredItems.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="knowledge-show-favorites"
+                      className="cursor-pointer text-xs font-normal text-zinc-600"
+                    >
+                      Show favorites
+                    </Label>
+                    <Switch
+                      id="knowledge-show-favorites"
+                      checked={showFavoritesOnly}
+                      onCheckedChange={setShowFavoritesOnly}
+                      aria-label="Show favorites only"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="knowledge-show-favorites"
-                    className="cursor-pointer text-xs font-normal text-zinc-600"
-                  >
-                    Show favorites
-                  </Label>
-                  <Switch
-                    id="knowledge-show-favorites"
-                    checked={showFavoritesOnly}
-                    onCheckedChange={setShowFavoritesOnly}
-                    aria-label="Show favorites only"
+                <div className="overflow-x-auto">
+                  <Table className={dataTableFixedLayoutClass}>
+                    <TableHeader>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <TableHead
+                              key={header.id}
+                              className={cn(
+                                knowledgeTableHeadClass,
+                                dataTableFixedCellClass,
+                                knowledgeColumnWidth(header.column.id),
+                                header.column.id === "title" && knowledgeTableEdgeStartClass,
+                                header.column.id === "favorite" && favoriteColumnHeadClass,
+                              )}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          className="cursor-pointer"
+                          onClick={() => openNote(row.original)}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className={cn(
+                                knowledgeTableCellClass,
+                                dataTableFixedCellClass,
+                                knowledgeColumnWidth(cell.column.id),
+                                cell.column.id === "title" && knowledgeTableEdgeStartClass,
+                                cell.column.id === "favorite" && favoriteColumnCellClass,
+                              )}
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {filteredItems.length > 0 ? (
+                  <DataTablePaginationFooter
+                    table={table}
+                    pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
                   />
-                </div>
+                ) : (
+                  <div className="border-t border-zinc-200/55 py-8 text-center">
+                    <p className="text-sm text-zinc-500">
+                      {noMatchingNotesMessage(showFavoritesOnly, isSearchActive, selectedTag)}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="overflow-x-auto">
-                <Table className={dataTableFixedLayoutClass}>
-                  <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead
-                            key={header.id}
-                            className={cn(
-                              dataTableHeadClass,
-                              dataTableFixedCellClass,
-                              knowledgeColumnWidth(header.column.id),
-                              header.column.id === "favorite" && favoriteColumnHeadClass,
-                            )}
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className="cursor-pointer"
-                        onClick={() => openNote(row.original)}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className={cn(
-                              dataTableCellClass,
-                              dataTableFixedCellClass,
-                              knowledgeColumnWidth(cell.column.id),
-                              cell.column.id === "favorite" && favoriteColumnCellClass,
-                            )}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {filteredItems.length > 0 ? (
-                <DataTablePaginationFooter
-                  table={table}
-                  pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
-                />
-              ) : (
-                <div className="border-t border-zinc-200/55 px-3 py-8 text-center">
-                  <p className="text-sm text-zinc-500">
-                    {noMatchingNotesMessage(showFavoritesOnly, isSearchActive, selectedTag)}
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </>
