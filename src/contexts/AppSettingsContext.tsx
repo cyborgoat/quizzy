@@ -23,6 +23,7 @@ import {
   stepFontSize,
   UI_FONT_SIZE_DEFAULT,
 } from "@/lib/uiPreferences";
+import { showZoomLevelToast } from "@/lib/zoomToast";
 
 function loadShortcut(raw: string | undefined, fallback: Keybind) {
   return parseKeybind(raw, fallback);
@@ -123,6 +124,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const next = stepFontSize(fontSizeRef.current, direction);
       if (next === null) return null;
       setFontSizeState(next);
+      showZoomLevelToast(next);
       void persistFontSize(next);
       return next;
     },
