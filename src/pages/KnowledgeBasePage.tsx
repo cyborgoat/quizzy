@@ -6,9 +6,10 @@ import {
   type SortingState,
   useTable,
 } from "@tanstack/react-table";
-import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
+import { FolderOpen, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
 import { Route } from "@/routes/_app/knowledge/index";
 import {
@@ -23,8 +24,9 @@ import {
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
+import { SectionPanel } from "@/components/ui/section-panel";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
@@ -37,12 +39,6 @@ import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { collectKnowledgeTags } from "@/lib/knowledgeTags";
 import { appTableFeatures, type AppTableFeatures } from "@/lib/tableFeatures";
-import {
-  mutedCountTextClassName,
-  pageDescriptionClassName,
-  pageTitleClassName,
-  panelHeadingClassName,
-} from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 import {
@@ -263,42 +259,37 @@ export function KnowledgeBasePage() {
 
   return (
     <PageShell className="space-y-3 overflow-x-clip">
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className={pageTitleClassName}>
-            Knowledge Base
-          </h1>
-          <p className={pageDescriptionClassName}>
-            Markdown notes in your knowledge-base folder. Link them to quiz questions and review
-            them from the Mistake Log.
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-1">
-          <IconActionButton
-            icon={FolderOpen}
-            label="Open folder"
-            variant="outline"
-            onClick={() => void library.openKnowledgeFolder()}
-            disabled={!library.directoryAvailable}
-          />
-          <IconActionButton
-            icon={RefreshCw}
-            label="Refresh"
-            variant="outline"
-            onClick={() => void handleRefresh()}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-          </IconActionButton>
-          <IconActionButton
-            icon={Plus}
-            label="New note"
-            variant="default"
-            onClick={handleNewNote}
-            disabled={!library.directoryAvailable}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title="Knowledge Base"
+        description="Markdown notes in your knowledge-base folder. Link them to quiz questions and review them from the Mistake Log."
+        actions={
+          <>
+            <IconActionButton
+              icon={FolderOpen}
+              label="Open folder"
+              variant="outline"
+              onClick={() => void library.openKnowledgeFolder()}
+              disabled={!library.directoryAvailable}
+            />
+            <IconActionButton
+              icon={RefreshCw}
+              label="Refresh"
+              variant="outline"
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+            </IconActionButton>
+            <IconActionButton
+              icon={Plus}
+              label="New note"
+              variant="default"
+              onClick={handleNewNote}
+              disabled={!library.directoryAvailable}
+            />
+          </>
+        }
+      />
 
       <WorkingDirectoryGate
         isLoading={library.isLoading}
@@ -318,16 +309,13 @@ export function KnowledgeBasePage() {
           />
 
           {library.items.length > 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2">
-              <Search className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search notes"
-                aria-label="Search notes"
-                className="h-7 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0"
-              />
-            </div>
+            <SearchField
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search notes"
+              pending={isSearchPending}
+              className="py-1"
+            />
           )}
 
           {library.items.length === 0 ? (
@@ -338,33 +326,32 @@ export function KnowledgeBasePage() {
               onAction={handleNewNote}
             />
           ) : (
-            <div
+            <SectionPanel
+              title="Notes"
+              count={filteredItems.length}
+              headerClassName="px-4"
+              contentClassName={knowledgeTableInsetClass}
+              headerAction={
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="knowledge-show-favorites"
+                    className="cursor-pointer text-xs font-normal text-zinc-600"
+                  >
+                    Show favorites
+                  </Label>
+                  <Switch
+                    id="knowledge-show-favorites"
+                    checked={showFavoritesOnly}
+                    onCheckedChange={setShowFavoritesOnly}
+                    aria-label="Show favorites only"
+                  />
+                </div>
+              }
               className={cn(
-                "overflow-hidden rounded-lg border border-zinc-200 bg-white transition-opacity",
+                "transition-opacity motion-reduce:transition-none",
                 isSearchPending && "opacity-70",
               )}
             >
-              <div className={knowledgeTableInsetClass}>
-                <div className="flex items-center justify-between gap-3 border-b border-zinc-200/55 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className={panelHeadingClassName}>Notes</span>
-                    <span className={mutedCountTextClassName}>({filteredItems.length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="knowledge-show-favorites"
-                      className="cursor-pointer text-xs font-normal text-zinc-600"
-                    >
-                      Show favorites
-                    </Label>
-                    <Switch
-                      id="knowledge-show-favorites"
-                      checked={showFavoritesOnly}
-                      onCheckedChange={setShowFavoritesOnly}
-                      aria-label="Show favorites only"
-                    />
-                  </div>
-                </div>
                 <div className="overflow-x-auto">
                   <Table className={dataTableFixedLayoutClass}>
                     <TableHeader>
@@ -430,8 +417,7 @@ export function KnowledgeBasePage() {
                     </p>
                   </div>
                 )}
-              </div>
-            </div>
+            </SectionPanel>
           )}
         </>
       </WorkingDirectoryGate>

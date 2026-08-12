@@ -5,6 +5,8 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 export function EmptyState({
   title,
   description,
+  icon,
+  action,
   actionLabel,
   actionIcon,
   actionVariant,
@@ -12,6 +14,8 @@ export function EmptyState({
 }: {
   title: string;
   description: string;
+  icon?: ReactNode;
+  action?: ReactNode;
   actionLabel?: string;
   actionIcon?: ReactNode;
   actionVariant?: ButtonProps["variant"];
@@ -19,15 +23,18 @@ export function EmptyState({
 }) {
   return (
     <section className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center">
-      <FolderOpen className="mx-auto mb-4 size-9 text-zinc-400" aria-hidden="true" />
+      {icon ?? (
+        <FolderOpen className="mx-auto mb-4 size-9 text-zinc-400" aria-hidden="true" />
+      )}
       <h2 className="text-xl font-semibold text-zinc-950">{title}</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">{description}</p>
-      {actionLabel && onAction && (
-        <Button className="mt-6" variant={actionVariant} onClick={onAction}>
-          {actionIcon}
-          {actionLabel}
-        </Button>
-      )}
+      {action ??
+        (actionLabel && onAction && (
+          <Button className="mt-6" variant={actionVariant} onClick={onAction}>
+            {actionIcon}
+            {actionLabel}
+          </Button>
+        ))}
     </section>
   );
 }

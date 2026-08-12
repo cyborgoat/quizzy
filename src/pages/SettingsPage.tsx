@@ -1,4 +1,5 @@
 import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { SettingsDirectorySection } from "@/components/settings/SettingsDirectorySection";
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
@@ -6,7 +7,6 @@ import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQu
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { Button } from "@/components/ui/button";
-import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
 
 export function SettingsPage() {
@@ -29,22 +29,20 @@ export function SettingsPage() {
 
   return (
     <PageShell width="narrow" className="space-y-3">
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className={pageTitleClassName}>Settings</h1>
-          <p className={pageDescriptionClassName}>
-            Configure your profile, shortcuts, and directory.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {hasChanges && (
-            <span className="text-xs text-zinc-500">Unsaved changes</span>
-          )}
-          <Button onClick={() => void handleSave()} disabled={!hasChanges}>
-            Save
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Configure your profile, shortcuts, and directory."
+        actions={
+          <div className="flex items-center gap-2">
+            {hasChanges && (
+              <span className="text-xs text-zinc-500">Unsaved changes</span>
+            )}
+            <Button onClick={() => void handleSave()} disabled={!hasChanges}>
+              Save
+            </Button>
+          </div>
+        }
+      />
 
       <SettingsProfileSection
         draft={draft}

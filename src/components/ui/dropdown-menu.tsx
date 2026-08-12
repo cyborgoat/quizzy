@@ -2,6 +2,7 @@ import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { floatingContentMotionClassName } from "@/components/ui/motion";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -39,6 +40,7 @@ const DropdownMenuSubContent = React.forwardRef<
     ref={ref}
     className={cn(
       "z-50 min-w-32 overflow-hidden rounded-md border border-zinc-200 bg-white p-1 text-zinc-950 shadow-md",
+      floatingContentMotionClassName,
       className,
     )}
     {...props}
@@ -56,6 +58,7 @@ const DropdownMenuContent = React.forwardRef<
       sideOffset={sideOffset}
       className={cn(
         "z-50 min-w-44 overflow-hidden rounded-md border border-zinc-200 bg-white p-1 text-zinc-950 shadow-md outline-none",
+        floatingContentMotionClassName,
         className,
       )}
       {...props}

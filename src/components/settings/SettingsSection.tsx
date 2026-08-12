@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { panelHeadingClassName } from "@/components/ui/typography";
+import { SectionPanel } from "@/components/ui/section-panel";
 
 export function SettingsSection({
   icon: Icon,
@@ -12,12 +12,8 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <header className="flex items-center gap-2 border-b border-zinc-200/55 px-3 py-2">
-        <Icon className="size-4 shrink-0 text-zinc-500" aria-hidden="true" />
-        <h2 className={panelHeadingClassName}>{title}</h2>
-      </header>
-      <div className="p-3">{children}</div>
-    </section>
+    <SectionPanel icon={Icon} title={title} contentClassName="p-3">
+      {children}
+    </SectionPanel>
   );
 }

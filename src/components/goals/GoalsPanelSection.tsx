@@ -1,7 +1,9 @@
-import { ChevronDown, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { mutedCountTextClassName, panelHeadingClassName } from "@/components/ui/typography";
-import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  CollapsibleSectionPanel,
+  SectionPanel,
+} from "@/components/ui/section-panel";
 
 export function GoalsPanelSection({
   icon: Icon,
@@ -24,61 +26,25 @@ export function GoalsPanelSection({
   onExpandedChange?: (expanded: boolean) => void;
   headerAction?: ReactNode;
 }) {
-  const [expandedState, setExpandedState] = useState(defaultExpanded);
-  const expanded = expandedProp ?? expandedState;
-
-  function setExpanded(next: boolean) {
-    setExpandedState(next);
-    onExpandedChange?.(next);
-  }
-
-  const titleContent = (
-    <>
-      <Icon className="size-4 shrink-0 text-zinc-500" aria-hidden="true" />
-      <span className={panelHeadingClassName}>{title}</span>
-      {count !== undefined && (
-        <span className={mutedCountTextClassName}>({count})</span>
-      )}
-    </>
-  );
-
   if (collapsible) {
     return (
-      <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-        <div
-          className={cn(
-            "flex items-center gap-2 px-3 py-2",
-            expanded && "border-b border-zinc-200/55",
-          )}
-        >
-          <button
-            type="button"
-            className="flex min-w-0 flex-1 items-center gap-2 text-left transition-colors hover:bg-zinc-50"
-            aria-expanded={expanded}
-            onClick={() => setExpanded(!expanded)}
-          >
-            <ChevronDown
-              className={cn(
-                "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
-                expanded && "rotate-180",
-              )}
-            />
-            {titleContent}
-          </button>
-          {headerAction}
-        </div>
-        {expanded && children}
-      </section>
+      <CollapsibleSectionPanel
+        icon={Icon}
+        title={title}
+        count={count}
+        defaultExpanded={defaultExpanded}
+        expanded={expandedProp}
+        onExpandedChange={onExpandedChange}
+        headerAction={headerAction}
+      >
+        {children}
+      </CollapsibleSectionPanel>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <header className="flex items-center justify-between gap-2 border-b border-zinc-200/55 px-3 py-2">
-        <div className="flex min-w-0 items-center gap-2">{titleContent}</div>
-        {headerAction}
-      </header>
+    <SectionPanel icon={Icon} title={title} count={count} headerAction={headerAction}>
       {children}
-    </section>
+    </SectionPanel>
   );
 }

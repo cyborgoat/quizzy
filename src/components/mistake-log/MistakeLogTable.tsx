@@ -1,5 +1,4 @@
 import { flexRender, type ReactTable as TanStackTable } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
 import {
   dataTableCellClass,
   dataTableFixedCellClass,
@@ -7,7 +6,7 @@ import {
   dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
-import { mutedCountTextClassName, panelHeadingClassName } from "@/components/ui/typography";
+import { CollapsibleSectionPanel } from "@/components/ui/section-panel";
 import {
   Table,
   TableBody,
@@ -39,27 +38,15 @@ export function MistakeLogTable({
   onSelectEntry: (entry: MistakeEntry) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <button
-        type="button"
-        className="flex w-full items-center gap-2 border-b border-zinc-200/55 px-3 py-2 text-left transition-colors hover:bg-zinc-50"
-        aria-expanded={expanded}
-        onClick={() => onExpandedChange(!expanded)}
-      >
-        <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-zinc-500 transition-transform duration-200",
-            expanded && "rotate-180",
-          )}
-        />
-        <span className={panelHeadingClassName}>Mistake list</span>
-        <span className={mutedCountTextClassName}>({entryCount})</span>
-      </button>
-
-      {expanded && (
-        <>
-          <div className="overflow-x-auto">
-            <Table className={dataTableFixedLayoutClass}>
+    <CollapsibleSectionPanel
+      title="Mistake list"
+      count={entryCount}
+      expanded={expanded}
+      onExpandedChange={onExpandedChange}
+    >
+      <>
+        <div className="overflow-x-auto">
+          <Table className={dataTableFixedLayoutClass}>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
@@ -110,14 +97,13 @@ export function MistakeLogTable({
                   );
                 })}
               </TableBody>
-            </Table>
-          </div>
-          <DataTablePaginationFooter
-            table={table}
-            pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
-          />
-        </>
-      )}
-    </div>
+          </Table>
+        </div>
+        <DataTablePaginationFooter
+          table={table}
+          pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
+        />
+      </>
+    </CollapsibleSectionPanel>
   );
 }

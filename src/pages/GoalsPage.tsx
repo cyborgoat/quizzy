@@ -1,54 +1,28 @@
 import { Route } from "@/routes/_app/goals/index";
 import { CheckCircle2, Plus, Target } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
 import { GoalCard } from "@/components/goals/GoalCard";
-import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { GoalsPanelSection } from "@/components/goals/GoalsPanelSection";
 import { GoalsRecentAttemptsSection } from "@/components/goals/GoalsRecentAttemptsSection";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizStartFromSearch } from "@/hooks/useQuizStartFromSearch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { collectRecentAttempts } from "@/lib/recentAttempts";
-import {
-  detailsFormToGoalInput,
-  type GoalDetailsFormValues,
-} from "@/types/goal";
-
-const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
-  quizId: "",
-  description: "",
-  targetScore: "",
-};
 
 export function GoalsPage() {
-  const { goals, addGoal } = useGoals();
+  const { goals } = useGoals();
   const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
   const { expand: expandParam, startQuiz, from } = Route.useSearch();
   useQuizStartFromSearch({
@@ -59,9 +33,6 @@ export function GoalsPage() {
     clearTo: "/goals",
   });
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(DEFAULT_FORM);
-  const [isCreating, setIsCreating] = useState(false);
-  const [validationError, setValidationError] = useState("");
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
   const defaultExpandedGoalId =
     expandParam && goals.some((goal) => goal.id === expandParam) ? expandParam : "";
@@ -82,47 +53,6 @@ export function GoalsPage() {
   const accordionValue =
     expandedGoalId !== null ? expandedGoalId : defaultExpandedGoalId;
 
-  function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setValidationError("");
-  }
-
-  function handleFormOpenChange(open: boolean) {
-    if (isCreating) return;
-    setShowForm(open);
-    if (!open) {
-      setForm(DEFAULT_FORM);
-      setValidationError("");
-    }
-  }
-
-  async function handleCreate() {
-    if (!form.quizId) return;
-    const quiz = quizzes.find((q) => q.quiz.id === form.quizId);
-    if (!quiz) return;
-    const details = detailsFormToGoalInput(form);
-    if (
-      details.targetScore !== undefined &&
-      (!Number.isFinite(details.targetScore) ||
-        details.targetScore < 0 ||
-        details.targetScore > 100)
-    ) {
-      setValidationError("Target score must be between 0 and 100.");
-      return;
-    }
-    setIsCreating(true);
-    const created = await addGoal({
-      quizId: form.quizId,
-      quizTitle: quiz.quiz.title,
-      ...details,
-    });
-    setIsCreating(false);
-    if (!created) return;
-    setForm(DEFAULT_FORM);
-    setValidationError("");
-    setShowForm(false);
-  }
-
   const accordionProps = {
     type: "single" as const,
     collapsible: true,
@@ -132,108 +62,47 @@ export function GoalsPage() {
 
   return (
     <PageShell className="space-y-3">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <h1 className={pageTitleClassName}>Goals</h1>
-          <p className={pageDescriptionClassName}>
-            Set quiz goals to track your progress and stay motivated.
-          </p>
-        </div>
-        {!showForm &&
-          (canAddGoal ? (
+      <PageHeader
+        className="mb-5"
+        title="Goals"
+        description="Set quiz goals to track your progress and stay motivated."
+        actions={
+          !showForm ? (
+            canAddGoal ? (
             <IconActionButton
               icon={Plus}
               label="New goal"
               variant="default"
-              onClick={() => handleFormOpenChange(true)}
+              onClick={() => setShowForm(true)}
             />
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex shrink-0">
-                  <Button size="icon" variant="default" disabled aria-label="New goal">
-                    <Plus className="size-4" aria-hidden="true" />
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{addGoalDisabledReason}</TooltipContent>
-            </Tooltip>
-          ))}
-      </div>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex shrink-0">
+                    <Button size="icon" variant="default" disabled aria-label="New goal">
+                      <Plus className="size-4" aria-hidden="true" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{addGoalDisabledReason}</TooltipContent>
+              </Tooltip>
+            )
+          ) : undefined
+        }
+      />
 
-      <Dialog open={showForm} onOpenChange={handleFormOpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>New goal</DialogTitle>
-            <DialogDescription>
-              Choose a quiz and set the result you want to achieve.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleCreate();
-            }}
-          >
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="new-goal-quiz">
-                  Quiz <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={form.quizId || undefined}
-                  onValueChange={(value) => handleField("quizId", value)}
-                  disabled={isCreating}
-                >
-                  <SelectTrigger id="new-goal-quiz" className="mt-1.5 w-full">
-                    <SelectValue placeholder="Select a quiz…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableQuizzes.map((q) => (
-                      <SelectItem key={q.quiz.id} value={q.quiz.id}>
-                        {q.quiz.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <GoalDetailsFields
-                idPrefix="new-goal"
-                values={form}
-                onChange={handleField}
-                disabled={isCreating}
-              />
-            </div>
-
-            {validationError && (
-              <p className="mt-2 text-xs text-red-600">{validationError}</p>
-            )}
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleFormOpenChange(false)}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!form.quizId || isCreating}>
-                {isCreating ? "Creating..." : "Create"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateGoalDialog
+        open={showForm}
+        onOpenChange={setShowForm}
+        availableQuizzes={availableQuizzes.map((source) => source.quiz)}
+      />
 
       {goals.length === 0 ? (
         <EmptyState
           title="No goals yet"
           description="Set a goal for a quiz to track your progress and keep yourself accountable."
           actionLabel="New goal"
-          onAction={() => handleFormOpenChange(true)}
+          onAction={() => setShowForm(true)}
         />
       ) : (
         <>

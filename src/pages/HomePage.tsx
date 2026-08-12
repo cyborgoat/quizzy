@@ -1,5 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog";
-import { ArrowRight, FileUp, FolderOpen, History, RefreshCw, Search } from "lucide-react";
+import { ArrowRight, FileUp, FolderOpen, History, RefreshCw } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/index";
 import { IconActionButton } from "@/components/ui/icon-action-button";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/ui/search-field";
 import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
@@ -167,17 +167,13 @@ export function HomePage() {
           </div>
 
           {library.quizzes.length > 0 && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3">
-              <Search className="size-4 text-zinc-400" aria-hidden="true" />
-              <Input
-                id="quiz-search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search quizzes"
-                className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
-                aria-label="Search quizzes"
-              />
-            </div>
+            <SearchField
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search quizzes"
+              pending={isSearchPending}
+              className="mb-4"
+            />
           )}
 
           <InvalidFileReportsAlert

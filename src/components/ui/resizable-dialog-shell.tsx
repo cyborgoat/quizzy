@@ -8,6 +8,7 @@ import {
   type DialogSizeConstraints,
 } from "@/lib/resizableDialogFrame";
 import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
+import { dialogContentMotionClassName } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 
 export type DialogStackLayer = "default" | "stacked" | "elevated";
@@ -56,6 +57,7 @@ export function ResizableDialogShell({
         <Dialog.Content
           className={cn(
             "fixed left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl focus:outline-none",
+            dialogContentMotionClassName,
             layers.content,
           )}
           style={{

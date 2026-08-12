@@ -1,13 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyMistakeLog } from "@/components/mistake-log/EmptyMistakeLog";
 import { MistakeLogReviewSection } from "@/components/mistake-log/MistakeLogReviewSection";
 import { MistakeLogTable } from "@/components/mistake-log/MistakeLogTable";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
+import { LoadingState } from "@/components/quiz/LoadingState";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
@@ -61,12 +62,10 @@ export function MistakeLogPage() {
 
   return (
     <PageShell className="space-y-3">
-      <div>
-        <h1 className={pageTitleClassName}>Mistake Log</h1>
-        <p className={pageDescriptionClassName}>
-          Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question
-          to review the answer and explanation.
-        </p>
+      <PageHeader
+        title="Mistake Log"
+        description="Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question to review the answer and explanation."
+      >
         <p className="mt-1 text-xs text-zinc-500">
           Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥{thresholds.minFlags} flag(s), ≤
           {thresholds.maxCorrectnessPercentage}% correctness. Adjust in{" "}
@@ -79,7 +78,7 @@ export function MistakeLogPage() {
         {isQuizScoped && scopedQuizTitle && (
           <p className="mt-1 text-sm font-medium text-zinc-700">{scopedQuizTitle}</p>
         )}
-      </div>
+      </PageHeader>
 
       {error && (
         <Alert variant="destructive">
@@ -96,7 +95,7 @@ export function MistakeLogPage() {
       )}
 
       {isLoading ? (
-        <p className="py-12 text-center text-sm text-zinc-500">Loading mistake data…</p>
+        <LoadingState message="Loading mistake data…" className="py-12" />
       ) : scopedEmptyReason ? (
         <EmptyMistakeLog
           reason={scopedEmptyReason}
