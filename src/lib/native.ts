@@ -99,6 +99,8 @@ export const nativeApi = {
     invoke<void>("save_settings", { request }),
   readWorkingDirectory: () =>
     invoke<NativeQuizFile[]>("read_working_directory"),
+  importQuizFile: (sourcePath: string) =>
+    invoke<string>("import_quiz_file", { sourcePath }),
   readKnowledgeDirectory: () =>
     invoke<NativeKnowledgeFile[]>("read_knowledge_directory"),
   writeKnowledgeFile: (request: WriteKnowledgeFileRequest) =>

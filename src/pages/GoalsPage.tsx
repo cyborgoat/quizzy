@@ -1,5 +1,5 @@
 import { Route } from "@/routes/_app/goals/index";
-import { CheckCircle2, Plus, Target, X } from "lucide-react";
+import { CheckCircle2, Plus, Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
@@ -9,6 +9,14 @@ import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import {
@@ -53,6 +61,7 @@ export function GoalsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [isCreating, setIsCreating] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
   const defaultExpandedGoalId =
     expandParam && goals.some((goal) => goal.id === expandParam) ? expandParam : "";
@@ -75,21 +84,42 @@ export function GoalsPage() {
 
   function handleField(field: keyof typeof DEFAULT_FORM, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setValidationError("");
+  }
+
+  function handleFormOpenChange(open: boolean) {
+    if (isCreating) return;
+    setShowForm(open);
+    if (!open) {
+      setForm(DEFAULT_FORM);
+      setValidationError("");
+    }
   }
 
   async function handleCreate() {
     if (!form.quizId) return;
     const quiz = quizzes.find((q) => q.quiz.id === form.quizId);
     if (!quiz) return;
+    const details = detailsFormToGoalInput(form);
+    if (
+      details.targetScore !== undefined &&
+      (!Number.isFinite(details.targetScore) ||
+        details.targetScore < 0 ||
+        details.targetScore > 100)
+    ) {
+      setValidationError("Target score must be between 0 and 100.");
+      return;
+    }
     setIsCreating(true);
     const created = await addGoal({
       quizId: form.quizId,
       quizTitle: quiz.quiz.title,
-      ...detailsFormToGoalInput(form),
+      ...details,
     });
     setIsCreating(false);
     if (!created) return;
     setForm(DEFAULT_FORM);
+    setValidationError("");
     setShowForm(false);
   }
 
@@ -115,7 +145,7 @@ export function GoalsPage() {
               icon={Plus}
               label="New goal"
               variant="default"
-              onClick={() => setShowForm(true)}
+              onClick={() => handleFormOpenChange(true)}
             />
           ) : (
             <Tooltip>
@@ -131,80 +161,79 @@ export function GoalsPage() {
           ))}
       </div>
 
-      {showForm && (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-950">New goal</h2>
-            <IconActionButton
-              icon={X}
-              label="Cancel"
-              className="size-7 text-zinc-500"
-              disabled={isCreating}
-              onClick={() => {
-                setShowForm(false);
-                setForm(DEFAULT_FORM);
-              }}
-            />
-          </div>
+      <Dialog open={showForm} onOpenChange={handleFormOpenChange}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>New goal</DialogTitle>
+            <DialogDescription>
+              Choose a quiz and set the result you want to achieve.
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="new-goal-quiz">
-                Quiz <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={form.quizId || undefined}
-                onValueChange={(value) => handleField("quizId", value)}
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleCreate();
+            }}
+          >
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="new-goal-quiz">
+                  Quiz <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={form.quizId || undefined}
+                  onValueChange={(value) => handleField("quizId", value)}
+                  disabled={isCreating}
+                >
+                  <SelectTrigger id="new-goal-quiz" className="mt-1.5 w-full">
+                    <SelectValue placeholder="Select a quiz…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableQuizzes.map((q) => (
+                      <SelectItem key={q.quiz.id} value={q.quiz.id}>
+                        {q.quiz.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <GoalDetailsFields
+                idPrefix="new-goal"
+                values={form}
+                onChange={handleField}
                 disabled={isCreating}
-              >
-                <SelectTrigger id="new-goal-quiz" className="mt-1.5 sm:max-w-xs">
-                  <SelectValue placeholder="Select a quiz…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableQuizzes.map((q) => (
-                    <SelectItem key={q.quiz.id} value={q.quiz.id}>
-                      {q.quiz.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
-            <GoalDetailsFields
-              idPrefix="new-goal"
-              values={form}
-              onChange={handleField}
-              disabled={isCreating}
-            />
-          </div>
+            {validationError && (
+              <p className="mt-2 text-xs text-red-600">{validationError}</p>
+            )}
 
-          <div className="mt-5 flex gap-2">
-            <Button
-              onClick={() => void handleCreate()}
-              disabled={!form.quizId || isCreating}
-            >
-              {isCreating ? "Creating..." : "Create"}
-            </Button>
-            <IconActionButton
-              icon={X}
-              label="Cancel"
-              variant="outline"
-              disabled={isCreating}
-              onClick={() => {
-                setShowForm(false);
-                setForm(DEFAULT_FORM);
-              }}
-            />
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleFormOpenChange(false)}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!form.quizId || isCreating}>
+                {isCreating ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {goals.length === 0 ? (
         <EmptyState
           title="No goals yet"
           description="Set a goal for a quiz to track your progress and keep yourself accountable."
           actionLabel="New goal"
-          onAction={() => setShowForm(true)}
+          onAction={() => handleFormOpenChange(true)}
         />
       ) : (
         <>

@@ -559,6 +559,35 @@ fn read_working_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
 }
 
 #[tauri::command]
+fn import_quiz_file(app: AppHandle, source_path: String) -> Result<String, String> {
+    let source = PathBuf::from(source_path);
+    if !source.is_file() {
+        return Err("Select an existing quiz file.".to_string());
+    }
+    if !source
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(is_json_extension)
+    {
+        return Err("Quiz files must use the .json extension.".to_string());
+    }
+
+    let file_name = source
+        .file_name()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "The selected quiz file name is invalid.".to_string())?;
+    let contents = fs::read(&source)
+        .map_err(|error| format!("Unable to read the selected quiz file: {error}"))?;
+    serde_json::from_slice::<serde_json::Value>(&contents)
+        .map_err(|error| format!("The selected quiz file is not valid JSON: {error}"))?;
+
+    let destination = configured_directory(&app)?.join(file_name);
+    atomic_write(&destination, &contents, false)?;
+    Ok(file_name.to_string())
+}
+
+#[tauri::command]
 fn read_knowledge_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
     let directory = knowledge_base_directory(&app)?;
     let mut files = Vec::new();
@@ -722,6 +751,7 @@ pub fn run() {
             get_settings,
             save_settings,
             read_working_directory,
+            import_quiz_file,
             read_knowledge_directory,
             write_knowledge_file,
             delete_knowledge_file,

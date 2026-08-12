@@ -47,6 +47,12 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function importQuizFile(sourcePath: string) {
+    const fileName = await nativeApi.importQuizFile(sourcePath);
+    await refresh();
+    return fileName;
+  }
+
   const value = {
     directoryPath,
     directoryAvailable,
@@ -54,6 +60,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     invalidReports,
     isLoading,
     refresh,
+    importQuizFile,
     openQuizFolder,
   };
 

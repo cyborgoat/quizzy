@@ -1,6 +1,8 @@
-import { ArrowRight, FolderOpen, History, RefreshCw, Search } from "lucide-react";
+import { open } from "@tauri-apps/plugin-dialog";
+import { ArrowRight, FileUp, FolderOpen, History, RefreshCw, Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/index";
@@ -17,6 +19,7 @@ import { useQuizStartFromSearch } from "@/hooks/useQuizStartFromSearch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { formatShortDate } from "@/lib/formatDate";
+import { errorMessage } from "@/lib/native";
 import {
   collectRecentAttempts,
   HOME_RECENT_ATTEMPTS_PREVIEW_COUNT,
@@ -40,6 +43,7 @@ export function HomePage() {
     clearTo: "/",
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
@@ -56,6 +60,26 @@ export function HomePage() {
     () => collectRecentAttempts(goals).slice(0, HOME_RECENT_ATTEMPTS_PREVIEW_COUNT),
     [goals],
   );
+
+  async function handleImportQuiz() {
+    try {
+      const selected = await open({
+        directory: false,
+        multiple: false,
+        title: "Import quiz file",
+        filters: [{ name: "Quiz JSON", extensions: ["json"] }],
+      });
+      if (!selected || Array.isArray(selected)) return;
+
+      setIsImporting(true);
+      const fileName = await library.importQuizFile(selected);
+      toast.success(`${fileName} imported.`);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setIsImporting(false);
+    }
+  }
 
   return (
     <PageShell>
@@ -117,6 +141,13 @@ export function HomePage() {
               </h2>
             </div>
             <div className="flex items-center gap-2">
+              <IconActionButton
+                icon={FileUp}
+                label={isImporting ? "Importing quiz file…" : "Import quiz file"}
+                variant="outline"
+                onClick={() => void handleImportQuiz()}
+                disabled={isImporting}
+              />
               <IconActionButton
                 icon={RefreshCw}
                 label="Refresh"
