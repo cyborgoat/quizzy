@@ -1,6 +1,7 @@
 import { BookOpen, Shuffle } from "lucide-react";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { panelHeadingClassName } from "@/components/ui/typography";
 import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import { formatShortDate } from "@/lib/formatDate";
 import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
@@ -41,7 +42,7 @@ export function MistakeLogReviewSection({
     <QuestionReviewCard
       header={
         <>
-          <h2 className="text-sm font-semibold text-zinc-950">Review mistake</h2>
+          <h2 className={panelHeadingClassName}>Review mistake</h2>
           <div className="mt-1 flex items-center gap-x-2 text-xs text-zinc-500">
             <span className="truncate">{entry.quizTitle}</span>
             <span className="shrink-0 text-zinc-300" aria-hidden="true">

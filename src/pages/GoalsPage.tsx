@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/quiz/EmptyState";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import {
   Tooltip,
   TooltipContent,
@@ -103,8 +104,8 @@ export function GoalsPage() {
     <PageShell className="space-y-3">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Goals</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <h1 className={pageTitleClassName}>Goals</h1>
+          <p className={pageDescriptionClassName}>
             Set quiz goals to track your progress and stay motivated.
           </p>
         </div>

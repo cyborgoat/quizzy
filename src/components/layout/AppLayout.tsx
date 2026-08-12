@@ -19,7 +19,7 @@ export function AppLayout() {
         }
       >
         <AppSidebar />
-        <SidebarInset className="min-h-svh min-w-0 overflow-x-hidden bg-zinc-50">
+        <SidebarInset className="min-h-svh min-w-0 overflow-x-hidden bg-white">
           <Outlet />
         </SidebarInset>
       </SidebarProvider>

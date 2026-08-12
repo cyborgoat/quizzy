@@ -1,5 +1,6 @@
-import type { Table } from "@tanstack/react-table";
+import type { ReactTable, RowData } from "@tanstack/react-table";
 import { useState } from "react";
+import type { AppTableFeatures } from "@/lib/tableFeatures";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,16 +25,16 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "@/lib/dataTablePagination";
 
-export function DataTablePaginationFooter<TData>({
+export function DataTablePaginationFooter<TData extends RowData>({
   table,
   pageSizeOptions = PAGE_SIZE_OPTIONS,
 }: {
-  table: Table<TData>;
+  table: ReactTable<AppTableFeatures, TData>;
   pageSizeOptions?: readonly number[];
 }) {
   const pageCount = table.getPageCount();
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
+  const pageIndex = table.state.pagination.pageIndex;
+  const pageSize = table.state.pagination.pageSize;
   const [isEditingPageJump, setIsEditingPageJump] = useState(false);
   const [pageJumpDraft, setPageJumpDraft] = useState("");
   const pageJumpValue = isEditingPageJump ? pageJumpDraft : String(pageIndex + 1);

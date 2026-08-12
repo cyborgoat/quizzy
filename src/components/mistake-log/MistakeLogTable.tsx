@@ -1,4 +1,4 @@
-import { flexRender, type Table as TanStackTable } from "@tanstack/react-table";
+import { flexRender, type ReactTable as TanStackTable } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
 import {
   dataTableCellClass,
@@ -7,6 +7,7 @@ import {
   dataTableHeadClass,
 } from "@/components/ui/data-table";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
+import { mutedCountTextClassName, panelHeadingClassName } from "@/components/ui/typography";
 import {
   Table,
   TableBody,
@@ -18,6 +19,7 @@ import {
 import { mistakeColumnWidth } from "@/lib/mistakeLogDisplay";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
+import type { AppTableFeatures } from "@/lib/tableFeatures";
 import { cn } from "@/lib/utils";
 import type { MistakeEntry } from "@/types/mistakeLog";
 
@@ -29,7 +31,7 @@ export function MistakeLogTable({
   onExpandedChange,
   onSelectEntry,
 }: {
-  table: TanStackTable<MistakeEntry>;
+  table: TanStackTable<AppTableFeatures, MistakeEntry>;
   activeEntry: MistakeEntry | null;
   entryCount: number;
   expanded: boolean;
@@ -50,8 +52,8 @@ export function MistakeLogTable({
             expanded && "rotate-180",
           )}
         />
-        <span className="text-sm font-semibold text-zinc-950">Mistake list</span>
-        <span className="text-xs text-zinc-500">({entryCount})</span>
+        <span className={panelHeadingClassName}>Mistake list</span>
+        <span className={mutedCountTextClassName}>({entryCount})</span>
       </button>
 
       {expanded && (
@@ -92,7 +94,7 @@ export function MistakeLogTable({
                       data-state={isActive ? "selected" : undefined}
                       onClick={() => onSelectEntry(row.original)}
                     >
-                      {row.getVisibleCells().map((cell) => (
+                      {row.getAllCells().map((cell) => (
                         <TableCell
                           key={cell.id}
                           className={cn(

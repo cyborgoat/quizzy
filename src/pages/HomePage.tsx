@@ -6,6 +6,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/index";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
+import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { QuizList } from "@/components/quiz/QuizList";
@@ -65,10 +66,10 @@ export function HomePage() {
           className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
         />
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-950 xl:text-3xl">
+          <h1 className={pageTitleClassName}>
             Hello, {userName || "there"}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 lg:text-base">
+          <p className={pageDescriptionClassName}>
             Ready to practice? Pick a quiz below and get started.
           </p>
         </div>

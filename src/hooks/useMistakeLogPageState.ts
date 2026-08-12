@@ -1,13 +1,11 @@
 import {
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   type PaginationState,
   type SortingState,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { buildMistakeLogColumns } from "@/components/mistake-log/mistakeLogColumns";
+import { appTableFeatures } from "@/lib/tableFeatures";
 import {
   applyMistakeLogShuffle,
   buildMistakeEntryOrderKey,
@@ -93,9 +91,12 @@ export function useMistakeLogPageState({
     ],
   );
 
-  useEffect(() => {
+  const filterResetKey = `${effectiveQuizFilter}::${questionTypeFilter}::${isQuizScoped}::${scopedQuizId ?? ""}`;
+  const [prevFilterResetKey, setPrevFilterResetKey] = useState(filterResetKey);
+  if (filterResetKey !== prevFilterResetKey) {
+    setPrevFilterResetKey(filterResetKey);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [effectiveQuizFilter, questionTypeFilter, isQuizScoped, scopedQuizId]);
+  }
 
   const shuffleOrderKey = useMemo(
     () => buildMistakeEntryOrderKey(filteredEntries),
@@ -135,7 +136,8 @@ export function useMistakeLogPageState({
     ],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: displayEntries,
     columns,
     state: { sorting, pagination },
@@ -144,9 +146,6 @@ export function useMistakeLogPageState({
       setSorting(nextSorting);
     },
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
   const sortedEntries = table.getSortedRowModel().rows.map((row) => row.original);
@@ -160,44 +159,42 @@ export function useMistakeLogPageState({
     [sortedEntries, activeEntry],
   );
 
-  const shuffleSelectionRef = useRef({
+  const [lastSelection, setLastSelection] = useState({
     entry: activeEntry,
     position: activePosition,
   });
-  shuffleSelectionRef.current = {
-    entry: activeEntry,
-    position: activePosition,
-  };
 
-  const prevShuffleEnabledRef = useRef(shuffleEnabled);
-  const shuffleOrderKeyRef = useRef(shuffleOrderKey);
+  const [prevShuffleEnabled, setPrevShuffleEnabled] = useState(shuffleEnabled);
+  const [prevShuffleOrderKey, setPrevShuffleOrderKey] = useState(shuffleOrderKey);
 
-  useEffect(() => {
+  if (shuffleEnabled !== prevShuffleEnabled || shuffleOrderKey !== prevShuffleOrderKey) {
+    const justEnabled = shuffleEnabled && !prevShuffleEnabled;
+    const orderChanged = prevShuffleOrderKey !== shuffleOrderKey;
+    setPrevShuffleEnabled(shuffleEnabled);
+    setPrevShuffleOrderKey(shuffleOrderKey);
+
     if (!shuffleEnabled) {
       setSorting(DEFAULT_MISTAKE_SORTING);
-      prevShuffleEnabledRef.current = false;
-      shuffleOrderKeyRef.current = shuffleOrderKey;
-      return;
-    }
+    } else {
+      setSorting([]);
 
-    setSorting([]);
-
-    const justEnabled = !prevShuffleEnabledRef.current;
-    const orderChanged = shuffleOrderKeyRef.current !== shuffleOrderKey;
-    if (orderChanged && !justEnabled) {
-      const { entry, position } = shuffleSelectionRef.current;
-      if (entry) {
-        const key = questionLinkKey(entry.quizId, entry.questionId);
-        setSelectedEntryKey(key);
-        setShufflePinnedKey(key);
-        setShufflePinnedIndex(position >= 0 ? position : 0);
+      if (orderChanged && !justEnabled) {
+        const { entry, position } = lastSelection;
+        if (entry) {
+          const key = questionLinkKey(entry.quizId, entry.questionId);
+          setSelectedEntryKey(key);
+          setShufflePinnedKey(key);
+          setShufflePinnedIndex(position >= 0 ? position : 0);
+        }
       }
-    }
 
-    prevShuffleEnabledRef.current = true;
-    shuffleOrderKeyRef.current = shuffleOrderKey;
-    setShuffleSeed((seed) => seed + 1);
-  }, [shuffleEnabled, shuffleOrderKey]);
+      setShuffleSeed((seed) => seed + 1);
+    }
+  }
+
+  if (lastSelection.entry !== activeEntry || lastSelection.position !== activePosition) {
+    setLastSelection({ entry: activeEntry, position: activePosition });
+  }
 
   function pinShuffleSelection(entry: MistakeEntry, position: number) {
     const key = questionLinkKey(entry.quizId, entry.questionId);

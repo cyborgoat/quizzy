@@ -4,6 +4,7 @@ import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { Button } from "@/components/ui/button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import {
   isOptionCorrect,
   isOptionIncorrectSelection,
@@ -92,7 +93,7 @@ export function ReviewQuestionDetail({
           {index + 1}
         </span>
         <div className={cn("min-w-0 flex-1", compact ? "space-y-2" : "space-y-3")}>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <p className={sectionLabelClassName}>
             {questionTypeHint(question.type)}
           </p>
 

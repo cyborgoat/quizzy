@@ -1,5 +1,6 @@
-import type { SortingState, Table as TanStackTable } from "@tanstack/react-table";
+import type { ReactTable as TanStackTable, SortingState } from "@tanstack/react-table";
 import { detectEmptyReason } from "@/lib/mistakeLog";
+import type { AppTableFeatures } from "@/lib/tableFeatures";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
 import {
@@ -121,16 +122,19 @@ export function applyMistakeLogShuffle(
   );
 }
 
-export function syncTablePageForEntry(table: TanStackTable<MistakeEntry>, entry: MistakeEntry) {
+export function syncTablePageForEntry(
+  table: TanStackTable<AppTableFeatures, MistakeEntry>,
+  entry: MistakeEntry,
+) {
   const entryKey = questionLinkKey(entry.quizId, entry.questionId);
   const index = table.getSortedRowModel().rows.findIndex(
     (row) => questionLinkKey(row.original.quizId, row.original.questionId) === entryKey,
   );
   if (index < 0) return;
 
-  const pageSize = table.getState().pagination.pageSize;
+  const pageSize = table.state.pagination.pageSize;
   const pageIndex = Math.floor(index / pageSize);
-  if (pageIndex !== table.getState().pagination.pageIndex) {
+  if (pageIndex !== table.state.pagination.pageIndex) {
     table.setPageIndex(pageIndex);
   }
 }

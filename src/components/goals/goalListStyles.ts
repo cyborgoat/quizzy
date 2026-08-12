@@ -1,3 +1,5 @@
+import { listItemTitleClassName } from "@/components/ui/typography";
+
 export const goalListRowClass =
   "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2";
 
@@ -7,7 +9,7 @@ export const goalListTriggerClass =
 export const goalRowHoverActionClass =
   "size-7 shrink-0 pointer-events-none text-zinc-500 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100";
 export const goalListTitleClass =
-  "truncate text-sm font-medium leading-snug text-zinc-950 select-none";
+  `truncate ${listItemTitleClassName} leading-snug select-none`;
 export const goalListSubtitleClass =
   "truncate text-xs leading-snug text-zinc-500 select-none";
 export const goalListRowMetaClass =

@@ -1,5 +1,6 @@
-import { type Column } from "@tanstack/react-table";
+import { type Column, type RowData } from "@tanstack/react-table";
 import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
+import type { AppTableFeatures } from "@/lib/tableFeatures";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,12 +104,12 @@ export function DataTableSearchHeader({
   );
 }
 
-export function DataTableSortableHeader<T>({
+export function DataTableSortableHeader<T extends RowData>({
   label,
   column,
 }: {
   label: string;
-  column: Column<T, unknown>;
+  column: Column<AppTableFeatures, T, unknown>;
 }) {
   return (
     <Button

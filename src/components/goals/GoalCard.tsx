@@ -18,6 +18,7 @@ import {
   goalRowHoverActionClass,
 } from "@/components/goals/goalListStyles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { mutedCountTextClassName } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
@@ -110,7 +111,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
               <p className={goalListSubtitleClass}>{goal.description.trim()}</p>
             )}
           </div>
-          <span className="whitespace-nowrap text-xs text-zinc-400">
+          <span className={cn("whitespace-nowrap", mutedCountTextClassName)}>
             {goal.attempts.length}×
           </span>
           <GoalCompactMeta goal={goal} />
@@ -161,7 +162,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
 
       <AccordionContent className="border-t border-zinc-100 px-3 pb-3 pt-2">
         {goal.completed && goal.completedAt && (
-          <p className="text-xs text-zinc-400">
+          <p className={mutedCountTextClassName}>
             Completed {new Date(goal.completedAt).toLocaleDateString()}
           </p>
         )}

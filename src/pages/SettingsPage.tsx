@@ -6,6 +6,7 @@ import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQu
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { Button } from "@/components/ui/button";
+import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
 
 export function SettingsPage() {
@@ -30,8 +31,8 @@ export function SettingsPage() {
     <PageShell width="narrow" className="space-y-3">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Settings</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <h1 className={pageTitleClassName}>Settings</h1>
+          <p className={pageDescriptionClassName}>
             Configure your profile, shortcuts, and directory.
           </p>
         </div>

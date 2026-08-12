@@ -1,5 +1,6 @@
 import { ChevronDown, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { mutedCountTextClassName, panelHeadingClassName } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 export function GoalsPanelSection({
@@ -34,9 +35,9 @@ export function GoalsPanelSection({
   const titleContent = (
     <>
       <Icon className="size-4 shrink-0 text-zinc-500" aria-hidden="true" />
-      <span className="text-sm font-semibold text-zinc-950">{title}</span>
+      <span className={panelHeadingClassName}>{title}</span>
       {count !== undefined && (
-        <span className="text-xs text-zinc-500">({count})</span>
+        <span className={mutedCountTextClassName}>({count})</span>
       )}
     </>
   );

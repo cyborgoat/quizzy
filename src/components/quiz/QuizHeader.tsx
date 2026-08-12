@@ -1,6 +1,7 @@
 import { quizChromeHeaderClass } from "@/components/quiz/quiz-chrome";
 import { quizChromeInnerClass } from "@/components/layout/pageShellClasses";
 import { Progress } from "@/components/ui/progress";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export function QuizHeader({
           <div className="flex items-baseline justify-between gap-2">
             <div className="min-w-0">
               {modeLabel && (
-                <p className="truncate text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                <p className={`truncate ${sectionLabelClassName}`}>
                   {modeLabel}
                 </p>
               )}

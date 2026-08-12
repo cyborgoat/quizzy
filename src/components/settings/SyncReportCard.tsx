@@ -1,3 +1,4 @@
+import { panelHeadingClassName } from "@/components/ui/typography";
 import type { SyncReport } from "@/lib/native";
 import type { SyncReportSections } from "@/lib/syncReport";
 
@@ -10,7 +11,7 @@ export function SyncReportCard({
 }) {
   return (
     <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-      <h3 className="text-sm font-semibold text-zinc-950">{sections.title}</h3>
+      <h3 className={panelHeadingClassName}>{sections.title}</h3>
 
       <div className="mt-2 space-y-2 text-sm text-zinc-700">
         <div>

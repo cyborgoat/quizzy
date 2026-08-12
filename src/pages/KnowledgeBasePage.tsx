@@ -2,15 +2,12 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   type ColumnDef,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   type PaginationState,
   type SortingState,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
 import { FolderOpen, Plus, RefreshCw, Search } from "lucide-react";
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
 import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
 import { Route } from "@/routes/_app/knowledge/index";
@@ -39,6 +36,13 @@ import { formatShortDate } from "@/lib/formatDate";
 import { buildKnowledgeDraft, stashKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { collectKnowledgeTags } from "@/lib/knowledgeTags";
+import { appTableFeatures, type AppTableFeatures } from "@/lib/tableFeatures";
+import {
+  mutedCountTextClassName,
+  pageDescriptionClassName,
+  pageTitleClassName,
+  panelHeadingClassName,
+} from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
 import {
@@ -105,10 +109,6 @@ function noMatchingNotesMessage(
   return "No matching notes.";
 }
 
-const coreRowModel = getCoreRowModel();
-const sortedRowModel = getSortedRowModel();
-const paginationRowModel = getPaginationRowModel();
-
 export function KnowledgeBasePage() {
   const { tag: tagFilter } = Route.useSearch();
   const navigate = useNavigate();
@@ -151,9 +151,12 @@ export function KnowledgeBasePage() {
     return searched.filter((item) => item.favorite);
   }, [library.items, deferredSearchQuery, selectedTag, showFavoritesOnly]);
 
-  useEffect(() => {
+  const filterResetKey = `${deferredSearchQuery}::${selectedTag}::${showFavoritesOnly}`;
+  const [prevFilterResetKey, setPrevFilterResetKey] = useState(filterResetKey);
+  if (filterResetKey !== prevFilterResetKey) {
+    setPrevFilterResetKey(filterResetKey);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [deferredSearchQuery, selectedTag, showFavoritesOnly]);
+  }
 
   const handleTagFilterChange = useCallback(
     (value: string) => {
@@ -166,7 +169,7 @@ export function KnowledgeBasePage() {
     [navigate],
   );
 
-  const columns = useMemo<ColumnDef<KnowledgeItem>[]>(
+  const columns = useMemo<ColumnDef<AppTableFeatures, KnowledgeItem>[]>(
     () => [
       {
         accessorKey: "title",
@@ -231,15 +234,13 @@ export function KnowledgeBasePage() {
     [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: filteredItems,
     columns,
     state: { sorting: isSearchActive ? [] : sorting, pagination },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
-    getCoreRowModel: coreRowModel,
-    getSortedRowModel: sortedRowModel,
-    getPaginationRowModel: paginationRowModel,
     manualSorting: isSearchActive,
   });
 
@@ -264,10 +265,10 @@ export function KnowledgeBasePage() {
     <PageShell className="space-y-3 overflow-x-clip">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">
+          <h1 className={pageTitleClassName}>
             Knowledge Base
           </h1>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <p className={pageDescriptionClassName}>
             Markdown notes in your knowledge-base folder. Link them to quiz questions and review
             them from the Mistake Log.
           </p>
@@ -346,8 +347,8 @@ export function KnowledgeBasePage() {
               <div className={knowledgeTableInsetClass}>
                 <div className="flex items-center justify-between gap-3 border-b border-zinc-200/55 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-zinc-950">Notes</span>
-                    <span className="text-xs text-zinc-500">({filteredItems.length})</span>
+                    <span className={panelHeadingClassName}>Notes</span>
+                    <span className={mutedCountTextClassName}>({filteredItems.length})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Label
@@ -398,7 +399,7 @@ export function KnowledgeBasePage() {
                           className="cursor-pointer"
                           onClick={() => openNote(row.original)}
                         >
-                          {row.getVisibleCells().map((cell) => (
+                          {row.getAllCells().map((cell) => (
                             <TableCell
                               key={cell.id}
                               className={cn(

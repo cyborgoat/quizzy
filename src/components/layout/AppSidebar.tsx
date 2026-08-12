@@ -44,7 +44,7 @@ function AppSidebarHeader() {
               type="button"
               onClick={toggleSidebar}
               aria-label="Open sidebar"
-              className="hidden size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-100 group-data-[collapsible=icon]:inline-flex"
+              className="hidden size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-200 group-data-[collapsible=icon]:inline-flex"
             >
               <img
                 src="/quizzy-logo.png"
@@ -80,7 +80,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname === "/"}
-              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
               <Link to="/">
                 <Home className="size-4 shrink-0" />
@@ -93,7 +93,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname === "/goals"}
-              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
               <Link to="/goals" className="flex items-center gap-2">
                 <Target className="size-4 shrink-0" />
@@ -111,7 +111,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname === "/mistakes"}
-              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
               <Link to="/mistakes">
                 <ClipboardList className="size-4 shrink-0" />
@@ -124,7 +124,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith("/knowledge")}
-              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
               <Link to="/knowledge">
                 <BookOpen className="size-4 shrink-0" />
@@ -141,7 +141,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname === "/settings"}
-              className="hover:bg-zinc-100 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
             >
               <Link to="/settings">
                 <Settings className="size-4 shrink-0" />

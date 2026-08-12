@@ -9,24 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as SplatRouteImport } from './routes/$'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as QuizQuizIdRouteImport } from './routes/quiz_.$quizId'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppMistakesIndexRouteImport } from './routes/_app/mistakes/index'
-import { Route as AppKnowledgeIndexRouteImport } from './routes/_app/knowledge/index'
+import { Route as QuizQuizIdRouteImport } from './routes/quiz_.$quizId'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
+import { Route as AppKnowledgeIndexRouteImport } from './routes/_app/knowledge/index'
 import { Route as AppKnowledgeKnowledgeIdRouteImport } from './routes/_app/knowledge/$knowledgeId'
+import { Route as AppMistakesIndexRouteImport } from './routes/_app/mistakes/index'
 import { Route as AppGoalsGoalIdAttemptsAttemptIdRouteImport } from './routes/_app/goals/$goalId/attempts/$attemptId'
 
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -34,19 +34,19 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const QuizQuizIdRoute = QuizQuizIdRouteImport.update({
-  id: '/quiz_/$quizId',
-  path: '/quiz/$quizId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppMistakesIndexRoute = AppMistakesIndexRouteImport.update({
-  id: '/mistakes/',
-  path: '/mistakes/',
+const QuizQuizIdRoute = QuizQuizIdRouteImport.update({
+  id: '/quiz_/$quizId',
+  path: '/quiz/$quizId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
+  id: '/goals/',
+  path: '/goals/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKnowledgeIndexRoute = AppKnowledgeIndexRouteImport.update({
@@ -54,14 +54,14 @@ const AppKnowledgeIndexRoute = AppKnowledgeIndexRouteImport.update({
   path: '/knowledge/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppGoalsIndexRoute = AppGoalsIndexRouteImport.update({
-  id: '/goals/',
-  path: '/goals/',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppKnowledgeKnowledgeIdRoute = AppKnowledgeKnowledgeIdRouteImport.update({
   id: '/knowledge/$knowledgeId',
   path: '/knowledge/$knowledgeId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMistakesIndexRoute = AppMistakesIndexRouteImport.update({
+  id: '/mistakes/',
+  path: '/mistakes/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGoalsGoalIdAttemptsAttemptIdRoute =
@@ -151,18 +151,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/$': {
       id: '/$'
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -172,13 +172,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/quiz_/$quizId': {
-      id: '/quiz_/$quizId'
-      path: '/quiz/$quizId'
-      fullPath: '/quiz/$quizId'
-      preLoaderRoute: typeof QuizQuizIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -186,11 +179,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/mistakes/': {
-      id: '/_app/mistakes/'
-      path: '/mistakes'
-      fullPath: '/mistakes/'
-      preLoaderRoute: typeof AppMistakesIndexRouteImport
+    '/quiz_/$quizId': {
+      id: '/quiz_/$quizId'
+      path: '/quiz/$quizId'
+      fullPath: '/quiz/$quizId'
+      preLoaderRoute: typeof QuizQuizIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/goals/': {
+      id: '/_app/goals/'
+      path: '/goals'
+      fullPath: '/goals/'
+      preLoaderRoute: typeof AppGoalsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/knowledge/': {
@@ -200,18 +200,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKnowledgeIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/goals/': {
-      id: '/_app/goals/'
-      path: '/goals'
-      fullPath: '/goals/'
-      preLoaderRoute: typeof AppGoalsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/knowledge/$knowledgeId': {
       id: '/_app/knowledge/$knowledgeId'
       path: '/knowledge/$knowledgeId'
       fullPath: '/knowledge/$knowledgeId'
       preLoaderRoute: typeof AppKnowledgeKnowledgeIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mistakes/': {
+      id: '/_app/mistakes/'
+      path: '/mistakes'
+      fullPath: '/mistakes/'
+      preLoaderRoute: typeof AppMistakesIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/goals/$goalId/attempts/$attemptId': {

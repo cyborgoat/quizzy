@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { sectionLabelClassName } from "@/components/ui/section-label";
+import { panelHeadingClassName } from "@/components/ui/typography";
 import { formatShortDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
@@ -58,7 +58,7 @@ export function AttemptHistoryCard({
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="border-b border-zinc-100 px-5 py-4">
-        <h2 className={sectionLabelClassName}>
+        <h2 className={panelHeadingClassName}>
           Attempt history
         </h2>
       </div>

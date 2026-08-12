@@ -2,6 +2,7 @@ import { Flag } from "lucide-react";
 import { AnswerOptionRow } from "@/components/quiz/AnswerOptionRow";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { isOptionSelected } from "@/lib/quizReview";
@@ -29,7 +30,7 @@ export function QuestionContent({
   return (
     <section aria-labelledby="question-prompt">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <p className={sectionLabelClassName}>
           {questionTypeHint(question.type)}
         </p>
         <IconActionButton

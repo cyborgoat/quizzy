@@ -144,7 +144,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-oklch(0.985 0 0) dark:has-[[data-variant=inset]]:bg-oklch(0.21 0.006 285.885)",
+              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-zinc-50 dark:has-[[data-variant=inset]]:bg-zinc-900",
               className
             )}
             ref={ref}
@@ -222,7 +222,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden text-oklch(0.141 0.005 285.823) md:block dark:text-oklch(0.985 0 0)"
+        className="group peer hidden text-zinc-950 md:block dark:text-zinc-50"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -285,7 +285,7 @@ const SidebarTrigger = React.forwardRef<
           variant="ghost"
           size="icon"
           className={cn(
-            "size-8 shrink-0 rounded-md p-2 hover:bg-zinc-100 [&>svg]:size-4",
+            "size-8 shrink-0 rounded-md p-2 hover:bg-zinc-200 [&>svg]:size-4",
             className
           )}
           onClick={(event) => {
@@ -320,10 +320,10 @@ const SidebarRail = React.forwardRef<
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-oklch(0.92 0.004 286.32) group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex dark:hover:after:bg-oklch(1 0 0 / 10%)",
+        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-zinc-200 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex dark:hover:after:bg-white/10",
         "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-oklch(0.985 0 0) dark:group-data-[collapsible=offcanvas]:hover:bg-oklch(0.21 0.006 285.885)",
+        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-zinc-50 dark:group-data-[collapsible=offcanvas]:hover:bg-zinc-900",
         "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
         className
@@ -342,7 +342,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex w-full flex-1 flex-col bg-oklch(1 0 0) dark:bg-oklch(0.141 0.005 285.823)",
+        "relative flex w-full flex-1 flex-col bg-white dark:bg-zinc-950",
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
       )}
@@ -361,7 +361,7 @@ const SidebarInput = React.forwardRef<
       ref={ref}
       data-sidebar="input"
       className={cn(
-        "h-8 w-full bg-oklch(1 0 0) shadow-none focus-visible:ring-2 focus-visible:ring-oklch(0.705 0.015 286.067) dark:bg-oklch(0.141 0.005 285.823) dark:focus-visible:ring-oklch(0.552 0.016 285.938)",
+        "h-8 w-full bg-white shadow-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-950 dark:focus-visible:ring-zinc-500",
         className
       )}
       {...props}
@@ -408,7 +408,7 @@ const SidebarSeparator = React.forwardRef<
     <Separator
       ref={ref}
       data-sidebar="separator"
-      className={cn("mx-2 w-auto bg-oklch(0.92 0.004 286.32) dark:bg-oklch(1 0 0 / 10%)", className)}
+      className={cn("mx-2 w-auto bg-zinc-200 dark:bg-white/10", className)}
       {...props}
     />
   )
@@ -459,7 +459,7 @@ const SidebarGroupLabel = React.forwardRef<
       ref={ref}
       data-sidebar="group-label"
       className={cn(
-        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-oklch(0.141 0.005 285.823)/70 outline-none ring-oklch(0.705 0.015 286.067) transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 dark:text-oklch(0.985 0 0)/70 dark:ring-oklch(0.552 0.016 285.938)",
+        "flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-zinc-950/70 outline-none ring-zinc-400 transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 dark:text-zinc-50/70 dark:ring-zinc-500",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:pointer-events-none",
         className
       )}
@@ -480,7 +480,7 @@ const SidebarGroupAction = React.forwardRef<
       ref={ref}
       data-sidebar="group-action"
       className={cn(
-        "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-oklch(0.141 0.005 285.823) outline-none ring-oklch(0.705 0.015 286.067) transition-transform hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 dark:text-oklch(0.985 0 0) dark:ring-oklch(0.552 0.016 285.938) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0)",
+        "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-zinc-950 outline-none ring-zinc-400 transition-transform hover:bg-zinc-200 hover:text-zinc-900 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 dark:text-zinc-50 dark:ring-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-50",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "group-data-[collapsible=icon]:hidden",
@@ -532,13 +532,13 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-oklch(0.705 0.015 286.067) transition-[width,height,padding] hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) focus-visible:ring-2 active:bg-oklch(0.967 0.001 286.375) active:text-oklch(0.21 0.006 285.885) disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-oklch(0.967 0.001 286.375) data-[active=true]:font-medium data-[active=true]:text-oklch(0.21 0.006 285.885) data-[state=open]:hover:bg-oklch(0.967 0.001 286.375) data-[state=open]:hover:text-oklch(0.21 0.006 285.885) group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 dark:ring-oklch(0.552 0.016 285.938) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0) dark:active:bg-oklch(0.274 0.006 286.033) dark:active:text-oklch(0.985 0 0) dark:data-[active=true]:bg-oklch(0.274 0.006 286.033) dark:data-[active=true]:text-oklch(0.985 0 0) dark:data-[state=open]:hover:bg-oklch(0.274 0.006 286.033) dark:data-[state=open]:hover:text-oklch(0.985 0 0)",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-zinc-400 transition-[width,height,padding] hover:bg-zinc-200 hover:text-zinc-900 focus-visible:ring-2 active:bg-zinc-200 active:text-zinc-900 disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-zinc-200 data-[active=true]:font-medium data-[active=true]:text-zinc-900 data-[state=open]:hover:bg-zinc-200 data-[state=open]:hover:text-zinc-900 group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 dark:ring-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 dark:active:bg-zinc-800 dark:active:text-zinc-50 dark:data-[active=true]:bg-zinc-800 dark:data-[active=true]:text-zinc-50 dark:data-[state=open]:hover:bg-zinc-800 dark:data-[state=open]:hover:text-zinc-50",
   {
     variants: {
       variant: {
-        default: "hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0)",
+        default: "hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50",
         outline:
-          "bg-oklch(1 0 0) shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))] dark:bg-oklch(0.141 0.005 285.823) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0)",
+          "bg-white shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-zinc-200 hover:text-zinc-900 hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))] dark:bg-zinc-950 dark:hover:bg-zinc-800 dark:hover:text-zinc-50",
       },
       size: {
         default: "h-8 text-sm",
@@ -626,7 +626,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-oklch(0.141 0.005 285.823) outline-none ring-oklch(0.705 0.015 286.067) transition-transform hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) focus-visible:ring-2 peer-hover/menu-button:text-oklch(0.21 0.006 285.885) [&>svg]:size-4 [&>svg]:shrink-0 dark:text-oklch(0.985 0 0) dark:ring-oklch(0.552 0.016 285.938) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0) dark:peer-hover/menu-button:text-oklch(0.985 0 0)",
+        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-zinc-950 outline-none ring-zinc-400 transition-transform hover:bg-zinc-200 hover:text-zinc-900 focus-visible:ring-2 peer-hover/menu-button:text-zinc-900 [&>svg]:size-4 [&>svg]:shrink-0 dark:text-zinc-50 dark:ring-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 dark:peer-hover/menu-button:text-zinc-50",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
@@ -634,7 +634,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-oklch(0.21 0.006 285.885) md:opacity-0 dark:peer-data-[active=true]/menu-button:text-oklch(0.985 0 0)",
+          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-zinc-900 md:opacity-0 dark:peer-data-[active=true]/menu-button:text-zinc-50",
         className
       )}
       {...props}
@@ -651,8 +651,8 @@ const SidebarMenuBadge = React.forwardRef<
     ref={ref}
     data-sidebar="menu-badge"
     className={cn(
-      "pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums text-oklch(0.141 0.005 285.823) dark:text-oklch(0.985 0 0)",
-      "peer-hover/menu-button:text-oklch(0.21 0.006 285.885) peer-data-[active=true]/menu-button:text-oklch(0.21 0.006 285.885) dark:peer-hover/menu-button:text-oklch(0.985 0 0) dark:peer-data-[active=true]/menu-button:text-oklch(0.985 0 0)",
+      "pointer-events-none absolute right-1 flex h-5 min-w-5 select-none items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums text-zinc-950 dark:text-zinc-50",
+      "peer-hover/menu-button:text-zinc-900 peer-data-[active=true]/menu-button:text-zinc-900 dark:peer-hover/menu-button:text-zinc-50 dark:peer-data-[active=true]/menu-button:text-zinc-50",
       "peer-data-[size=sm]/menu-button:top-1",
       "peer-data-[size=default]/menu-button:top-1.5",
       "peer-data-[size=lg]/menu-button:top-2.5",
@@ -707,7 +707,7 @@ const SidebarMenuSub = React.forwardRef<
     ref={ref}
     data-sidebar="menu-sub"
     className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-oklch(0.92 0.004 286.32) px-2.5 py-0.5 dark:border-oklch(1 0 0 / 10%)",
+      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-zinc-200 px-2.5 py-0.5 dark:border-white/10",
       "group-data-[collapsible=icon]:hidden",
       className
     )}
@@ -739,8 +739,8 @@ const SidebarMenuSubButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-oklch(0.141 0.005 285.823) outline-none ring-oklch(0.705 0.015 286.067) hover:bg-oklch(0.967 0.001 286.375) hover:text-oklch(0.21 0.006 285.885) focus-visible:ring-2 active:bg-oklch(0.967 0.001 286.375) active:text-oklch(0.21 0.006 285.885) disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-oklch(0.21 0.006 285.885) dark:text-oklch(0.985 0 0) dark:ring-oklch(0.552 0.016 285.938) dark:hover:bg-oklch(0.274 0.006 286.033) dark:hover:text-oklch(0.985 0 0) dark:active:bg-oklch(0.274 0.006 286.033) dark:active:text-oklch(0.985 0 0) dark:[&>svg]:text-oklch(0.985 0 0)",
-        "data-[active=true]:bg-oklch(0.967 0.001 286.375) data-[active=true]:text-oklch(0.21 0.006 285.885) dark:data-[active=true]:bg-oklch(0.274 0.006 286.033) dark:data-[active=true]:text-oklch(0.985 0 0)",
+        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-zinc-950 outline-none ring-zinc-400 hover:bg-zinc-200 hover:text-zinc-900 focus-visible:ring-2 active:bg-zinc-200 active:text-zinc-900 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-zinc-900 dark:text-zinc-50 dark:ring-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 dark:active:bg-zinc-800 dark:active:text-zinc-50 dark:[&>svg]:text-zinc-50",
+        "data-[active=true]:bg-zinc-200 data-[active=true]:text-zinc-900 dark:data-[active=true]:bg-zinc-800 dark:data-[active=true]:text-zinc-50",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",
         "group-data-[collapsible=icon]:hidden",

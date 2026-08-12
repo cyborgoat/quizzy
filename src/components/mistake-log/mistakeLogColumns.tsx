@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import type { AppTableFeatures } from "@/lib/tableFeatures";
 import {
   DataTableColumnFilterHeader,
   DataTableColumnHeader,
@@ -38,7 +39,7 @@ export function buildMistakeLogColumns({
   onQuizFilterChange,
   onQuestionTypeFilterChange,
   getNotesForQuestion,
-}: MistakeLogColumnOptions): ColumnDef<MistakeEntry>[] {
+}: MistakeLogColumnOptions): ColumnDef<AppTableFeatures, MistakeEntry>[] {
   return [
     {
       accessorKey: "quizTitle",
@@ -118,7 +119,7 @@ export function buildMistakeLogColumns({
     {
       id: "lastMistakenAt",
       accessorFn: (row) => row.lastMistakenAt,
-      sortingFn: (rowA, rowB) => {
+      sortFn: (rowA, rowB) => {
         const aTime = rowA.original.lastMistakenAt
           ? Date.parse(rowA.original.lastMistakenAt)
           : 0;

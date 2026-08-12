@@ -1,6 +1,8 @@
 import { ArrowLeft, Home, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { sectionLabelClassName } from "@/components/ui/section-label";
+import { pageTitleClassName } from "@/components/ui/typography";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import type { ReviewGoalContext, ReviewPracticeContext } from "@/lib/quizReviewSummary";
 
@@ -31,10 +33,10 @@ export function ReviewHeader({
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <p className={sectionLabelClassName}>
               Attempt review
             </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">{quizTitle}</h1>
+            <h1 className={`mt-1 ${pageTitleClassName}`}>{quizTitle}</h1>
             {goal.description.trim() && (
               <p className="mt-1 text-sm leading-6 text-zinc-600">{goal.description.trim()}</p>
             )}
@@ -72,15 +74,15 @@ export function ReviewHeader({
         <div className="min-w-0">
           {practiceContext && (
             <>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className={sectionLabelClassName}>
                 {practiceContext.modeLabel}
               </p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <p className={`mt-1 ${sectionLabelClassName}`}>
                 Quiz complete
               </p>
             </>
           )}
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">{quizTitle}</h1>
+          <h1 className={`mt-1 ${pageTitleClassName}`}>{quizTitle}</h1>
         </div>
 
         {practiceContext && (

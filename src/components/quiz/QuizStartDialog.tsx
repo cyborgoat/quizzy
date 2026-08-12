@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { sectionLabelClassName } from "@/components/ui/section-label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
@@ -54,7 +55,7 @@ export function QuizStartDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg" showClose={false}>
         <DialogHeader>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <p className={sectionLabelClassName}>
             Start quiz
           </p>
           <DialogTitle className="mt-1">{quiz.title}</DialogTitle>

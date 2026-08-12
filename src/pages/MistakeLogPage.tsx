@@ -7,6 +7,7 @@ import { MistakeLogTable } from "@/components/mistake-log/MistakeLogTable";
 import { Route } from "@/routes/_app/mistakes/index";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
@@ -61,8 +62,8 @@ export function MistakeLogPage() {
   return (
     <PageShell className="space-y-3">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-zinc-950 lg:text-2xl">Mistake Log</h1>
-        <p className="mt-0.5 text-sm text-zinc-500">
+        <h1 className={pageTitleClassName}>Mistake Log</h1>
+        <p className={pageDescriptionClassName}>
           Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question
           to review the answer and explanation.
         </p>

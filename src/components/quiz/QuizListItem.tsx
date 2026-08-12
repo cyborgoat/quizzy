@@ -15,6 +15,7 @@ import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyl
 import { quizCardActionClass } from "@/components/quiz/quiz-card-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { listItemTitleClassName } from "@/components/ui/typography";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +69,7 @@ export function QuizListItem({ source }: { source: QuizSource }) {
     <article className="group flex flex-col rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-950">{source.quiz.title}</h2>
+          <h2 className={listItemTitleClassName}>{source.quiz.title}</h2>
           <p className="mt-0.5 text-xs text-zinc-500">{source.fileName}</p>
         </div>
         <div className="flex items-center gap-1">
