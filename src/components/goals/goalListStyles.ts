@@ -16,4 +16,4 @@ export const goalListRowMetaClass =
   "hidden min-w-0 truncate text-xs text-zinc-500 lg:inline";
 
 export const goalActionLinkPrimaryClass =
-  "inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-md border border-zinc-200 px-2 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-900 hover:bg-zinc-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2";
+  "inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-md border border-zinc-200 px-2 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-700 hover:bg-zinc-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2";

@@ -4,7 +4,7 @@ export type ButtonVariant = "default" | "outline" | "ghost" | "destructive";
 export type ButtonSize = "default" | "sm" | "icon";
 
 const variants: Record<ButtonVariant, string> = {
-  default: "border border-transparent bg-zinc-900 text-white hover:bg-zinc-800",
+  default: "border border-transparent bg-zinc-700 text-white hover:bg-zinc-800",
   outline: "border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100",
   ghost: "border border-transparent text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950",
   destructive: "border border-transparent bg-red-600 text-white hover:bg-red-700",

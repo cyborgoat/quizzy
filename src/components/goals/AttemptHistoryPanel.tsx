@@ -26,7 +26,7 @@ function AttemptHistoryList({
               className={cn(
                 "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
                 isCurrent
-                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  ? "border-zinc-700 bg-zinc-700 text-white"
                   : "border-zinc-200 bg-zinc-50 text-zinc-900 hover:border-zinc-300 hover:bg-zinc-100",
               )}
               aria-current={isCurrent ? "page" : undefined}
