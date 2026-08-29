@@ -149,11 +149,7 @@ export function QuizListItem({ source }: { source: QuizSource }) {
             type="button"
             className={quizCardActionClass}
             onClick={() =>
-              openQuizStart({
-                quizId: source.quiz.id,
-                defaultMode: "practice",
-                from: "home",
-              })
+              openQuizStart({ quizId: source.quiz.id, from: "home" })
             }
           >
             Start <ArrowRight className="size-4" />

@@ -1,4 +1,3 @@
-import type { QuestionReviewItem } from "@/types/review";
 import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
 
 export type ReviewFilterKind = "incorrect" | "correct" | "flagged";
@@ -140,26 +139,4 @@ export function isOptionIncorrectSelection(
   index: number,
 ) {
   return isOptionSelected(question, answer, index) && !isOptionCorrect(question, index);
-}
-
-function buildQuestionReviewItems(
-  questions: QuizQuestion[],
-  getRecord: (question: QuizQuestion) => AnswerRecord | undefined,
-): QuestionReviewItem[] {
-  return questions.flatMap((question, index) => {
-    const record = getRecord(question);
-    if (!record) return [];
-    return [{ question, index, record }];
-  });
-}
-
-export function buildSessionReviewItems(
-  questions: QuizQuestion[],
-  answers: AnswerRecord[],
-): QuestionReviewItem[] {
-  const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
-
-  return buildQuestionReviewItems(questions, (question) =>
-    answerByQuestionId.get(question.id),
-  );
 }

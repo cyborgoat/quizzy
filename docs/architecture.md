@@ -42,7 +42,7 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/knowledge` | Knowledge Base browse view |
 | `/knowledge/:knowledgeId` | Knowledge note detail (`?edit=1` opens edit mode) |
 | `/settings` | User profile, preferences, and working-directory configuration |
-| `/quiz/:quizId` | Active quiz or final results (`?mode=practice&count=N` or `?mode=scored`) |
+| `/quiz/:quizId` | Active quiz or final results (`?from=home` or `?from=goals` records the origin) |
 
 Unknown routes redirect to the home page.
 
@@ -207,19 +207,20 @@ managed directly through the system file manager.
 ### Quiz attempt
 
 1. The user clicks **Start** on the home page, a goal row, or **Retake** on
-   attempt review. A modal dialog opens over the current page (blurred backdrop)
-   with **Practice** and **Scored** modes. Practice passes
-   `?mode=practice&count=N`; scored passes `?mode=scored`.
-2. **Begin** navigates to `/quiz/:quizId` with the chosen search params.
-3. `useQuizSession` selects a type-balanced subset for practice (or all questions
-   for scored), then applies question-order and option-order shuffle settings.
+   attempt review. A confirmation dialog opens over the current page (blurred
+   backdrop) summarizing the question-type breakdown and warning when the quiz
+   has no goal.
+2. **Start quiz** navigates to `/quiz/:quizId` (with `?from=` recording the
+   origin so exit returns there).
+3. `useQuizSession` takes the full question set, then applies question-order and
+   option-order shuffle settings.
 4. Editable drafts and flags are stored per question.
 5. Direct, previous, and next navigation preserve those drafts.
 6. Final submission freezes one answer record per question in the session.
 7. Pure scoring functions evaluate answered questions; blanks score as incorrect.
 8. The frozen records drive the result and review screens.
-9. If the session mode is **scored** and the quiz has a goal,
-   `GoalsProvider` saves an attempt for it.
+9. When the quiz has a goal, `GoalsProvider` saves an attempt for it on
+   submission.
 10. Rust updates `mistake-index.json` for that quiz when the attempt is saved.
 
 ### Attempt review

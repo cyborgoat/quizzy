@@ -5,7 +5,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
-import { Route } from "@/routes/_app/index";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
 import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
@@ -15,7 +14,6 @@ import { QuizList } from "@/components/quiz/QuizList";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
-import { useQuizStartFromSearch } from "@/hooks/useQuizStartFromSearch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { formatShortDate } from "@/lib/formatDate";
@@ -30,18 +28,10 @@ import { cn } from "@/lib/utils";
 import { attemptPassed } from "@/types/goal";
 
 export function HomePage() {
-  const { startQuiz, from } = Route.useSearch();
   const library = useQuizLibrary();
   const { userName } = useUserProfile();
   const { goals } = useGoals();
   const navigate = useNavigate();
-  useQuizStartFromSearch({
-    startQuiz,
-    from,
-    defaultMode: "practice",
-    clearSearch: {},
-    clearTo: "/",
-  });
   const [searchQuery, setSearchQuery] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);

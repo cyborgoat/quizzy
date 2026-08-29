@@ -19,7 +19,6 @@ import {
 } from "@/lib/quizReview";
 import type {
   ReviewGoalContext,
-  ReviewPracticeContext,
   ReviewScoreSummaryData,
 } from "@/lib/quizReviewSummary";
 import type { QuestionReviewItem } from "@/types/review";
@@ -44,7 +43,6 @@ export function QuizReviewView({
   resetKey,
   score,
   goalContext,
-  practiceContext,
   quizAvailable = true,
 }: {
   quizId: string;
@@ -53,7 +51,6 @@ export function QuizReviewView({
   resetKey: string;
   score: ReviewScoreSummaryData;
   goalContext: ReviewGoalContext | null;
-  practiceContext: ReviewPracticeContext | null;
   quizAvailable?: boolean;
 }) {
   const navigation = useAttemptReviewNavigation(items);
@@ -96,11 +93,7 @@ export function QuizReviewView({
 
   return (
     <>
-      <ReviewHeader
-        quizTitle={quizTitle}
-        goalContext={goalContext}
-        practiceContext={practiceContext}
-      />
+      <ReviewHeader quizTitle={quizTitle} goalContext={goalContext} />
 
       <div
         className={

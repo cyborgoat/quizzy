@@ -10,7 +10,7 @@ working directory.
 ## Documentation map
 
 - [Quick start](quick-start.md): prerequisites, local development, and desktop builds
-- [Features and workflows](features.md): sidebar, goals, Mistake Log, Knowledge Base, practice and scored quiz modes, settings, quiz-folder management, and review
+- [Features and workflows](features.md): sidebar, goals, Mistake Log, Knowledge Base, scored quiz attempts, settings, quiz-folder management, and review
 - [Software architecture](architecture.md): frontend, native layer, data flow, and project structure
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
 - [Knowledge file format](knowledge-format.md): markdown note front matter, linking rules, and folder layout
@@ -46,4 +46,4 @@ is bundled with the desktop application.
 - Active quiz sessions use an in-memory snapshot and are not affected by
   subsequent file refreshes.
 - Goal metadata and attempt history are persisted locally; in-progress quiz
-  drafts and practice runs are not.
+  drafts are not.

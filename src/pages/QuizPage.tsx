@@ -1,12 +1,11 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Route, type QuizSearch } from "@/routes/quiz_.$quizId";
+import { Route } from "@/routes/quiz_.$quizId";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
-import { QuizReviewView } from "@/components/goals/QuizReviewView";
 import { QuestionContent } from "@/components/quiz/QuestionContent";
 import { QuizActionBar } from "@/components/quiz/QuizActionBar";
 import { QuizHeader } from "@/components/quiz/QuizHeader";
@@ -22,39 +21,9 @@ import {
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizSession } from "@/hooks/useQuizSession";
-import { buildSessionReviewItems } from "@/lib/quizReview";
-import { reviewScoreFromSession } from "@/lib/quizReviewSummary";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
-import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz } from "@/types/quiz";
-
-function resolveSessionConfig(
-  quiz: Quiz,
-  search: QuizSearch,
-): QuizSessionConfig | null {
-  if (search.mode === "scored") {
-    return { mode: "scored" };
-  }
-  if (search.mode === "practice") {
-    const count = search.count;
-    if (
-      count == null ||
-      count < 1 ||
-      count > quiz.questions.length ||
-      !Number.isInteger(count)
-    ) {
-      return null;
-    }
-    return { mode: "practice", questionCount: count };
-  }
-  return null;
-}
-
-function sessionModeLabel(config: QuizSessionConfig, totalQuestions: number) {
-  if (config.mode === "scored") return "Scored";
-  return `Practice · ${totalQuestions} question${totalQuestions !== 1 ? "s" : ""}`;
-}
 
 function ScoredAttemptRedirect({
   quiz,
@@ -123,52 +92,10 @@ function ScoredAttemptRedirect({
   );
 }
 
-function PracticeCompleteView({
-  quiz,
-  config,
-  session,
-}: {
-  quiz: Quiz;
-  config: QuizSessionConfig;
-  session: ReturnType<typeof useQuizSession>;
-}) {
-  const reviewItems = useMemo(
-    () => buildSessionReviewItems(session.questions, session.answers),
-    [session.questions, session.answers],
-  );
-
-  return (
-    <PageShell className="space-y-5">
-      <QuizReviewView
-        quizId={quiz.id}
-        quizTitle={quiz.title}
-        items={reviewItems}
-        resetKey={session.questions.map((q) => q.id).join(",")}
-        score={reviewScoreFromSession({
-          score: session.score,
-          total: session.totalQuestions,
-          questions: session.questions,
-          answers: session.answers,
-        })}
-        goalContext={null}
-        practiceContext={{
-          modeLabel: sessionModeLabel(config, session.totalQuestions),
-          onRestart: session.restart,
-        }}
-      />
-    </PageShell>
-  );
-}
-
-function QuizSessionPage({
-  quiz,
-  config,
-}: {
-  quiz: Quiz;
-  config: QuizSessionConfig;
-}) {
+function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const navigate = useNavigate();
-  const session = useQuizSession(quiz, config);
+  const { from } = Route.useSearch();
+  const session = useQuizSession(quiz);
   const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
@@ -205,7 +132,7 @@ function QuizSessionPage({
     session.goToNextQuestion,
   ]);
 
-  if (session.isComplete && config.mode === "scored") {
+  if (session.isComplete) {
     return (
       <ScoredAttemptRedirect
         quiz={quiz}
@@ -213,10 +140,6 @@ function QuizSessionPage({
         recordAttempt={recordAttempt}
       />
     );
-  }
-
-  if (session.isComplete) {
-    return <PracticeCompleteView quiz={quiz} config={config} session={session} />;
   }
 
   return (
@@ -240,7 +163,6 @@ function QuizSessionPage({
       <SidebarInset className="flex min-h-svh flex-col bg-transparent">
         <QuizHeader
           title={quiz.title}
-          modeLabel={sessionModeLabel(config, session.totalQuestions)}
           current={session.currentQuestionIndex + 1}
           total={session.totalQuestions}
           answered={session.answeredCount}
@@ -285,7 +207,7 @@ function QuizSessionPage({
           onCancel={() => setExitDialogOpen(false)}
           onConfirm={() => {
             setExitDialogOpen(false);
-            navigate({ to: "/" });
+            navigate({ to: from === "goals" ? "/goals" : "/" });
           }}
         />
         <SubmitQuizDialog
@@ -306,26 +228,12 @@ function QuizSessionPage({
 
 export function QuizPage() {
   const { quizId } = Route.useParams();
-  const search = Route.useSearch();
   const navigate = useNavigate();
   const library = useQuizLibrary();
   const quiz = useMemo(
     () => library.quizzes.find((source) => source.quiz.id === quizId)?.quiz,
     [library.quizzes, quizId],
   );
-
-  const sessionConfig = quiz ? resolveSessionConfig(quiz, search) : null;
-
-  useEffect(() => {
-    if (!quiz || sessionConfig) return;
-
-    const from = search.from === "goals" ? "goals" : "home";
-    void navigate({
-      to: from === "goals" ? "/goals" : "/",
-      search: { startQuiz: quizId, from },
-      replace: true,
-    });
-  }, [quiz, sessionConfig, search.from, quizId, navigate]);
 
   if (library.isLoading && !quiz) {
     return <LoadingState message="Loading quiz…" />;
@@ -343,16 +251,5 @@ export function QuizPage() {
     );
   }
 
-  if (!sessionConfig) {
-    return <LoadingState message="Opening quiz setup…" />;
-  }
-
-  const sessionKey =
-    sessionConfig.mode === "practice"
-      ? `${quiz.id}-practice-${sessionConfig.questionCount}`
-      : `${quiz.id}-scored`;
-
-  return (
-    <QuizSessionPage key={sessionKey} quiz={quiz} config={sessionConfig} />
-  );
+  return <QuizSessionPage key={quiz.id} quiz={quiz} />;
 }

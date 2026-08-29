@@ -5,29 +5,15 @@ import {
   initialQuizSessionState,
   quizSessionReducer,
 } from "@/lib/quizSessionState";
-import type { QuizSessionConfig } from "@/types/quizSession";
 import type { Quiz, SubmittedAnswer } from "@/types/quiz";
 
-function sessionQuestionOptions(
-  config: QuizSessionConfig,
-  shuffleQuestions: boolean,
-  shuffleOptions: boolean,
-) {
-  return {
-    mode: config.mode,
-    questionCount: config.questionCount,
-    shuffleQuestions,
-    shuffleOptions,
-  };
-}
-
-export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
+export function useQuizSession(quiz: Quiz) {
   const { shuffleQuestions, shuffleOptions } = useQuizPreferences();
   const [questions, setQuestions] = useState(() =>
-    buildQuizSessionQuestions(
-      quiz.questions,
-      sessionQuestionOptions(config, shuffleQuestions, shuffleOptions),
-    ),
+    buildQuizSessionQuestions(quiz.questions, {
+      shuffleQuestions,
+      shuffleOptions,
+    }),
   );
   const [state, dispatch] = useReducer(
     quizSessionReducer,
@@ -90,7 +76,6 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
   }
 
   return {
-    mode: config.mode,
     questions,
     currentQuestion,
     currentQuestionIndex: state.currentQuestionIndex,
@@ -115,10 +100,10 @@ export function useQuizSession(quiz: Quiz, config: QuizSessionConfig) {
     submitQuiz: () => dispatch({ type: "submit_quiz", questions }),
     restart: () => {
       setQuestions(
-        buildQuizSessionQuestions(
-          quiz.questions,
-          sessionQuestionOptions(config, shuffleQuestions, shuffleOptions),
-        ),
+        buildQuizSessionQuestions(quiz.questions, {
+          shuffleQuestions,
+          shuffleOptions,
+        }),
       );
       dispatch({ type: "restart" });
     },

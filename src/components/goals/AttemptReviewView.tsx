@@ -37,7 +37,6 @@ export function AttemptReviewView({
             }
           : undefined,
       }}
-      practiceContext={null}
       quizAvailable={Boolean(quiz)}
     />
   );

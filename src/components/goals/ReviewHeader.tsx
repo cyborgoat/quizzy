@@ -4,16 +4,14 @@ import { Button } from "@/components/ui/button";
 import { sectionLabelClassName } from "@/components/ui/section-label";
 import { pageTitleClassName } from "@/components/ui/typography";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
-import type { ReviewGoalContext, ReviewPracticeContext } from "@/lib/quizReviewSummary";
+import type { ReviewGoalContext } from "@/lib/quizReviewSummary";
 
 export function ReviewHeader({
   quizTitle,
   goalContext,
-  practiceContext,
 }: {
   quizTitle: string;
   goalContext: ReviewGoalContext | null;
-  practiceContext: ReviewPracticeContext | null;
 }) {
   const { openQuizStart } = useQuizStartDialog();
 
@@ -45,11 +43,7 @@ export function ReviewHeader({
           <Button
             className="shrink-0 self-start"
             onClick={() =>
-              openQuizStart({
-                quizId: goal.quizId,
-                defaultMode: "scored",
-                from: "goals",
-              })
+              openQuizStart({ quizId: goal.quizId, from: "goals" })
             }
           >
             <RotateCcw className="size-4" />
@@ -72,28 +66,8 @@ export function ReviewHeader({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          {practiceContext && (
-            <>
-              <p className={sectionLabelClassName}>
-                {practiceContext.modeLabel}
-              </p>
-              <p className={`mt-1 ${sectionLabelClassName}`}>
-                Quiz complete
-              </p>
-            </>
-          )}
           <h1 className={`mt-1 ${pageTitleClassName}`}>{quizTitle}</h1>
         </div>
-
-        {practiceContext && (
-          <Button
-            className="shrink-0 self-start"
-            onClick={practiceContext.onRestart}
-          >
-            <RotateCcw className="size-4" />
-            Restart
-          </Button>
-        )}
       </div>
     </header>
   );

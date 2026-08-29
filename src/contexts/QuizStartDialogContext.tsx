@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { QuizStartDialog } from "@/components/quiz/QuizStartDialog";
+import { StartQuizDialog } from "@/components/quiz/StartQuizDialog";
+import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import {
   QuizStartDialogContext,
@@ -8,6 +9,7 @@ import {
 
 export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
   const { quizzes } = useQuizLibrary();
+  const { goals } = useGoals();
   const [request, setRequest] = useState<QuizStartRequest | null>(null);
 
   const quiz = useMemo(
@@ -32,15 +34,15 @@ export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
     <QuizStartDialogContext.Provider value={value}>
       {children}
       {request && quiz && (
-        <QuizStartDialog
-          key={`${request.quizId}-${request.defaultMode}`}
+        <StartQuizDialog
+          key={request.quizId}
           open
+          quiz={quiz}
+          hasGoal={goals.some((goal) => goal.quizId === request.quizId)}
+          from={request.from}
           onOpenChange={(open) => {
             if (!open) closeQuizStart();
           }}
-          quiz={quiz}
-          defaultMode={request.defaultMode}
-          from={request.from}
         />
       )}
     </QuizStartDialogContext.Provider>

@@ -136,11 +136,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
             className={goalActionLinkPrimaryClass}
             onClick={(event) => {
               event.stopPropagation();
-              openQuizStart({
-                quizId: goal.quizId,
-                defaultMode: "scored",
-                from: "goals",
-              });
+              openQuizStart({ quizId: goal.quizId, from: "goals" });
             }}
             onPointerDown={(event) => event.stopPropagation()}
           >

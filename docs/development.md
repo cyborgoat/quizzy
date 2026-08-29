@@ -92,8 +92,7 @@ Use the narrowest appropriate layer:
 
 - Quiz data shape or validation: `src/types` and `src/data`
 - Pure scoring behavior: `src/lib/scoring.ts`
-- Attempt state and session modes: `src/hooks/useQuizSession.ts` and
-  `src/types/quizSession.ts`
+- Attempt state: `src/hooks/useQuizSession.ts`
 - Library workflow: `QuizLibraryProvider`
 - Goals workflow: `GoalsProvider` and `src/components/goals`
 - Mistake Log workflow: `useMistakeLog`, `useMistakeLogPageState`,
@@ -127,8 +126,8 @@ Before packaging a release:
 4. Run `cargo test --manifest-path src-tauri/Cargo.toml` and Rust formatting checks.
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
-7. Test directory selection, opening and rescanning the quiz folder, practice
-   and scored quiz completion, goal creation, attempt recording, attempt
+7. Test directory selection, opening and rescanning the quiz folder, quiz
+   completion, goal creation, attempt recording, attempt
    deletion, attempt review, Mistake Log threshold filtering and question
    review, Settings data synchronization (including result summary), and
    Knowledge Base note create/edit/link/preview in the packaged application.

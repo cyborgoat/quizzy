@@ -51,8 +51,9 @@ to browse markdown notes linked to quiz questions. Use **Mistake Log** to review
 questions you miss most often and flagged questions from scored attempts, with
 inline question review, column filters, and linked knowledge notes.
 
-When you start a quiz, choose **Practice** (subset of questions, not saved to
-goals) or **Scored attempt** (full quiz, counts toward goals and the Mistake Log).
+When you start a quiz, a confirmation dialog summarizes the question breakdown
+before you begin. Every attempt is scored: you answer the full quiz, and the
+result counts toward the quiz's goal and the Mistake Log.
 
 ## Quiz files
 

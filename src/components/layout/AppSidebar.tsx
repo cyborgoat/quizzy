@@ -9,7 +9,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -19,32 +18,19 @@ import {
 } from "@/components/ui/tooltip";
 import { useGoals } from "@/hooks/useGoals";
 
-const appLogoClassName =
-  "size-8 shrink-0 rounded-md border border-zinc-200 bg-white object-cover";
-
 function AppSidebarHeader() {
   const { toggleSidebar } = useSidebar();
 
   return (
     <SidebarHeader className="h-[4.5rem] gap-0 border-b border-zinc-200 p-0">
-      <div className="flex h-full items-center justify-between gap-2 px-1 group-data-[collapsible=icon]:justify-start">
-        <div className="flex min-w-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
-          <img
-            src="/quizzy-logo.png"
-            alt=""
-            aria-hidden
-            className={appLogoClassName}
-          />
-          <span className="truncate text-sm font-semibold text-zinc-950">Quizzy</span>
-        </div>
-
+      <div className="flex h-full items-center gap-2 px-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
               onClick={toggleSidebar}
-              aria-label="Open sidebar"
-              className="hidden size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-200 group-data-[collapsible=icon]:inline-flex"
+              aria-label="Toggle sidebar"
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-200"
             >
               <img
                 src="/quizzy-logo.png"
@@ -53,13 +39,12 @@ function AppSidebarHeader() {
               />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">Open sidebar</TooltipContent>
+          <TooltipContent side="right">Toggle sidebar</TooltipContent>
         </Tooltip>
 
-        <SidebarTrigger
-          className="group-data-[collapsible=icon]:hidden"
-          tooltipSide="left"
-        />
+        <span className="truncate text-sm font-semibold text-zinc-950 group-data-[collapsible=icon]:hidden">
+          Quizzy
+        </span>
       </div>
     </SidebarHeader>
   );

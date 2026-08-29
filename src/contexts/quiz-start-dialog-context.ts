@@ -1,9 +1,7 @@
 import { createContext } from "react";
-import type { QuizSessionMode } from "@/types/quizSession";
 
 export type QuizStartRequest = {
   quizId: string;
-  defaultMode: QuizSessionMode;
   from?: "home" | "goals";
 };
 

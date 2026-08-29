@@ -3,7 +3,6 @@ import {
   buildQuizSessionQuestions,
   groupQuestionsByType,
   orderQuestionsByType,
-  selectPracticeQuestions,
   shuffleArrayKeepingKeyedItemAtIndex,
   shuffleQuestionOptions,
   shuffleQuestionsWithinGroups,
@@ -100,29 +99,17 @@ describe("shuffleQuestionsWithinGroups", () => {
   });
 });
 
-describe("selectPracticeQuestions", () => {
-  it("round-robins across question types instead of taking one type first", () => {
-    expect(
-      selectPracticeQuestions(questions, 3).map((question) => question.id),
-    ).toEqual(["tf-1", "sc-1", "mc-1"]);
-  });
-
-  it("returns every question when the count covers the full quiz", () => {
-    expect(selectPracticeQuestions(questions, 10)).toEqual(questions);
-  });
-});
-
 describe("buildQuizSessionQuestions", () => {
   it("keeps a stable order for the same inputs and random seed", () => {
     const random = () => 0;
     const first = buildQuizSessionQuestions(
       questions,
-      { mode: "scored", shuffleQuestions: true, shuffleOptions: true },
+      { shuffleQuestions: true, shuffleOptions: true },
       random,
     );
     const second = buildQuizSessionQuestions(
       questions,
-      { mode: "scored", shuffleQuestions: true, shuffleOptions: true },
+      { shuffleQuestions: true, shuffleOptions: true },
       random,
     );
     expect(first.map((question) => question.id)).toEqual(

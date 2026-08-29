@@ -17,21 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useGoals } from "@/hooks/useGoals";
-import { useQuizStartFromSearch } from "@/hooks/useQuizStartFromSearch";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { collectRecentAttempts } from "@/lib/recentAttempts";
 
 export function GoalsPage() {
   const { goals } = useGoals();
   const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
-  const { expand: expandParam, startQuiz, from } = Route.useSearch();
-  useQuizStartFromSearch({
-    startQuiz,
-    from,
-    defaultMode: "scored",
-    clearSearch: expandParam ? { expand: expandParam } : {},
-    clearTo: "/goals",
-  });
+  const { expand: expandParam } = Route.useSearch();
   const [showForm, setShowForm] = useState(false);
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
   const defaultExpandedGoalId =

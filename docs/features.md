@@ -12,8 +12,8 @@ screen. It contains:
 - **Settings** — profile, quiz directory, quiz preferences, shortcuts, Mistake Log thresholds, and synchronization (pinned to the bottom)
 
 The sidebar shows a badge with the count of active (incomplete) goals. It
-collapses to icon-only mode. On desktop the trigger button sits in the sidebar
-header; on mobile it moves to the quiz-page header.
+collapses to icon-only mode; clicking the Quizzy logo in the sidebar header
+toggles it open and closed.
 
 ## Home page
 
@@ -58,8 +58,7 @@ Available actions:
 - **Delete attempt** removes one saved attempt from a goal's history after
   confirmation.
 
-Completing a **scored attempt** for a quiz with a goal automatically records an
-attempt for that goal. **Practice** runs never create goal attempts.
+Completing a quiz that has a goal automatically records an attempt for that goal.
 
 ## Attempt review
 
@@ -72,7 +71,7 @@ Each saved attempt opens on a dedicated page at
 - Inline per-question answer review (correct answer, explanation, flagged state)
 
 **Back to goals** returns to the Goals page and expands the relevant goal row.
-**Retake quiz** opens the quiz start screen with **Scored attempt** pre-selected.
+**Retake quiz** opens the start confirmation dialog for the quiz.
 
 ### Quiz card goal actions
 
@@ -86,8 +85,8 @@ Each saved attempt opens on a dedicated page at
 
 ## Mistake Log
 
-The Mistake Log aggregates incorrect answers and flagged questions from **scored attempts only**.
-Practice runs are not included. Rust maintains a materialized `mistake-index.json`
+The Mistake Log aggregates incorrect answers and flagged questions from your saved
+quiz attempts. Rust maintains a materialized `mistake-index.json`
 in the app-config directory; the UI loads that index in one native call instead of
 re-reading every attempt file. **Mistake Log** in the sidebar opens the global
 view at `/mistakes`; an existing quiz goal's menu can open the same view scoped
@@ -151,7 +150,7 @@ Editing and drafts:
 Mistake Log integration:
 
 - The table shows a sortable **Notes** count for each qualifying mistake
-- Clicking a row opens the shared question review card with navigation, linked knowledge notes, and an optional **Study mode** that hides answers in the review panel until you submit a practice attempt or turn study mode off
+- Clicking a row opens the shared question review card with navigation, linked knowledge notes, and an optional **Study mode** that hides answers in the review panel until you submit an attempt or turn study mode off
 - Link and add-note icon actions attach existing notes or create a new draft pre-linked to that question
 - Opening a linked note from the review card or from a linked-question preview uses the same knowledge note dialog
 
@@ -252,16 +251,12 @@ bottom-right corner of the screen:
 
 ## Quiz sessions
 
-Starting a quiz opens a mode picker:
+Starting a quiz opens a confirmation dialog that shows the question-type
+breakdown and warns when the quiz has no goal. Click **Start quiz** to begin.
 
-- **Practice** — choose how many questions to take (1 through the full quiz count)
-  using a slider. Picks a balanced mix of question types when possible, then
-  applies your order/shuffle settings.
-  Practice runs do not count toward goals. Pre-selected when starting from the
-  home page.
-- **Scored attempt** — answer every question in the quiz. Results are saved to
-  the matching goal when you submit. Pre-selected when starting from a goal or
-  retaking from attempt review.
+Every attempt is scored: you answer every question in the quiz, and the result
+is saved to the matching goal (if one exists) when you submit. Question order and
+answer-option order follow your order/shuffle settings.
 
 Quizzy presents one question at a time and supports:
 
