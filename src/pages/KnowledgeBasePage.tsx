@@ -56,7 +56,7 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  title: "w-[36%]",
+  title: "w-[calc(36%_-_2.5rem)]",
   tags: "w-[26%]",
   links: "w-[14%]",
   updatedAt: "w-[24%]",
