@@ -3,6 +3,9 @@ import { listItemTitleClassName } from "@/components/ui/typography";
 export const goalListRowClass =
   "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2";
 
+export const goalsSectionScrollClass =
+  "max-h-[60vh] overflow-y-auto overscroll-contain";
+
 export const goalListTriggerClass =
   "flex w-full min-w-0 items-center gap-1.5 px-3 py-2 text-left transition-colors hover:bg-zinc-50 hover:no-underline select-none";
 

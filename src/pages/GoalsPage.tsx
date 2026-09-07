@@ -5,6 +5,7 @@ import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
 import { GoalCard } from "@/components/goals/GoalCard";
 import { GoalsPanelSection } from "@/components/goals/GoalsPanelSection";
 import { GoalsRecentAttemptsSection } from "@/components/goals/GoalsRecentAttemptsSection";
+import { goalsSectionScrollClass } from "@/components/goals/goalListStyles";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
@@ -100,11 +101,13 @@ export function GoalsPage() {
         <>
           {activeGoals.length > 0 && (
             <GoalsPanelSection icon={Target} title="Active goals" count={activeGoals.length}>
-              <Accordion {...accordionProps}>
-                {activeGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
-                ))}
-              </Accordion>
+              <div className={goalsSectionScrollClass}>
+                <Accordion {...accordionProps}>
+                  {activeGoals.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </Accordion>
+              </div>
             </GoalsPanelSection>
           )}
 
@@ -114,11 +117,13 @@ export function GoalsPage() {
               title="Completed goals"
               count={completedGoals.length}
             >
-              <Accordion {...accordionProps}>
-                {completedGoals.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} />
-                ))}
-              </Accordion>
+              <div className={goalsSectionScrollClass}>
+                <Accordion {...accordionProps}>
+                  {completedGoals.map((goal) => (
+                    <GoalCard key={goal.id} goal={goal} />
+                  ))}
+                </Accordion>
+              </div>
             </GoalsPanelSection>
           )}
 
