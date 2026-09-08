@@ -56,15 +56,16 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  title: "w-[calc(36%_-_2.5rem)]",
+  title: "w-[calc(36%_-_3rem)]",
   tags: "w-[26%]",
   links: "w-[14%]",
   updatedAt: "w-[24%]",
-  favorite: "w-10",
+  favorite: "w-12 min-w-12 max-w-none overflow-visible",
 };
 
-const favoriteColumnHeadClass = "px-2 py-2 pl-2 pr-0";
-const favoriteColumnCellClass = "px-2 py-2 pl-2 pr-0 text-center align-middle";
+const favoriteColumnHeadClass = "px-2 py-2";
+const favoriteColumnCellClass =
+  "max-w-none overflow-visible px-2 py-2 text-center align-middle";
 const knowledgeTableInsetClass = "px-4";
 const knowledgeTableHeadClass = "h-auto px-4 py-2 text-left align-middle";
 const knowledgeTableCellClass = "px-4 py-2 text-left align-middle";

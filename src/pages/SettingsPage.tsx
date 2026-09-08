@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SettingsAboutSection } from "@/components/settings/SettingsAboutSection";
 import { SettingsDirectorySection } from "@/components/settings/SettingsDirectorySection";
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
@@ -81,6 +82,8 @@ export function SettingsPage() {
         lastSyncReport={lastSyncReport}
         onSynchronize={() => void handleSynchronize()}
       />
+
+      <SettingsAboutSection />
     </PageShell>
   );
 }
