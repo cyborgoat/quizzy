@@ -42,14 +42,12 @@ npm run tauri build
 
 On first launch, open **Settings** from the sidebar to enter your name and select
 a working directory. Click **Save**, then return to the home page and use
-**Open quiz folder** to add quiz JSON files directly. Use **Goals** in the
-sidebar to set target scores and review past attempts. You can also use the
-target icon on a quiz card to add or edit that quiz's single goal without
-leaving the home page. Existing goal icons provide quick access to attempts,
-the quiz-scoped Mistake Log, and goal deletion. Use **Knowledge** in the sidebar
-to browse markdown notes linked to quiz questions. Use **Mistake Log** to review
-questions you miss most often and flagged questions from scored attempts, with
-inline question review, column filters, and linked knowledge notes.
+**Open quiz folder** to add quiz JSON files directly. Use the target icon on a
+quiz card to add or edit that quiz's single goal, and open **History** from the
+sidebar to browse and review saved attempts. Use **Knowledge** to browse
+markdown notes linked to quiz questions. Use **Mistake Log** to review questions
+you miss most often and flagged questions from scored attempts, with inline
+question review, column filters, and linked knowledge notes.
 
 When you start a quiz, a confirmation dialog summarizes the question breakdown
 before you begin. Every attempt is scored: you answer the full quiz, and the

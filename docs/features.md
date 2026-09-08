@@ -6,9 +6,9 @@ A persistent collapsible sidebar runs along the left edge of every non-quiz
 screen. It contains:
 
 - **Home** — the quiz library
-- **History** — saved quiz attempts, progress summaries, and review shortcuts
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
 - **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
+- **History** — saved quiz attempts, progress summaries, and review shortcuts (the final main navigation item)
 - **Settings** — profile, quiz directory, quiz preferences, shortcuts, Mistake Log thresholds, and synchronization (pinned to the bottom)
 
 The sidebar collapses to icon-only mode; clicking the Quizzy logo in the
@@ -250,6 +250,11 @@ Use **Open quiz folder** to add, replace, rename, or remove top-level `.json`
 files with the system file manager. Quizzy validates the directory contents
 whenever it refreshes, skips malformed or invalid quiz files, and reports
 diagnostics on the home page. Duplicate quiz IDs are also rejected.
+
+Quiz details also provide archive management. Archiving moves a quiz out of the
+active library while preserving its saved attempts in History. Archived quizzes
+can be restored or permanently deleted; permanent deletion requires
+confirmation.
 
 ## Notifications
 

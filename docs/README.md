@@ -3,7 +3,7 @@
 Quizzy is a local-first desktop quiz application built with Tauri v2, React,
 TypeScript, and Rust. It reads quiz files from a user-selected directory rather
 than storing quiz content in a database. A persistent sidebar provides navigation
-between the home page, goals, Mistake Log, Knowledge Base, and Settings, where
+between the home page, Mistake Log, Knowledge Base, History, and Settings, where
 users configure their display name, quiz preferences, Mistake Log thresholds, and
 working directory.
 
