@@ -1,5 +1,5 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { GoalDetailsFields } from "@/components/goals/GoalDetailsFields";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useGoals } from "@/hooks/useGoals";
 import {
-  anyAttemptMetTarget,
   detailsFormToGoalInput,
   goalToDetailsForm,
   type Goal,
@@ -29,7 +28,7 @@ export function GoalSettingsDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { updateGoal, completeGoal, deleteGoal } = useGoals();
+  const { updateGoal, deleteGoal } = useGoals();
   const [form, setForm] = useState<GoalDetailsFormValues>(() =>
     goalToDetailsForm(goal),
   );
@@ -66,20 +65,6 @@ export function GoalSettingsDialog({
     setIsSaving(false);
     if (!updated) return;
     setValidationError("");
-    onOpenChange(false);
-  }
-
-  async function handleComplete() {
-    if (!anyAttemptMetTarget(goal)) {
-      const ok = await confirm(
-        `You haven't had any attempt that achieved the target score of ${goal.targetScore}%. Mark this goal as complete anyway?`,
-        { title: "Target score not reached", kind: "warning" },
-      );
-      if (!ok) return;
-    }
-    setIsSaving(true);
-    await completeGoal(goal.id);
-    setIsSaving(false);
     onOpenChange(false);
   }
 
@@ -125,15 +110,6 @@ export function GoalSettingsDialog({
               disabled={isSaving}
               onClick={() => void handleDelete()}
             />
-            {!goal.completed && (
-              <IconActionButton
-                icon={CheckCircle2}
-                label="Complete"
-                variant="outline"
-                disabled={isSaving}
-                onClick={() => void handleComplete()}
-              />
-            )}
           </div>
           <Button
             type="button"

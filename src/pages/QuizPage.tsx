@@ -229,10 +229,11 @@ export function QuizPage() {
   const { quizId } = Route.useParams();
   const navigate = useNavigate();
   const library = useQuizLibrary();
-  const quiz = useMemo(
-    () => library.quizzes.find((source) => source.quiz.id === quizId)?.quiz,
+  const source = useMemo(
+    () => library.quizzes.find((item) => item.quiz.id === quizId),
     [library.quizzes, quizId],
   );
+  const quiz = source?.quiz;
 
   if (library.isLoading && !quiz) {
     return <LoadingState message="Loading quiz…" />;
@@ -243,6 +244,19 @@ export function QuizPage() {
         <ErrorState
           title="Quiz not found"
           description="This quiz is unavailable or its file is no longer valid."
+          actionLabel="Home"
+          onAction={() => navigate({ to: "/" })}
+        />
+      </PageShell>
+    );
+  }
+
+  if (source.archived) {
+    return (
+      <PageShell width="quiz">
+        <ErrorState
+          title="Quiz is archived"
+          description="Restore this quiz from the Archived filter before starting it."
           actionLabel="Home"
           onAction={() => navigate({ to: "/" })}
         />

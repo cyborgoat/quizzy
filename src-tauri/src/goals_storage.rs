@@ -78,9 +78,6 @@ pub struct GoalMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_score: Option<u32>,
     pub created_at: String,
-    pub completed: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completed_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -101,9 +98,6 @@ struct LegacyGoal {
     #[serde(default)]
     target_score: Option<u32>,
     created_at: String,
-    completed: bool,
-    #[serde(default)]
-    completed_at: Option<String>,
     #[serde(default)]
     attempts: Vec<GoalAttempt>,
 }
@@ -117,8 +111,6 @@ impl LegacyGoal {
             description: self.description.clone(),
             target_score: self.target_score,
             created_at: self.created_at.clone(),
-            completed: self.completed,
-            completed_at: self.completed_at.clone(),
         }
     }
 }
@@ -643,8 +635,6 @@ mod tests {
             description: String::new(),
             target_score: None,
             created_at: "2026-06-09T00:00:00.000Z".into(),
-            completed: false,
-            completed_at: None,
         }
     }
 

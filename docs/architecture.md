@@ -225,14 +225,15 @@ managed directly through the system file manager.
 
 ### Attempt review
 
-1. The user opens `/goals/:goalId/attempts/:attemptId`.
+1. The user opens `/quizzes/:quizId/attempts/:attemptId` from History, quiz
+   details, or another attempt review.
 2. React loads the goal metadata from context and fetches the full attempt from
    Rust via `get_goal_attempt`.
 3. The page renders score summary, attempt history, and inline question review.
 
 ### Delete attempt
 
-1. The user deletes an attempt from a goal row on the Goals page.
+1. The user deletes an attempt from History or quiz details after confirmation.
 2. React calls `delete_goal_attempt` via the native adapter.
 3. Rust removes the attempt file and updates `attempts/index.json`.
 4. `GoalsProvider` updates in-memory goal state.

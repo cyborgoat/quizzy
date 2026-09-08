@@ -39,6 +39,7 @@ export type Quiz = {
 
 export type QuizSource = {
   fileName: string;
+  archived: boolean;
   quiz: Quiz;
 };
 

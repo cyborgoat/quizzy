@@ -9,6 +9,7 @@ use tauri::{AppHandle, Manager};
 mod data_sync;
 mod goals_storage;
 mod mistake_index;
+mod quiz_archive;
 
 use data_sync::SyncReport;
 use goals_storage::{GoalAttempt, GoalListItem, GoalMeta};
@@ -321,6 +322,19 @@ fn resolve_knowledge_path(directory: &Path, file_name: &str) -> Result<PathBuf, 
     Ok(path)
 }
 
+fn resolve_quiz_path(directory: &Path, file_name: &str) -> Result<PathBuf, String> {
+    let relative = Path::new(file_name);
+    if relative.components().count() != 1
+        || !relative
+            .extension()
+            .and_then(|value| value.to_str())
+            .is_some_and(is_json_extension)
+    {
+        return Err("Quiz file names must be top-level JSON files.".to_string());
+    }
+    Ok(directory.join(relative))
+}
+
 fn strip_utf8_bom(contents: String) -> String {
     contents
         .strip_prefix('\u{feff}')
@@ -588,6 +602,69 @@ fn import_quiz_file(app: AppHandle, source_path: String) -> Result<String, Strin
 }
 
 #[tauri::command]
+fn list_archived_quiz_ids(app: AppHandle) -> Result<Vec<String>, String> {
+    quiz_archive::list_archived_quiz_ids(&app)
+}
+
+#[tauri::command]
+fn set_quiz_archived(app: AppHandle, quiz_id: String, archived: bool) -> Result<(), String> {
+    quiz_archive::set_quiz_archived(&app, &quiz_id, archived)
+}
+
+#[derive(Deserialize)]
+struct QuizIdentity {
+    id: String,
+}
+
+#[tauri::command]
+fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), String> {
+    let directory = configured_directory(&app)?;
+    let path = resolve_quiz_path(&directory, &file_name)?;
+    if !path.is_file() {
+        return Err(format!("{} does not exist.", path.display()));
+    }
+
+    let contents = read_text_file(&path)?;
+    let identity: QuizIdentity = serde_json::from_str(&contents)
+        .map_err(|error| format!("Unable to identify the quiz before deletion: {error}"))?;
+    if identity.id.trim().is_empty() {
+        return Err("Unable to identify the quiz before deletion.".to_string());
+    }
+
+    fs::remove_file(&path)
+        .map_err(|error| format!("Unable to delete {}: {error}", path.display()))?;
+
+    let mut cleanup_errors = Vec::new();
+    match goals_storage::list_goals(&app) {
+        Ok(goals) => {
+            for goal in goals {
+                if goal.meta.quiz_id == identity.id {
+                    if let Err(error) = goals_storage::delete_goal(&app, goal.meta.id) {
+                        cleanup_errors.push(error);
+                    }
+                }
+            }
+        }
+        Err(error) => cleanup_errors.push(error),
+    }
+    if let Err(error) = mistake_index::remove_quiz_entries(&app, &identity.id) {
+        cleanup_errors.push(error);
+    }
+    if let Err(error) = quiz_archive::set_quiz_archived(&app, &identity.id, false) {
+        cleanup_errors.push(error);
+    }
+
+    if cleanup_errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "The quiz file was deleted, but some saved data could not be removed: {}",
+            cleanup_errors.join(" ")
+        ))
+    }
+}
+
+#[tauri::command]
 fn read_knowledge_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
     let directory = knowledge_base_directory(&app)?;
     let mut files = Vec::new();
@@ -752,6 +829,9 @@ pub fn run() {
             save_settings,
             read_working_directory,
             import_quiz_file,
+            list_archived_quiz_ids,
+            set_quiz_archived,
+            delete_quiz_file,
             read_knowledge_directory,
             write_knowledge_file,
             delete_knowledge_file,
@@ -779,8 +859,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        atomic_write, is_json_extension, normalize_keybind, resolve_knowledge_path, strip_utf8_bom,
-        KNOWLEDGE_BASE_FOLDER,
+        atomic_write, is_json_extension, normalize_keybind, resolve_knowledge_path,
+        resolve_quiz_path, strip_utf8_bom, KNOWLEDGE_BASE_FOLDER,
     };
     use std::{fs, path::PathBuf};
 
@@ -832,6 +912,18 @@ mod tests {
         assert_eq!(path, knowledge_base.join("note-one.md"));
 
         fs::remove_dir_all(root).expect("remove test directory");
+    }
+
+    #[test]
+    fn resolve_quiz_path_rejects_nested_or_non_json_files() {
+        let root = test_directory("quiz-path");
+        assert_eq!(
+            resolve_quiz_path(&root, "quiz.JSON").expect("resolve quiz path"),
+            root.join("quiz.JSON")
+        );
+        assert!(resolve_quiz_path(&root, "nested/quiz.json").is_err());
+        assert!(resolve_quiz_path(&root, "../quiz.json").is_err());
+        assert!(resolve_quiz_path(&root, "quiz.txt").is_err());
     }
 
     #[test]

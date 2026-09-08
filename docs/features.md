@@ -6,14 +6,13 @@ A persistent collapsible sidebar runs along the left edge of every non-quiz
 screen. It contains:
 
 - **Home** — the quiz library
-- **Goals** — study goals and attempt history
+- **History** — saved quiz attempts, progress summaries, and review shortcuts
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
 - **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
 - **Settings** — profile, quiz directory, quiz preferences, shortcuts, Mistake Log thresholds, and synchronization (pinned to the bottom)
 
-The sidebar shows a badge with the count of active (incomplete) goals. It
-collapses to icon-only mode; clicking the Quizzy logo in the sidebar header
-toggles it open and closed.
+The sidebar collapses to icon-only mode; clicking the Quizzy logo in the
+sidebar header toggles it open and closed.
 
 ## Home page
 
@@ -28,8 +27,20 @@ Available actions on the home page:
 - **Open quiz folder** opens the configured working directory in the system file
   manager.
 
-When the user has active goals, a summary card lists up to three of them with a
-link to the full Goals page.
+Saved attempt activity lives on the dedicated History page so the home page can
+remain focused on choosing and managing quizzes.
+
+## History
+
+The History page at `/history` lists saved attempts as a chronological activity
+feed grouped by day. Summary cards show the filtered attempt count, average
+score, best score, and pass rate. Search, quiz, and time-sort controls refine
+both the feed and its summary.
+
+Active and archived attempts appear in the unified history. Each item opens its
+full review, supports permanent deletion after confirmation, and offers a
+retake shortcut while its quiz is active. Long histories are revealed in
+batches of 20.
 
 ## Goals
 
@@ -63,7 +74,7 @@ Completing a quiz that has a goal automatically records an attempt for that goal
 ## Attempt review
 
 Each saved attempt opens on a dedicated page at
-`/goals/:goalId/attempts/:attemptId`. The page shows:
+`/quizzes/:quizId/attempts/:attemptId`. The page shows:
 
 - Score summary with target, latest, and highest metrics
 - Question index grid for quick navigation

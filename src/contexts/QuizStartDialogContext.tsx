@@ -13,7 +13,10 @@ export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<QuizStartRequest | null>(null);
 
   const quiz = useMemo(
-    () => quizzes.find((source) => source.quiz.id === request?.quizId)?.quiz ?? null,
+    () =>
+      quizzes.find(
+        (source) => source.quiz.id === request?.quizId && !source.archived,
+      )?.quiz ?? null,
     [quizzes, request?.quizId],
   );
 

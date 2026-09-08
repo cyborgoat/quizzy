@@ -30,8 +30,6 @@ export type Goal = {
   description: string;
   targetScore?: number;
   createdAt: string;
-  completed: boolean;
-  completedAt?: string;
   attempts: AttemptSummary[];
 };
 
@@ -79,14 +77,7 @@ export function goalMeta(goal: Goal): Omit<Goal, "attempts"> {
     description: goal.description,
     targetScore: goal.targetScore,
     createdAt: goal.createdAt,
-    completed: goal.completed,
-    completedAt: goal.completedAt,
   };
-}
-
-export function anyAttemptMetTarget(goal: Goal): boolean {
-  if (goal.targetScore === undefined) return true;
-  return goal.attempts.some((attempt) => attempt.percentage >= goal.targetScore!);
 }
 
 export function latestAttempt(goal: Goal): AttemptSummary | undefined {

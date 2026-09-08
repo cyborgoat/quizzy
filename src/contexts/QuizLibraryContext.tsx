@@ -19,8 +19,11 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
         setInvalidReports([]);
         return;
       }
-      const files = await nativeApi.readWorkingDirectory();
-      const library = parseQuizFiles(files);
+      const [files, archivedQuizIds] = await Promise.all([
+        nativeApi.readWorkingDirectory(),
+        nativeApi.listArchivedQuizIds(),
+      ]);
+      const library = parseQuizFiles(files, new Set(archivedQuizIds));
       setQuizzes(library.quizzes);
       setInvalidReports(library.invalidReports);
       if (import.meta.env.DEV && library.invalidReports.length > 0) {
@@ -53,6 +56,36 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     return fileName;
   }
 
+  async function setQuizArchived(quizId: string, archived: boolean) {
+    try {
+      await nativeApi.setQuizArchived(quizId, archived);
+      setQuizzes((current) =>
+        current.map((source) =>
+          source.quiz.id === quizId ? { ...source, archived } : source,
+        ),
+      );
+      toast.success(archived ? "Quiz archived." : "Quiz restored.");
+      return true;
+    } catch (error) {
+      await refresh({ background: true });
+      toast.error(errorMessage(error));
+      return false;
+    }
+  }
+
+  async function deleteQuizFile(fileName: string) {
+    try {
+      await nativeApi.deleteQuizFile(fileName);
+      setQuizzes((current) => current.filter((source) => source.fileName !== fileName));
+      toast.success("Quiz permanently deleted.");
+      return true;
+    } catch (error) {
+      await refresh({ background: true });
+      toast.error(errorMessage(error));
+      return false;
+    }
+  }
+
   const value = {
     directoryPath,
     directoryAvailable,
@@ -61,6 +94,8 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     isLoading,
     refresh,
     importQuizFile,
+    setQuizArchived,
+    deleteQuizFile,
     openQuizFolder,
   };
 

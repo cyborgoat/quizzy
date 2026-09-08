@@ -11,6 +11,7 @@ function makeSource(
 ): QuizSource {
   return {
     fileName: `${overrides.id}.json`,
+    archived: false,
     quiz: {
       tags: [],
       questions: [],

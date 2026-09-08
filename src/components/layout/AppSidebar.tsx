@@ -1,4 +1,4 @@
-import { BookOpen, Home, Settings, ClipboardList } from "lucide-react";
+import { BookOpen, ClipboardList, History, Home, Settings } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar,
@@ -93,6 +93,19 @@ export function AppSidebar() {
               <Link to="/knowledge">
                 <BookOpen className="size-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Knowledge</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/history"}
+              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+            >
+              <Link to="/history">
+                <History className="size-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden">History</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

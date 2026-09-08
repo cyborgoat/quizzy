@@ -1,5 +1,4 @@
-import { Play, Settings, Target } from "lucide-react";
-import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
+import { ArchiveRestore, Play, Settings } from "lucide-react";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusBadge } from "@/components/quiz/QuizStatusBadge";
 import { Badge } from "@/components/ui/badge";
@@ -29,34 +28,17 @@ export function QuizListItem({
   return (
     <article className="group flex min-h-full flex-col rounded-xl border border-zinc-200 bg-white p-4 transition-[border-color,box-shadow] hover:border-zinc-300 hover:shadow-sm focus-within:border-zinc-300 focus-within:shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <QuizStatusBadge status={status} />
-        {goal ? (
-          <Button
-            size="icon"
-            variant="ghost"
-            className={revealActionClassName}
-            onClick={() => onOpenDetails(source.quiz.id)}
-            aria-label={`Open settings and attempts for ${source.quiz.title}`}
-            title="Settings and attempts"
-          >
-            <Settings className="size-4" />
-          </Button>
-        ) : (
-          <CreateGoalDialog
-            quiz={source.quiz}
-            triggerTooltip="Add goal"
-            trigger={
-              <Button
-                size="icon"
-                variant="ghost"
-                className={revealActionClassName}
-                aria-label={`Add ${source.quiz.title} to goals`}
-              >
-                <Target className="size-4" />
-              </Button>
-            }
-          />
-        )}
+        <QuizStatusBadge status={source.archived ? "archived" : status} />
+        <Button
+          size="icon"
+          variant="ghost"
+          className={revealActionClassName}
+          onClick={() => onOpenDetails(source.quiz.id)}
+          aria-label={`Open details and settings for ${source.quiz.title}`}
+          title="Details and settings"
+        >
+          <Settings className="size-4" />
+        </Button>
       </div>
 
       <div className="mt-3">
@@ -106,10 +88,15 @@ export function QuizListItem({
 
       <Button
         className="mt-3 w-full bg-zinc-900 hover:bg-zinc-800"
+        disabled={source.archived}
         onClick={() => openQuizStart({ quizId: source.quiz.id })}
       >
-        <Play className="size-4 fill-current" />
-        Start quiz
+        {source.archived ? (
+          <ArchiveRestore className="size-4" />
+        ) : (
+          <Play className="size-4 fill-current" />
+        )}
+        {source.archived ? "Restore to start" : "Start quiz"}
       </Button>
     </article>
   );

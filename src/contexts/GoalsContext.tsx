@@ -55,7 +55,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     attemptCacheRef.current.clear();
   }, []);
 
-  async function addGoal(data: Omit<Goal, "id" | "createdAt" | "completed" | "attempts">) {
+  async function addGoal(data: Omit<Goal, "id" | "createdAt" | "attempts">) {
     if (goals.some((goal) => goal.quizId === data.quizId)) {
       toast.error("This quiz already has a goal.");
       return false;
@@ -64,7 +64,6 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       ...data,
       id: generateId(),
       createdAt: new Date().toISOString(),
-      completed: false,
       attempts: [],
     };
     try {
@@ -135,44 +134,6 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function completeGoal(id: string) {
-    const goal = goals.find((item) => item.id === id);
-    if (!goal) return;
-    const updated: Goal = {
-      ...goal,
-      completed: true,
-      completedAt: new Date().toISOString(),
-    };
-    try {
-      await nativeApi.upsertGoal(goalMeta(updated));
-      setGoals((current) =>
-        current.map((item) => (item.id === id ? updated : item)),
-      );
-      toast.success("Goal marked as complete.");
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
-  }
-
-  async function reopenGoal(id: string) {
-    const goal = goals.find((item) => item.id === id);
-    if (!goal) return;
-    const updated: Goal = {
-      ...goal,
-      completed: false,
-      completedAt: undefined,
-    };
-    try {
-      await nativeApi.upsertGoal(goalMeta(updated));
-      setGoals((current) =>
-        current.map((item) => (item.id === id ? updated : item)),
-      );
-      toast.success("Goal moved back to active.");
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
-  }
-
   async function deleteGoal(id: string) {
     try {
       await nativeApi.deleteGoal(id);
@@ -234,8 +195,6 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         addGoal,
         updateGoal,
         recordAttempt,
-        completeGoal,
-        reopenGoal,
         deleteGoal,
         deleteAttempt,
         loadGoalAttempt,

@@ -2,7 +2,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { QuizProgressStatus } from "@/lib/quizProgress";
 
-const statusStyles: Record<QuizProgressStatus, { label: string; className: string }> = {
+type QuizDisplayStatus = QuizProgressStatus | "archived";
+
+const statusStyles: Record<QuizDisplayStatus, { label: string; className: string }> = {
   "not-started": {
     label: "Not started",
     className: "border-zinc-200 bg-zinc-50 text-zinc-600",
@@ -15,9 +17,9 @@ const statusStyles: Record<QuizProgressStatus, { label: string; className: strin
     label: "Target reached",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   },
-  completed: {
-    label: "Completed",
-    className: "border-green-200 bg-green-100 text-green-800",
+  archived: {
+    label: "Archived",
+    className: "border-zinc-300 bg-zinc-100 text-zinc-700",
   },
 };
 
@@ -25,7 +27,7 @@ export function QuizStatusBadge({
   status,
   className,
 }: {
-  status: QuizProgressStatus;
+  status: QuizDisplayStatus;
   className?: string;
 }) {
   const presentation = statusStyles[status];

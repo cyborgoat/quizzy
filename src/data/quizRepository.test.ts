@@ -56,4 +56,19 @@ describe("parseQuizFiles", () => {
     expect(result.quizzes[0].quiz.id).toBe("comprehensive-stress-test");
     expect(result.quizzes[0].quiz.questions).toHaveLength(45);
   });
+
+  it("marks quiz sources whose IDs are archived", () => {
+    const result = parseQuizFiles(
+      [
+        { fileName: "active.json", contents: quiz("active") },
+        { fileName: "archived.json", contents: quiz("archived") },
+      ],
+      new Set(["archived"]),
+    );
+
+    expect(result.quizzes.map(({ quiz: item, archived }) => [item.id, archived])).toEqual([
+      ["active", false],
+      ["archived", true],
+    ]);
+  });
 });

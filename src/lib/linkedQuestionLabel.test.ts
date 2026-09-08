@@ -5,6 +5,7 @@ import type { QuizSource } from "@/types/quiz";
 const quizzes: QuizSource[] = [
   {
     fileName: "react-basics.json",
+    archived: false,
     quiz: {
       id: "react-basics",
       title: "React Basics",

@@ -5,6 +5,7 @@ import type { QuizSource } from "@/types/quiz";
 const quizzes: QuizSource[] = [
   {
     fileName: "quiz.json",
+    archived: false,
     quiz: {
       id: "quiz-a",
       title: "Quiz A",

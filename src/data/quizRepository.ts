@@ -13,7 +13,10 @@ export type ParsedQuizLibrary = {
   invalidReports: InvalidQuizReport[];
 };
 
-export function parseQuizFiles(files: RawQuizFile[]): ParsedQuizLibrary {
+export function parseQuizFiles(
+  files: RawQuizFile[],
+  archivedQuizIds: ReadonlySet<string> = new Set(),
+): ParsedQuizLibrary {
   const quizzes: QuizSource[] = [];
   const invalidReports: InvalidQuizReport[] = [];
   const seenQuizIds = new Map<string, string>();
@@ -71,7 +74,11 @@ export function parseQuizFiles(files: RawQuizFile[]): ParsedQuizLibrary {
       }
 
       seenQuizIds.set(result.data.id, file.fileName);
-      quizzes.push({ fileName: file.fileName, quiz: result.data });
+      quizzes.push({
+        fileName: file.fileName,
+        archived: archivedQuizIds.has(result.data.id),
+        quiz: result.data,
+      });
     });
 
   return { quizzes, invalidReports };

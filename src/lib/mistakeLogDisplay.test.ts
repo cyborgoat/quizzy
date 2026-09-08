@@ -25,6 +25,7 @@ const entry = (overrides: Partial<MistakeEntry> = {}): MistakeEntry => ({
 const quizzes: QuizSource[] = [
   {
     fileName: "quiz-1.json",
+    archived: false,
     quiz: {
       id: "quiz-1",
       title: "Quiz One",
