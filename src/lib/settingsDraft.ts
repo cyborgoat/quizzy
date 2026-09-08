@@ -32,6 +32,11 @@ export type SettingsFieldKey =
 
 export type SettingsDraftErrors = Partial<Record<SettingsFieldKey, string>>;
 
+export type NumericSettingsFieldKey =
+  | "minMistakes"
+  | "minFlags"
+  | "maxCorrectness";
+
 export type ParsedSettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
@@ -170,6 +175,56 @@ export function validateSettingsDraft(
       ...normalizedShortcuts,
       pendingDir: draft.pendingDir,
     },
+  };
+}
+
+export function validateNumericSetting(
+  field: NumericSettingsFieldKey,
+  rawValue: string,
+): { ok: true; value: number } | { ok: false; error: string } {
+  const value = Number(rawValue);
+
+  if (field === "minMistakes" || field === "minFlags") {
+    return Number.isInteger(value) && value >= 1
+      ? { ok: true, value }
+      : { ok: false, error: "Enter a whole number of at least 1." };
+  }
+
+  return Number.isFinite(value) && value >= 0 && value <= 100
+    ? { ok: true, value }
+    : { ok: false, error: "Enter a number between 0 and 100." };
+}
+
+export function validateShortcutSettings(
+  draft: Pick<SettingsDraft, ShortcutDraftKey>,
+):
+  | { ok: true; values: Record<ShortcutDraftKey, string> }
+  | { ok: false; errors: SettingsDraftErrors } {
+  const errors: SettingsDraftErrors = {};
+  const shortcutValues = Object.fromEntries(
+    SHORTCUT_FIELDS.map((field) => [field.draftKey, draft[field.draftKey]]),
+  ) as Record<ShortcutDraftKey, string>;
+
+  for (const field of SHORTCUT_FIELDS) {
+    const error = validateKeybindSerialized(draft[field.draftKey]);
+    if (error) errors[field.draftKey] = error;
+  }
+
+  const duplicate = findDuplicateKeybind(shortcutValues);
+  if (duplicate) {
+    errors[duplicate.field as SettingsFieldKey] = duplicate.message;
+  }
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+
+  return {
+    ok: true,
+    values: Object.fromEntries(
+      SHORTCUT_FIELDS.map((field) => [
+        field.draftKey,
+        normalizeShortcutDraftValue(draft[field.draftKey], field.defaultBind),
+      ]),
+    ) as Record<ShortcutDraftKey, string>,
   };
 }
 

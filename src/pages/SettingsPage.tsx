@@ -6,23 +6,26 @@ import { SettingsProfileSection } from "@/components/settings/SettingsProfileSec
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
-import { Button } from "@/components/ui/button";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
 
 export function SettingsPage() {
   const {
     draft,
     errors,
-    hasChanges,
+    savingFields,
     displayDir,
     directoryPath,
     directoryAvailable,
     isSyncing,
     lastSyncReport,
     syncSections,
-    updateDraft,
-    clearFieldError,
-    handleSave,
+    handleNameChange,
+    commitName,
+    handleShuffleQuestionsChange,
+    handleShuffleOptionsChange,
+    handleNumericChange,
+    commitNumericSetting,
+    handleShortcutChange,
     handlePickDirectory,
     handleSynchronize,
   } = useSettingsPageState();
@@ -32,23 +35,13 @@ export function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Configure your profile, shortcuts, and directory."
-        actions={
-          <div className="flex items-center gap-2">
-            {hasChanges && (
-              <span className="text-xs text-zinc-500">Unsaved changes</span>
-            )}
-            <Button onClick={() => void handleSave()} disabled={!hasChanges}>
-              Save
-            </Button>
-          </div>
-        }
       />
 
       <SettingsProfileSection
         draft={draft}
-        hasChanges={hasChanges}
-        onNameChange={(name) => updateDraft({ name })}
-        onSave={() => void handleSave()}
+        disabled={savingFields.has("name")}
+        onNameChange={handleNameChange}
+        onNameCommit={commitName}
       />
 
       <SettingsDirectorySection
@@ -56,39 +49,30 @@ export function SettingsPage() {
         directoryPath={directoryPath}
         directoryAvailable={directoryAvailable}
         hasPendingDirChange={draft.pendingDir !== null}
+        disabled={savingFields.has("workingDirectory") || isSyncing}
         onPickDirectory={() => void handlePickDirectory()}
       />
 
       <SettingsQuizPreferencesSection
         draft={draft}
-        onShuffleQuestionsChange={(shuffleQuestions) => updateDraft({ shuffleQuestions })}
-        onShuffleOptionsChange={(shuffleOptions) => updateDraft({ shuffleOptions })}
+        savingFields={savingFields}
+        onShuffleQuestionsChange={handleShuffleQuestionsChange}
+        onShuffleOptionsChange={handleShuffleOptionsChange}
       />
 
       <SettingsShortcutsSection
         draft={draft}
         errors={errors}
-        onShortcutChange={(field, value) => {
-          updateDraft({ [field]: value });
-          clearFieldError(field);
-        }}
+        savingFields={savingFields}
+        onShortcutChange={handleShortcutChange}
       />
 
       <SettingsMistakeLogSection
         draft={draft}
         errors={errors}
-        onMinMistakesChange={(minMistakes) => {
-          updateDraft({ minMistakes });
-          clearFieldError("minMistakes");
-        }}
-        onMinFlagsChange={(minFlags) => {
-          updateDraft({ minFlags });
-          clearFieldError("minFlags");
-        }}
-        onMaxCorrectnessChange={(maxCorrectness) => {
-          updateDraft({ maxCorrectness });
-          clearFieldError("maxCorrectness");
-        }}
+        savingFields={savingFields}
+        onValueChange={handleNumericChange}
+        onValueCommit={commitNumericSetting}
       />
 
       <SettingsSyncSection

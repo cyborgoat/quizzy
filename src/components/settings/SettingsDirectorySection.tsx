@@ -7,12 +7,14 @@ export function SettingsDirectorySection({
   directoryPath,
   directoryAvailable,
   hasPendingDirChange,
+  disabled,
   onPickDirectory,
 }: {
   displayDir: string | null;
   directoryPath: string | null;
   directoryAvailable: boolean;
   hasPendingDirChange: boolean;
+  disabled: boolean;
   onPickDirectory: () => void;
 }) {
   const showUnavailable =
@@ -32,6 +34,7 @@ export function SettingsDirectorySection({
           icon={FolderCog}
           label={displayDir ? "Change folder" : "Select folder"}
           variant="outline"
+          disabled={disabled}
           onClick={onPickDirectory}
         />
       </div>

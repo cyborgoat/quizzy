@@ -3,20 +3,24 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
 import { Input } from "@/components/ui/input";
 import { settingsCompactInputClassName } from "@/components/settings/settingsControlStyles";
-import type { SettingsDraft, SettingsDraftErrors } from "@/lib/settingsDraft";
+import type {
+  NumericSettingsFieldKey,
+  SettingsDraft,
+  SettingsDraftErrors,
+} from "@/lib/settingsDraft";
 
 export function SettingsMistakeLogSection({
   draft,
   errors,
-  onMinMistakesChange,
-  onMinFlagsChange,
-  onMaxCorrectnessChange,
+  savingFields,
+  onValueChange,
+  onValueCommit,
 }: {
   draft: SettingsDraft;
   errors: SettingsDraftErrors;
-  onMinMistakesChange: (value: string) => void;
-  onMinFlagsChange: (value: string) => void;
-  onMaxCorrectnessChange: (value: string) => void;
+  savingFields: ReadonlySet<keyof SettingsDraft | "workingDirectory">;
+  onValueChange: (field: NumericSettingsFieldKey, value: string) => void;
+  onValueCommit: (field: NumericSettingsFieldKey) => void;
 }) {
   return (
     <SettingsSection icon={ClipboardList} title="Mistake Log">
@@ -31,7 +35,10 @@ export function SettingsMistakeLogSection({
           min={1}
           step={1}
           value={draft.minMistakes}
-          onChange={(e) => onMinMistakesChange(e.target.value)}
+          disabled={savingFields.has("minMistakes")}
+          onChange={(e) => onValueChange("minMistakes", e.target.value)}
+          onBlur={() => onValueCommit("minMistakes")}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>
@@ -47,7 +54,10 @@ export function SettingsMistakeLogSection({
           min={1}
           step={1}
           value={draft.minFlags}
-          onChange={(e) => onMinFlagsChange(e.target.value)}
+          disabled={savingFields.has("minFlags")}
+          onChange={(e) => onValueChange("minFlags", e.target.value)}
+          onBlur={() => onValueCommit("minFlags")}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>
@@ -64,7 +74,10 @@ export function SettingsMistakeLogSection({
           max={100}
           step={1}
           value={draft.maxCorrectness}
-          onChange={(e) => onMaxCorrectnessChange(e.target.value)}
+          disabled={savingFields.has("maxCorrectness")}
+          onChange={(e) => onValueChange("maxCorrectness", e.target.value)}
+          onBlur={() => onValueCommit("maxCorrectness")}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           className={settingsCompactInputClassName}
         />
       </SettingsSettingRow>

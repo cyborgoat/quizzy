@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { createSettingsSaveQueue } from "@/lib/settingsSaveQueue";
 import type { Goal, GoalAttempt } from "@/types/goal";
 import type { MistakeEntry } from "@/types/mistakeLog";
 
@@ -93,10 +94,13 @@ export type SyncReport = {
   warnings: SyncWarning[];
 };
 
+const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
+  invoke<void>("save_settings", { request }),
+);
+
 export const nativeApi = {
   getSettings: () => invoke<AppSettings>("get_settings"),
-  saveSettings: (request: SaveSettingsRequest) =>
-    invoke<void>("save_settings", { request }),
+  saveSettings,
   readWorkingDirectory: () =>
     invoke<NativeQuizFile[]>("read_working_directory"),
   importQuizFile: (sourcePath: string) =>

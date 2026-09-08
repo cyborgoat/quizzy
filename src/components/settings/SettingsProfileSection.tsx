@@ -6,14 +6,14 @@ import type { SettingsDraft } from "@/lib/settingsDraft";
 
 export function SettingsProfileSection({
   draft,
-  hasChanges,
+  disabled,
   onNameChange,
-  onSave,
+  onNameCommit,
 }: {
   draft: SettingsDraft;
-  hasChanges: boolean;
+  disabled: boolean;
   onNameChange: (name: string) => void;
-  onSave: () => void;
+  onNameCommit: () => void;
 }) {
   return (
     <SettingsSection icon={User} title="Profile">
@@ -25,8 +25,10 @@ export function SettingsProfileSection({
         <Input
           id="full-name"
           value={draft.name}
+          disabled={disabled}
           onChange={(e) => onNameChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && hasChanges && onSave()}
+          onBlur={onNameCommit}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           placeholder="Your full name"
           className="max-w-xs"
         />

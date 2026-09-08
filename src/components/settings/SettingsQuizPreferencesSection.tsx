@@ -6,10 +6,12 @@ import type { SettingsDraft } from "@/lib/settingsDraft";
 
 export function SettingsQuizPreferencesSection({
   draft,
+  savingFields,
   onShuffleQuestionsChange,
   onShuffleOptionsChange,
 }: {
   draft: SettingsDraft;
+  savingFields: ReadonlySet<keyof SettingsDraft | "workingDirectory">;
   onShuffleQuestionsChange: (value: boolean) => void;
   onShuffleOptionsChange: (value: boolean) => void;
 }) {
@@ -21,6 +23,7 @@ export function SettingsQuizPreferencesSection({
       >
         <Switch
           checked={draft.shuffleQuestions}
+          disabled={savingFields.has("shuffleQuestions")}
           onCheckedChange={onShuffleQuestionsChange}
           aria-label="Shuffle questions"
         />
@@ -32,6 +35,7 @@ export function SettingsQuizPreferencesSection({
       >
         <Switch
           checked={draft.shuffleOptions}
+          disabled={savingFields.has("shuffleOptions")}
           onCheckedChange={onShuffleOptionsChange}
           aria-label="Shuffle options"
         />

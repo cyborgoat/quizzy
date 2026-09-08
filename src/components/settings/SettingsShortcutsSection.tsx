@@ -2,17 +2,19 @@ import { Keyboard } from "lucide-react";
 import { HotkeyRecorder } from "@/components/settings/HotkeyRecorder";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
-import { SHORTCUT_FIELDS } from "@/lib/keybinds";
-import type { SettingsDraft, SettingsDraftErrors, SettingsFieldKey } from "@/lib/settingsDraft";
+import { SHORTCUT_FIELDS, type ShortcutDraftKey } from "@/lib/keybinds";
+import type { SettingsDraft, SettingsDraftErrors } from "@/lib/settingsDraft";
 
 export function SettingsShortcutsSection({
   draft,
   errors,
+  savingFields,
   onShortcutChange,
 }: {
   draft: SettingsDraft;
   errors: SettingsDraftErrors;
-  onShortcutChange: (field: SettingsFieldKey, value: string) => void;
+  savingFields: ReadonlySet<keyof SettingsDraft | "workingDirectory">;
+  onShortcutChange: (field: ShortcutDraftKey, value: string) => void;
 }) {
   return (
     <SettingsSection icon={Keyboard} title="Shortcuts">
@@ -25,6 +27,7 @@ export function SettingsShortcutsSection({
         >
           <HotkeyRecorder
             value={draft[field.draftKey]}
+            disabled={savingFields.has(field.draftKey)}
             onChange={(value) => onShortcutChange(field.draftKey, value)}
             aria-label={`Change shortcut for ${field.label}`}
           />

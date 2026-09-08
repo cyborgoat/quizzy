@@ -3,6 +3,8 @@ import {
   draftFromPersisted,
   hasSettingsChanges,
   toSaveSettingsRequest,
+  validateNumericSetting,
+  validateShortcutSettings,
   validateSettingsDraft,
 } from "@/lib/settingsDraft";
 
@@ -108,5 +110,30 @@ describe("settingsDraft", () => {
       expect(result.errors.minFlags).toBeTruthy();
       expect(result.errors.maxCorrectness).toBeTruthy();
     }
+  });
+
+  it("validates standalone numeric settings", () => {
+    expect(validateNumericSetting("minMistakes", "2")).toEqual({ ok: true, value: 2 });
+    expect(validateNumericSetting("minFlags", "0")).toEqual({
+      ok: false,
+      error: "Enter a whole number of at least 1.",
+    });
+    expect(validateNumericSetting("maxCorrectness", "40.5")).toEqual({
+      ok: true,
+      value: 40.5,
+    });
+  });
+
+  it("validates shortcuts without depending on unrelated fields", () => {
+    const draft = draftFromPersisted(persistedSnapshot);
+    const valid = validateShortcutSettings(draft);
+    expect(valid.ok).toBe(true);
+
+    const duplicate = validateShortcutSettings({
+      ...draft,
+      zoomOutShortcut: draft.zoomInShortcut,
+    });
+    expect(duplicate.ok).toBe(false);
+    if (!duplicate.ok) expect(duplicate.errors.zoomOutShortcut).toBeTruthy();
   });
 });
