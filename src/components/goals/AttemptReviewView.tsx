@@ -31,7 +31,7 @@ export function AttemptReviewView({
         targetScore: goal.targetScore,
         attemptHistory: hasMultipleAttempts
           ? {
-              goalId: goal.id,
+              quizId: goal.quizId,
               attempts: goal.attempts,
               currentAttemptId: attemptId,
             }

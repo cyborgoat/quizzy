@@ -111,7 +111,7 @@ export function QuizReviewView({
 
         {attemptHistory && (
           <AttemptHistoryCard
-            goalId={attemptHistory.goalId}
+            quizId={attemptHistory.quizId}
             attempts={attemptHistory.attempts}
             currentAttemptId={attemptHistory.currentAttemptId}
           />

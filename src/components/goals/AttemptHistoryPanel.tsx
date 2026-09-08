@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
 
 function AttemptHistoryList({
-  goalId,
+  quizId,
   attempts,
   currentAttemptId,
 }: {
-  goalId: string;
+  quizId: string;
   attempts: AttemptSummary[];
   currentAttemptId: string;
 }) {
@@ -21,8 +21,8 @@ function AttemptHistoryList({
         return (
           <li key={attempt.id}>
             <Link
-              to="/goals/$goalId/attempts/$attemptId"
-              params={{ goalId, attemptId: attempt.id }}
+              to="/quizzes/$quizId/attempts/$attemptId"
+              params={{ quizId, attemptId: attempt.id }}
               className={cn(
                 "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
                 isCurrent
@@ -44,11 +44,11 @@ function AttemptHistoryList({
 }
 
 export function AttemptHistoryCard({
-  goalId,
+  quizId,
   attempts,
   currentAttemptId,
 }: {
-  goalId: string;
+  quizId: string;
   attempts: AttemptSummary[];
   currentAttemptId: string;
 }) {
@@ -72,8 +72,8 @@ export function AttemptHistoryCard({
               const nextId = event.target.value;
               if (nextId !== currentAttemptId) {
                 navigate({
-                  to: "/goals/$goalId/attempts/$attemptId",
-                  params: { goalId, attemptId: nextId },
+                  to: "/quizzes/$quizId/attempts/$attemptId",
+                  params: { quizId, attemptId: nextId },
                 });
               }
             }}
@@ -90,7 +90,7 @@ export function AttemptHistoryCard({
 
         <div className="hidden lg:block">
           <AttemptHistoryList
-            goalId={goalId}
+            quizId={quizId}
             attempts={sortedAttempts}
             currentAttemptId={currentAttemptId}
           />

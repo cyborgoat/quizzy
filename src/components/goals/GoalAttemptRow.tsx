@@ -7,7 +7,7 @@ import { formatShortDate } from "@/lib/formatDate";
 import { attemptPassed, type AttemptSummary } from "@/types/goal";
 
 export function GoalAttemptRow({
-  goalId,
+  quizId,
   quizTitle,
   targetScore,
   attempt,
@@ -15,7 +15,7 @@ export function GoalAttemptRow({
   deleteLabel,
   showQuizTitle = true,
 }: {
-  goalId: string;
+  quizId: string;
   quizTitle?: string;
   targetScore?: number;
   attempt: AttemptSummary;
@@ -29,8 +29,8 @@ export function GoalAttemptRow({
 
   return (
     <Link
-      to="/goals/$goalId/attempts/$attemptId"
-      params={{ goalId, attemptId: attempt.id }}
+      to="/quizzes/$quizId/attempts/$attemptId"
+      params={{ quizId, attemptId: attempt.id }}
       className="group flex items-center gap-2 px-3 py-2 text-xs text-zinc-950 transition-colors hover:bg-zinc-50 hover:text-zinc-950"
     >
       <p className="min-w-0 flex-1 truncate">

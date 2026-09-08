@@ -59,9 +59,9 @@ function ScoredAttemptRedirect({
     }).then((recorded) => {
       if (recorded) {
         navigate({
-          to: "/goals/$goalId/attempts/$attemptId",
+          to: "/quizzes/$quizId/attempts/$attemptId",
           params: {
-            goalId: recorded.goalId,
+            quizId: quiz.id,
             attemptId: recorded.attemptId,
           },
           replace: true,
@@ -94,7 +94,6 @@ function ScoredAttemptRedirect({
 
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const navigate = useNavigate();
-  const { from } = Route.useSearch();
   const session = useQuizSession(quiz);
   const { recordAttempt } = useGoals();
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
@@ -207,7 +206,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
           onCancel={() => setExitDialogOpen(false)}
           onConfirm={() => {
             setExitDialogOpen(false);
-            navigate({ to: from === "goals" ? "/goals" : "/" });
+            navigate({ to: "/", search: {} });
           }}
         />
         <SubmitQuizDialog

@@ -2,7 +2,6 @@ import { createContext } from "react";
 
 export type QuizStartRequest = {
   quizId: string;
-  from?: "home" | "goals";
 };
 
 export type QuizStartDialogContextValue = {

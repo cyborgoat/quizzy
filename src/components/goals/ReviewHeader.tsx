@@ -21,12 +21,12 @@ export function ReviewHeader({
     return (
       <header className="space-y-4">
         <Link
-          to="/goals"
-          search={{ expand: goal.id }}
+          to="/"
+          search={{ details: goal.quizId }}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
         >
           <ArrowLeft className="size-4" />
-          Goals
+          Quiz details
         </Link>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -43,7 +43,7 @@ export function ReviewHeader({
           <Button
             className="shrink-0 self-start"
             onClick={() =>
-              openQuizStart({ quizId: goal.quizId, from: "goals" })
+              openQuizStart({ quizId: goal.quizId })
             }
           >
             <RotateCcw className="size-4" />

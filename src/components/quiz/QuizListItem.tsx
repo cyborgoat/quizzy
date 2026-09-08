@@ -1,161 +1,116 @@
-import { confirm } from "@tauri-apps/plugin-dialog";
-import {
-  ArrowRight,
-  ClipboardList,
-  ListChecks,
-  Pencil,
-  Target,
-  Trash2,
-} from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { AddGoalDialog } from "@/components/goals/AddGoalDialog";
-import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
+import { Play, Settings, Target } from "lucide-react";
+import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
-import { quizCardActionClass } from "@/components/quiz/quiz-card-action";
+import { QuizStatusBadge } from "@/components/quiz/QuizStatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listItemTitleClassName } from "@/components/ui/typography";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
+import { quizProgressMetrics, quizProgressStatus } from "@/lib/quizProgress";
 import type { QuizSource } from "@/types/quiz";
 
-export function QuizListItem({ source }: { source: QuizSource }) {
-  const { goals, deleteGoal } = useGoals();
+const revealActionClassName =
+  "size-8 pointer-events-none opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100";
+
+export function QuizListItem({
+  source,
+  onOpenDetails,
+}: {
+  source: QuizSource;
+  onOpenDetails: (quizId: string) => void;
+}) {
+  const { goals } = useGoals();
   const { openQuizStart } = useQuizStartDialog();
   const goal = goals.find((item) => item.quizId === source.quiz.id);
-  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
-  const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [isGoalMenuOpen, setIsGoalMenuOpen] = useState(false);
-  const hasAttempts = Boolean(goal?.attempts.length);
-  const highestScore = hasAttempts
-    ? Math.max(...goal!.attempts.map((attempt) => attempt.percentage))
-    : undefined;
-  const targetAchieved =
-    goal?.targetScore !== undefined &&
-    highestScore !== undefined &&
-    highestScore >= goal.targetScore;
-  const goalIconClass =
-    goal && !goal.completed
-      ? targetAchieved
-        ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-        : "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-      : "text-zinc-950 hover:bg-zinc-100 hover:text-zinc-950";
-  async function handleDeleteGoal() {
-    if (!goal) return;
-    const approved = await confirm(
-      `Delete the goal for "${source.quiz.title}" and all of its attempt history? This cannot be undone.`,
-      { title: "Delete goal?", kind: "warning" },
-    );
-    if (!approved) return;
-    setIsDeletingGoal(true);
-    await deleteGoal(goal.id);
-    setIsDeletingGoal(false);
-  }
-
-  function handleEditGoal() {
-    setIsGoalMenuOpen(false);
-    window.setTimeout(() => setIsEditingGoal(true), 0);
-  }
+  const status = quizProgressStatus(goal);
+  const { attemptCount, highestScore } = quizProgressMetrics(goal);
 
   return (
-    <article className="group flex flex-col rounded-lg border border-zinc-200 bg-white p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className={listItemTitleClassName}>{source.quiz.title}</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">{source.fileName}</p>
-        </div>
-        <div className="flex items-center gap-1">
-          {goal ? (
-            <DropdownMenu
-              open={isGoalMenuOpen}
-              onOpenChange={setIsGoalMenuOpen}
-              modal={false}
-            >
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className={`size-7 ${goalIconClass}`}
-                  disabled={isDeletingGoal}
-                  aria-label={`Open goal actions for ${source.quiz.title}`}
-                >
-                  <Target className="size-4" strokeWidth={2.5} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={handleEditGoal}>
-                  <Pencil />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/goals" search={{ expand: goal.id }}>
-                    <ListChecks />
-                    Attempts
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/mistakes" search={{ quizId: source.quiz.id }}>
-                    <ClipboardList />
-                    Mistakes
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onSelect={() => void handleDeleteGoal()}
-                  disabled={isDeletingGoal}
-                >
-                  <Trash2 />
-                  {isDeletingGoal ? "Deleting..." : "Delete"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <AddGoalDialog quiz={source.quiz} />
-          )}
-          {goal && (
-            <GoalSettingsDialog
-              goal={goal}
-              open={isEditingGoal}
-              onOpenChange={setIsEditingGoal}
-            />
-          )}
-        </div>
+    <article className="group flex min-h-full flex-col rounded-xl border border-zinc-200 bg-white p-4 transition-[border-color,box-shadow] hover:border-zinc-300 hover:shadow-sm focus-within:border-zinc-300 focus-within:shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <QuizStatusBadge status={status} />
+        {goal ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            className={revealActionClassName}
+            onClick={() => onOpenDetails(source.quiz.id)}
+            aria-label={`Open settings and attempts for ${source.quiz.title}`}
+            title="Settings and attempts"
+          >
+            <Settings className="size-4" />
+          </Button>
+        ) : (
+          <CreateGoalDialog
+            quiz={source.quiz}
+            triggerTooltip="Add goal"
+            trigger={
+              <Button
+                size="icon"
+                variant="ghost"
+                className={revealActionClassName}
+                aria-label={`Add ${source.quiz.title} to goals`}
+              >
+                <Target className="size-4" />
+              </Button>
+            }
+          />
+        )}
       </div>
-      <p className="mt-3 flex-1 text-xs leading-5 text-zinc-600">
+
+      <div className="mt-3">
+        <h2 className={listItemTitleClassName}>{source.quiz.title}</h2>
+        <p className="mt-0.5 truncate text-xs text-zinc-500" title={source.fileName}>
+          {source.fileName}
+        </p>
+      </div>
+
+      <p className="mt-3 line-clamp-3 flex-1 text-xs leading-5 text-zinc-600">
         {source.quiz.description ?? "No description provided."}
       </p>
-      <div className="mt-3 flex flex-wrap gap-1">
-        {source.quiz.tags.map((tag) => (
-          <Badge key={tag} className={knowledgeTagBadgeClassName}>
-            {tag}
-          </Badge>
-        ))}
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-zinc-100 pt-3">
-        <span className="text-xs text-zinc-500">
-          {source.quiz.questions.length} questions
-        </span>
-        <div className="flex items-center gap-1">
+
+      {source.quiz.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1">
+          {source.quiz.tags.map((tag) => (
+            <Badge key={tag} className={knowledgeTagBadgeClassName}>
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
+        <span>{source.quiz.questions.length} questions</span>
+        <span aria-hidden="true">·</span>
+        {goal ? (
           <button
             type="button"
-            className={quizCardActionClass}
-            onClick={() =>
-              openQuizStart({ quizId: source.quiz.id, from: "home" })
-            }
+            className="font-medium text-zinc-700 hover:text-zinc-950 hover:underline"
+            onClick={() => onOpenDetails(source.quiz.id)}
           >
-            Start <ArrowRight className="size-4" />
+            {attemptCount} {attemptCount === 1 ? "attempt" : "attempts"}
           </button>
-        </div>
+        ) : (
+          <span>0 attempts</span>
+        )}
+        <span aria-hidden="true">·</span>
+        <span>Best {highestScore === undefined ? "—" : `${highestScore}%`}</span>
+        {goal?.targetScore !== undefined && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>Target {goal.targetScore}%</span>
+          </>
+        )}
       </div>
+
+      <Button
+        className="mt-3 w-full bg-zinc-900 hover:bg-zinc-800"
+        onClick={() => openQuizStart({ quizId: source.quiz.id })}
+      >
+        <Play className="size-4 fill-current" />
+        Start quiz
+      </Button>
     </article>
   );
 }

@@ -1,10 +1,12 @@
 import { open } from "@tauri-apps/plugin-dialog";
-import { ArrowRight, FileUp, FolderOpen, History, RefreshCw } from "lucide-react";
+import { ChevronDown, FileUp, FolderOpen, History, RefreshCw } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { PageShell } from "@/components/layout/PageShell";
+import { QuizDetailsDialog } from "@/components/quiz/QuizDetailsDialog";
+import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
 import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
@@ -19,12 +21,18 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { formatShortDate } from "@/lib/formatDate";
 import { errorMessage } from "@/lib/native";
 import {
+  QUIZ_PROGRESS_FILTERS,
+  quizProgressStatus,
+  type QuizProgressStatus,
+} from "@/lib/quizProgress";
+import {
   collectRecentAttempts,
   HOME_RECENT_ATTEMPTS_PREVIEW_COUNT,
   type RecentAttemptEntry,
 } from "@/lib/recentAttempts";
 import { searchQuizSources } from "@/lib/quizSearch";
 import { cn } from "@/lib/utils";
+import { Route } from "@/routes/_app/index";
 import { attemptPassed } from "@/types/goal";
 
 export function HomePage() {
@@ -32,7 +40,10 @@ export function HomePage() {
   const { userName } = useUserProfile();
   const { goals } = useGoals();
   const navigate = useNavigate();
+  const { details: detailsQuizId } = Route.useSearch();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | QuizProgressStatus>("all");
+  const [showAllRecentAttempts, setShowAllRecentAttempts] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
@@ -41,15 +52,27 @@ export function HomePage() {
     "Library refreshed.",
   );
 
-  const filteredQuizzes = useMemo(
-    () => searchQuizSources(library.quizzes, deferredSearchQuery),
-    [library.quizzes, deferredSearchQuery],
-  );
+  const filteredQuizzes = useMemo(() => {
+    const searched = searchQuizSources(library.quizzes, deferredSearchQuery);
+    if (statusFilter === "all") return searched;
+    return searched.filter((source) =>
+      quizProgressStatus(goals.find((goal) => goal.quizId === source.quiz.id)) === statusFilter,
+    );
+  }, [library.quizzes, deferredSearchQuery, goals, statusFilter]);
 
-  const recentAttempts = useMemo(
-    () => collectRecentAttempts(goals).slice(0, HOME_RECENT_ATTEMPTS_PREVIEW_COUNT),
-    [goals],
-  );
+  const detailsSource = detailsQuizId
+    ? library.quizzes.find((source) => source.quiz.id === detailsQuizId) ?? null
+    : null;
+  const detailsGoal = detailsSource
+    ? goals.find((goal) => goal.quizId === detailsSource.quiz.id)
+    : undefined;
+
+  const allRecentAttempts = useMemo(() => collectRecentAttempts(goals), [goals]);
+  const recentAttempts = showAllRecentAttempts
+    ? allRecentAttempts
+    : allRecentAttempts.slice(0, HOME_RECENT_ATTEMPTS_PREVIEW_COUNT);
+  const hasMoreRecentAttempts =
+    allRecentAttempts.length > HOME_RECENT_ATTEMPTS_PREVIEW_COUNT;
 
   async function handleImportQuiz() {
     try {
@@ -96,18 +119,42 @@ export function HomePage() {
               <History className="size-4 shrink-0 text-zinc-500" />
               Recent attempts
             </div>
-            <Link
-              to="/goals"
-              className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900"
-            >
-              View all <ArrowRight className="size-3.5" />
-            </Link>
+            <span className="text-xs tabular-nums text-zinc-500">
+              {allRecentAttempts.length}
+            </span>
           </div>
-          <ul className="mt-3 space-y-2">
+          <ul
+            id="recent-attempts-list"
+            className={cn(
+              "mt-3 space-y-2",
+              showAllRecentAttempts && "max-h-64 overflow-y-auto pr-1",
+            )}
+          >
             {recentAttempts.map((entry) => (
               <HomeRecentAttemptRow key={entry.attempt.id} {...entry} />
             ))}
           </ul>
+          {hasMoreRecentAttempts && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-2 w-full text-zinc-600"
+              aria-expanded={showAllRecentAttempts}
+              aria-controls="recent-attempts-list"
+              onClick={() => setShowAllRecentAttempts((expanded) => !expanded)}
+            >
+              {showAllRecentAttempts
+                ? "Show less"
+                : `View all ${allRecentAttempts.length} attempts`}
+              <ChevronDown
+                className={cn(
+                  "size-4 transition-transform",
+                  showAllRecentAttempts && "rotate-180",
+                )}
+              />
+            </Button>
+          )}
         </div>
       )}
 
@@ -157,13 +204,34 @@ export function HomePage() {
           </div>
 
           {library.quizzes.length > 0 && (
-            <SearchField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search quizzes"
-              pending={isSearchPending}
-              className="mb-4"
-            />
+            <div className="mb-5 space-y-3">
+              <SearchField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search quizzes"
+                pending={isSearchPending}
+              />
+              <div
+                className="flex flex-wrap gap-1.5"
+                role="group"
+                aria-label="Filter quizzes by status"
+              >
+                {QUIZ_PROGRESS_FILTERS.map((filter) => {
+                  const active = statusFilter === filter.value;
+                  return (
+                    <Button
+                      key={filter.value}
+                      size="sm"
+                      variant={active ? "default" : "outline"}
+                      aria-pressed={active}
+                      onClick={() => setStatusFilter(filter.value)}
+                    >
+                      {filter.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           <InvalidFileReportsAlert
@@ -180,15 +248,23 @@ export function HomePage() {
                   isSearchPending && "opacity-70",
                 )}
               >
-                <QuizList quizzes={filteredQuizzes} />
+                <QuizList
+                  quizzes={filteredQuizzes}
+                  onOpenDetails={(quizId) =>
+                    navigate({ to: "/", search: { details: quizId } })
+                  }
+                />
               </div>
             ) : (
               <EmptyState
                 title="No quizzes match your search"
-                description="Try another keyword or clear the search to see all quizzes."
-                actionLabel="Clear"
+                description="Try another keyword or status filter."
+                actionLabel="Clear filters"
                 actionVariant="outline"
-                onAction={() => setSearchQuery("")}
+                onAction={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                }}
               />
             )
           ) : (
@@ -203,12 +279,20 @@ export function HomePage() {
           )}
         </>
       </WorkingDirectoryGate>
+
+      <QuizDetailsDialog
+        source={detailsSource}
+        goal={detailsGoal}
+        onOpenChange={(open) => {
+          if (!open) navigate({ to: "/", search: {} });
+        }}
+      />
     </PageShell>
   );
 }
 
 function HomeRecentAttemptRow({
-  goalId,
+  quizId,
   quizTitle,
   targetScore,
   attempt,
@@ -219,8 +303,8 @@ function HomeRecentAttemptRow({
   return (
     <li>
       <Link
-        to="/goals/$goalId/attempts/$attemptId"
-        params={{ goalId, attemptId: attempt.id }}
+        to="/quizzes/$quizId/attempts/$attemptId"
+        params={{ quizId, attemptId: attempt.id }}
         className="flex items-center gap-2 rounded-md px-1 py-0.5 text-xs text-zinc-950 transition-colors hover:bg-zinc-50 hover:text-zinc-950"
       >
         <p className="min-w-0 flex-1 truncate">

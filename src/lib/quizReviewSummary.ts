@@ -14,7 +14,7 @@ export type ReviewGoalContext = {
   attemptTakenAt: string;
   targetScore?: number;
   attemptHistory?: {
-    goalId: string;
+    quizId: string;
     attempts: AttemptSummary[];
     currentAttemptId: string;
   };

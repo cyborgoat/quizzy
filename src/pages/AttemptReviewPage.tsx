@@ -1,10 +1,11 @@
-import { Route } from "@/routes/_app/goals/$goalId/attempts/$attemptId";
+import { Route } from "@/routes/_app/quizzes/$quizId/attempts/$attemptId";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AttemptReviewView } from "@/components/goals/AttemptReviewView";
 import { PageShell } from "@/components/layout/PageShell";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
+import { LoadingState } from "@/components/quiz/LoadingState";
 import { useGoals } from "@/hooks/useGoals";
 import { errorMessage } from "@/lib/native";
 import type { Goal, GoalAttempt } from "@/types/goal";
@@ -56,8 +57,8 @@ function AttemptReviewLoader({
         <ErrorState
           title="Attempt unavailable"
           description={error ?? "Attempt details are unavailable."}
-          actionLabel="Goals"
-          onAction={() => navigate({ to: "/goals" })}
+          actionLabel="Quiz dashboard"
+          onAction={() => navigate({ to: "/", search: { details: goal.quizId } })}
         />
       </PageShell>
     );
@@ -71,21 +72,29 @@ function AttemptReviewLoader({
 }
 
 export function AttemptReviewPage() {
-  const { goalId, attemptId } = Route.useParams();
+  const { quizId, attemptId } = Route.useParams();
   const navigate = useNavigate();
-  const { goals } = useGoals();
+  const { goals, isLoading } = useGoals();
 
-  const goal = goals.find((item) => item.id === goalId);
+  if (isLoading) {
+    return (
+      <PageShell>
+        <LoadingState message="Loading attempt…" />
+      </PageShell>
+    );
+  }
+
+  const goal = goals.find((item) => item.quizId === quizId);
   const attemptSummary = goal?.attempts.find((item) => item.id === attemptId);
 
-  if (!goalId || !attemptId) {
+  if (!quizId || !attemptId) {
     return (
       <PageShell>
         <ErrorState
           title="Invalid review link"
           description="This attempt review link is missing required information."
-          actionLabel="Goals"
-          onAction={() => navigate({ to: "/goals" })}
+          actionLabel="Quiz dashboard"
+          onAction={() => navigate({ to: "/", search: {} })}
         />
       </PageShell>
     );
@@ -97,14 +106,14 @@ export function AttemptReviewPage() {
         <ErrorState
           title="Goal or attempt not found"
           description="This goal or attempt may have been deleted or is no longer available."
-          actionLabel="Goals"
-          onAction={() => navigate({ to: "/goals" })}
+          actionLabel="Quiz dashboard"
+          onAction={() => navigate({ to: "/", search: {} })}
         />
       </PageShell>
     );
   }
 
   return (
-    <AttemptReviewLoader key={`${goalId}-${attemptId}`} goal={goal} attemptId={attemptId} />
+    <AttemptReviewLoader key={`${quizId}-${attemptId}`} goal={goal} attemptId={attemptId} />
   );
 }

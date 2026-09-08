@@ -39,7 +39,6 @@ export function QuizStartDialogProvider({ children }: { children: ReactNode }) {
           open
           quiz={quiz}
           hasGoal={goals.some((goal) => goal.quizId === request.quizId)}
-          from={request.from}
           onOpenChange={(open) => {
             if (!open) closeQuizStart();
           }}

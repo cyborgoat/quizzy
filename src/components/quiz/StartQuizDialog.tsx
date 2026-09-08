@@ -9,13 +9,11 @@ export function StartQuizDialog({
   open,
   quiz,
   hasGoal,
-  from,
   onOpenChange,
 }: {
   open: boolean;
   quiz: Quiz;
   hasGoal: boolean;
-  from?: "home" | "goals";
   onOpenChange: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
@@ -40,7 +38,7 @@ export function StartQuizDialog({
         navigate({
           to: "/quiz/$quizId",
           params: { quizId: quiz.id },
-          search: { from },
+          search: {},
         });
       }}
     >
