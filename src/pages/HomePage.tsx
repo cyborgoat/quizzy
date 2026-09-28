@@ -1,5 +1,11 @@
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileUp, FolderOpen, RefreshCw } from "lucide-react";
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  FileUp,
+  FolderOpen,
+  RefreshCw,
+} from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -10,7 +16,10 @@ import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -22,12 +31,18 @@ import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useQuizLibrarySort } from "@/hooks/useQuizLibrarySort";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { errorMessage } from "@/lib/native";
 import {
   filterQuizSources,
   QUIZ_LIBRARY_FILTERS,
+  QUIZ_LIBRARY_SORT_GROUPS,
+  quizLibrarySortOption,
+  sortQuizSources,
+  withSortField,
   type QuizLibraryFilter,
+  type QuizLibrarySortField,
 } from "@/lib/quizProgress";
 import { searchQuizSources } from "@/lib/quizSearch";
 import { cn } from "@/lib/utils";
@@ -41,6 +56,9 @@ export function HomePage() {
   const { details: detailsQuizId } = Route.useSearch();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuizLibraryFilter>("all");
+  const [sortOrder, setSortOrder] = useQuizLibrarySort();
+  const sortOption = quizLibrarySortOption(sortOrder.field);
+  const nextSortDirection = sortOrder.direction === "asc" ? "desc" : "asc";
   const [isImporting, setIsImporting] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
@@ -51,8 +69,9 @@ export function HomePage() {
 
   const filteredQuizzes = useMemo(() => {
     const searched = searchQuizSources(library.quizzes, deferredSearchQuery);
-    return filterQuizSources(searched, goals, statusFilter);
-  }, [library.quizzes, deferredSearchQuery, goals, statusFilter]);
+    const filtered = filterQuizSources(searched, goals, statusFilter);
+    return sortQuizSources(filtered, goals, sortOrder);
+  }, [library.quizzes, deferredSearchQuery, goals, statusFilter, sortOrder]);
 
   const detailsSource = detailsQuizId
     ? library.quizzes.find((source) => source.quiz.id === detailsQuizId) ?? null
@@ -165,6 +184,49 @@ export function HomePage() {
                   ))}
                 </SelectContent>
               </Select>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={sortOrder.field}
+                  onValueChange={(value) =>
+                    setSortOrder(withSortField(value as QuizLibrarySortField))
+                  }
+                >
+                  <SelectTrigger className="min-w-0 flex-1 sm:w-44" aria-label="Sort quizzes by">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUIZ_LIBRARY_SORT_GROUPS.map((group, index) => (
+                      <SelectGroup key={group.label}>
+                        {index > 0 && <SelectSeparator />}
+                        <SelectLabel className="text-xs font-medium text-zinc-500">
+                          {group.label}
+                        </SelectLabel>
+                        {group.options.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <IconActionButton
+                  icon={
+                    sortOrder.direction === "asc" ? ArrowUpNarrowWide : ArrowDownWideNarrow
+                  }
+                  label={
+                    sortOrder.field === "default"
+                      ? "Choose a sort field to change direction"
+                      : `${sortOption.directionLabels[sortOrder.direction]} · switch to ${sortOption.directionLabels[nextSortDirection].toLowerCase()}`
+                  }
+                  variant="outline"
+                  className="size-9 shrink-0"
+                  disabled={sortOrder.field === "default"}
+                  onClick={() =>
+                    setSortOrder({ ...sortOrder, direction: nextSortDirection })
+                  }
+                />
+              </div>
             </div>
           )}
 

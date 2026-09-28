@@ -26,6 +26,12 @@ Available actions on the home page:
   operation and a toast confirms completion.
 - **Open quiz folder** opens the configured working directory in the system file
   manager.
+- **Search, filter, and sort** narrow the library by keyword and status, then
+  order it by last attempt, attempts, best score, target score, or title. The
+  arrow button next to the sort menu flips between high-to-low and low-to-high
+  (A to Z / Z to A for titles). Quizzes with no value, such as no attempts or no
+  target, stay last in either direction. The default order keeps search
+  relevance. The chosen sort is remembered across restarts.
 
 Saved attempt activity lives on the dedicated History page so the home page can
 remain focused on choosing and managing quizzes.
