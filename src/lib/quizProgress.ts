@@ -69,7 +69,7 @@ export type QuizLibrarySortField =
   | "target-score"
   | "title";
 
-export type QuizLibrarySortDirection = "asc" | "desc";
+type QuizLibrarySortDirection = "asc" | "desc";
 
 export type QuizLibrarySort = {
   field: QuizLibrarySortField;
@@ -138,11 +138,6 @@ export const QUIZ_LIBRARY_SORT_GROUPS: Array<{
 
 const SORT_OPTIONS = QUIZ_LIBRARY_SORT_GROUPS.flatMap((group) => group.options);
 
-export const DEFAULT_QUIZ_LIBRARY_SORT: QuizLibrarySort = {
-  field: "default",
-  direction: "asc",
-};
-
 export function quizLibrarySortOption(field: QuizLibrarySortField): QuizLibrarySortOption {
   return SORT_OPTIONS.find((option) => option.value === field) ?? SORT_OPTIONS[0];
 }
@@ -151,6 +146,8 @@ export function quizLibrarySortOption(field: QuizLibrarySortField): QuizLibraryS
 export function withSortField(field: QuizLibrarySortField): QuizLibrarySort {
   return { field, direction: quizLibrarySortOption(field).defaultDirection };
 }
+
+export const DEFAULT_QUIZ_LIBRARY_SORT = withSortField("default");
 
 export function parseQuizLibrarySort(value: unknown): QuizLibrarySort {
   if (typeof value !== "object" || value === null) return DEFAULT_QUIZ_LIBRARY_SORT;
@@ -178,7 +175,7 @@ function sortValue(
     case "recent-attempt":
       return latestAttemptTime(goal);
     case "attempts":
-      return goal?.attempts.length ?? 0;
+      return quizProgressMetrics(goal).attemptCount;
     case "best-score":
       return quizProgressMetrics(goal).highestScore;
     case "target-score":
