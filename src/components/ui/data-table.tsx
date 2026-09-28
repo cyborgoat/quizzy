@@ -48,6 +48,9 @@ export function DataTableColumnFilterHeader({
   onFilterChange: (value: string) => void;
 }) {
   const isFiltered = filterValue !== "all";
+  const selectedLabel = isFiltered
+    ? options.find((option) => option.value === filterValue)?.label
+    : undefined;
 
   return (
     <DropdownMenu>
@@ -59,8 +62,12 @@ export function DataTableColumnFilterHeader({
             sortButtonClass,
             isFiltered && "text-zinc-950",
           )}
+          title={selectedLabel ? `${label}: ${selectedLabel}` : undefined}
         >
-          {label}
+          <span className="min-w-0 truncate">
+            {label}
+            {selectedLabel && <span className="font-semibold">: {selectedLabel}</span>}
+          </span>
           <ChevronDown className="size-3 shrink-0 opacity-60" />
         </Button>
       </DropdownMenuTrigger>

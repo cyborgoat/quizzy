@@ -97,7 +97,7 @@ Each saved attempt opens on a dedicated page at
 - The icon is brown while an active goal remains below its target, including
   before the first attempt, and green once its highest score meets the target.
   Clicking an existing goal icon opens actions to edit the goal in place, view
-  attempts, open the quiz-scoped Mistake Log, or delete the goal after
+  attempts, open the Mistake Log filtered to that quiz, or delete the goal after
   confirmation.
 
 ## Mistake Log
@@ -106,8 +106,9 @@ The Mistake Log aggregates incorrect answers and flagged questions from your sav
 quiz attempts. Rust maintains a materialized `mistake-index.json`
 in the app-config directory; the UI loads that index in one native call instead of
 re-reading every attempt file. **Mistake Log** in the sidebar opens the global
-view at `/mistakes`; an existing quiz goal's menu can open the same view scoped
-to that quiz.
+view at `/mistakes`. **View mistakes** in a quiz's details opens the same full
+log with the **Quiz Name** filter preset to that quiz (`/mistakes?quizId=…`), so
+the filter stays visible and can be changed or cleared.
 
 The list shows:
 
@@ -127,8 +128,10 @@ is collapsible and paginated (default **5** rows per page).
 The table lists **Quiz Name**, **Question** (for example `Q3`), **Question type**
 (single choice, multiple choice, or true or false), and sortable columns for
 notes, flags, mistakes, correctness, and last mistaken date. Click the **Quiz Name**
-or **Question type** column header to filter; the global view filters by quiz,
-and any view can filter by question type.
+or **Question type** column header to filter; an active filter shows its value
+in the header. When the filters hide every row, the table stays in place with an
+explanation (for example, that the quiz has no scored attempts yet) and a
+**Clear filters** button.
 
 The first sorted row is selected automatically. Click a row or use arrow
 navigation in the inline review card below the table to review the full question,

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildMistakeQuizFilterOptions,
+  describeFilteredEmptyMistakes,
   filterMistakeEntries,
   resolveActiveMistakeEntry,
-  resolveScopedEmptyReason,
 } from "@/lib/mistakeLogDisplay";
+import type { Goal } from "@/types/goal";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizSource } from "@/types/quiz";
 
@@ -58,7 +60,6 @@ describe("mistakeLogDisplay", () => {
 
     expect(
       filterMistakeEntries(entries, {
-        isQuizScoped: false,
         quizFilter: "quiz-1",
         questionTypeFilter: "single_choice",
         quizzes,
@@ -75,31 +76,80 @@ describe("mistakeLogDisplay", () => {
     expect(resolveActiveMistakeEntry([], "quiz-1:q1")).toBeNull();
   });
 
-  it("returns a filter-specific empty reason when filters hide all rows", () => {
-    expect(
-      resolveScopedEmptyReason({
-        filteredCount: 0,
-        isQuizScoped: false,
-        quizFilter: "quiz-2",
-        questionTypeFilter: "all",
-        goals: [],
-        rawEntries: [entry()],
-        globalEmptyReason: null,
-      }),
-    ).toBe("no_mistakes");
+  it("keeps a selected quiz without qualifying mistakes in the filter options", () => {
+    const options = buildMistakeQuizFilterOptions({
+      quizzesWithMistakes: [{ quizId: "quiz-2", quizTitle: "Quiz Two" }],
+      quizFilter: "quiz-1",
+      quizzes,
+      goals: [],
+    });
+
+    expect(options).toEqual([
+      { value: "all", label: "All quizzes" },
+      { value: "quiz-1", label: "Quiz One" },
+      { value: "quiz-2", label: "Quiz Two" },
+    ]);
   });
 
-  it("uses the global empty reason when no filters are active", () => {
+  it("explains why a filtered quiz has no mistakes", () => {
+    const base = {
+      qualifyingEntries: [],
+      rawEntries: [],
+      goals: [],
+      quizzes,
+    };
+    const attempted: Goal = {
+      id: "goal-1",
+      quizId: "quiz-1",
+      quizTitle: "Quiz One",
+      description: "",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      attempts: [
+        {
+          id: "a1",
+          takenAt: "2026-01-01T00:00:00.000Z",
+          score: 1,
+          total: 2,
+          percentage: 50,
+          incorrectCount: 1,
+        },
+      ],
+    };
+
+    expect(describeFilteredEmptyMistakes({ ...base, quizFilter: "quiz-1" })).toBe(
+      "Quiz One has no scored attempts yet.",
+    );
     expect(
-      resolveScopedEmptyReason({
-        filteredCount: 0,
-        isQuizScoped: false,
-        quizFilter: "all",
-        questionTypeFilter: "all",
-        goals: [],
-        rawEntries: [],
-        globalEmptyReason: "no_attempts",
+      describeFilteredEmptyMistakes({ ...base, quizFilter: "quiz-1", goals: [attempted] }),
+    ).toBe("Quiz One has no mistakes or flagged questions.");
+    expect(
+      describeFilteredEmptyMistakes({
+        ...base,
+        quizFilter: "quiz-1",
+        goals: [attempted],
+        rawEntries: [entry()],
       }),
-    ).toBe("no_attempts");
+    ).toBe("None of the mistakes in Quiz One meet your current thresholds.");
+  });
+
+  it("falls back to a generic message for other filters", () => {
+    expect(
+      describeFilteredEmptyMistakes({
+        quizFilter: "quiz-1",
+        qualifyingEntries: [entry()],
+        rawEntries: [entry()],
+        goals: [],
+        quizzes,
+      }),
+    ).toBe("No mistakes match the current filters.");
+    expect(
+      describeFilteredEmptyMistakes({
+        quizFilter: "all",
+        qualifyingEntries: [entry()],
+        rawEntries: [entry()],
+        goals: [],
+        quizzes,
+      }),
+    ).toBe("No mistakes match the current filters.");
   });
 });

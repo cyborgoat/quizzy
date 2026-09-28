@@ -1,5 +1,4 @@
 import type { ReactTable as TanStackTable, SortingState } from "@tanstack/react-table";
-import { detectEmptyReason } from "@/lib/mistakeLog";
 import type { AppTableFeatures } from "@/lib/tableFeatures";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
@@ -8,7 +7,7 @@ import {
   shuffleArrayKeepingKeyedItemAtIndex,
 } from "@/lib/questionOrder";
 import type { Goal } from "@/types/goal";
-import type { MistakeEntry, MistakeLogEmptyReason } from "@/types/mistakeLog";
+import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizQuestion, QuizSource } from "@/types/quiz";
 
 export type QuestionTypeFilter = "all" | QuizQuestion["type"];
@@ -64,8 +63,6 @@ export function formatMistakeQuestionType(entry: MistakeEntry, quizzes: QuizSour
 export function filterMistakeEntries(
   entries: MistakeEntry[],
   options: {
-    scopedQuizId?: string;
-    isQuizScoped: boolean;
     quizFilter: string;
     questionTypeFilter: QuestionTypeFilter;
     quizzes: QuizSource[];
@@ -73,14 +70,8 @@ export function filterMistakeEntries(
 ) {
   let filtered = entries;
 
-  const quizId = options.isQuizScoped
-    ? options.scopedQuizId
-    : options.quizFilter === "all"
-      ? undefined
-      : options.quizFilter;
-
-  if (quizId) {
-    filtered = filtered.filter((entry) => entry.quizId === quizId);
+  if (options.quizFilter !== "all") {
+    filtered = filtered.filter((entry) => entry.quizId === options.quizFilter);
   }
 
   if (options.questionTypeFilter !== "all") {
@@ -176,31 +167,66 @@ export function getMistakeQuestionContext(
   return { question, questionIndex: questionIndex >= 0 ? questionIndex : 0 };
 }
 
-export function resolveScopedEmptyReason(options: {
-  filteredCount: number;
-  isQuizScoped: boolean;
-  scopedQuizId?: string;
+/**
+ * Quiz filter options: every quiz with qualifying mistakes, plus the selected
+ * quiz even when it has none, so a linked filter stays visible and clearable.
+ */
+export function buildMistakeQuizFilterOptions(options: {
+  quizzesWithMistakes: { quizId: string; quizTitle: string }[];
   quizFilter: string;
-  questionTypeFilter: QuestionTypeFilter;
+  quizzes: QuizSource[];
   goals: Goal[];
+}) {
+  const quizOptions = options.quizzesWithMistakes.map((quiz) => ({
+    value: quiz.quizId,
+    label: quiz.quizTitle,
+  }));
+
+  if (
+    options.quizFilter !== "all" &&
+    !quizOptions.some((option) => option.value === options.quizFilter)
+  ) {
+    quizOptions.push({
+      value: options.quizFilter,
+      label: resolveMistakeQuizTitle(options.quizFilter, options.quizzes, options.goals),
+    });
+    quizOptions.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  return [{ value: "all", label: "All quizzes" }, ...quizOptions];
+}
+
+function resolveMistakeQuizTitle(quizId: string, quizzes: QuizSource[], goals: Goal[]) {
+  return (
+    quizzes.find((source) => source.quiz.id === quizId)?.quiz.title ??
+    goals.find((goal) => goal.quizId === quizId)?.quizTitle ??
+    quizId
+  );
+}
+
+/** Message for a table whose filters hide every qualifying mistake. */
+export function describeFilteredEmptyMistakes(options: {
+  quizFilter: string;
+  qualifyingEntries: MistakeEntry[];
   rawEntries: MistakeEntry[];
-  globalEmptyReason: MistakeLogEmptyReason;
-}): MistakeLogEmptyReason {
-  if (options.filteredCount > 0) return null;
+  goals: Goal[];
+  quizzes: QuizSource[];
+}): string {
+  const fallback = "No mistakes match the current filters.";
+  if (options.quizFilter === "all") return fallback;
 
-  if (!options.isQuizScoped && (options.quizFilter !== "all" || options.questionTypeFilter !== "all")) {
-    return "no_mistakes";
-  }
+  const quizId = options.quizFilter;
+  // The quiz has qualifying mistakes, so another filter is hiding them.
+  if (options.qualifyingEntries.some((entry) => entry.quizId === quizId)) return fallback;
 
-  if (options.isQuizScoped && options.scopedQuizId) {
-    const scopedGoal = options.goals.find((goal) => goal.quizId === options.scopedQuizId);
-    const hasQuizAttempts = (scopedGoal?.attempts.length ?? 0) > 0;
-    const quizRaw = options.rawEntries.filter((entry) => entry.quizId === options.scopedQuizId);
-    const hasQuizMistakes = quizRaw.some(
-      (entry) => entry.mistakeCount > 0 || entry.flaggedCount > 0,
-    );
-    return detectEmptyReason(hasQuizAttempts, hasQuizMistakes, options.filteredCount);
-  }
+  const title = resolveMistakeQuizTitle(quizId, options.quizzes, options.goals);
+  const goal = options.goals.find((item) => item.quizId === quizId);
+  if (!goal?.attempts.length) return `${title} has no scored attempts yet.`;
 
-  return options.globalEmptyReason;
+  const hasMistakes = options.rawEntries.some(
+    (entry) => entry.quizId === quizId && (entry.mistakeCount > 0 || entry.flaggedCount > 0),
+  );
+  return hasMistakes
+    ? `None of the mistakes in ${title} meet your current thresholds.`
+    : `${title} has no mistakes or flagged questions.`;
 }

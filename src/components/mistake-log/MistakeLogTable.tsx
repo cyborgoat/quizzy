@@ -5,6 +5,7 @@ import {
   dataTableFixedLayoutClass,
   dataTableHeadClass,
 } from "@/components/ui/data-table";
+import { Button } from "@/components/ui/button";
 import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination";
 import { CollapsibleSectionPanel } from "@/components/ui/section-panel";
 import {
@@ -29,6 +30,8 @@ export function MistakeLogTable({
   expanded,
   onExpandedChange,
   onSelectEntry,
+  emptyMessage,
+  onClearFilters,
 }: {
   table: TanStackTable<AppTableFeatures, MistakeEntry>;
   activeEntry: MistakeEntry | null;
@@ -36,6 +39,9 @@ export function MistakeLogTable({
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   onSelectEntry: (entry: MistakeEntry) => void;
+  /** Shown in place of rows when the filters hide every mistake. */
+  emptyMessage: string | null;
+  onClearFilters: () => void;
 }) {
   return (
     <CollapsibleSectionPanel
@@ -68,6 +74,24 @@ export function MistakeLogTable({
                 ))}
               </TableHeader>
               <TableBody>
+                {emptyMessage && (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell
+                      colSpan={table.getAllLeafColumns().length}
+                      className="px-3 py-8 text-center text-sm text-zinc-500"
+                    >
+                      <p>{emptyMessage}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={onClearFilters}
+                      >
+                        Clear filters
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )}
                 {table.getRowModel().rows.map((row) => {
                   const isActive =
                     activeEntry !== null &&

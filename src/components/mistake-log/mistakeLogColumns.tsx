@@ -21,9 +21,8 @@ import type { QuizSource } from "@/types/quiz";
 
 export type MistakeLogColumnOptions = {
   quizzes: QuizSource[];
-  quizzesWithMistakes: { quizId: string; quizTitle: string }[];
-  isQuizScoped: boolean;
-  effectiveQuizFilter: string;
+  quizFilterOptions: { value: string; label: string }[];
+  quizFilter: string;
   questionTypeFilter: QuestionTypeFilter;
   onQuizFilterChange: (value: string) => void;
   onQuestionTypeFilterChange: (value: QuestionTypeFilter) => void;
@@ -32,9 +31,8 @@ export type MistakeLogColumnOptions = {
 
 export function buildMistakeLogColumns({
   quizzes,
-  quizzesWithMistakes,
-  isQuizScoped,
-  effectiveQuizFilter,
+  quizFilterOptions,
+  quizFilter,
   questionTypeFilter,
   onQuizFilterChange,
   onQuestionTypeFilterChange,
@@ -43,24 +41,15 @@ export function buildMistakeLogColumns({
   return [
     {
       accessorKey: "quizTitle",
-      header: () =>
-        isQuizScoped ? (
-          <DataTableColumnHeader label="Quiz Name" />
-        ) : (
-          <DataTableColumnFilterHeader
-            label="Quiz Name"
-            filterValue={effectiveQuizFilter}
-            menuLabel="Filter by quiz"
-            options={[
-              { value: "all", label: "All quizzes" },
-              ...quizzesWithMistakes.map((quiz) => ({
-                value: quiz.quizId,
-                label: quiz.quizTitle,
-              })),
-            ]}
-            onFilterChange={onQuizFilterChange}
-          />
-        ),
+      header: () => (
+        <DataTableColumnFilterHeader
+          label="Quiz Name"
+          filterValue={quizFilter}
+          menuLabel="Filter by quiz"
+          options={quizFilterOptions}
+          onFilterChange={onQuizFilterChange}
+        />
+      ),
       cell: ({ row }) => <DataTableTruncatedCell value={row.original.quizTitle} />,
     },
     {

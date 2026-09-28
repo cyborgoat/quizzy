@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { Settings } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -16,7 +17,18 @@ import { useMistakeLogPageState } from "@/hooks/useMistakeLogPageState";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 
 export function MistakeLogPage() {
-  const { quizId: scopedQuizId } = Route.useSearch();
+  const { quizId } = Route.useSearch();
+  const navigate = useNavigate();
+  const quizFilter = quizId ?? "all";
+  const setQuizFilter = useCallback(
+    (value: string) =>
+      void navigate({
+        to: "/mistakes",
+        search: value === "all" ? {} : { quizId: value },
+        replace: true,
+      }),
+    [navigate],
+  );
   const { goals } = useGoals();
   const {
     qualifyingEntries,
@@ -32,9 +44,8 @@ export function MistakeLogPage() {
   const { getNotesForQuestion } = useKnowledgeLibrary();
 
   const {
-    isQuizScoped,
-    scopedQuizTitle,
-    scopedEmptyReason,
+    filteredEmptyMessage,
+    clearFilters,
     isMistakeListExpanded,
     setIsMistakeListExpanded,
     studyMode,
@@ -52,9 +63,9 @@ export function MistakeLogPage() {
   } = useMistakeLogPageState({
     qualifyingEntries,
     rawEntries,
-    emptyReason,
     quizzesWithMistakes,
-    scopedQuizId,
+    quizFilter,
+    onQuizFilterChange: setQuizFilter,
     goals,
     quizzes,
     getNotesForQuestion,
@@ -75,9 +86,6 @@ export function MistakeLogPage() {
           </Link>
           .
         </p>
-        {isQuizScoped && scopedQuizTitle && (
-          <p className="mt-1 text-sm font-medium text-zinc-700">{scopedQuizTitle}</p>
-        )}
       </PageHeader>
 
       {error && (
@@ -96,12 +104,8 @@ export function MistakeLogPage() {
 
       {isLoading ? (
         <LoadingState message="Loading mistake data…" className="py-12" />
-      ) : scopedEmptyReason ? (
-        <EmptyMistakeLog
-          reason={scopedEmptyReason}
-          thresholds={thresholds}
-          scopedQuizTitle={isQuizScoped ? (scopedQuizTitle ?? undefined) : undefined}
-        />
+      ) : emptyReason ? (
+        <EmptyMistakeLog reason={emptyReason} thresholds={thresholds} />
       ) : (
         <>
           <MistakeLogTable
@@ -111,6 +115,8 @@ export function MistakeLogPage() {
             expanded={isMistakeListExpanded}
             onExpandedChange={setIsMistakeListExpanded}
             onSelectEntry={selectEntry}
+            emptyMessage={filteredEmptyMessage}
+            onClearFilters={clearFilters}
           />
 
           {activeEntry && (

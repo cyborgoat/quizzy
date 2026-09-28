@@ -9,27 +9,29 @@ import { appTableFeatures } from "@/lib/tableFeatures";
 import {
   applyMistakeLogShuffle,
   buildMistakeEntryOrderKey,
+  buildMistakeQuizFilterOptions,
   DEFAULT_MISTAKE_SORTING,
+  describeFilteredEmptyMistakes,
   filterMistakeEntries,
   findMistakeEntryIndex,
   getMistakeQuestionContext,
   resolveActiveMistakeEntry,
-  resolveScopedEmptyReason,
   syncTablePageForEntry,
   type QuestionTypeFilter,
 } from "@/lib/mistakeLogDisplay";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import type { Goal } from "@/types/goal";
 import type { KnowledgeItem } from "@/types/knowledge";
-import type { MistakeEntry, MistakeLogEmptyReason } from "@/types/mistakeLog";
+import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizSource } from "@/types/quiz";
 
 type UseMistakeLogPageStateOptions = {
   qualifyingEntries: MistakeEntry[];
   rawEntries: MistakeEntry[];
-  emptyReason: MistakeLogEmptyReason;
   quizzesWithMistakes: { quizId: string; quizTitle: string }[];
-  scopedQuizId?: string;
+  /** Selected quiz id, or "all". Owned by the route so links can preset it. */
+  quizFilter: string;
+  onQuizFilterChange: (quizFilter: string) => void;
   goals: Goal[];
   quizzes: QuizSource[];
   getNotesForQuestion: (quizId: string, questionId: string) => KnowledgeItem[];
@@ -38,14 +40,13 @@ type UseMistakeLogPageStateOptions = {
 export function useMistakeLogPageState({
   qualifyingEntries,
   rawEntries,
-  emptyReason,
   quizzesWithMistakes,
-  scopedQuizId,
+  quizFilter,
+  onQuizFilterChange,
   goals,
   quizzes,
   getNotesForQuestion,
 }: UseMistakeLogPageStateOptions) {
-  const [quizFilter, setQuizFilter] = useState("all");
   const [questionTypeFilter, setQuestionTypeFilter] = useState<QuestionTypeFilter>("all");
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_MISTAKE_SORTING);
   const [pagination, setPagination] = useState<PaginationState>({
@@ -60,38 +61,22 @@ export function useMistakeLogPageState({
   const [shufflePinnedIndex, setShufflePinnedIndex] = useState(0);
   const [shufflePinnedKey, setShufflePinnedKey] = useState<string | null>(null);
 
-  const isQuizScoped = Boolean(scopedQuizId);
-  const effectiveQuizFilter =
-    quizFilter === "all" ||
-    quizzesWithMistakes.some((quiz) => quiz.quizId === quizFilter)
-      ? quizFilter
-      : "all";
-
-  const scopedQuizTitle =
-    scopedQuizId &&
-    (quizzes.find((source) => source.quiz.id === scopedQuizId)?.quiz.title ??
-      qualifyingEntries.find((entry) => entry.quizId === scopedQuizId)?.quizTitle);
-
   const filteredEntries = useMemo(
     () =>
       filterMistakeEntries(qualifyingEntries, {
-        scopedQuizId,
-        isQuizScoped,
-        quizFilter: effectiveQuizFilter,
+        quizFilter,
         questionTypeFilter,
         quizzes,
       }),
-    [
-      qualifyingEntries,
-      scopedQuizId,
-      isQuizScoped,
-      effectiveQuizFilter,
-      questionTypeFilter,
-      quizzes,
-    ],
+    [qualifyingEntries, quizFilter, questionTypeFilter, quizzes],
   );
 
-  const filterResetKey = `${effectiveQuizFilter}::${questionTypeFilter}::${isQuizScoped}::${scopedQuizId ?? ""}`;
+  const quizFilterOptions = useMemo(
+    () => buildMistakeQuizFilterOptions({ quizzesWithMistakes, quizFilter, quizzes, goals }),
+    [quizzesWithMistakes, quizFilter, quizzes, goals],
+  );
+
+  const filterResetKey = `${quizFilter}::${questionTypeFilter}`;
   const [prevFilterResetKey, setPrevFilterResetKey] = useState(filterResetKey);
   if (filterResetKey !== prevFilterResetKey) {
     setPrevFilterResetKey(filterResetKey);
@@ -118,20 +103,19 @@ export function useMistakeLogPageState({
     () =>
       buildMistakeLogColumns({
         quizzes,
-        quizzesWithMistakes,
-        isQuizScoped,
-        effectiveQuizFilter,
+        quizFilterOptions,
+        quizFilter,
         questionTypeFilter,
-        onQuizFilterChange: setQuizFilter,
+        onQuizFilterChange,
         onQuestionTypeFilterChange: setQuestionTypeFilter,
         getNotesForQuestion,
       }),
     [
       quizzes,
-      quizzesWithMistakes,
-      isQuizScoped,
-      effectiveQuizFilter,
+      quizFilterOptions,
+      quizFilter,
       questionTypeFilter,
+      onQuizFilterChange,
       getNotesForQuestion,
     ],
   );
@@ -225,29 +209,24 @@ export function useMistakeLogPageState({
     selectEntry(sortedEntries[activePosition + 1]);
   }
 
-  const scopedEmptyReason = useMemo(
+  const filteredEmptyMessage = useMemo(
     () =>
-      resolveScopedEmptyReason({
-        filteredCount: filteredEntries.length,
-        isQuizScoped,
-        scopedQuizId,
-        quizFilter: effectiveQuizFilter,
-        questionTypeFilter,
-        goals,
-        rawEntries,
-        globalEmptyReason: emptyReason,
-      }),
-    [
-      filteredEntries.length,
-      isQuizScoped,
-      scopedQuizId,
-      effectiveQuizFilter,
-      questionTypeFilter,
-      goals,
-      rawEntries,
-      emptyReason,
-    ],
+      filteredEntries.length > 0
+        ? null
+        : describeFilteredEmptyMistakes({
+            quizFilter,
+            qualifyingEntries,
+            rawEntries,
+            goals,
+            quizzes,
+          }),
+    [filteredEntries.length, quizFilter, qualifyingEntries, rawEntries, goals, quizzes],
   );
+
+  function clearFilters() {
+    onQuizFilterChange("all");
+    setQuestionTypeFilter("all");
+  }
 
   const activeQuestionContext = useMemo(
     () => getMistakeQuestionContext(activeEntry, quizzes),
@@ -255,9 +234,8 @@ export function useMistakeLogPageState({
   );
 
   return {
-    isQuizScoped,
-    scopedQuizTitle,
-    scopedEmptyReason,
+    filteredEmptyMessage,
+    clearFilters,
     isMistakeListExpanded,
     setIsMistakeListExpanded,
     studyMode,
