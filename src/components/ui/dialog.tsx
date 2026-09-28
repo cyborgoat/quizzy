@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- Radix primitive aliases are intentional */
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
