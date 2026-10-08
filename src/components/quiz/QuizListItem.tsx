@@ -1,9 +1,10 @@
 import { ArchiveRestore, Play, Settings } from "lucide-react";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
-import { QuizStatusBadge } from "@/components/quiz/QuizStatusBadge";
+import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listItemTitleClassName } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
 import { quizProgressMetrics, quizProgressStatus } from "@/lib/quizProgress";
@@ -26,9 +27,15 @@ export function QuizListItem({
   const { attemptCount, highestScore } = quizProgressMetrics(goal);
 
   return (
-    <article className="group flex min-h-full flex-col rounded-xl border border-zinc-200 bg-white p-4 transition-[border-color,box-shadow] hover:border-zinc-300 hover:shadow-sm focus-within:border-zinc-300 focus-within:shadow-sm">
+    <article className="group relative flex min-h-full flex-col rounded-xl border border-zinc-200 bg-zinc-50 p-4 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
+      >
+        <span className="absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 -translate-x-full bg-gradient-to-r from-transparent via-zinc-900/[0.04] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[300%]" />
+      </span>
       <div className="flex items-center justify-between gap-3">
-        <QuizStatusBadge status={source.archived ? "archived" : status} />
+        <QuizStatusIcon status={source.archived ? "archived" : status} />
         <Button
           size="icon"
           variant="ghost"
@@ -48,21 +55,21 @@ export function QuizListItem({
         </p>
       </div>
 
-      <p className="mt-3 line-clamp-3 flex-1 text-xs leading-5 text-zinc-600">
+      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-5 text-zinc-600">
         {source.quiz.description ?? "No description provided."}
       </p>
 
       {source.quiz.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1">
           {source.quiz.tags.map((tag) => (
-            <Badge key={tag} className={knowledgeTagBadgeClassName}>
+            <Badge key={tag} className={cn(knowledgeTagBadgeClassName, "text-xs")}>
               {tag}
             </Badge>
           ))}
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
+      <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-zinc-100 pt-3 text-xs text-zinc-600">
         <span>{source.quiz.questions.length} questions</span>
         <span aria-hidden="true">·</span>
         {goal ? (
@@ -86,18 +93,22 @@ export function QuizListItem({
         )}
       </div>
 
-      <Button
-        className="mt-3 w-full bg-zinc-900 hover:bg-zinc-800"
-        disabled={source.archived}
-        onClick={() => openQuizStart({ quizId: source.quiz.id })}
-      >
-        {source.archived ? (
-          <ArchiveRestore className="size-4" />
-        ) : (
-          <Play className="size-4 fill-current" />
-        )}
-        {source.archived ? "Restore to start" : "Start quiz"}
-      </Button>
+      <div className="mt-3 flex justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-zinc-700 hover:bg-zinc-900 hover:text-white"
+          disabled={source.archived}
+          onClick={() => openQuizStart({ quizId: source.quiz.id })}
+        >
+          {source.archived ? (
+            <ArchiveRestore className="size-3.5" />
+          ) : (
+            <Play className="size-3.5 fill-current" />
+          )}
+          {source.archived ? "Restore to start" : "Start quiz"}
+        </Button>
+      </div>
     </article>
   );
 }
