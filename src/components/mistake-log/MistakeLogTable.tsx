@@ -101,7 +101,7 @@ export function MistakeLogTable({
                   return (
                     <TableRow
                       key={row.id}
-                      className={cn("cursor-pointer", isActive && "bg-zinc-50")}
+                      className={cn("cursor-pointer", isActive && "bg-white")}
                       data-state={isActive ? "selected" : undefined}
                       onClick={() => onSelectEntry(row.original)}
                     >

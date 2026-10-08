@@ -8,6 +8,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { Badge } from "@/components/ui/badge";
+import { CardShine } from "@/components/ui/card-shine";
 import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-styles";
 import { IconActionButton } from "@/components/ui/icon-action-button";
@@ -75,7 +76,8 @@ function AttemptHistoryRow({
   const passed = attemptPassed(entry.attempt, entry.targetScore);
 
   return (
-    <li className="group flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-within:border-zinc-300">
+    <li className="group relative flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
+      <CardShine />
       <Link
         to="/quizzes/$quizId/attempts/$attemptId"
         params={{ quizId: entry.quizId, attemptId: entry.attempt.id }}
@@ -226,7 +228,7 @@ export function AttemptHistoryPage() {
         description="Review saved attempts, compare your results, and return to quizzes that need more practice."
       />
 
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-zinc-200 bg-zinc-200 shadow-sm sm:grid-cols-4">
         {[
           ["Attempts", String(stats.count)],
           [
@@ -236,7 +238,7 @@ export function AttemptHistoryPage() {
           ["Best score", stats.bestScore === undefined ? "—" : `${stats.bestScore}%`],
           ["Pass rate", stats.passRate === undefined ? "—" : `${stats.passRate}%`],
         ].map(([label, value]) => (
-          <div key={label} className="bg-white px-4 py-3">
+          <div key={label} className="bg-zinc-50 px-4 py-3">
             <dt className="text-xs text-zinc-500">{label}</dt>
             <dd className="mt-1 text-lg font-semibold tabular-nums text-zinc-950">
               {value}

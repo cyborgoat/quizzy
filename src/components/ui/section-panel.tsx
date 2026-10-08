@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
-const panelClassName = "overflow-hidden rounded-lg border border-zinc-200 bg-white";
+const panelClassName = "overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm";
 const panelHeaderClassName =
   "flex items-center justify-between gap-2 border-b border-zinc-200/55 px-3 py-2";
 
@@ -113,7 +113,7 @@ export function CollapsibleSectionPanel({
       >
         <AccordionItem value="content">
           <div className="flex items-center gap-2 px-3 py-2">
-            <AccordionTrigger className="min-w-0 gap-2 p-0 hover:bg-zinc-50">
+            <AccordionTrigger className="min-w-0 gap-2 p-0 hover:bg-transparent">
               <ChevronDown className="accordion-chevron size-4 shrink-0 text-zinc-500 transition-transform duration-200 motion-reduce:transition-none" />
               <PanelTitle icon={icon} title={title} count={count} />
             </AccordionTrigger>

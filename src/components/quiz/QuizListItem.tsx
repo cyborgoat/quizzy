@@ -1,6 +1,7 @@
 import { ArchiveRestore, Play, Settings } from "lucide-react";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
+import { CardShine } from "@/components/ui/card-shine";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listItemTitleClassName } from "@/components/ui/typography";
@@ -28,12 +29,7 @@ export function QuizListItem({
 
   return (
     <article className="group relative flex min-h-full flex-col rounded-xl border border-zinc-200 bg-zinc-50 p-4 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
-      >
-        <span className="absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 -translate-x-full bg-gradient-to-r from-transparent via-zinc-900/[0.04] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[300%]" />
-      </span>
+      <CardShine />
       <div className="flex items-center justify-between gap-3">
         <QuizStatusIcon status={source.archived ? "archived" : status} />
         <Button
