@@ -1,4 +1,4 @@
-import { ArchiveRestore, Play, Settings } from "lucide-react";
+import { ArchiveRestore, Info, Play } from "lucide-react";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
 import { CardShine } from "@/components/ui/card-shine";
@@ -37,10 +37,10 @@ export function QuizListItem({
           variant="ghost"
           className={revealActionClassName}
           onClick={() => onOpenDetails(source.quiz.id)}
-          aria-label={`Open details and settings for ${source.quiz.title}`}
-          title="Details and settings"
+          aria-label={`Open details for ${source.quiz.title}`}
+          title="Details"
         >
-          <Settings className="size-4" />
+          <Info className="size-4" />
         </Button>
       </div>
 

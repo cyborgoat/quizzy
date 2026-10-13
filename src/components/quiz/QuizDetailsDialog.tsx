@@ -3,6 +3,7 @@ import {
   Archive,
   ArchiveRestore,
   ClipboardList,
+  MoreHorizontal,
   Pencil,
   Play,
   Target,
@@ -15,7 +16,6 @@ import { GoalAttemptRow } from "@/components/goals/GoalAttemptRow";
 import { GoalSettingsDialog } from "@/components/goals/GoalSettingsDialog";
 import { QuizStatusBadge } from "@/components/quiz/QuizStatusBadge";
 import { Button } from "@/components/ui/button";
-import { buttonClassName } from "@/components/ui/button-styles";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +23,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IconActionButton } from "@/components/ui/icon-action-button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
@@ -49,6 +52,7 @@ export function QuizDetailsDialog({
   const { setQuizArchived, deleteQuizFile } = useQuizLibrary();
   const { openQuizStart } = useQuizStartDialog();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [managementAction, setManagementAction] = useState<
     "archive" | "restore" | "delete" | null
   >(null);
@@ -109,6 +113,70 @@ export function QuizDetailsDialog({
     <>
       <Dialog open onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute right-14 top-4 text-zinc-500 hover:bg-zinc-100"
+                aria-label="Quiz actions"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>Quiz actions</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                {goal ? (
+                  <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+                    <Pencil className="size-4" />
+                    Goal settings
+                  </DropdownMenuItem>
+                ) : (
+                  !archived && (
+                    <DropdownMenuItem onSelect={() => setCreateGoalOpen(true)}>
+                      <Target className="size-4" />
+                      Add goal
+                    </DropdownMenuItem>
+                  )
+                )}
+                {goal && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/mistakes" search={{ quizId: quiz.id }}>
+                      <ClipboardList className="size-4" />
+                      View mistakes
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={isManagingQuiz}
+                onSelect={() => void handleArchiveChange(!archived)}
+              >
+                {archived ? (
+                  <ArchiveRestore className="size-4" />
+                ) : (
+                  <Archive className="size-4" />
+                )}
+                {managementAction === "restore"
+                  ? "Restoring…"
+                  : managementAction === "archive"
+                    ? "Archiving…"
+                    : archived
+                      ? "Restore quiz"
+                      : "Archive quiz"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isManagingQuiz}
+                className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                onSelect={() => void handleDeleteQuiz()}
+              >
+                <Trash2 className="size-4" />
+                {managementAction === "delete" ? "Deleting…" : "Delete quiz"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DialogHeader>
             <div className="mb-3">
               <QuizStatusBadge status={archived ? "archived" : status} />
@@ -134,85 +202,13 @@ export function QuizDetailsDialog({
           </dl>
 
           {!archived && (
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Button
-                className="w-full bg-zinc-900 hover:bg-zinc-800 sm:flex-1"
-                onClick={handleStart}
-              >
-                <Play className="size-4 fill-current" />
-                {attemptCount > 0 ? "Retake quiz" : "Start quiz"}
-              </Button>
-              <div className="flex items-center gap-1">
-                {goal ? (
-                  <>
-                    <IconActionButton
-                      icon={Pencil}
-                      label="Goal settings"
-                      onClick={() => setSettingsOpen(true)}
-                    />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          to="/mistakes"
-                          search={{ quizId: quiz.id }}
-                          aria-label="View mistakes"
-                          className={buttonClassName({
-                            variant: "ghost",
-                            size: "icon",
-                            className: "size-8 text-zinc-900 hover:bg-zinc-100/60",
-                          })}
-                        >
-                          <ClipboardList className="size-4" />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">View mistakes</TooltipContent>
-                    </Tooltip>
-                  </>
-                ) : (
-                  <CreateGoalDialog
-                    quiz={quiz}
-                    triggerTooltip="Add goal"
-                    trigger={
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-8 text-zinc-900 hover:bg-zinc-100/60"
-                        aria-label="Add goal"
-                      >
-                        <Target className="size-4" />
-                      </Button>
-                    }
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {archived && goal && (
-            <div className="mt-4 flex items-center gap-1">
-              <IconActionButton
-                icon={Pencil}
-                label="Goal settings"
-                onClick={() => setSettingsOpen(true)}
-              />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link
-                    to="/mistakes"
-                    search={{ quizId: quiz.id }}
-                    aria-label="View mistakes"
-                    className={buttonClassName({
-                      variant: "ghost",
-                      size: "icon",
-                      className: "size-8 text-zinc-900 hover:bg-zinc-100/60",
-                    })}
-                  >
-                    <ClipboardList className="size-4" />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">View mistakes</TooltipContent>
-              </Tooltip>
-            </div>
+            <Button
+              className="mt-4 w-full bg-zinc-900 hover:bg-zinc-800"
+              onClick={handleStart}
+            >
+              <Play className="size-4 fill-current" />
+              {attemptCount > 0 ? "Retake quiz" : "Start quiz"}
+            </Button>
           )}
 
           <section className="mt-6 border-t border-zinc-200 pt-4">
@@ -241,36 +237,21 @@ export function QuizDetailsDialog({
             )}
           </section>
 
-          <footer className="mt-6 flex items-center justify-between gap-4 border-t border-zinc-200 pt-4">
+          <footer className="mt-6 flex items-center border-t border-zinc-200 pt-4">
             <span className="min-w-0 truncate text-xs text-zinc-500" title={fileName}>
               {fileName}
             </span>
-            <div className="flex shrink-0 items-center gap-1">
-              <IconActionButton
-                icon={archived ? ArchiveRestore : Archive}
-                label={
-                  managementAction === "restore"
-                    ? "Restoring…"
-                    : managementAction === "archive"
-                      ? "Archiving…"
-                      : archived
-                        ? "Restore quiz"
-                        : "Archive quiz"
-                }
-                disabled={isManagingQuiz}
-                onClick={() => void handleArchiveChange(!archived)}
-              />
-              <IconActionButton
-                icon={Trash2}
-                label={managementAction === "delete" ? "Deleting…" : "Permanently delete quiz"}
-                disabled={isManagingQuiz}
-                className="text-zinc-600 hover:bg-red-50 hover:text-red-600 focus-visible:bg-red-50 focus-visible:text-red-600"
-                onClick={() => void handleDeleteQuiz()}
-              />
-            </div>
           </footer>
         </DialogContent>
       </Dialog>
+
+      {!goal && (
+        <CreateGoalDialog
+          quiz={quiz}
+          open={createGoalOpen}
+          onOpenChange={setCreateGoalOpen}
+        />
+      )}
 
       {goal && (
         <GoalSettingsDialog
