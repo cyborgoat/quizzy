@@ -1,4 +1,4 @@
-import { ArchiveRestore, Info, Play } from "lucide-react";
+import { ArchiveRestore, Eye, Play } from "lucide-react";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
 import { CardShine } from "@/components/ui/card-shine";
@@ -50,7 +50,7 @@ export function QuizListItem({
           aria-label={`Open details for ${source.quiz.title}`}
           title="Details"
         >
-          <Info className="size-4" />
+          <Eye className="size-4" />
         </Button>
       </div>
 
@@ -94,6 +94,7 @@ export function QuizListItem({
           className={cn(
             "h-7 shrink-0 text-zinc-700 hover:bg-zinc-900 hover:text-white",
             revealClassName,
+            "transition-[opacity,color,background-color] duration-300 ease-in-out",
           )}
           disabled={source.archived}
           onClick={() => openQuizStart({ quizId: source.quiz.id })}
