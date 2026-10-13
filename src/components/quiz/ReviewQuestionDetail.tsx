@@ -52,6 +52,7 @@ export function ReviewQuestionDetail({
   concealAnswers = false,
   showExplanation = true,
   compact = false,
+  flat = false,
   onStudyRevealChange,
 }: {
   question: QuizQuestion;
@@ -61,6 +62,7 @@ export function ReviewQuestionDetail({
   concealAnswers?: boolean;
   showExplanation?: boolean;
   compact?: boolean;
+  flat?: boolean;
   onStudyRevealChange?: (revealed: boolean) => void;
 }) {
   const [studyAnswer, setStudyAnswer] = useState<SubmittedAnswer | undefined>();
@@ -80,14 +82,18 @@ export function ReviewQuestionDetail({
     <article
       id={`review-question-${index}`}
       className={cn(
-        "scroll-mt-4 rounded-lg border border-zinc-200 bg-white",
-        compact ? "p-3" : "p-4 sm:p-5",
+        "scroll-mt-4",
+        flat ? "px-1" : "rounded-lg border border-zinc-200 bg-white",
+        compact ? (flat ? "py-1" : "p-3") : "p-4 sm:p-5",
         className,
       )}
     >
       <div className={cn("flex items-start", compact ? "gap-2" : "gap-3")}>
         <span
-          className="grid-center size-6 shrink-0 rounded-md border border-zinc-200 bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700"
+          className={cn(
+            "grid-center size-6 shrink-0 rounded-md bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700",
+            !flat && "border border-zinc-200",
+          )}
           aria-label={`Question ${index + 1}`}
         >
           {index + 1}
@@ -120,6 +126,7 @@ export function ReviewQuestionDetail({
                       : false
                 }
                 multiple={question.type === "multiple_choice"}
+                flat={flat}
                 locked={!concealAnswers || studySubmitted}
                 isCorrectAnswer={
                   revealed ? isOptionCorrect(question, optionIndex) : false

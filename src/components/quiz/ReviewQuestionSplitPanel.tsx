@@ -20,6 +20,7 @@ export function ReviewQuestionSplitPanel({
   noteDialogLayer,
   className,
   concealAnswers = false,
+  flat = false,
 }: {
   question: QuizQuestion;
   index: number;
@@ -29,6 +30,7 @@ export function ReviewQuestionSplitPanel({
   noteDialogLayer?: DialogStackLayer;
   className?: string;
   concealAnswers?: boolean;
+  flat?: boolean;
 }) {
   const [studyRevealed, setStudyRevealed] = useState(!concealAnswers);
   const revealed = studyRevealed;
@@ -49,10 +51,16 @@ export function ReviewQuestionSplitPanel({
         onStudyRevealChange={setStudyRevealed}
         showExplanation={false}
         compact
+        flat={flat}
         className="h-full"
       />
 
-      <aside className="flex min-w-0 flex-col gap-3 pt-3">
+      <aside
+        className={cn(
+          "flex min-w-0 flex-col gap-3",
+          flat ? "border-t border-zinc-200/60 pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-1" : "pt-3",
+        )}
+      >
         {question.explanation && (
           <QuestionExplanation
             explanation={question.explanation}

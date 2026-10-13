@@ -12,7 +12,7 @@ function ResultMetric({
   prominent?: boolean;
 }) {
   return (
-    <div className="bg-white px-4 py-3">
+    <div className="px-4 py-3">
       <p className="text-xs text-zinc-500">{label}</p>
       <p
         className={cn(
@@ -52,7 +52,7 @@ export function ReviewScoreSummary({
     : null;
 
   return (
-    <section className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <section className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm">
       {goalContext && formattedDate && (
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
           <p className="text-sm text-zinc-600">{formattedDate}</p>
@@ -73,8 +73,8 @@ export function ReviewScoreSummary({
 
       <div
         className={cn(
-          "grid grid-cols-2 gap-px bg-zinc-200 sm:grid-cols-4",
-          goalContext ? "border-t border-zinc-200" : "",
+          "grid grid-cols-2 divide-zinc-200/60 sm:grid-cols-4 sm:divide-x",
+          goalContext ? "border-t border-zinc-200/60" : "",
         )}
       >
         <ResultMetric label="Score" value={`${score.percentage}%`} prominent />
@@ -84,7 +84,7 @@ export function ReviewScoreSummary({
       </div>
 
       {score.indexItems.length > 0 && (
-        <div className="border-t border-zinc-200 px-5 py-4">
+        <div className="border-t border-zinc-200/60 px-5 py-4">
           <QuestionReviewIndexGrid
             items={score.indexItems}
             selectedIndex={selectedQuestionIndex}

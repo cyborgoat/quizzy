@@ -14,6 +14,7 @@ export function AnswerOptionRow({
   locked,
   isCorrectAnswer,
   isIncorrectSelection,
+  flat = false,
   onSelect,
 }: {
   index: number;
@@ -23,6 +24,7 @@ export function AnswerOptionRow({
   locked: boolean;
   isCorrectAnswer: boolean;
   isIncorrectSelection: boolean;
+  flat?: boolean;
   onSelect: () => void;
 }) {
   const ariaLabel = locked
@@ -49,9 +51,12 @@ export function AnswerOptionRow({
         !locked && "hover:border-zinc-400 hover:bg-white",
         selected && !locked && "border-zinc-900 bg-white",
         !selected && !locked && "border-zinc-200 bg-zinc-50",
-        locked && isCorrectAnswer && "border-emerald-400 bg-emerald-50",
-        locked && isIncorrectSelection && "border-red-400 bg-red-50",
-        locked && !isCorrectAnswer && !isIncorrectSelection && "border-zinc-200 bg-zinc-50",
+        locked && isCorrectAnswer && (flat ? "border-emerald-300 bg-emerald-50" : "border-emerald-400 bg-emerald-50"),
+        locked && isIncorrectSelection && (flat ? "border-red-300 bg-red-50" : "border-red-400 bg-red-50"),
+        locked &&
+          !isCorrectAnswer &&
+          !isIncorrectSelection &&
+          (flat ? "border-transparent bg-white" : "border-zinc-200 bg-zinc-50"),
       )}
     >
       <span className="grid-center h-5 shrink-0">

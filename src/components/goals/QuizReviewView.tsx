@@ -98,7 +98,7 @@ export function QuizReviewView({
       <div
         className={
           hasAttemptHistory
-            ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch"
+            ? "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch"
             : undefined
         }
       >
@@ -144,7 +144,7 @@ export function QuizReviewView({
                     aria-pressed={isActive}
                     size="sm"
                     variant="outline"
-                    className={toggleOutlineButtonClass(isActive)}
+                    className={cn("rounded-full", toggleOutlineButtonClass(isActive))}
                     onClick={() => navigation.onFilterToggle(value)}
                   >
                     {label} ({count})
@@ -168,6 +168,7 @@ export function QuizReviewView({
                   onNext={goToNextQuestion}
                   disablePrevious={resolvedFilteredPosition === 0}
                   disableNext={resolvedFilteredPosition >= filteredItems.length - 1}
+                  flat
                   panelKey={`${currentItem.question.id}:${currentItem.index}`}
                 />
               )

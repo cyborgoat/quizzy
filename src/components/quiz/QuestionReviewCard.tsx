@@ -3,6 +3,7 @@ import { ReviewQuestionSplitPanel } from "@/components/quiz/ReviewQuestionSplitP
 import { UnavailableQuestionCard } from "@/components/quiz/UnavailableQuestionMessage";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function QuestionReviewCard({
   header,
@@ -20,6 +21,7 @@ export function QuestionReviewCard({
   disableNext,
   panelKey,
   unavailablePrompt,
+  flat = false,
 }: {
   header?: ReactNode;
   headerActions?: ReactNode;
@@ -36,11 +38,19 @@ export function QuestionReviewCard({
   disableNext: boolean;
   panelKey?: string;
   unavailablePrompt?: string;
+  flat?: boolean;
 }) {
   const showHeader = Boolean(header || headerActions);
 
   return (
-    <section className="shrink-0 rounded-lg border border-zinc-200 bg-white p-3 lg:p-4">
+    <section
+      className={cn(
+        "shrink-0 p-3 lg:p-4",
+        flat
+          ? "rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm"
+          : "rounded-lg border border-zinc-200 bg-white",
+      )}
+    >
       {showHeader && (
         <header className="mb-3 flex items-start justify-between gap-3">
           {header ? <div className="min-w-0">{header}</div> : null}
@@ -68,6 +78,7 @@ export function QuestionReviewCard({
             record={record}
             quizId={quizId}
             concealAnswers={concealAnswers}
+            flat={flat}
           />
         ) : (
           <UnavailableQuestionCard prompt={unavailablePrompt} />

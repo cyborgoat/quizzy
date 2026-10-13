@@ -24,10 +24,10 @@ function AttemptHistoryList({
               to="/quizzes/$quizId/attempts/$attemptId"
               params={{ quizId, attemptId: attempt.id }}
               className={cn(
-                "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+                "flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                 isCurrent
-                  ? "border-zinc-700 bg-zinc-700 text-white"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-900 hover:border-zinc-300 hover:bg-zinc-100",
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-900 hover:bg-zinc-200/50",
               )}
               aria-current={isCurrent ? "page" : undefined}
             >
@@ -56,8 +56,8 @@ export function AttemptHistoryCard({
   const sortedAttempts = [...attempts].reverse();
 
   return (
-    <section className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <div className="border-b border-zinc-100 px-5 py-4">
+    <section className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm">
+      <div className="border-b border-zinc-200/60 px-5 py-4">
         <h2 className={panelHeadingClassName}>
           Attempt history
         </h2>
