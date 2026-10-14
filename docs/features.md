@@ -276,8 +276,8 @@ bottom-right corner of the screen:
 
 ## Quiz sessions
 
-Starting a quiz opens a confirmation dialog that shows the question-type
-breakdown and warns when the quiz has no goal. Click **Start quiz** to begin.
+Starting a quiz opens a friendly intro dialog that shows the question-type
+breakdown and suggests setting a goal when the quiz has none. Click **Start quiz** to begin.
 
 Every attempt is scored: you answer every question in the quiz, and the result
 is saved to the matching goal (if one exists) when you submit. Question order and

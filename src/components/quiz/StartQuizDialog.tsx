@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { groupQuestionsByType, QUESTION_TYPE_LABELS } from "@/lib/questionOrder";
@@ -23,13 +23,11 @@ export function StartQuizDialog({
   return (
     <ConfirmDialog
       open={open}
-      leading={<AlertTriangle className="size-8 text-amber-500" aria-hidden="true" />}
-      title={`Start "${quiz.title}"?`}
-      description={
-        hasGoal
-          ? "This is a scored attempt. You'll answer every question, and your result is saved to this quiz's goal once you submit."
-          : "This is a scored attempt. You'll answer every question. Correct answers and explanations are shown only after you submit."
-      }
+      leading={<BookOpen className="size-8 text-zinc-700" aria-hidden="true" />}
+      title={`Ready for "${quiz.title}"?`}
+      description={`You'll work through ${totalQuestions} ${
+        totalQuestions === 1 ? "question" : "questions"
+      } one at a time. Take your time, and flag anything you want to revisit. Answers and explanations appear after you submit.`}
       cancelLabel="Cancel"
       confirmLabel="Start quiz"
       onCancel={() => onOpenChange(false)}
@@ -67,9 +65,8 @@ export function StartQuizDialog({
         )}
       </dl>
       {!hasGoal && (
-        <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          No goal is set for this quiz, so this attempt won&apos;t be recorded. Add
-          a goal first to track your scores.
+        <p className="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600">
+          Tip: set a goal for this quiz to track your progress over time.
         </p>
       )}
     </ConfirmDialog>
