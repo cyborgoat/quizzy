@@ -74,7 +74,7 @@ fn read_index(path: &Path) -> Result<MistakeIndex, String> {
 fn write_index(path: &Path, index: &MistakeIndex) -> Result<(), String> {
     let contents = serde_json::to_vec_pretty(index)
         .map_err(|error| format!("Unable to serialize {}: {error}", path.display()))?;
-    super::atomic_write(path, &contents, true)
+    crate::fs_utils::atomic_write(path, &contents, true)
 }
 
 fn entry_key(quiz_id: &str, question_id: &str) -> String {

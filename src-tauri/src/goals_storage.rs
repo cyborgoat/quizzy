@@ -172,7 +172,7 @@ fn write_json<T: Serialize + ?Sized>(path: &Path, value: &T) -> Result<(), Strin
     }
     let contents = serde_json::to_vec_pretty(value)
         .map_err(|error| format!("Unable to serialize {}: {error}", path.display()))?;
-    super::atomic_write(path, &contents, true)
+    crate::fs_utils::atomic_write(path, &contents, true)
 }
 
 fn attempt_summary(attempt: &GoalAttempt) -> AttemptSummary {

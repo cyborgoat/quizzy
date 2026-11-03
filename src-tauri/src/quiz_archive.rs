@@ -62,15 +62,15 @@ fn read_registry(app: &AppHandle) -> Result<ArchiveRegistry, String> {
 fn write_registry(app: &AppHandle, registry: &ArchiveRegistry) -> Result<(), String> {
     let contents = serde_json::to_vec_pretty(registry)
         .map_err(|error| format!("Unable to serialize the quiz archive registry: {error}"))?;
-    super::atomic_write(&registry_path(app)?, &contents, true)
+    crate::fs_utils::atomic_write(&registry_path(app)?, &contents, true)
 }
 
 fn current_directory_key(app: &AppHandle) -> Result<String, String> {
-    let directory = super::configured_directory(app)?;
+    let directory = crate::fs_utils::configured_directory(app)?;
     let canonical = directory
         .canonicalize()
         .map_err(|error| format!("Unable to resolve the working directory: {error}"))?;
-    Ok(super::normalize_stored_path(canonical))
+    Ok(crate::fs_utils::normalize_stored_path(canonical))
 }
 
 fn update_archive_entry(
