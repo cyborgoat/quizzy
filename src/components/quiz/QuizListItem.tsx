@@ -30,14 +30,14 @@ export function QuizListItem({
   const { attemptCount, highestScore } = quizProgressMetrics(goal);
 
   return (
-    <article className="group relative flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 pb-2 pt-2.5 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
+    <article className="group relative flex h-36 flex-col gap-2 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 px-3 pb-2 pt-2.5 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
       <CardShine />
       <div className="flex items-start gap-2">
         <span className="mt-px shrink-0">
           <QuizStatusIcon status={source.archived ? "archived" : status} />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className={cn(listItemTitleClassName, "leading-6")}>{source.quiz.title}</h2>
+          <h2 className={cn(listItemTitleClassName, "truncate leading-6")} title={source.quiz.title}>{source.quiz.title}</h2>
           <p className="truncate text-xs text-zinc-500" title={source.fileName}>
             {source.fileName}
           </p>
@@ -55,19 +55,27 @@ export function QuizListItem({
       </div>
 
       {source.quiz.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-nowrap gap-1 overflow-hidden" title={source.quiz.tags.join(", ")}>
           {source.quiz.tags.map((tag) => (
-            <Badge key={tag} className={cn(knowledgeTagBadgeClassName, "text-xs")}>
-              {tag}
+            <Badge key={tag} title={tag} className={cn(knowledgeTagBadgeClassName, "min-w-0 shrink text-xs")}>
+              <span className="truncate">{tag}</span>
             </Badge>
           ))}
         </div>
       )}
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-100 pt-1.5">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-600">
+        <div
+          className="min-w-0 flex-1 truncate text-xs text-zinc-600"
+          title={[
+            `${source.quiz.questions.length} questions`,
+            `${attemptCount} ${attemptCount === 1 ? "attempt" : "attempts"}`,
+            `Best ${highestScore === undefined ? "—" : `${highestScore}%`}`,
+            ...(goal?.targetScore !== undefined ? [`Target ${goal.targetScore}%`] : []),
+          ].join(" · ")}
+        >
           <span>{source.quiz.questions.length} questions</span>
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true" className="mx-1">·</span>
           {goal ? (
             <button
               type="button"
@@ -79,11 +87,11 @@ export function QuizListItem({
           ) : (
             <span>0 attempts</span>
           )}
-          <span aria-hidden="true">·</span>
+          <span aria-hidden="true" className="mx-1">·</span>
           <span>Best {highestScore === undefined ? "—" : `${highestScore}%`}</span>
           {goal?.targetScore !== undefined && (
             <>
-              <span aria-hidden="true">·</span>
+              <span aria-hidden="true" className="mx-1">·</span>
               <span>Target {goal.targetScore}%</span>
             </>
           )}

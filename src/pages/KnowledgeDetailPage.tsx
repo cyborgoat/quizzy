@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Route } from "@/routes/_app/knowledge/$knowledgeId";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ScrollToTopButton } from "@/components/ui/scroll-to-top-button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useKnowledgeNoteEditor } from "@/hooks/useKnowledgeNoteEditor";
@@ -205,6 +206,7 @@ export function KnowledgeDetailPage() {
           onChange={updateDraft}
         />
       )}
+      {mode === "view" && !isNewDraft && <ScrollToTopButton />}
     </PageShell>
   );
 }
