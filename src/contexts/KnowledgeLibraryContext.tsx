@@ -1,68 +1,48 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
   KnowledgeLibraryContext,
 } from "@/contexts/knowledge-library-context";
 import type { CreateKnowledgeDraft } from "@/contexts/knowledge-library-context";
-import { parseKnowledgeFiles } from "@/data/knowledgeRepository";
-import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
-import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
+import { parseKnowledgeFiles, type ParsedKnowledgeLibrary } from "@/data/knowledgeRepository";
+import { useDirectoryLibrary } from "@/hooks/useDirectoryLibrary";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { validateKnowledgeNote } from "@/lib/knowledgeDraft";
 import { buildKnowledgeIndex, getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
-import { createFileVersionCache } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
-import type { InvalidKnowledgeReport, KnowledgeItem } from "@/types/knowledge";
+import type { KnowledgeItem } from "@/types/knowledge";
+
+const EMPTY_LIBRARY: ParsedKnowledgeLibrary = { items: [], invalidReports: [] };
+
+const readKnowledgeFiles = (knownVersions: Record<string, string>) =>
+  nativeApi.readKnowledgeDirectory(knownVersions);
 
 export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) {
-  const { directoryPath, directoryAvailable } = useWorkingDirectory();
+  const {
+    library,
+    setLibrary,
+    refresh,
+    isLoading,
+    directoryPath,
+    directoryAvailable,
+  } = useDirectoryLibrary({
+    empty: EMPTY_LIBRARY,
+    readFiles: readKnowledgeFiles,
+    parse: parseKnowledgeFiles,
+    label: "knowledge",
+  });
+  const { items, invalidReports } = library;
   const knowledgeDirectoryPath = directoryPath
     ? `${directoryPath}/${KNOWLEDGE_BASE_FOLDER}`
     : null;
-  const [items, setItems] = useState<KnowledgeItem[]>([]);
-  const [invalidReports, setInvalidReports] = useState<InvalidKnowledgeReport[]>([]);
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
-  const fileCache = useRef(createFileVersionCache());
-  const cachedDirectory = useRef<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      if (!directoryAvailable || !directoryPath) {
-        fileCache.current.clear();
-        setItems([]);
-        setInvalidReports([]);
-        return;
-      }
-      if (cachedDirectory.current !== directoryPath) {
-        fileCache.current.clear();
-        cachedDirectory.current = directoryPath;
-      }
-      const files = fileCache.current.resolve(
-        await nativeApi.readKnowledgeDirectory(fileCache.current.knownVersions()),
-      );
-      const library = parseKnowledgeFiles(files);
-      setItems(library.items);
-      setInvalidReports(library.invalidReports);
-      if (import.meta.env.DEV && library.invalidReports.length > 0) {
-        console.warn("Quizzy skipped invalid knowledge files:", library.invalidReports);
-      }
-    } catch (error) {
-      fileCache.current.clear();
-      setItems([]);
-      setInvalidReports([]);
-      toast.error(errorMessage(error));
-    }
-  }, [directoryAvailable, directoryPath]);
-
-  const { refresh, isLoading } = useBackgroundDataLoader(load);
-
-  useEffect(() => {
-    void refresh({ background: true });
-  }, [directoryAvailable, directoryPath, refresh]);
+  function setItems(update: (current: KnowledgeItem[]) => KnowledgeItem[]) {
+    setLibrary((current) => ({ ...current, items: update(current.items) }));
+  }
 
   const getNotesForQuestion = useCallback(
     (quizId: string, questionId: string) =>

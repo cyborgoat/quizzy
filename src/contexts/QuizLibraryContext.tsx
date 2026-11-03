@@ -1,57 +1,39 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { QuizLibraryContext } from "@/contexts/quiz-library-context";
-import { parseQuizFiles } from "@/data/quizRepository";
-import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
-import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
-import { createFileVersionCache } from "@/lib/fileVersionCache";
+import { parseQuizFiles, type ParsedQuizLibrary } from "@/data/quizRepository";
+import { useDirectoryLibrary } from "@/hooks/useDirectoryLibrary";
+import type { ResolvedLibraryFile } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
-import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
+
+const EMPTY_LIBRARY: ParsedQuizLibrary = { quizzes: [], invalidReports: [] };
+
+const readQuizFiles = (knownVersions: Record<string, string>) =>
+  nativeApi.readWorkingDirectory(knownVersions);
+const readArchivedQuizIds = () => nativeApi.listArchivedQuizIds();
+const parseQuizLibrary = (files: ResolvedLibraryFile[], archivedQuizIds: string[]) =>
+  parseQuizFiles(files, new Set(archivedQuizIds));
 
 export function QuizLibraryProvider({ children }: { children: ReactNode }) {
-  const { directoryPath, directoryAvailable } = useWorkingDirectory();
-  const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
-  const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
+  const {
+    library,
+    setLibrary,
+    refresh,
+    isLoading,
+    directoryPath,
+    directoryAvailable,
+  } = useDirectoryLibrary({
+    empty: EMPTY_LIBRARY,
+    readFiles: readQuizFiles,
+    readExtras: readArchivedQuizIds,
+    parse: parseQuizLibrary,
+    label: "quiz",
+  });
+  const { quizzes, invalidReports } = library;
 
-  const fileCache = useRef(createFileVersionCache());
-  const cachedDirectory = useRef<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      if (!directoryAvailable || !directoryPath) {
-        fileCache.current.clear();
-        setQuizzes([]);
-        setInvalidReports([]);
-        return;
-      }
-      if (cachedDirectory.current !== directoryPath) {
-        fileCache.current.clear();
-        cachedDirectory.current = directoryPath;
-      }
-      const [nativeFiles, archivedQuizIds] = await Promise.all([
-        nativeApi.readWorkingDirectory(fileCache.current.knownVersions()),
-        nativeApi.listArchivedQuizIds(),
-      ]);
-      const files = fileCache.current.resolve(nativeFiles);
-      const library = parseQuizFiles(files, new Set(archivedQuizIds));
-      setQuizzes(library.quizzes);
-      setInvalidReports(library.invalidReports);
-      if (import.meta.env.DEV && library.invalidReports.length > 0) {
-        console.warn("Quizzy skipped invalid quiz files:", library.invalidReports);
-      }
-    } catch (error) {
-      fileCache.current.clear();
-      setQuizzes([]);
-      setInvalidReports([]);
-      toast.error(errorMessage(error));
-    }
-  }, [directoryAvailable, directoryPath]);
-
-  const { refresh, isLoading } = useBackgroundDataLoader(load);
-
-  useEffect(() => {
-    void refresh({ background: true });
-  }, [directoryAvailable, directoryPath, refresh]);
+  function setQuizzes(update: (current: typeof quizzes) => typeof quizzes) {
+    setLibrary((current) => ({ ...current, quizzes: update(current.quizzes) }));
+  }
 
   async function openQuizFolder() {
     try {
