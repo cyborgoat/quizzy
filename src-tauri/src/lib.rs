@@ -601,6 +601,48 @@ fn import_quiz_file(app: AppHandle, source_path: String) -> Result<String, Strin
     Ok(file_name.to_string())
 }
 
+const SAMPLE_QUIZZES: [(&str, &str); 4] = [
+    (
+        "css-basics.json",
+        include_str!("../../sample-quizzes/css-basics.json"),
+    ),
+    (
+        "javascript-basics.json",
+        include_str!("../../sample-quizzes/javascript-basics.json"),
+    ),
+    (
+        "react-basics.json",
+        include_str!("../../sample-quizzes/react-basics.json"),
+    ),
+    (
+        "markdown-showcase.json",
+        include_str!("../../sample-quizzes/markdown-showcase.json"),
+    ),
+];
+
+#[derive(Serialize)]
+struct AddSampleQuizzesResult {
+    added: Vec<String>,
+    skipped: Vec<String>,
+}
+
+#[tauri::command]
+fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
+    let directory = configured_directory(&app)?;
+    let mut added = Vec::new();
+    let mut skipped = Vec::new();
+    for (file_name, contents) in SAMPLE_QUIZZES {
+        let destination = directory.join(file_name);
+        if destination.exists() {
+            skipped.push(file_name.to_string());
+            continue;
+        }
+        atomic_write(&destination, contents.as_bytes(), false)?;
+        added.push(file_name.to_string());
+    }
+    Ok(AddSampleQuizzesResult { added, skipped })
+}
+
 #[tauri::command]
 fn list_archived_quiz_ids(app: AppHandle) -> Result<Vec<String>, String> {
     quiz_archive::list_archived_quiz_ids(&app)
@@ -829,6 +871,7 @@ pub fn run() {
             save_settings,
             read_working_directory,
             import_quiz_file,
+            add_sample_quizzes,
             list_archived_quiz_ids,
             set_quiz_archived,
             delete_quiz_file,

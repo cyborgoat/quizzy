@@ -56,6 +56,12 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     return fileName;
   }
 
+  async function addSampleQuizzes() {
+    const result = await nativeApi.addSampleQuizzes();
+    await refresh();
+    return result;
+  }
+
   async function setQuizArchived(quizId: string, archived: boolean) {
     try {
       await nativeApi.setQuizArchived(quizId, archived);
@@ -94,6 +100,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     isLoading,
     refresh,
     importQuizFile,
+    addSampleQuizzes,
     setQuizArchived,
     deleteQuizFile,
     openQuizFolder,

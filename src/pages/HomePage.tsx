@@ -3,6 +3,7 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
   FileUp,
+  CircleHelp,
   FolderOpen,
   RefreshCw,
 } from "lucide-react";
@@ -10,7 +11,9 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
+import { ImportHelpDialog } from "@/components/quiz/ImportHelpDialog";
 import { QuizDetailsDialog } from "@/components/quiz/QuizDetailsDialog";
+import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
 import {
@@ -60,6 +63,7 @@ export function HomePage() {
   const sortOption = quizLibrarySortOption(sortOrder.field);
   const nextSortDirection = sortOrder.direction === "asc" ? "desc" : "asc";
   const [isImporting, setIsImporting] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
@@ -100,6 +104,21 @@ export function HomePage() {
     }
   }
 
+  async function handleAddSamples() {
+    try {
+      const { added, skipped } = await library.addSampleQuizzes();
+      if (added.length > 0) {
+        toast.success(
+          `Added ${added.length} sample ${added.length === 1 ? "quiz" : "quizzes"}.`,
+        );
+      } else if (skipped.length > 0) {
+        toast.info("Sample quizzes are already in your quiz folder.");
+      }
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+
   return (
     <PageShell>
       <div className="mb-8 flex items-center gap-4 lg:gap-5">
@@ -135,6 +154,12 @@ export function HomePage() {
               Quiz Library
             </h2>
             <div className="flex items-center gap-2">
+              <IconActionButton
+                icon={CircleHelp}
+                label="How to import"
+                variant="outline"
+                onClick={() => setHelpOpen(true)}
+              />
               <IconActionButton
                 icon={FileUp}
                 label={isImporting ? "Importing quiz file…" : "Import quiz file"}
@@ -275,14 +300,34 @@ export function HomePage() {
             <EmptyState
               title="No valid quizzes yet"
               description="Add one or more quiz JSON files to the configured quiz folder."
-              actionLabel="Open folder"
-              actionIcon={<FolderOpen className="size-4" />}
-              actionVariant="outline"
-              onAction={() => void library.openQuizFolder()}
+              action={
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  <Button onClick={() => setHelpOpen(true)}>
+                    <CircleHelp className="size-4" />
+                    How to import
+                  </Button>
+                  <Button variant="outline" onClick={() => void library.openQuizFolder()}>
+                    <FolderOpen className="size-4" />
+                    Open folder
+                  </Button>
+                </div>
+              }
             />
           )}
         </>
       </WorkingDirectoryGate>
+
+      <ImportHelpDialog
+        open={helpOpen}
+        onOpenChange={setHelpOpen}
+        canUseLibrary={library.directoryAvailable}
+        onImport={() => {
+          setHelpOpen(false);
+          void handleImportQuiz();
+        }}
+        onOpenFolder={() => void library.openQuizFolder()}
+        onAddSamples={handleAddSamples}
+      />
 
       <QuizDetailsDialog
         source={detailsSource}

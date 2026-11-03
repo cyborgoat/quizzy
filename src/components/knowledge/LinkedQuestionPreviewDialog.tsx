@@ -1,4 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
+import { Play } from "lucide-react";
 import { useMemo } from "react";
 import {
   ResizableDialogShell,
@@ -11,6 +12,7 @@ import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { sectionLabelClassName } from "@/components/ui/section-label";
+import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
@@ -37,6 +39,7 @@ export function LinkedQuestionPreviewDialog({
   layer?: DialogStackLayer;
 }) {
   const { quizzes } = useQuizLibrary();
+  const { openQuizStart } = useQuizStartDialog();
 
   const resolved = useMemo(
     () => (link ? resolveLinkedQuestion(link, quizzes) : null),
@@ -52,6 +55,9 @@ export function LinkedQuestionPreviewDialog({
 
   if (!link) return null;
 
+  const isArchived =
+    quizzes.find((source) => source.quiz.id === link.quizId)?.archived ?? false;
+
   return (
     <ResizableDialogShell
       open={open}
@@ -60,15 +66,31 @@ export function LinkedQuestionPreviewDialog({
       title="Linked question"
       description={label}
       footer={
-        <Dialog.Close asChild>
-          <Button
-            size="sm"
-            variant="ghost"
-            className={knowledgeDialogCloseButtonClassName}
-          >
-            Close
-          </Button>
-        </Dialog.Close>
+        <>
+          {resolved && (
+            <Button
+              size="sm"
+              disabled={isArchived}
+              title={isArchived ? "Restore this quiz to retake it" : undefined}
+              onClick={() => {
+                onOpenChange(false);
+                openQuizStart({ quizId: link.quizId });
+              }}
+            >
+              <Play className="size-3.5 fill-current" />
+              Retake quiz
+            </Button>
+          )}
+          <Dialog.Close asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={knowledgeDialogCloseButtonClassName}
+            >
+              Close
+            </Button>
+          </Dialog.Close>
+        </>
       }
     >
       {!resolved ? (

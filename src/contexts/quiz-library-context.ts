@@ -13,6 +13,7 @@ export type QuizLibraryContextValue = {
   isLoading: boolean;
   refresh: (options?: QuizLibraryRefreshOptions) => Promise<void>;
   importQuizFile: (sourcePath: string) => Promise<string>;
+  addSampleQuizzes: () => Promise<{ added: string[]; skipped: string[] }>;
   setQuizArchived: (quizId: string, archived: boolean) => Promise<boolean>;
   deleteQuizFile: (fileName: string) => Promise<boolean>;
   openQuizFolder: () => Promise<void>;
