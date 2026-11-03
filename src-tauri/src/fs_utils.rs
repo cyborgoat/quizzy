@@ -1,5 +1,6 @@
 use serde::Serialize;
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
     process::Command,
@@ -15,8 +16,23 @@ pub(crate) const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
 pub(crate) struct QuizFile {
     file_name: String,
     contents: String,
+    /// Cheap change marker (`<mtime-nanos>-<byte-length>`); `None` if metadata is unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version: Option<String>,
+    /// True when `version` matched the caller's known version, so `contents` was not read.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    unchanged: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     read_error: Option<String>,
+}
+
+fn file_version(metadata: &fs::Metadata) -> Option<String> {
+    let modified = metadata.modified().ok()?;
+    let nanos = modified
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?
+        .as_nanos();
+    Some(format!("{nanos}-{}", metadata.len()))
 }
 
 pub(crate) fn is_json_extension(extension: &str) -> bool {
@@ -184,6 +200,7 @@ pub(crate) fn read_library_files(
     directory: &Path,
     label: &str,
     matches_extension: fn(&str) -> bool,
+    known_versions: &HashMap<String, String>,
 ) -> Result<Vec<QuizFile>, String> {
     let mut files = Vec::new();
     for entry in
@@ -201,15 +218,30 @@ pub(crate) fn read_library_files(
             continue;
         }
         let file_name = entry.file_name().to_string_lossy().into_owned();
+        let version = fs::metadata(&path).ok().as_ref().and_then(file_version);
+        if version.is_some() && known_versions.get(&file_name) == version.as_ref() {
+            files.push(QuizFile {
+                file_name,
+                contents: String::new(),
+                version,
+                unchanged: true,
+                read_error: None,
+            });
+            continue;
+        }
         match read_text_file(&path) {
             Ok(contents) => files.push(QuizFile {
                 file_name,
                 contents,
+                version,
+                unchanged: false,
                 read_error: None,
             }),
             Err(error) => files.push(QuizFile {
                 file_name,
                 contents: String::new(),
+                version: None,
+                unchanged: false,
                 read_error: Some(error),
             }),
         }
@@ -224,7 +256,7 @@ mod tests {
         atomic_write, is_json_extension, resolve_knowledge_path, resolve_quiz_path, strip_utf8_bom,
         KNOWLEDGE_BASE_FOLDER,
     };
-    use std::{fs, path::PathBuf};
+    use std::{collections::HashMap, fs, path::PathBuf};
 
     fn test_directory(name: &str) -> PathBuf {
         std::env::temp_dir().join(format!("quizzy-{name}-{}", std::process::id()))
@@ -297,10 +329,23 @@ mod tests {
         fs::write(root.join("c.txt"), "x").expect("write c");
 
         let files =
-            super::read_library_files(&root, "test folder", is_json_extension).expect("read files");
+            super::read_library_files(&root, "test folder", is_json_extension, &HashMap::new())
+                .expect("read files");
         let names: Vec<_> = files.iter().map(|file| file.file_name.as_str()).collect();
         assert_eq!(names, ["a.json", "b.json"]);
         assert_eq!(files[0].contents, "{}");
+
+        // Unchanged files are reported without re-reading their contents.
+        let known: HashMap<String, String> = files
+            .iter()
+            .filter_map(|file| Some((file.file_name.clone(), file.version.clone()?)))
+            .collect();
+        fs::write(root.join("b.json"), "{\"changed\":true}").expect("rewrite b");
+        let second = super::read_library_files(&root, "test folder", is_json_extension, &known)
+            .expect("second read");
+        assert!(second[0].unchanged && second[0].contents.is_empty());
+        assert!(!second[1].unchanged);
+        assert_eq!(second[1].contents, "{\"changed\":true}");
 
         fs::remove_dir_all(root).expect("remove test directory");
     }

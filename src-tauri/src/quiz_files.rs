@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
 use tauri::AppHandle;
 
 use crate::fs_utils::{
@@ -9,14 +13,21 @@ use crate::fs_utils::{
 use crate::{goals_storage, mistake_index, quiz_archive};
 
 #[tauri::command]
-pub(crate) fn read_working_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
+pub(crate) fn read_working_directory(
+    app: AppHandle,
+    known_versions: Option<HashMap<String, String>>,
+) -> Result<Vec<QuizFile>, String> {
     let directory = configured_directory(&app)?;
-    read_library_files(&directory, "working directory", is_json_extension)
+    read_library_files(
+        &directory,
+        "working directory",
+        is_json_extension,
+        &known_versions.unwrap_or_default(),
+    )
 }
 
-#[tauri::command]
-pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<String, String> {
-    let source = PathBuf::from(source_path);
+/// Validates an import source and returns its file name and raw bytes.
+fn read_import_source(source: &Path) -> Result<(String, Vec<u8>), String> {
     if !source.is_file() {
         return Err("Select an existing quiz file.".to_string());
     }
@@ -32,15 +43,21 @@ pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<St
         .file_name()
         .and_then(|value| value.to_str())
         .filter(|value| !value.is_empty())
-        .ok_or_else(|| "The selected quiz file name is invalid.".to_string())?;
-    let contents = fs::read(&source)
+        .ok_or_else(|| "The selected quiz file name is invalid.".to_string())?
+        .to_string();
+    let contents = fs::read(source)
         .map_err(|error| format!("Unable to read the selected quiz file: {error}"))?;
     serde_json::from_slice::<serde_json::Value>(&contents)
         .map_err(|error| format!("The selected quiz file is not valid JSON: {error}"))?;
+    Ok((file_name, contents))
+}
 
-    let destination = configured_directory(&app)?.join(file_name);
+#[tauri::command]
+pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<String, String> {
+    let (file_name, contents) = read_import_source(&PathBuf::from(source_path))?;
+    let destination = configured_directory(&app)?.join(&file_name);
     atomic_write(&destination, &contents, false)?;
-    Ok(file_name.to_string())
+    Ok(file_name)
 }
 
 pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 4] = [
@@ -68,9 +85,7 @@ pub(crate) struct AddSampleQuizzesResult {
     skipped: Vec<String>,
 }
 
-#[tauri::command]
-pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
-    let directory = configured_directory(&app)?;
+fn write_missing_samples(directory: &Path) -> Result<AddSampleQuizzesResult, String> {
     let mut added = Vec::new();
     let mut skipped = Vec::new();
     for (file_name, contents) in SAMPLE_QUIZZES {
@@ -83,6 +98,11 @@ pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResul
         added.push(file_name.to_string());
     }
     Ok(AddSampleQuizzesResult { added, skipped })
+}
+
+#[tauri::command]
+pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
+    write_missing_samples(&configured_directory(&app)?)
 }
 
 #[tauri::command]
@@ -155,4 +175,64 @@ pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), 
 #[tauri::command]
 pub(crate) fn open_quiz_folder(app: AppHandle) -> Result<(), String> {
     open_directory_in_file_manager(configured_directory(&app)?, "quiz folder")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{read_import_source, write_missing_samples, SAMPLE_QUIZZES};
+    use std::{fs, path::PathBuf};
+
+    fn test_directory(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("quizzy-qf-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("create test directory");
+        dir
+    }
+
+    #[test]
+    fn import_rejects_missing_non_json_and_malformed_files() {
+        let dir = test_directory("import");
+        assert!(read_import_source(&dir.join("missing.json")).is_err());
+
+        fs::write(dir.join("quiz.txt"), "{}").expect("write txt");
+        assert!(read_import_source(&dir.join("quiz.txt")).is_err());
+
+        fs::write(dir.join("bad.json"), "{not json").expect("write bad");
+        assert!(read_import_source(&dir.join("bad.json")).is_err());
+
+        fs::write(dir.join("ok.JSON"), "{\"id\":\"q\"}").expect("write ok");
+        let (name, contents) = read_import_source(&dir.join("ok.JSON")).expect("valid import");
+        assert_eq!(name, "ok.JSON");
+        assert_eq!(contents, b"{\"id\":\"q\"}");
+
+        fs::remove_dir_all(dir).expect("cleanup");
+    }
+
+    #[test]
+    fn samples_are_added_once_and_never_overwritten() {
+        let dir = test_directory("samples");
+        fs::write(dir.join("css-basics.json"), "custom").expect("write existing");
+
+        let first = write_missing_samples(&dir).expect("first run");
+        assert_eq!(first.added.len(), SAMPLE_QUIZZES.len() - 1);
+        assert_eq!(first.skipped, ["css-basics.json"]);
+        assert_eq!(
+            fs::read_to_string(dir.join("css-basics.json")).expect("read"),
+            "custom"
+        );
+
+        let second = write_missing_samples(&dir).expect("second run");
+        assert!(second.added.is_empty());
+        assert_eq!(second.skipped.len(), SAMPLE_QUIZZES.len());
+
+        fs::remove_dir_all(dir).expect("cleanup");
+    }
+
+    #[test]
+    fn bundled_samples_are_valid_json() {
+        for (name, contents) in SAMPLE_QUIZZES {
+            serde_json::from_str::<serde_json::Value>(contents)
+                .unwrap_or_else(|error| panic!("{name} is invalid: {error}"));
+        }
+    }
 }

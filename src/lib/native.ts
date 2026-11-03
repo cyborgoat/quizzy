@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { NativeLibraryFile } from "@/lib/fileVersionCache";
 import { createSettingsSaveQueue } from "@/lib/settingsSaveQueue";
 import type { Goal, GoalAttempt } from "@/types/goal";
 import type { MistakeEntry } from "@/types/mistakeLog";
@@ -36,11 +37,7 @@ export type SaveSettingsRequest = {
   toggleSidebarShortcutKey?: string;
 };
 
-export type NativeQuizFile = {
-  fileName: string;
-  contents: string;
-  readError?: string;
-};
+export type NativeQuizFile = NativeLibraryFile;
 
 export type NativeKnowledgeFile = NativeQuizFile;
 
@@ -101,8 +98,8 @@ const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
 export const nativeApi = {
   getSettings: () => invoke<AppSettings>("get_settings"),
   saveSettings,
-  readWorkingDirectory: () =>
-    invoke<NativeQuizFile[]>("read_working_directory"),
+  readWorkingDirectory: (knownVersions?: Record<string, string>) =>
+    invoke<NativeQuizFile[]>("read_working_directory", { knownVersions }),
   importQuizFile: (sourcePath: string) =>
     invoke<string>("import_quiz_file", { sourcePath }),
   addSampleQuizzes: () =>
@@ -112,8 +109,8 @@ export const nativeApi = {
     invoke<void>("set_quiz_archived", { quizId, archived }),
   deleteQuizFile: (fileName: string) =>
     invoke<void>("delete_quiz_file", { fileName }),
-  readKnowledgeDirectory: () =>
-    invoke<NativeKnowledgeFile[]>("read_knowledge_directory"),
+  readKnowledgeDirectory: (knownVersions?: Record<string, string>) =>
+    invoke<NativeKnowledgeFile[]>("read_knowledge_directory", { knownVersions }),
   writeKnowledgeFile: (request: WriteKnowledgeFileRequest) =>
     invoke<void>("write_knowledge_file", { request }),
   deleteKnowledgeFile: (fileName: string) =>

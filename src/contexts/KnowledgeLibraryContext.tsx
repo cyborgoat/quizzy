@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -12,6 +12,7 @@ import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { validateKnowledgeNote } from "@/lib/knowledgeDraft";
 import { buildKnowledgeIndex, getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
+import { createFileVersionCache } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidKnowledgeReport, KnowledgeItem } from "@/types/knowledge";
 
@@ -25,14 +26,24 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
+  const fileCache = useRef(createFileVersionCache());
+  const cachedDirectory = useRef<string | null>(null);
+
   const load = useCallback(async () => {
     try {
       if (!directoryAvailable || !directoryPath) {
+        fileCache.current.clear();
         setItems([]);
         setInvalidReports([]);
         return;
       }
-      const files = await nativeApi.readKnowledgeDirectory();
+      if (cachedDirectory.current !== directoryPath) {
+        fileCache.current.clear();
+        cachedDirectory.current = directoryPath;
+      }
+      const files = fileCache.current.resolve(
+        await nativeApi.readKnowledgeDirectory(fileCache.current.knownVersions()),
+      );
       const library = parseKnowledgeFiles(files);
       setItems(library.items);
       setInvalidReports(library.invalidReports);
@@ -40,6 +51,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
         console.warn("Quizzy skipped invalid knowledge files:", library.invalidReports);
       }
     } catch (error) {
+      fileCache.current.clear();
       setItems([]);
       setInvalidReports([]);
       toast.error(errorMessage(error));

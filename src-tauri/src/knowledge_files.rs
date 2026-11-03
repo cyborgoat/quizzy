@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::fs;
+use std::{collections::HashMap, fs};
 use tauri::AppHandle;
 
 use crate::fs_utils::{
@@ -8,9 +8,17 @@ use crate::fs_utils::{
 };
 
 #[tauri::command]
-pub(crate) fn read_knowledge_directory(app: AppHandle) -> Result<Vec<QuizFile>, String> {
+pub(crate) fn read_knowledge_directory(
+    app: AppHandle,
+    known_versions: Option<HashMap<String, String>>,
+) -> Result<Vec<QuizFile>, String> {
     let directory = knowledge_base_directory(&app)?;
-    read_library_files(&directory, "knowledge-base folder", is_md_extension)
+    read_library_files(
+        &directory,
+        "knowledge-base folder",
+        is_md_extension,
+        &known_versions.unwrap_or_default(),
+    )
 }
 
 #[derive(Deserialize)]

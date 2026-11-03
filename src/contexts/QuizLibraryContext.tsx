@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { QuizLibraryContext } from "@/contexts/quiz-library-context";
 import { parseQuizFiles } from "@/data/quizRepository";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
+import { createFileVersionCache } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { InvalidQuizReport, QuizSource } from "@/types/quiz";
 
@@ -12,17 +13,26 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const [quizzes, setQuizzes] = useState<QuizSource[]>([]);
   const [invalidReports, setInvalidReports] = useState<InvalidQuizReport[]>([]);
 
+  const fileCache = useRef(createFileVersionCache());
+  const cachedDirectory = useRef<string | null>(null);
+
   const load = useCallback(async () => {
     try {
       if (!directoryAvailable || !directoryPath) {
+        fileCache.current.clear();
         setQuizzes([]);
         setInvalidReports([]);
         return;
       }
-      const [files, archivedQuizIds] = await Promise.all([
-        nativeApi.readWorkingDirectory(),
+      if (cachedDirectory.current !== directoryPath) {
+        fileCache.current.clear();
+        cachedDirectory.current = directoryPath;
+      }
+      const [nativeFiles, archivedQuizIds] = await Promise.all([
+        nativeApi.readWorkingDirectory(fileCache.current.knownVersions()),
         nativeApi.listArchivedQuizIds(),
       ]);
+      const files = fileCache.current.resolve(nativeFiles);
       const library = parseQuizFiles(files, new Set(archivedQuizIds));
       setQuizzes(library.quizzes);
       setInvalidReports(library.invalidReports);
@@ -30,6 +40,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
         console.warn("Quizzy skipped invalid quiz files:", library.invalidReports);
       }
     } catch (error) {
+      fileCache.current.clear();
       setQuizzes([]);
       setInvalidReports([]);
       toast.error(errorMessage(error));
