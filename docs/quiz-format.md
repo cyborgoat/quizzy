@@ -105,7 +105,7 @@ Markdown. Supported syntax:
 | ` ```lang … ``` ` | Fenced code block |
 | `$…$` | Inline math (KaTeX) |
 | `$$…$$` | Display math (KaTeX) |
-| GFM pipe tables | Tabular content (see `sample-knowledge/markdown-showcase.md`) |
+| GFM pipe tables | Tabular content (see `sample-quizzes/knowledge-base/markdown-showcase.md`) |
 
 **Inline math:**
 
@@ -146,7 +146,7 @@ Markdown. Supported syntax:
 ```
 
 See `sample-quizzes/markdown-showcase.json` and
-`sample-knowledge/markdown-showcase.md` for examples that exercise supported
+`sample-quizzes/knowledge-base/markdown-showcase.md` for examples that exercise supported
 Markdown features.
 
 ## Complete example

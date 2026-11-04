@@ -24,6 +24,12 @@ Available actions on the home page:
 
 - **Refresh** rescans the working directory. The button spins during the
   operation and a toast confirms completion.
+- **Import quiz file** copies a chosen `.json` file into the working directory.
+  It never overwrites an existing file.
+- **How to import** opens a guide with import steps, the file format with a
+  copyable example, an **Add sample quizzes** button, and a **Copy AI prompt**
+  button for generating quiz files with an AI assistant. The same guide is
+  offered on the empty library screen.
 - **Open quiz folder** opens the configured working directory in the system file
   manager.
 - **Search, filter, and sort** narrow the library by keyword and status, then
@@ -255,8 +261,9 @@ the window regains focus.
 
 ## Managing quiz files
 
-Use **Open quiz folder** to add, replace, rename, or remove top-level `.json`
-files with the system file manager. Quizzy validates the directory contents
+Use **Import quiz file** to copy a single `.json` file in, or **Open quiz folder**
+to add, replace, rename, or remove top-level `.json` files with the system file
+manager. Quizzy validates the directory contents
 whenever it refreshes, skips malformed or invalid quiz files, and reports
 diagnostics on the home page. Duplicate quiz IDs are also rejected.
 
@@ -351,7 +358,7 @@ config directory. See [Native storage and security](native-storage.md).
 ## Example data
 
 The repository contains example JSON files under `sample-quizzes/` and example
-knowledge notes under `sample-knowledge/`:
+knowledge notes under `sample-quizzes/knowledge-base/`:
 
 | File | Contents |
 | --- | --- |
@@ -362,6 +369,8 @@ knowledge notes under `sample-knowledge/`:
 | `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
 | `markdown-showcase.md` | Knowledge note with tables, math, and other markdown features |
 
-Copy quiz files into your working directory and knowledge notes into
-`knowledge-base/` for local testing. These files are not embedded in production
-builds and the app has no special sample loading action.
+The **Add sample quizzes** button in the import guide writes `react-basics`,
+`javascript-basics`, `css-basics` and `markdown-showcase` into the working
+directory (existing files are skipped). The large stress-test quiz and the
+knowledge note are not bundled; copy them into your working directory and
+`knowledge-base/` manually when needed.

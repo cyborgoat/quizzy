@@ -45,7 +45,14 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | --- | --- |
 | `get_settings` | Load app settings (directory, profile, preferences) |
 | `save_settings` | Persist profile, preferences, and/or working directory |
-| `read_working_directory` | Read top-level JSON files |
+| `read_working_directory` | Read top-level JSON files; accepts known file versions and returns unchanged files without contents |
+| `import_quiz_file` | Copy a user-selected `.json` file (checked for valid JSON, never overwriting) into the working directory |
+| `add_sample_quizzes` | Write the bundled sample quizzes into the working directory, skipping files that already exist |
+| `list_archived_quiz_ids` / `set_quiz_archived` | Read and update the archived-quiz registry |
+| `delete_quiz_file` | Permanently delete a quiz file and its goals, mistake-index entries and archive entry |
+| `read_knowledge_directory` | Read top-level `.md` files in `knowledge-base/`; same known-version behavior as quizzes |
+| `write_knowledge_file` / `delete_knowledge_file` | Create, replace or delete one knowledge note (validated file names) |
+| `open_knowledge_folder` | Open the `knowledge-base` folder in the system file manager |
 | `open_quiz_folder` | Open the configured quiz directory in the system file manager |
 | `list_goals` | Load saved goals with attempt summaries |
 | `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz; refreshes that quiz's mistake-index entries |
@@ -57,6 +64,16 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `synchronize_app_data` | Rescan quiz/knowledge folders, repair goal attempt indexes, refresh goal titles from quiz files, rebuild the mistake index when changed, and return a structured `SyncReport` |
 
 `synchronize_app_data` only writes app-config files (`goals/...`, `mistake-index.json`). It rebuilds each goal's `attempts/index.json` from on-disk attempt files, removes orphan index entries when attempt files are missing, and records per-file changes in the report. Goals whose quiz files are missing are reported as warnings, not deleted.
+
+## Incremental directory reads
+
+Both directory-read commands attach a `version` (`<mtime-nanos>-<byte-length>`) to
+each file. The frontend sends back the versions it already holds
+(`knownVersions`), and Rust skips reading any file whose version matches,
+returning it with `unchanged: true` and no contents. A per-library cache in the
+frontend (`src/lib/fileVersionCache.ts`) restores those contents, so a refresh
+only reads and transfers files that changed. The cache is cleared when the
+working directory changes.
 
 ## Filesystem boundaries
 
@@ -75,8 +92,10 @@ filesystem plugin permissions are not granted to the webview.
 ## Atomic writes
 
 Quizzy uses temporary files and rename operations when writing its own settings,
-goal data, and `mistake-index.json`. Quiz files are managed by the user through
-the system file manager and are read-only from Quizzy's perspective.
+goal data, `mistake-index.json`, knowledge notes, imported quiz files, and sample
+quizzes. Imports and samples never overwrite an existing file. Other changes to
+quiz files are made by the user through the system file manager, and Quizzy only
+reads them (apart from permanent deletion of an archived quiz).
 
 ## Current security notes
 

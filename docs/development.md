@@ -132,9 +132,9 @@ Before packaging a release:
    review, Settings data synchronization (including result summary), and
    Knowledge Base note create/edit/link/preview in the packaged application.
 
-The files under `sample-quizzes/` and `sample-knowledge/` can be copied into
-your working directory when manual test data is needed. They are not production
-resources.
+The files under `sample-quizzes/` (and `sample-quizzes/knowledge-base/`) can be
+copied into your working directory when manual test data is needed. Four of the
+quizzes are also embedded in the app for the **Add sample quizzes** button.
 
 Cross-platform release builds are handled by `.github/workflows/release.yml` when
 a version tag is pushed.

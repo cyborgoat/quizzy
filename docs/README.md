@@ -18,8 +18,8 @@ working directory.
 - [Development and testing](development.md): scripts, tests, formatting, and packaging
 
 Reference quiz files for development and manual quiz-folder testing are kept in
-`sample-quizzes/`. Reference knowledge notes are in `sample-knowledge/`. Neither
-is bundled with the desktop application.
+`sample-quizzes/`. Reference knowledge notes are in `sample-quizzes/knowledge-base/`. Four sample
+quizzes are embedded in the app for the **Add sample quizzes** button.
 
 ## Technology stack
 

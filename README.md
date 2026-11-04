@@ -6,9 +6,10 @@ history, and keeps quiz data entirely local.
 
 Detailed documentation is available in [docs/README.md](docs/README.md).
 
-Example JSON quizzes are in [sample-quizzes](sample-quizzes). Example knowledge
-notes are in [sample-knowledge](sample-knowledge). Copy them into your working
-directory when testing locally. They are not bundled into production builds.
+Example JSON quizzes are in [sample-quizzes](sample-quizzes) and example
+knowledge notes are in [sample-quizzes/knowledge-base](sample-quizzes/knowledge-base).
+In the app, **How to import** on the home page explains the format and can add
+some sample quizzes for you.
 
 ## Requirements
 

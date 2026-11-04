@@ -166,10 +166,23 @@ change and performs a background refresh when the app window regains focus.
 
 `src/lib/native.ts` is the typed frontend adapter for Tauri `invoke` calls.
 
-`src-tauri/src/lib.rs` implements settings, working-directory validation,
-top-level JSON scanning, and opening the configured quiz directory in the system
-file manager. Goal and attempt persistence live in `goals_storage.rs`. The
-materialized Mistake Log index lives in `mistake_index.rs`.
+The Rust backend is split by responsibility. `lib.rs` only builds the app and
+registers commands.
+
+- `settings.rs`: settings, shortcut normalization and validation
+- `fs_utils.rs`: path safety, atomic writes, directory reads with version-based
+  skipping, and opening folders in the system file manager
+- `quiz_files.rs`: quiz scanning, import, bundled sample quizzes, archive and
+  deletion
+- `knowledge_files.rs`: knowledge note scanning, writing and deletion
+- `app_data_commands.rs`: thin command wrappers for goals, the Mistake Log index
+  and data synchronization
+- `goals_storage.rs`, `mistake_index.rs`, `quiz_archive.rs`, `data_sync.rs`:
+  persistence and synchronization logic
+
+On the frontend, `useDirectoryLibrary` (`src/hooks/useDirectoryLibrary.ts`) is
+the shared loader behind the quiz and knowledge providers. It handles directory
+changes, the file-version cache, parsing, background refresh and error toasts.
 
 The dialog plugin obtains the working-directory path in Settings. Quiz files are
 managed directly through the system file manager.
@@ -308,11 +321,13 @@ src/
 src-tauri/
   capabilities/   Tauri permissions
   icons/          Desktop and mobile platform icons
-  src/            Rust commands (`lib.rs`, `goals_storage.rs`, `mistake_index.rs`,
-                  `data_sync.rs`)
+  src/            Rust commands (`lib.rs`, `settings.rs`, `fs_utils.rs`,
+                  `quiz_files.rs`, `knowledge_files.rs`,
+                  `app_data_commands.rs`, `goals_storage.rs`,
+                  `mistake_index.rs`, `quiz_archive.rs`, `data_sync.rs`)
   Cargo.toml      Rust dependencies and crate configuration
   tauri.conf.json Desktop window, build, and bundle configuration
 
 sample-quizzes/    Reference quiz JSON files for manual folder testing
-sample-knowledge/  Reference knowledge `.md` files for manual folder testing
+sample-quizzes/knowledge-base/  Reference knowledge `.md` files
 ```
