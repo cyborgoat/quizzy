@@ -18,6 +18,8 @@ import {
   DataTableNumericCell,
   DataTableSortableHeader,
   DataTableTruncatedCell,
+  dataTableCellClass,
+  dataTableHeadClass,
   dataTableCellMutedClass,
   dataTableFixedCellClass,
   dataTableFixedLayoutClass,
@@ -26,7 +28,11 @@ import { DataTablePaginationFooter } from "@/components/ui/data-table-pagination
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
-import { SectionPanel } from "@/components/ui/section-panel";
+import {
+  TableWorkspace,
+  tableWorkspaceHeaderClass,
+  tableWorkspaceScrollClass,
+} from "@/components/ui/table-workspace";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
@@ -66,10 +72,6 @@ const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
 const favoriteColumnHeadClass = "px-2 py-2";
 const favoriteColumnCellClass =
   "max-w-none overflow-visible px-2 py-2 text-center align-middle";
-const knowledgeTableInsetClass = "px-4";
-const knowledgeTableHeadClass = "h-auto px-4 py-2 text-left align-middle";
-const knowledgeTableCellClass = "px-4 py-2 text-left align-middle";
-const knowledgeTableEdgeStartClass = "pl-0";
 
 function knowledgeColumnWidth(columnId: string) {
   return KNOWLEDGE_COLUMN_WIDTHS[columnId] ?? "";
@@ -127,7 +129,10 @@ export function KnowledgeBasePage() {
     "Knowledge base refreshed.",
   );
 
-  const allTags = useMemo(() => collectKnowledgeTags(library.items), [library.items]);
+  const allTags = useMemo(
+    () => collectKnowledgeTags(library.items),
+    [library.items],
+  );
 
   const tagFilterOptions = useMemo(
     () => [
@@ -171,7 +176,9 @@ export function KnowledgeBasePage() {
       {
         accessorKey: "title",
         header: () => <DataTableColumnHeader label="Title" />,
-        cell: ({ row }) => <DataTableTruncatedCell value={row.original.title} />,
+        cell: ({ row }) => (
+          <DataTableTruncatedCell value={row.original.title} />
+        ),
       },
       {
         accessorKey: "tags",
@@ -259,10 +266,11 @@ export function KnowledgeBasePage() {
   }
 
   return (
-    <PageShell className="space-y-3 overflow-x-clip">
+    <PageShell layout="workspace">
       <PageHeader
         title="Knowledge Base"
-        description="Markdown notes in your knowledge-base folder. Link them to quiz questions and review them from the Mistake Log."
+        description="Your notes, concepts, and linked quiz references."
+        className="shrink-0 [@media(max-height:699px)]:[&>div>p:first-of-type]:hidden"
         actions={
           <>
             <IconActionButton
@@ -279,7 +287,9 @@ export function KnowledgeBasePage() {
               onClick={() => void handleRefresh()}
               disabled={isRefreshing}
             >
-              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+              <RefreshCw
+                className={cn("size-4", isRefreshing && "animate-spin")}
+              />
             </IconActionButton>
             <IconActionButton
               icon={Plus}
@@ -292,136 +302,162 @@ export function KnowledgeBasePage() {
         }
       />
 
-      <WorkingDirectoryGate
-        isLoading={library.isLoading}
-        directoryPath={library.directoryPath}
-        directoryAvailable={library.directoryAvailable}
-        loadingMessage="Loading knowledge base…"
-        noDirectoryTitle="No working directory set"
-        noDirectoryDescription="Choose a working directory in Settings to store knowledge notes."
-        unavailableTitle="Working directory unavailable"
-        unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
-        onOpenSettings={() => navigate({ to: "/settings" })}
-      >
-        <>
-          <InvalidFileReportsAlert
-            reports={library.invalidReports}
-            entityLabel="knowledge"
-          />
-
-          {library.items.length > 0 && (
-            <SearchField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search notes"
-              pending={isSearchPending}
-              className="py-1"
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto">
+        <WorkingDirectoryGate
+          isLoading={library.isLoading}
+          directoryPath={library.directoryPath}
+          directoryAvailable={library.directoryAvailable}
+          loadingMessage="Loading knowledge base…"
+          noDirectoryTitle="No working directory set"
+          noDirectoryDescription="Choose a working directory in Settings to store knowledge notes."
+          unavailableTitle="Working directory unavailable"
+          unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
+          onOpenSettings={() => navigate({ to: "/settings" })}
+        >
+          <>
+            <InvalidFileReportsAlert
+              reports={library.invalidReports}
+              entityLabel="knowledge"
+              className="max-h-[20dvh] shrink-0 overflow-auto"
             />
-          )}
 
-          {library.items.length === 0 ? (
-            <EmptyState
-              title="No knowledge notes yet"
-              description="Create your first note to capture concepts and link them to quiz questions."
-              actionLabel="New note"
-              onAction={handleNewNote}
-            />
-          ) : (
-            <SectionPanel
-              title="Notes"
-              count={filteredItems.length}
-              headerClassName="px-4"
-              contentClassName={knowledgeTableInsetClass}
-              headerAction={
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="knowledge-show-favorites"
-                    className="cursor-pointer text-xs font-normal text-zinc-600"
-                  >
-                    Show favorites
-                  </Label>
-                  <Switch
-                    id="knowledge-show-favorites"
-                    checked={showFavoritesOnly}
-                    onCheckedChange={setShowFavoritesOnly}
-                    aria-label="Show favorites only"
-                  />
-                </div>
-              }
-              className={cn(
-                "transition-opacity motion-reduce:transition-none",
-                isSearchPending && "opacity-70",
-              )}
-            >
-                <div className="overflow-x-auto">
-                  <Table className={dataTableFixedLayoutClass}>
-                    <TableHeader>
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead
-                              key={header.id}
-                              className={cn(
-                                knowledgeTableHeadClass,
-                                dataTableFixedCellClass,
-                                knowledgeColumnWidth(header.column.id),
-                                header.column.id === "title" && knowledgeTableEdgeStartClass,
-                                header.column.id === "favorite" && favoriteColumnHeadClass,
-                              )}
-                            >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext(),
-                                  )}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={row.id}
-                          className="cursor-pointer"
-                          onClick={() => openNote(row.original)}
-                        >
-                          {row.getAllCells().map((cell) => (
-                            <TableCell
-                              key={cell.id}
-                              className={cn(
-                                knowledgeTableCellClass,
-                                dataTableFixedCellClass,
-                                knowledgeColumnWidth(cell.column.id),
-                                cell.column.id === "title" && knowledgeTableEdgeStartClass,
-                                cell.column.id === "favorite" && favoriteColumnCellClass,
-                              )}
-                            >
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {filteredItems.length > 0 ? (
+            {library.items.length > 0 && (
+              <SearchField
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search notes"
+                pending={isSearchPending}
+                className="shrink-0 py-1"
+              />
+            )}
+
+            {library.items.length === 0 ? (
+              <EmptyState
+                title="No knowledge notes yet"
+                description="Create your first note to capture concepts and link them to quiz questions."
+                actionLabel="New note"
+                onAction={handleNewNote}
+              />
+            ) : (
+              <TableWorkspace
+                title="Notes"
+                count={filteredItems.length}
+                actions={
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="knowledge-show-favorites"
+                      className="cursor-pointer text-xs font-normal text-zinc-600"
+                    >
+                      Show favorites
+                    </Label>
+                    <Switch
+                      id="knowledge-show-favorites"
+                      checked={showFavoritesOnly}
+                      onCheckedChange={setShowFavoritesOnly}
+                      aria-label="Show favorites only"
+                    />
+                  </div>
+                }
+                footer={
                   <DataTablePaginationFooter
                     table={table}
                     pageSizeOptions={MISTAKE_LOG_PAGE_SIZE_OPTIONS}
                   />
-                ) : (
-                  <div className="border-t border-zinc-200/55 py-8 text-center">
-                    <p className="text-sm text-zinc-500">
-                      {noMatchingNotesMessage(showFavoritesOnly, isSearchActive, selectedTag)}
-                    </p>
-                  </div>
+                }
+                className={cn(
+                  "transition-opacity motion-reduce:transition-none",
+                  isSearchPending && "opacity-70",
                 )}
-            </SectionPanel>
-          )}
-        </>
-      </WorkingDirectoryGate>
+              >
+                <Table
+                  key={`${filterResetKey}:${pagination.pageIndex}:${pagination.pageSize}`}
+                  className={cn(dataTableFixedLayoutClass, "min-w-[36rem]")}
+                  containerClassName={tableWorkspaceScrollClass}
+                >
+                  <TableHeader className={tableWorkspaceHeaderClass}>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            className={cn(
+                              dataTableHeadClass,
+                              dataTableFixedCellClass,
+                              knowledgeColumnWidth(header.column.id),
+
+                              header.column.id === "favorite" &&
+                                favoriteColumnHeadClass,
+                            )}
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {filteredItems.length === 0 && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell
+                          colSpan={columns.length}
+                          className="px-3 py-8 text-center text-sm text-zinc-500"
+                        >
+                          {noMatchingNotesMessage(
+                            showFavoritesOnly,
+                            isSearchActive,
+                            selectedTag,
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        className="cursor-pointer hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (
+                            event.target === event.currentTarget &&
+                            (event.key === "Enter" || event.key === " ")
+                          ) {
+                            event.preventDefault();
+                            openNote(row.original);
+                          }
+                        }}
+                        onClick={() => openNote(row.original)}
+                      >
+                        {row.getAllCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              dataTableCellClass,
+                              dataTableFixedCellClass,
+                              knowledgeColumnWidth(cell.column.id),
+
+                              cell.column.id === "favorite" &&
+                                favoriteColumnCellClass,
+                            )}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableWorkspace>
+            )}
+          </>
+        </WorkingDirectoryGate>
+      </div>
     </PageShell>
   );
 }

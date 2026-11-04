@@ -72,15 +72,20 @@ export function MistakeLogPage() {
   });
 
   return (
-    <PageShell className="space-y-3">
+    <PageShell layout="workspace">
       <PageHeader
         title="Mistake Log"
-        description="Threshold-filtered mistakes plus flagged questions from scored attempts. Click a question to review the answer and explanation."
+        description="Review mistakes and flagged questions at your own pace."
+        className="shrink-0 [@media(max-height:699px)]:[&>div>p:first-of-type]:hidden"
       >
         <p className="mt-1 text-xs text-zinc-500">
-          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥{thresholds.minFlags} flag(s), ≤
-          {thresholds.maxCorrectnessPercentage}% correctness. Adjust in{" "}
-          <Link to="/settings" className="font-medium text-zinc-700 underline-offset-2 hover:underline">
+          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥
+          {thresholds.minFlags} flag(s), ≤{thresholds.maxCorrectnessPercentage}%
+          correctness. Adjust in{" "}
+          <Link
+            to="/settings"
+            className="font-medium text-zinc-700 underline-offset-2 hover:underline"
+          >
             <Settings className="mr-0.5 inline size-3" />
             Settings
           </Link>
@@ -89,12 +94,19 @@ export function MistakeLogPage() {
       </PageHeader>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert
+          variant="destructive"
+          className="max-h-[20dvh] shrink-0 overflow-auto"
+        >
           <AlertTitle>Unable to load mistake data</AlertTitle>
           <AlertDescription>
             <div className="flex flex-wrap items-center gap-3">
               <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void refetch()}
+              >
                 Retry
               </Button>
             </div>
@@ -105,7 +117,9 @@ export function MistakeLogPage() {
       {isLoading ? (
         <LoadingState message="Loading mistake data…" className="py-12" />
       ) : emptyReason ? (
-        <EmptyMistakeLog reason={emptyReason} thresholds={thresholds} />
+        <div className="min-h-0 flex-1 overflow-auto">
+          <EmptyMistakeLog reason={emptyReason} thresholds={thresholds} />
+        </div>
       ) : (
         <>
           <MistakeLogTable
@@ -133,7 +147,9 @@ export function MistakeLogPage() {
               onPrevious={goToPreviousMistake}
               onNext={goToNextMistake}
               disablePrevious={activePosition <= 0}
-              disableNext={activePosition < 0 || activePosition >= sortedEntries.length - 1}
+              disableNext={
+                activePosition < 0 || activePosition >= sortedEntries.length - 1
+              }
             />
           )}
         </>

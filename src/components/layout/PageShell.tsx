@@ -10,10 +10,12 @@ export type { PageShellWidth };
 
 export function PageShell({
   width = "wide",
+  layout = "flow",
   className,
   children,
 }: {
   width?: PageShellWidth;
+  layout?: "flow" | "workspace";
   className?: string;
   children: ReactNode;
 }) {
@@ -23,6 +25,7 @@ export function PageShell({
         "mx-auto w-full min-w-0 max-w-full overflow-x-hidden py-[var(--app-page-py)]",
         pageShellPaddingClass,
         pageShellWidthClass[width],
+        layout === "workspace" && "flex h-dvh min-h-0 flex-col gap-3 overflow-hidden py-3 lg:py-4",
         className,
       )}
     >

@@ -54,7 +54,9 @@ export function useMistakeLogPageState({
     pageSize: 5,
   });
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
-  const [isMistakeListExpanded, setIsMistakeListExpanded] = useState(true);
+  const [isMistakeListExpanded, setIsMistakeListExpanded] = useState(() =>
+    typeof window === "undefined" || window.innerHeight >= 700,
+  );
   const [studyMode, setStudyMode] = useState(true);
   const [shuffleEnabled, setShuffleEnabled] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(0);

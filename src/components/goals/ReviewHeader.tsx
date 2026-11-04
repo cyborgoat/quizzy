@@ -21,12 +21,11 @@ export function ReviewHeader({
     return (
       <header className="space-y-4">
         <Link
-          to="/"
-          search={{ details: goal.quizId }}
+          to="/history"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
         >
           <ArrowLeft className="size-4" />
-          Quiz details
+          History
         </Link>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

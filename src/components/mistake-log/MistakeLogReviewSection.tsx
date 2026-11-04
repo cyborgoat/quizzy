@@ -40,11 +40,14 @@ export function MistakeLogReviewSection({
 }) {
   return (
     <QuestionReviewCard
+      layout="workspace"
       header={
         <>
           <h2 className={panelHeadingClassName}>Review mistake</h2>
-          <div className="mt-1 flex items-center gap-x-2 text-xs text-zinc-500">
-            <span className="truncate">{entry.quizTitle}</span>
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+            <span className="max-w-48 truncate" title={entry.quizTitle}>
+              {entry.quizTitle}
+            </span>
             <span className="shrink-0 text-zinc-300" aria-hidden="true">
               ·
             </span>
