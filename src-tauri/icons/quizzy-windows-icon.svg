@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <svg xmlns="http://www.w3.org/2000/svg" x="48" y="48" width="928" height="928" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="sunshine" x1="12" y1="0" x2="48" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFE775"/>
-      <stop offset="1" stop-color="#FFC337"/>
+    <linearGradient id="graphite" x1="12" y1="0" x2="48" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34373D"/>
+      <stop offset="1" stop-color="#181A1E"/>
     </linearGradient>
-    <linearGradient id="grape" x1="20" y1="10" x2="45" y2="53" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8747DC"/>
-      <stop offset="1" stop-color="#6427B9"/>
+    <linearGradient id="ivory" x1="20" y1="10" x2="45" y2="53" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAFAF8"/>
+      <stop offset="1" stop-color="#E5E5E0"/>
     </linearGradient>
     <g id="q">
       <path fill-rule="evenodd" d="M31 10C44 9 52 17 51 30C50 43 43 50 30 51C17 52 10 43 11 30C12 18 18 11 31 10ZM31 21C24 21 22 26 22 32C22 38 25 41 31 40C37 40 40 35 40 29C41 23 37 20 31 21Z"/>
       <path d="M35 34C36 33 38 33 39 34L53 46C55 48 54 50 52 52L50 54C48 56 46 55 45 53L33 39C32 37 33 35 35 34Z"/>
     </g>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#sunshine)"/>
-  <rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" stroke="#FFFFFF" stroke-opacity=".32" stroke-width="1.5"/>
+  <rect width="64" height="64" rx="14" fill="url(#graphite)"/>
+  <rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="1.5"/>
   <g transform="rotate(-8 32 32)">
-    <use href="#q" transform="translate(0 2)" fill="#51208E" fill-opacity=".24"/>
-    <use href="#q" fill="url(#grape)"/>
+    <use href="#q" transform="translate(0 2)" fill="#000000" fill-opacity=".28"/>
+    <use href="#q" fill="url(#ivory)"/>
   </g>
 </svg>
 

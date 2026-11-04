@@ -26,10 +26,10 @@ try {
   copyFileSync(join(temporary, "1024x1024.png"), join(root, "public/quizzy-logo.png"));
 
   const appSource = join(icons, "quizzy-app-icon.svg");
-  writeFileSync(appSource, nativeSource(96));
+  // Keep a small safe margin without shrinking the icon in the Dock.
+  writeFileSync(appSource, nativeSource(48));
   generate(appSource, icons);
 
-  // Windows uses a larger tile so the mark remains clear in the taskbar.
   const windowsSource = join(icons, "quizzy-windows-icon.svg");
   writeFileSync(windowsSource, nativeSource(48));
   generate(windowsSource, join(temporary, "windows"));
