@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
-import { SectionPanel } from "@/components/ui/section-panel";
+import { useId, type ReactNode } from "react";
 
 export function SettingsSection({
   icon: Icon,
@@ -11,9 +10,15 @@ export function SettingsSection({
   title: string;
   children: ReactNode;
 }) {
+  const headingId = useId();
+
   return (
-    <SectionPanel icon={Icon} title={title} contentClassName="p-3">
+    <section aria-labelledby={headingId} className="border-b border-zinc-200/70 pb-6 last:border-b-0 last:pb-0">
+      <header className="mb-3 flex items-center gap-2">
+        <Icon className="size-4 shrink-0 text-zinc-400" aria-hidden="true" />
+        <h2 id={headingId} className="text-sm font-semibold text-zinc-900">{title}</h2>
+      </header>
       {children}
-    </SectionPanel>
+    </section>
   );
 }

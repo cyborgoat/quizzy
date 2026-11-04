@@ -6,13 +6,21 @@ import { useDirectoryLibrary } from "@/hooks/useDirectoryLibrary";
 import type { ResolvedLibraryFile } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
 
-const EMPTY_LIBRARY: ParsedQuizLibrary = { quizzes: [], invalidReports: [] };
+type QuizLibrary = ParsedQuizLibrary & { favoriteQuizIds: ReadonlySet<string> };
+const EMPTY_LIBRARY: QuizLibrary = { quizzes: [], invalidReports: [], favoriteQuizIds: new Set() };
 
 const readQuizFiles = (knownVersions: Record<string, string>) =>
   nativeApi.readWorkingDirectory(knownVersions);
-const readArchivedQuizIds = () => nativeApi.listArchivedQuizIds();
-const parseQuizLibrary = (files: ResolvedLibraryFile[], archivedQuizIds: string[]) =>
-  parseQuizFiles(files, new Set(archivedQuizIds));
+const readQuizMetadata = async () => {
+  const [archivedQuizIds, favoriteQuizIds] = await Promise.all([
+    nativeApi.listArchivedQuizIds(), nativeApi.listFavoriteQuizIds(),
+  ]);
+  return { archivedQuizIds, favoriteQuizIds };
+};
+const parseQuizLibrary = (files: ResolvedLibraryFile[], metadata: Awaited<ReturnType<typeof readQuizMetadata>>): QuizLibrary => ({
+  ...parseQuizFiles(files, new Set(metadata.archivedQuizIds)),
+  favoriteQuizIds: new Set(metadata.favoriteQuizIds),
+});
 
 export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   const {
@@ -25,11 +33,11 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   } = useDirectoryLibrary({
     empty: EMPTY_LIBRARY,
     readFiles: readQuizFiles,
-    readExtras: readArchivedQuizIds,
+    readExtras: readQuizMetadata,
     parse: parseQuizLibrary,
     label: "quiz",
   });
-  const { quizzes, invalidReports } = library;
+  const { quizzes, invalidReports, favoriteQuizIds } = library;
 
   function setQuizzes(update: (current: typeof quizzes) => typeof quizzes) {
     setLibrary((current) => ({ ...current, quizzes: update(current.quizzes) }));
@@ -72,6 +80,22 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function setQuizFavorite(quizId: string, favorite: boolean) {
+    try {
+      await nativeApi.setQuizFavorite(quizId, favorite);
+      setLibrary((current) => {
+        const next = new Set(current.favoriteQuizIds);
+        if (favorite) next.add(quizId);
+        else next.delete(quizId);
+        return { ...current, favoriteQuizIds: next };
+      });
+      return true;
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return false;
+    }
+  }
+
   async function deleteQuizFile(fileName: string) {
     try {
       await nativeApi.deleteQuizFile(fileName);
@@ -89,6 +113,8 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     directoryPath,
     directoryAvailable,
     quizzes,
+    favoriteQuizIds,
+    setQuizFavorite,
     invalidReports,
     isLoading,
     refresh,

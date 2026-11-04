@@ -20,6 +20,8 @@ struct ArchiveRegistry {
     version: u32,
     #[serde(default)]
     directories: BTreeMap<String, BTreeSet<String>>,
+    #[serde(default)]
+    favorites: BTreeMap<String, BTreeSet<String>>,
 }
 
 impl Default for ArchiveRegistry {
@@ -27,6 +29,7 @@ impl Default for ArchiveRegistry {
         Self {
             version: ARCHIVE_REGISTRY_VERSION,
             directories: BTreeMap::new(),
+            favorites: BTreeMap::new(),
         }
     }
 }
@@ -73,25 +76,24 @@ fn current_directory_key(app: &AppHandle) -> Result<String, String> {
     Ok(crate::fs_utils::normalize_stored_path(canonical))
 }
 
-fn update_archive_entry(
-    registry: &mut ArchiveRegistry,
+fn update_entry(
+    directories: &mut BTreeMap<String, BTreeSet<String>>,
     directory_key: &str,
     quiz_id: &str,
     archived: bool,
 ) {
     if archived {
-        registry
-            .directories
+        directories
             .entry(directory_key.to_string())
             .or_default()
             .insert(quiz_id.to_string());
         return;
     }
 
-    if let Some(ids) = registry.directories.get_mut(directory_key) {
+    if let Some(ids) = directories.get_mut(directory_key) {
         ids.remove(quiz_id);
         if ids.is_empty() {
-            registry.directories.remove(directory_key);
+            directories.remove(directory_key);
         }
     }
 }
@@ -112,19 +114,54 @@ pub fn set_quiz_archived(app: &AppHandle, quiz_id: &str, archived: bool) -> Resu
     }
     let mut registry = read_registry(app)?;
     let directory_key = current_directory_key(app)?;
-    update_archive_entry(&mut registry, &directory_key, quiz_id, archived);
+    update_entry(&mut registry.directories, &directory_key, quiz_id, archived);
+    write_registry(app, &registry)
+}
+
+pub fn list_favorite_quiz_ids(app: &AppHandle) -> Result<Vec<String>, String> {
+    let registry = read_registry(app)?;
+    let directory_key = current_directory_key(app)?;
+    Ok(registry
+        .favorites
+        .get(&directory_key)
+        .map(|ids| ids.iter().cloned().collect())
+        .unwrap_or_default())
+}
+
+pub fn set_quiz_favorite(app: &AppHandle, quiz_id: &str, favorite: bool) -> Result<(), String> {
+    if quiz_id.trim().is_empty() {
+        return Err("The quiz ID is required.".to_string());
+    }
+    let mut registry = read_registry(app)?;
+    let directory_key = current_directory_key(app)?;
+    update_entry(&mut registry.favorites, &directory_key, quiz_id, favorite);
     write_registry(app, &registry)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{update_archive_entry, ArchiveRegistry};
+    use super::{update_entry, ArchiveRegistry};
+
+    #[test]
+    fn favorites_preserve_archives_and_support_existing_registries() {
+        let mut registry: ArchiveRegistry =
+            serde_json::from_str(r#"{"version":1,"directories":{"/a":["archived"]}}"#).unwrap();
+        assert!(registry.favorites.is_empty());
+        update_entry(&mut registry.favorites, "/a", "quiz-1", true);
+        update_entry(&mut registry.favorites, "/b", "quiz-1", true);
+        update_entry(&mut registry.favorites, "/a", "quiz-1", false);
+        let loaded: ArchiveRegistry =
+            serde_json::from_str(&serde_json::to_string(&registry).unwrap()).unwrap();
+        assert!(!loaded.favorites.contains_key("/a"));
+        assert!(loaded.favorites["/b"].contains("quiz-1"));
+        assert!(loaded.directories["/a"].contains("archived"));
+    }
 
     #[test]
     fn archive_entries_are_scoped_by_directory() {
         let mut registry = ArchiveRegistry::default();
-        update_archive_entry(&mut registry, "/quizzes/a", "quiz-1", true);
-        update_archive_entry(&mut registry, "/quizzes/b", "quiz-2", true);
+        update_entry(&mut registry.directories, "/quizzes/a", "quiz-1", true);
+        update_entry(&mut registry.directories, "/quizzes/b", "quiz-2", true);
 
         assert!(registry.directories["/quizzes/a"].contains("quiz-1"));
         assert!(!registry.directories["/quizzes/a"].contains("quiz-2"));
@@ -134,8 +171,8 @@ mod tests {
     #[test]
     fn restoring_the_last_quiz_removes_the_directory_entry() {
         let mut registry = ArchiveRegistry::default();
-        update_archive_entry(&mut registry, "/quizzes", "quiz-1", true);
-        update_archive_entry(&mut registry, "/quizzes", "quiz-1", false);
+        update_entry(&mut registry.directories, "/quizzes", "quiz-1", true);
+        update_entry(&mut registry.directories, "/quizzes", "quiz-1", false);
 
         assert!(!registry.directories.contains_key("/quizzes"));
     }

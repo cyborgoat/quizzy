@@ -1,12 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog";
-import {
-  ArrowDownWideNarrow,
-  ArrowUpNarrowWide,
-  FileUp,
-  CircleHelp,
-  FolderOpen,
-  RefreshCw,
-} from "lucide-react";
+import { FileUp, CircleHelp, FolderOpen, RefreshCw } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -16,17 +9,11 @@ import { QuizDetailsDialog } from "@/components/quiz/QuizDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
+import { FilterSortMenu } from "@/components/ui/filter-sort-menu";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { pageDescriptionClassName, pageTitleClassName } from "@/components/ui/typography";
+  pageDescriptionClassName,
+  pageTitleClassName,
+} from "@/components/ui/typography";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { QuizList } from "@/components/quiz/QuizList";
@@ -59,9 +46,11 @@ export function HomePage() {
   const { details: detailsQuizId } = Route.useSearch();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuizLibraryFilter>("all");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sortOrder, setSortOrder] = useQuizLibrarySort();
   const sortOption = quizLibrarySortOption(sortOrder.field);
-  const nextSortDirection = sortOrder.direction === "asc" ? "desc" : "asc";
+  const hasActiveFilters =
+    statusFilter !== "all" || favoritesOnly || sortOrder.field !== "default";
   const [isImporting, setIsImporting] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -74,11 +63,23 @@ export function HomePage() {
   const filteredQuizzes = useMemo(() => {
     const searched = searchQuizSources(library.quizzes, deferredSearchQuery);
     const filtered = filterQuizSources(searched, goals, statusFilter);
-    return sortQuizSources(filtered, goals, sortOrder);
-  }, [library.quizzes, deferredSearchQuery, goals, statusFilter, sortOrder]);
+    const favorites = favoritesOnly
+      ? filtered.filter((source) => library.favoriteQuizIds.has(source.quiz.id))
+      : filtered;
+    return sortQuizSources(favorites, goals, sortOrder);
+  }, [
+    library.quizzes,
+    deferredSearchQuery,
+    goals,
+    statusFilter,
+    sortOrder,
+    favoritesOnly,
+    library.favoriteQuizIds,
+  ]);
 
   const detailsSource = detailsQuizId
-    ? library.quizzes.find((source) => source.quiz.id === detailsQuizId) ?? null
+    ? (library.quizzes.find((source) => source.quiz.id === detailsQuizId) ??
+      null)
     : null;
   const detailsGoal = detailsSource
     ? goals.find((goal) => goal.quizId === detailsSource.quiz.id)
@@ -128,9 +129,7 @@ export function HomePage() {
           className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
         />
         <div>
-          <h1 className={pageTitleClassName}>
-            Hello, {userName || "there"}
-          </h1>
+          <h1 className={pageTitleClassName}>Hello, {userName || "there"}</h1>
           <p className={pageDescriptionClassName}>
             Ready to practice? Pick a quiz below and get started.
           </p>
@@ -162,7 +161,9 @@ export function HomePage() {
               />
               <IconActionButton
                 icon={FileUp}
-                label={isImporting ? "Importing quiz file…" : "Import quiz file"}
+                label={
+                  isImporting ? "Importing quiz file…" : "Import quiz file"
+                }
                 variant="outline"
                 onClick={() => void handleImportQuiz()}
                 disabled={isImporting}
@@ -174,7 +175,9 @@ export function HomePage() {
                 onClick={() => void handleRefresh()}
                 disabled={isRefreshing}
               >
-                <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`size-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
               </IconActionButton>
               <IconActionButton
                 icon={FolderOpen}
@@ -194,64 +197,54 @@ export function HomePage() {
                 pending={isSearchPending}
                 className="min-w-0 flex-1"
               />
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as QuizLibraryFilter)}
-              >
-                <SelectTrigger className="sm:w-48" aria-label="Filter quizzes">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {QUIZ_LIBRARY_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={sortOrder.field}
-                  onValueChange={(value) =>
-                    setSortOrder(withSortField(value as QuizLibrarySortField))
-                  }
-                >
-                  <SelectTrigger className="min-w-0 flex-1 sm:w-44" aria-label="Sort quizzes by">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {QUIZ_LIBRARY_SORT_GROUPS.map((group, index) => (
-                      <SelectGroup key={group.label}>
-                        {index > 0 && <SelectSeparator />}
-                        <SelectLabel className="text-xs font-medium text-zinc-500">
-                          {group.label}
-                        </SelectLabel>
-                        {group.options.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <IconActionButton
-                  icon={
-                    sortOrder.direction === "asc" ? ArrowUpNarrowWide : ArrowDownWideNarrow
-                  }
-                  label={
-                    sortOrder.field === "default"
-                      ? "Choose a sort field to change direction"
-                      : `${sortOption.directionLabels[sortOrder.direction]} · switch to ${sortOption.directionLabels[nextSortDirection].toLowerCase()}`
-                  }
-                  variant="outline"
-                  className="size-9 shrink-0"
-                  disabled={sortOrder.field === "default"}
-                  onClick={() =>
-                    setSortOrder({ ...sortOrder, direction: nextSortDirection })
-                  }
-                />
-              </div>
+              <FilterSortMenu
+                label="Filter and sort quizzes"
+                active={hasActiveFilters}
+                sections={[
+                  {
+                    label: "Status",
+                    value: statusFilter,
+                    options: QUIZ_LIBRARY_FILTERS,
+                    onValueChange: (value) =>
+                      setStatusFilter(value as QuizLibraryFilter),
+                  },
+                  {
+                    label: "Sort by",
+                    value: sortOrder.field,
+                    options: QUIZ_LIBRARY_SORT_GROUPS.flatMap((group) =>
+                      group.options.map((option) => ({
+                        ...option,
+                        group: group.label,
+                      })),
+                    ),
+                    onValueChange: (value) =>
+                      setSortOrder(
+                        withSortField(value as QuizLibrarySortField),
+                      ),
+                  },
+                  {
+                    label: "Order",
+                    value: sortOrder.direction,
+                    disabled: sortOrder.field === "default",
+                    options: (["asc", "desc"] as const).map((value) => ({
+                      value,
+                      label: sortOption.directionLabels[value],
+                    })),
+                    onValueChange: (value) =>
+                      setSortOrder({
+                        ...sortOrder,
+                        direction: value as "asc" | "desc",
+                      }),
+                  },
+                ]}
+                toggles={[
+                  {
+                    label: "Favorites only",
+                    checked: favoritesOnly,
+                    onCheckedChange: setFavoritesOnly,
+                  },
+                ]}
+              />
             </div>
           )}
 
@@ -279,20 +272,25 @@ export function HomePage() {
             ) : (
               <EmptyState
                 title={
-                  statusFilter === "archived"
-                    ? "No archived quizzes"
-                    : "No quizzes match your search"
+                  favoritesOnly
+                    ? "No favorite quizzes match"
+                    : statusFilter === "archived"
+                      ? "No archived quizzes"
+                      : "No quizzes match your search"
                 }
                 description={
-                  statusFilter === "archived"
-                    ? "Archive a quiz from its details to find it here."
-                    : "Try another keyword or status filter."
+                  favoritesOnly
+                    ? "Star a quiz card to save it here, or try another search or status filter."
+                    : statusFilter === "archived"
+                      ? "Archive a quiz from its details to find it here."
+                      : "Try another keyword or status filter."
                 }
                 actionLabel="Clear filters"
                 actionVariant="outline"
                 onAction={() => {
                   setSearchQuery("");
                   setStatusFilter("all");
+                  setFavoritesOnly(false);
                 }}
               />
             )
@@ -306,7 +304,10 @@ export function HomePage() {
                     <CircleHelp className="size-4" />
                     How to import
                   </Button>
-                  <Button variant="outline" onClick={() => void library.openQuizFolder()}>
+                  <Button
+                    variant="outline"
+                    onClick={() => void library.openQuizFolder()}
+                  >
                     <FolderOpen className="size-4" />
                     Open folder
                   </Button>

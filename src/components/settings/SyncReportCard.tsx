@@ -10,7 +10,7 @@ export function SyncReportCard({
   report: SyncReport;
 }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+    <div className="pt-1">
       <h3 className={panelHeadingClassName}>{sections.title}</h3>
 
       <div className="mt-2 space-y-2 text-sm text-zinc-700">
@@ -52,14 +52,14 @@ export function SyncReportCard({
         {report.changes.length > 0 && (
           <div>
             <p className="text-xs font-medium text-zinc-800">Files changed</p>
-            <ul className="mt-1 space-y-1.5">
+            <ul className="mt-1 divide-y divide-zinc-100">
               {report.changes.map((change, index) => (
                 <li
                   key={`${change.kind}-${change.path ?? "none"}-${index}`}
-                  className="rounded border border-zinc-200 bg-white px-2.5 py-2"
+                  className="py-2 first:pt-0 last:pb-0"
                 >
                   {change.path && (
-                    <code className="block text-xs text-zinc-700">{change.path}</code>
+                    <code className="block break-all text-xs text-zinc-700">{change.path}</code>
                   )}
                   <span className="mt-0.5 block text-xs text-zinc-600">{change.detail}</span>
                 </li>

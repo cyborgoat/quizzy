@@ -1,5 +1,5 @@
 export const settingsControlSizeClassName =
-  "h-7 w-[4.5rem] shrink-0 rounded-md border-2 border-zinc-200 bg-white text-center text-xs";
+  "h-7 w-[4.5rem] shrink-0 rounded-md border border-zinc-200 bg-white text-center text-xs";
 
 export const settingsCompactControlPadding = "px-1 py-0";
 

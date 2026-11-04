@@ -1,4 +1,7 @@
-import { ArchiveRestore, Eye, Play } from "lucide-react";
+import { ArchiveRestore, FileText, Play, Star } from "lucide-react";
+import { useState } from "react";
+import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
 import { CardShine } from "@/components/ui/card-shine";
@@ -24,6 +27,18 @@ export function QuizListItem({
   onOpenDetails: (quizId: string) => void;
 }) {
   const { goals } = useGoals();
+  const { favoriteQuizIds, setQuizFavorite } = useQuizLibrary();
+  const favorite = favoriteQuizIds.has(source.quiz.id);
+  const [savingFavorite, setSavingFavorite] = useState(false);
+
+  async function toggleFavorite() {
+    setSavingFavorite(true);
+    try {
+      await setQuizFavorite(source.quiz.id, !favorite);
+    } finally {
+      setSavingFavorite(false);
+    }
+  }
   const { openQuizStart } = useQuizStartDialog();
   const goal = goals.find((item) => item.quizId === source.quiz.id);
   const status = quizProgressStatus(goal);
@@ -50,8 +65,18 @@ export function QuizListItem({
           aria-label={`Open details for ${source.quiz.title}`}
           title="Details"
         >
-          <Eye className="size-4" />
+          <FileText className="size-4" />
         </Button>
+        <IconActionButton
+          icon={Star}
+          label={favorite ? `Unfavorite ${source.quiz.title}` : `Favorite ${source.quiz.title}`}
+          aria-pressed={favorite}
+          disabled={savingFavorite}
+          className={cn("size-6 shrink-0 text-zinc-400", favorite && "text-amber-500 hover:text-amber-600")}
+          onClick={() => void toggleFavorite()}
+        >
+          <Star className={cn("size-4", favorite && "fill-current")} />
+        </IconActionButton>
       </div>
 
       {source.quiz.tags.length > 0 && (

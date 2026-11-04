@@ -32,7 +32,7 @@ export function SettingsPage() {
   } = useSettingsPageState();
 
   return (
-    <PageShell width="narrow" className="space-y-3">
+    <PageShell className="space-y-6">
       <PageHeader
         title="Settings"
         description="Configure your profile, shortcuts, and directory."

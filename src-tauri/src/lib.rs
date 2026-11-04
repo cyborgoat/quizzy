@@ -41,6 +41,8 @@ pub fn run() {
             quiz_files::add_sample_quizzes,
             quiz_files::list_archived_quiz_ids,
             quiz_files::set_quiz_archived,
+            quiz_files::list_favorite_quiz_ids,
+            quiz_files::set_quiz_favorite,
             quiz_files::delete_quiz_file,
             knowledge_files::read_knowledge_directory,
             knowledge_files::write_knowledge_file,

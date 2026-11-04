@@ -33,7 +33,7 @@ export function SettingsAboutSection() {
         label="Quizzy"
         description="The version currently installed on this device."
       >
-        <span className="inline-flex min-h-7 items-center rounded-md border border-zinc-200 bg-zinc-50 px-2.5 text-xs font-medium tabular-nums text-zinc-700">
+        <span className="inline-flex min-h-7 items-center text-xs font-medium tabular-nums text-zinc-700">
           {version ?? "Loading…"}
         </span>
       </SettingsSettingRow>

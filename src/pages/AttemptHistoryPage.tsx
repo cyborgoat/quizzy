@@ -1,21 +1,14 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link } from "@tanstack/react-router";
 import { History } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AttemptHistoryTable } from "@/components/goals/AttemptHistoryTable";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { buttonClassName } from "@/components/ui/button-styles";
-import { SearchField } from "@/components/ui/search-field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
@@ -24,17 +17,13 @@ import {
   collectAttemptHistory,
   filterAttemptHistory,
   type AttemptHistoryEntry,
-  type AttemptHistorySort,
 } from "@/lib/recentAttempts";
 
 export function AttemptHistoryPage() {
   const { goals, isLoading: goalsLoading, deleteAttempt } = useGoals();
   const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
   const { openQuizStart } = useQuizStartDialog();
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
   const [quizId, setQuizId] = useState("all");
-  const [sort, setSort] = useState<AttemptHistorySort>("newest");
   const [deletingAttemptId, setDeletingAttemptId] = useState<string | null>(
     null,
   );
@@ -66,28 +55,16 @@ export function AttemptHistoryPage() {
   const filteredEntries = useMemo(
     () =>
       filterAttemptHistory(allEntries, {
-        query: deferredQuery,
+        query: "",
         quizId: resolvedQuizId === "all" ? "" : resolvedQuizId,
-        sort,
+        sort: "newest",
       }),
-    [allEntries, deferredQuery, resolvedQuizId, sort],
+    [allEntries, resolvedQuizId],
   );
   const stats = useMemo(
     () => attemptHistoryStats(filteredEntries),
     [filteredEntries],
   );
-  function handleQuizChange(value: string) {
-    setQuizId(value);
-  }
-
-  function handleQueryChange(value: string) {
-    setQuery(value);
-  }
-
-  function handleSortChange(value: AttemptHistorySort) {
-    setSort(value);
-  }
-
   async function handleDelete(entry: AttemptHistoryEntry) {
     if (deletingAttemptId) return;
     const approved = await confirm(
@@ -142,46 +119,6 @@ export function AttemptHistoryPage() {
         ))}
       </dl>
 
-      <section aria-label="History filters" className="shrink-0">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,10rem)_minmax(0,9rem)] gap-2">
-          <SearchField
-            value={query}
-            onChange={handleQueryChange}
-            placeholder="Search quiz titles or tags"
-            pending={query !== deferredQuery}
-          />
-          <Select value={resolvedQuizId} onValueChange={handleQuizChange}>
-            <SelectTrigger aria-label="Filter by quiz">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All quizzes</SelectItem>
-              {quizOptions.map((option) => (
-                <SelectItem key={option.quizId} value={option.quizId}>
-                  {option.quizTitle}
-                  {option.archived ? " (Archived)" : ""}
-                  {!option.quizAvailable ? " (Unavailable)" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={sort}
-            onValueChange={(value) =>
-              handleSortChange(value as AttemptHistorySort)
-            }
-          >
-            <SelectTrigger aria-label="Sort attempt history">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </section>
-
       {allEntries.length === 0 ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyState
@@ -202,8 +139,16 @@ export function AttemptHistoryPage() {
         </div>
       ) : (
         <AttemptHistoryTable
-          key={`${deferredQuery}:${resolvedQuizId}:${sort}`}
           entries={filteredEntries}
+          quizFilter={resolvedQuizId}
+          quizOptions={[
+            { value: "all", label: "All quizzes" },
+            ...quizOptions.map((option) => ({
+              value: option.quizId,
+              label: `${option.quizTitle}${option.archived ? " (Archived)" : ""}${!option.quizAvailable ? " (Unavailable)" : ""}`,
+            })),
+          ]}
+          onQuizFilterChange={setQuizId}
           deletingAttemptId={deletingAttemptId}
           onRetake={(entry) => openQuizStart({ quizId: entry.quizId })}
           onDelete={(entry) => void handleDelete(entry)}

@@ -3,14 +3,17 @@ import {
   type ColumnDef,
   flexRender,
   type PaginationState,
+  type SortingState,
   useTable,
 } from "@tanstack/react-table";
 import { RotateCcw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { Badge } from "@/components/ui/badge";
 import {
   DataTableColumnHeader,
+  DataTableColumnFilterHeader,
+  DataTableSortableHeader,
   DataTableTruncatedCell,
   dataTableCellClass,
   dataTableHeadClass,
@@ -36,17 +39,6 @@ import { appTableFeatures, type AppTableFeatures } from "@/lib/tableFeatures";
 import { cn } from "@/lib/utils";
 import { attemptPassed } from "@/types/goal";
 
-const columns: ColumnDef<AppTableFeatures, AttemptHistoryEntry>[] = [
-  {
-    accessorKey: "quizTitle",
-    header: () => <DataTableColumnHeader label="Quiz" />,
-  },
-  { id: "takenAt", header: () => <DataTableColumnHeader label="Taken" /> },
-  { id: "score", header: () => <DataTableColumnHeader label="Score" /> },
-  { id: "mistakes", header: () => <DataTableColumnHeader label="Mistakes" /> },
-  { id: "result", header: () => <DataTableColumnHeader label="Result" /> },
-  { id: "actions", header: () => <span className="sr-only">Actions</span> },
-];
 const widths: Record<string, string> = {
   quizTitle: "w-[32%]",
   takenAt: "w-[23%]",
@@ -58,11 +50,17 @@ const widths: Record<string, string> = {
 
 export function AttemptHistoryTable({
   entries,
+  quizFilter,
+  quizOptions,
+  onQuizFilterChange,
   deletingAttemptId,
   onDelete,
   onRetake,
 }: {
   entries: AttemptHistoryEntry[];
+  quizFilter: string;
+  quizOptions: { value: string; label: string }[];
+  onQuizFilterChange: (value: string) => void;
   deletingAttemptId: string | null;
   onDelete: (entry: AttemptHistoryEntry) => void;
   onRetake: (entry: AttemptHistoryEntry) => void;
@@ -71,11 +69,61 @@ export function AttemptHistoryTable({
     pageIndex: 0,
     pageSize: 20,
   });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "takenAt", desc: true },
+  ]);
+  const columns = useMemo<ColumnDef<AppTableFeatures, AttemptHistoryEntry>[]>(
+    () => [
+      {
+        accessorKey: "quizTitle",
+        header: () => (
+          <DataTableColumnFilterHeader
+            label="Quiz"
+            menuLabel="Filter by quiz"
+            filterValue={quizFilter}
+            options={quizOptions}
+            onFilterChange={(value) => {
+              onQuizFilterChange(value);
+              setPagination((current) => ({ ...current, pageIndex: 0 }));
+            }}
+          />
+        ),
+      },
+      {
+        id: "takenAt",
+        accessorFn: (entry) => Date.parse(entry.attempt.takenAt),
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Taken" column={column} />
+        ),
+      },
+      {
+        id: "score",
+        accessorFn: (entry) => entry.attempt.percentage,
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Score" column={column} />
+        ),
+      },
+      {
+        id: "mistakes",
+        accessorFn: (entry) => entry.attempt.incorrectCount,
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Mistakes" column={column} />
+        ),
+      },
+      { id: "result", header: () => <DataTableColumnHeader label="Result" /> },
+      { id: "actions", header: () => <span className="sr-only">Actions</span> },
+    ],
+    [quizFilter, quizOptions, onQuizFilterChange],
+  );
   const table = useTable({
     features: appTableFeatures,
     data: entries,
     columns,
-    state: { pagination },
+    state: { pagination, sorting },
+    onSortingChange: (updater) => {
+      setSorting(updater);
+      setPagination((current) => ({ ...current, pageIndex: 0 }));
+    },
     onPaginationChange: setPagination,
   });
 
@@ -86,7 +134,7 @@ export function AttemptHistoryTable({
       footer={<DataTablePaginationFooter table={table} />}
     >
       <Table
-        key={`${pagination.pageIndex}:${pagination.pageSize}`}
+        key={`${pagination.pageIndex}:${pagination.pageSize}:${JSON.stringify(sorting)}`}
         className="w-full min-w-[50rem] table-fixed"
         containerClassName={tableWorkspaceScrollClass}
       >
@@ -114,7 +162,7 @@ export function AttemptHistoryTable({
                 colSpan={columns.length}
                 className="py-8 text-center text-sm text-zinc-500"
               >
-                No attempts match your search or quiz filter.
+                No attempts match the selected quiz.
               </TableCell>
             </TableRow>
           )}

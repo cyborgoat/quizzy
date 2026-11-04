@@ -119,6 +119,20 @@ pub(crate) fn set_quiz_archived(
     quiz_archive::set_quiz_archived(&app, &quiz_id, archived)
 }
 
+#[tauri::command]
+pub(crate) fn list_favorite_quiz_ids(app: AppHandle) -> Result<Vec<String>, String> {
+    quiz_archive::list_favorite_quiz_ids(&app)
+}
+
+#[tauri::command]
+pub(crate) fn set_quiz_favorite(
+    app: AppHandle,
+    quiz_id: String,
+    favorite: bool,
+) -> Result<(), String> {
+    quiz_archive::set_quiz_favorite(&app, &quiz_id, favorite)
+}
+
 #[derive(Deserialize)]
 pub(crate) struct QuizIdentity {
     id: String,
@@ -159,6 +173,10 @@ pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), 
         cleanup_errors.push(error);
     }
     if let Err(error) = quiz_archive::set_quiz_archived(&app, &identity.id, false) {
+        cleanup_errors.push(error);
+    }
+
+    if let Err(error) = quiz_archive::set_quiz_favorite(&app, &identity.id, false) {
         cleanup_errors.push(error);
     }
 

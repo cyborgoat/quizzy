@@ -9,6 +9,8 @@ export type QuizLibraryContextValue = {
   directoryPath: string | null;
   directoryAvailable: boolean;
   quizzes: QuizSource[];
+  favoriteQuizIds: ReadonlySet<string>;
+  setQuizFavorite: (quizId: string, favorite: boolean) => Promise<boolean>;
   invalidReports: InvalidQuizReport[];
   isLoading: boolean;
   refresh: (options?: QuizLibraryRefreshOptions) => Promise<void>;

@@ -104,6 +104,9 @@ export const nativeApi = {
     invoke<string>("import_quiz_file", { sourcePath }),
   addSampleQuizzes: () =>
     invoke<{ added: string[]; skipped: string[] }>("add_sample_quizzes"),
+  listFavoriteQuizIds: () => invoke<string[]>("list_favorite_quiz_ids"),
+  setQuizFavorite: (quizId: string, favorite: boolean) =>
+    invoke<void>("set_quiz_favorite", { quizId, favorite }),
   listArchivedQuizIds: () => invoke<string[]>("list_archived_quiz_ids"),
   setQuizArchived: (quizId: string, archived: boolean) =>
     invoke<void>("set_quiz_archived", { quizId, archived }),
