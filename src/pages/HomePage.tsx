@@ -123,7 +123,7 @@ export function HomePage() {
     <PageShell>
       <div className="mb-8 flex items-center gap-4 lg:gap-5">
         <img
-          src="/quizzy-logo.png"
+          src="/quizzy-logo.svg"
           alt="Quizzy logo"
           className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
         />

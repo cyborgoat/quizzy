@@ -39,6 +39,10 @@ Create desktop installers with:
 npm run tauri build
 ```
 
+The logo source is `public/quizzy-logo.svg`. After editing it, run `npm run icons`
+to regenerate the favicon, PNG logo, and platform icons, including the Windows
+taskbar icon and macOS icon. Rebuild the desktop app to see the new system icon.
+
 ## First launch
 
 On first launch, open **Settings** from the sidebar to enter your name and select

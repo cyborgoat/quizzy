@@ -32,7 +32,7 @@ function AppSidebarHeader() {
               className="inline-flex size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-200"
             >
               <img
-                src="/quizzy-logo.png"
+                src="/quizzy-logo.svg"
                 alt="Quizzy"
                 className="size-full rounded-[5px] object-cover"
               />
