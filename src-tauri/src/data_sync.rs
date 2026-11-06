@@ -11,7 +11,7 @@ use crate::{
         goal_meta_relative_path, goals_storage_root, list_goals, migrate_legacy_goals_for_sync,
         repair_attempt_summaries, update_goal_quiz_title, GOAL_META_FILE,
     },
-    mistake_index::{mistake_index_relative_path, rebuild_all, write_index_for_sync},
+    mistake_index::rebuild_all,
 };
 
 const MAX_SYNC_CHANGES: usize = 20;
@@ -274,22 +274,22 @@ pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
         }
     }
 
-    let rebuilt_index = rebuild_all(app)?;
+    let (rebuilt_index, changed_paths) = rebuild_all(app)?;
     let mistake_entry_count = rebuilt_index.entries.len() as u32;
     report.mistake_index_entries = mistake_entry_count;
-    let previous_index = crate::mistake_index::read_existing_index(app)?;
-    let mistake_changed = previous_index.as_ref() != Some(&rebuilt_index);
-    if mistake_changed {
-        write_index_for_sync(app, &rebuilt_index)?;
+    if !changed_paths.is_empty() {
         report.mistake_index_rebuilt = true;
-        let mistake_path = mistake_index_relative_path().to_string();
-        written_paths.insert(mistake_path.clone());
+        let first_path = changed_paths.first().cloned();
+        let changed_count = changed_paths.len();
+        written_paths.extend(changed_paths);
         push_change(
             &mut report,
             "mistake_index_rebuilt",
-            Some(mistake_path),
+            if changed_count == 1 { first_path } else { None },
             format!(
-                "Rebuilt Mistake Log index ({} question{} tracked).",
+                "Rebuilt Mistake Log data for {} file{} ({} question{} tracked).",
+                changed_count,
+                if changed_count == 1 { "" } else { "s" },
                 mistake_entry_count,
                 if mistake_entry_count == 1 { "" } else { "s" }
             ),

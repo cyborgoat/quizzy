@@ -1,6 +1,7 @@
 use tauri::{AppHandle, Manager};
 
 mod app_data_commands;
+mod data_cleanup;
 mod data_sync;
 mod fs_utils;
 mod goals_storage;
@@ -33,6 +34,10 @@ pub fn run() {
 
     builder
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            data_cleanup::spawn_cleanup(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             settings::get_settings,
             settings::save_settings,

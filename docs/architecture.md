@@ -234,7 +234,7 @@ managed directly through the system file manager.
 8. The frozen records drive the result and review screens.
 9. When the quiz has a goal, `GoalsProvider` saves an attempt for it on
    submission.
-10. Rust updates `mistake-index.json` for that quiz when the attempt is saved.
+10. Rust folds the attempt into that goal's `mistakes.json` when it is saved.
 
 ### Attempt review
 
@@ -250,13 +250,13 @@ managed directly through the system file manager.
 2. React calls `delete_goal_attempt` via the native adapter.
 3. Rust removes the attempt file and updates `attempts/index.json`.
 4. `GoalsProvider` updates in-memory goal state.
-5. Rust updates `mistake-index.json` for that goal's quiz.
+5. Rust re-aggregates that goal's `mistakes.json`.
 6. The Mistake Log reloads the index when goals change.
 
 ### Mistake Log review
 
 1. The user opens `/mistakes` or `/mistakes?quizId=...`.
-2. `useMistakeLog` loads `mistake-index.json` via `get_mistake_index`.
+2. `useMistakeLog` loads the per-goal `mistakes.json` data via `get_mistake_index`.
 3. Entries are filtered by configured thresholds, with flagged questions always
   included, and sorted by flagged count then mistake frequency.
 4. The first sorted row is selected by default. Clicking a row or using arrow
@@ -273,7 +273,7 @@ managed directly through the system file manager.
 2. A confirmation dialog explains that quiz/knowledge files are not modified.
 3. Rust runs `synchronize_app_data`: rescans the working directory and knowledge
    base, repairs goal attempt indexes, updates goal titles from quiz files when
-   needed, and rebuilds `mistake-index.json` when its contents change.
+   needed, and rebuilds each goal's `mistakes.json` when its contents change.
 4. React refreshes the working-directory state, quiz library, knowledge library,
    and goals (clearing the attempt cache) so Mistake Log and Goals stay aligned.
 5. Settings shows a result card with rescanned counts, repairs, changed file

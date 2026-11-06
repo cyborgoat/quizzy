@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
@@ -64,11 +64,8 @@ export function useDirectoryLibrary<T extends { invalidReports: unknown[] }, E =
     }
   }, [directoryAvailable, directoryPath, empty, readFiles, readExtras, parse, label]);
 
+  // useBackgroundDataLoader reloads whenever `load` changes (directory switch), so no extra effect.
   const { refresh, isLoading } = useBackgroundDataLoader(load);
-
-  useEffect(() => {
-    void refresh({ background: true });
-  }, [directoryAvailable, directoryPath, refresh]);
 
   return { library, setLibrary, refresh, isLoading, directoryPath, directoryAvailable };
 }

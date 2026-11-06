@@ -8,17 +8,20 @@ use crate::fs_utils::{
 };
 
 #[tauri::command]
-pub(crate) fn read_knowledge_directory(
+pub(crate) async fn read_knowledge_directory(
     app: AppHandle,
     known_versions: Option<HashMap<String, String>>,
 ) -> Result<Vec<QuizFile>, String> {
-    let directory = knowledge_base_directory(&app)?;
-    read_library_files(
-        &directory,
-        "knowledge-base folder",
-        is_md_extension,
-        &known_versions.unwrap_or_default(),
-    )
+    crate::app_data_commands::run_blocking(move || {
+        let directory = knowledge_base_directory(&app)?;
+        read_library_files(
+            &directory,
+            "knowledge-base folder",
+            is_md_extension,
+            &known_versions.unwrap_or_default(),
+        )
+    })
+    .await
 }
 
 #[derive(Deserialize)]

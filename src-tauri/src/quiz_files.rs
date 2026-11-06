@@ -10,20 +10,23 @@ use crate::fs_utils::{
     atomic_write, configured_directory, is_json_extension, open_directory_in_file_manager,
     read_library_files, read_text_file, resolve_quiz_path, QuizFile,
 };
-use crate::{goals_storage, mistake_index, quiz_archive};
+use crate::{goals_storage, quiz_archive};
 
 #[tauri::command]
-pub(crate) fn read_working_directory(
+pub(crate) async fn read_working_directory(
     app: AppHandle,
     known_versions: Option<HashMap<String, String>>,
 ) -> Result<Vec<QuizFile>, String> {
-    let directory = configured_directory(&app)?;
-    read_library_files(
-        &directory,
-        "working directory",
-        is_json_extension,
-        &known_versions.unwrap_or_default(),
-    )
+    crate::app_data_commands::run_blocking(move || {
+        let directory = configured_directory(&app)?;
+        read_library_files(
+            &directory,
+            "working directory",
+            is_json_extension,
+            &known_versions.unwrap_or_default(),
+        )
+    })
+    .await
 }
 
 /// Validates an import source and returns its file name and raw bytes.
@@ -168,9 +171,6 @@ pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), 
             }
         }
         Err(error) => cleanup_errors.push(error),
-    }
-    if let Err(error) = mistake_index::remove_quiz_entries(&app, &identity.id) {
-        cleanup_errors.push(error);
     }
     if let Err(error) = quiz_archive::set_quiz_archived(&app, &identity.id, false) {
         cleanup_errors.push(error);

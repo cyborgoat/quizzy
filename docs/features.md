@@ -109,8 +109,8 @@ Each saved attempt opens on a dedicated page at
 ## Mistake Log
 
 The Mistake Log aggregates incorrect answers and flagged questions from your saved
-quiz attempts. Rust maintains a materialized `mistake-index.json`
-in the app-config directory; the UI loads that index in one native call instead of
+quiz attempts. Rust maintains a compact `mistakes.json` for each goal
+in the app-config directory; the UI loads them in one native call instead of
 re-reading every attempt file. **Mistake Log** in the sidebar opens the global
 view at `/mistakes`. **View mistakes** in a quiz's details opens the same full
 log with the **Quiz Name** filter preset to that quiz (`/mistakes?quizId=…`), so

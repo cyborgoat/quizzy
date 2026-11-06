@@ -170,7 +170,7 @@ fn write_json<T: Serialize + ?Sized>(path: &Path, value: &T) -> Result<(), Strin
         fs::create_dir_all(parent)
             .map_err(|error| format!("Unable to create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_vec_pretty(value)
+    let contents = serde_json::to_vec(value)
         .map_err(|error| format!("Unable to serialize {}: {error}", path.display()))?;
     crate::fs_utils::atomic_write(path, &contents, true)
 }
@@ -190,7 +190,7 @@ fn attempt_summary(attempt: &GoalAttempt) -> AttemptSummary {
     }
 }
 
-fn read_attempt_summaries(goal_dir: &Path) -> Result<Vec<AttemptSummary>, String> {
+pub fn read_attempt_summaries(goal_dir: &Path) -> Result<Vec<AttemptSummary>, String> {
     let index_path = attempts_directory(goal_dir).join(ATTEMPTS_INDEX_FILE);
     if !index_path.exists() {
         return Ok(Vec::new());
@@ -441,13 +441,9 @@ pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
     write_goal_meta(&goal_dir, &meta)
 }
 
-pub fn goal_quiz_id(app: &AppHandle, goal_id: &str) -> Result<Option<String>, String> {
-    validate_storage_id(goal_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, goal_id)?;
-    if !goal_dir.exists() {
-        return Ok(None);
-    }
-    Ok(Some(read_goal_meta(&goal_dir)?.quiz_id))
+/// Resolves (and validates) the storage directory of a goal without touching the disk.
+pub fn goal_directory_path(app: &AppHandle, goal_id: &str) -> Result<PathBuf, String> {
+    goal_directory(&goals_root(app)?, goal_id)
 }
 
 pub fn load_goal_attempts(app: &AppHandle, goal_id: &str) -> Result<Vec<GoalAttempt>, String> {

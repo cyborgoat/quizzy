@@ -45,16 +45,6 @@ export function useMistakeLog() {
     void loadIndex(hasLoadedIndexRef.current);
   }, [goalsLoading, goalsVersion, loadIndex]);
 
-  useEffect(() => {
-    function handleFocus() {
-      if (goalsLoading) return;
-      void loadIndex(true);
-    }
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [goalsLoading, loadIndex]);
-
   const thresholds = useMemo(
     () => ({ minMistakes, minFlags, maxCorrectnessPercentage }),
     [minMistakes, minFlags, maxCorrectnessPercentage],

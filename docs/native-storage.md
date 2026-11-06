@@ -8,10 +8,11 @@ Quizzy stores application data in the Tauri app-config directory:
 
 ```text
 <Tauri app config directory>/settings.json
-<Tauri app config directory>/mistake-index.json
+<Tauri app config directory>/data-version
 <Tauri app config directory>/goals/
   <goal-id>/
     goal.json
+    mistakes.json
     attempts/
       index.json
       <attempt-id>.json
@@ -26,10 +27,18 @@ Each quiz can have at most one goal. Each goal is stored in its own directory.
 summaries live in `attempts/index.json`, and each full attempt (including
 per-question results) is stored separately as `attempts/<attempt-id>.json`.
 
-`mistake-index.json` is a materialized aggregate of per-question mistake
-statistics across all scored attempts. Rust rebuilds entries for a quiz when
-attempts are saved or deleted, and rebuilds the full index on first read if the
-file is missing or its version is stale.
+`mistakes.json` is a compact, per-goal aggregate of per-question mistake
+statistics. Saving an attempt folds only that attempt into the goal's file;
+deleting an attempt re-aggregates only that goal; deleting a goal removes the file
+with its directory. Each file records how many attempts it was built from, and a
+missing, outdated, or out-of-step file is rebuilt from that goal's attempt files on
+the next read. `get_mistake_index` concatenates the per-goal files for the UI.
+
+`data-version` records which data format the folder was last cleaned for. On
+launch, when it is older than the app's version, Quizzy removes files that older
+releases left behind (`mistake-index.json`, `goals.json.bak`, and stray
+`.quizzy-*.tmp`/`.backup` files) in a background thread and then updates the
+marker. Goals, attempts, quizzes, and knowledge notes are never touched.
 
 Legacy single-file `goals.json` data is migrated into this layout on first
 load and archived as `goals.json.bak`.
@@ -49,21 +58,21 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `import_quiz_file` | Copy a user-selected `.json` file (checked for valid JSON, never overwriting) into the working directory |
 | `add_sample_quizzes` | Write the bundled sample quizzes into the working directory, skipping files that already exist |
 | `list_archived_quiz_ids` / `set_quiz_archived` | Read and update the archived-quiz registry |
-| `delete_quiz_file` | Permanently delete a quiz file and its goals, mistake-index entries and archive entry |
+| `delete_quiz_file` | Permanently delete a quiz file and its goals, mistake data and archive entry |
 | `read_knowledge_directory` | Read top-level `.md` files in `knowledge-base/`; same known-version behavior as quizzes |
 | `write_knowledge_file` / `delete_knowledge_file` | Create, replace or delete one knowledge note (validated file names) |
 | `open_knowledge_folder` | Open the `knowledge-base` folder in the system file manager |
 | `open_quiz_folder` | Open the configured quiz directory in the system file manager |
 | `list_goals` | Load saved goals with attempt summaries |
-| `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz; refreshes that quiz's mistake-index entries |
-| `delete_goal` | Delete a goal and its attempt files; removes that quiz from `mistake-index.json` |
-| `save_goal_attempt` | Persist one attempt, update its summary index, and refresh that quiz's mistake-index entries |
+| `upsert_goal` | Create or update one goal's metadata; rejects a second goal for the same quiz; Mistake data is derived lazily from the goal's attempts |
+| `delete_goal` | Delete a goal, its attempt files, and its `mistakes.json` |
+| `save_goal_attempt` | Persist one attempt, update its summary index, and fold it into the goal's `mistakes.json` |
 | `get_goal_attempt` | Load one full attempt with question results |
-| `delete_goal_attempt` | Delete one attempt file, remove it from the summary index, and refresh that quiz's mistake-index entries |
+| `delete_goal_attempt` | Delete one attempt file, remove it from the summary index, and re-aggregate the goal's `mistakes.json` |
 | `get_mistake_index` | Load the materialized mistake index (rebuilds if missing, version-mismatched, or attempt-count stale) |
 | `synchronize_app_data` | Rescan quiz/knowledge folders, repair goal attempt indexes, refresh goal titles from quiz files, rebuild the mistake index when changed, and return a structured `SyncReport` |
 
-`synchronize_app_data` only writes app-config files (`goals/...`, `mistake-index.json`). It rebuilds each goal's `attempts/index.json` from on-disk attempt files, removes orphan index entries when attempt files are missing, and records per-file changes in the report. Goals whose quiz files are missing are reported as warnings, not deleted.
+`synchronize_app_data` only writes app-config files (`goals/...`, including each goal's `mistakes.json`). It rebuilds each goal's `attempts/index.json` from on-disk attempt files, removes orphan index entries when attempt files are missing, and records per-file changes in the report. Goals whose quiz files are missing are reported as warnings, not deleted.
 
 ## Incremental directory reads
 
@@ -92,7 +101,7 @@ filesystem plugin permissions are not granted to the webview.
 ## Atomic writes
 
 Quizzy uses temporary files and rename operations when writing its own settings,
-goal data, `mistake-index.json`, knowledge notes, imported quiz files, and sample
+goal data, mistake data, knowledge notes, imported quiz files, and sample
 quizzes. Imports and samples never overwrite an existing file. Other changes to
 quiz files are made by the user through the system file manager, and Quizzy only
 reads them (apart from permanent deletion of an archived quiz).
