@@ -22,6 +22,8 @@ struct ArchiveRegistry {
     directories: BTreeMap<String, BTreeSet<String>>,
     #[serde(default)]
     favorites: BTreeMap<String, BTreeSet<String>>,
+    #[serde(default)]
+    knowledge_views: BTreeMap<String, BTreeMap<String, u32>>,
 }
 
 impl Default for ArchiveRegistry {
@@ -30,6 +32,7 @@ impl Default for ArchiveRegistry {
             version: ARCHIVE_REGISTRY_VERSION,
             directories: BTreeMap::new(),
             favorites: BTreeMap::new(),
+            knowledge_views: BTreeMap::new(),
         }
     }
 }
@@ -138,9 +141,59 @@ pub fn set_quiz_favorite(app: &AppHandle, quiz_id: &str, favorite: bool) -> Resu
     write_registry(app, &registry)
 }
 
+fn increment_view(
+    views: &mut BTreeMap<String, BTreeMap<String, u32>>,
+    directory_key: &str,
+    note_id: &str,
+) -> u32 {
+    let count = views
+        .entry(directory_key.to_string())
+        .or_default()
+        .entry(note_id.to_string())
+        .or_insert(0);
+    *count = count.saturating_add(1);
+    *count
+}
+
+pub fn list_knowledge_view_counts(app: &AppHandle) -> Result<BTreeMap<String, u32>, String> {
+    let registry = read_registry(app)?;
+    let directory_key = current_directory_key(app)?;
+    Ok(registry
+        .knowledge_views
+        .get(&directory_key)
+        .cloned()
+        .unwrap_or_default())
+}
+
+pub fn record_knowledge_view(app: &AppHandle, note_id: &str) -> Result<u32, String> {
+    if note_id.trim().is_empty() {
+        return Err("The knowledge note ID is required.".to_string());
+    }
+    let mut registry = read_registry(app)?;
+    let directory_key = current_directory_key(app)?;
+    let count = increment_view(&mut registry.knowledge_views, &directory_key, note_id);
+    write_registry(app, &registry)?;
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{update_entry, ArchiveRegistry};
+    use super::{increment_view, update_entry, ArchiveRegistry};
+
+    #[test]
+    fn knowledge_views_count_per_directory_and_support_existing_registries() {
+        let mut registry: ArchiveRegistry =
+            serde_json::from_str(r#"{"version":1,"favorites":{"/a":["q"]}}"#).unwrap();
+        assert!(registry.knowledge_views.is_empty());
+        assert_eq!(increment_view(&mut registry.knowledge_views, "/a", "n1"), 1);
+        assert_eq!(increment_view(&mut registry.knowledge_views, "/a", "n1"), 2);
+        assert_eq!(increment_view(&mut registry.knowledge_views, "/b", "n1"), 1);
+        let loaded: ArchiveRegistry =
+            serde_json::from_str(&serde_json::to_string(&registry).unwrap()).unwrap();
+        assert_eq!(loaded.knowledge_views["/a"]["n1"], 2);
+        assert_eq!(loaded.knowledge_views["/b"]["n1"], 1);
+        assert!(loaded.favorites["/a"].contains("q"));
+    }
 
     #[test]
     fn favorites_preserve_archives_and_support_existing_registries() {

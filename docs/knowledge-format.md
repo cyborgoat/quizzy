@@ -37,6 +37,8 @@ Always return a cleanup function when subscribing to external resources.
 | `createdAt` | Yes | ISO 8601 timestamp set when the note is created. |
 | `updatedAt` | Yes | ISO 8601 timestamp updated on each save. |
 
+View counts shown in the Knowledge Base are not stored in the note. They are kept per working directory in the app's config folder (`quiz-archive.json`), so note files are never rewritten when you open them.
+
 ## Linking rules
 
 - Links are one-way: knowledge notes reference quiz questions.

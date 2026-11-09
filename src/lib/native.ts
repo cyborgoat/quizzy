@@ -118,6 +118,10 @@ export const nativeApi = {
     invoke<void>("write_knowledge_file", { request }),
   deleteKnowledgeFile: (fileName: string) =>
     invoke<void>("delete_knowledge_file", { fileName }),
+  listKnowledgeViewCounts: () =>
+    invoke<Record<string, number>>("list_knowledge_view_counts"),
+  recordKnowledgeView: (noteId: string) =>
+    invoke<number>("record_knowledge_view", { noteId }),
   openQuizFolder: () => invoke<void>("open_quiz_folder"),
   openKnowledgeFolder: () => invoke<void>("open_knowledge_folder"),
   listGoals: () =>

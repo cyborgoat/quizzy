@@ -21,6 +21,9 @@ export type KnowledgeLibraryContextValue = {
   items: KnowledgeItem[];
   invalidReports: InvalidKnowledgeReport[];
   isLoading: boolean;
+  /** View counts by note id, kept in app config rather than in the note files. */
+  viewCounts: Record<string, number>;
+  recordView: (noteId: string) => void;
   refresh: (options?: KnowledgeLibraryRefreshOptions) => Promise<void>;
   createItem: (draft: CreateKnowledgeDraft) => Promise<KnowledgeItem>;
   saveItem: (item: KnowledgeItem, options?: { preserveUpdatedAt?: boolean }) => Promise<void>;

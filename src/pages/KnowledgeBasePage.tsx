@@ -112,7 +112,7 @@ export function KnowledgeBasePage() {
   const { tag: tagFilter } = Route.useSearch();
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
-  const { toggleFavorite } = library;
+  const { toggleFavorite, viewCounts } = library;
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const selectedTag = tagFilter ?? "all";
@@ -210,6 +210,16 @@ export function KnowledgeBasePage() {
         ),
       },
       {
+        id: "views",
+        accessorFn: (row) => viewCounts[row.id] ?? 0,
+        header: ({ column }) => (
+          <DataTableSortableHeader label="Views" column={column} />
+        ),
+        cell: ({ row }) => (
+          <DataTableNumericCell value={viewCounts[row.original.id] ?? 0} mutedWhenZero />
+        ),
+      },
+      {
         accessorKey: "updatedAt",
         header: ({ column }) => (
           <DataTableSortableHeader label="Updated" column={column} />
@@ -235,7 +245,7 @@ export function KnowledgeBasePage() {
         enableSorting: false,
       },
     ],
-    [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite],
+    [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite, viewCounts],
   );
 
   const table = useTable({

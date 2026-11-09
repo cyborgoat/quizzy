@@ -52,6 +52,8 @@ pub fn run() {
             knowledge_files::read_knowledge_directory,
             knowledge_files::write_knowledge_file,
             knowledge_files::delete_knowledge_file,
+            knowledge_files::list_knowledge_view_counts,
+            knowledge_files::record_knowledge_view,
             quiz_files::open_quiz_folder,
             knowledge_files::open_knowledge_folder,
             app_data_commands::list_goals,

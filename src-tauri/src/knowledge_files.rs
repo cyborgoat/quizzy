@@ -53,6 +53,25 @@ pub(crate) fn delete_knowledge_file(app: AppHandle, file_name: String) -> Result
 }
 
 #[tauri::command]
+pub(crate) async fn list_knowledge_view_counts(
+    app: AppHandle,
+) -> Result<HashMap<String, u32>, String> {
+    crate::app_data_commands::run_blocking(move || {
+        crate::quiz_archive::list_knowledge_view_counts(&app)
+            .map(|counts| counts.into_iter().collect())
+    })
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn record_knowledge_view(app: AppHandle, note_id: String) -> Result<u32, String> {
+    crate::app_data_commands::run_blocking(move || {
+        crate::quiz_archive::record_knowledge_view(&app, &note_id)
+    })
+    .await
+}
+
+#[tauri::command]
 pub(crate) fn open_knowledge_folder(app: AppHandle) -> Result<(), String> {
     open_directory_in_file_manager(knowledge_base_directory(&app)?, "knowledge-base folder")
 }

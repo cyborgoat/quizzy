@@ -82,6 +82,9 @@ export function KnowledgeDetailPage() {
     previousKnowledgeIdRef.current = knowledgeId;
 
     if (knowledgeIdChanged) {
+      if (!startsInEditMode && items.some((item) => item.id === knowledgeId)) {
+        library.recordView(knowledgeId);
+      }
       editor.resetFromSource(source, startsInEditMode ? "edit" : "view");
       return;
     }

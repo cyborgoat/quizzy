@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   KNOWLEDGE_BASE_FOLDER,
@@ -37,6 +37,30 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   const knowledgeDirectoryPath = directoryPath
     ? `${directoryPath}/${KNOWLEDGE_BASE_FOLDER}`
     : null;
+
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    nativeApi
+      .listKnowledgeViewCounts()
+      .then((counts) => {
+        if (!cancelled) setViewCounts(counts);
+      })
+      .catch(() => {
+        if (!cancelled) setViewCounts({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [directoryPath]);
+
+  const recordView = useCallback((noteId: string) => {
+    setViewCounts((current) => ({ ...current, [noteId]: (current[noteId] ?? 0) + 1 }));
+    nativeApi.recordKnowledgeView(noteId).catch(() => {
+      // View counts are best-effort; ignore persistence failures.
+    });
+  }, []);
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
@@ -130,6 +154,8 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     items,
     invalidReports,
     isLoading,
+    viewCounts,
+    recordView,
     refresh,
     createItem,
     saveItem,
