@@ -7,7 +7,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { FolderOpen, Plus, RefreshCw } from "lucide-react";
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
@@ -38,6 +38,7 @@ import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
+import { useSessionState } from "@/hooks/useSessionState";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import { formatShortDate } from "@/lib/formatDate";
@@ -62,10 +63,11 @@ function formatTagsLabel(tags: string[]) {
 }
 
 const KNOWLEDGE_COLUMN_WIDTHS: Record<string, string> = {
-  title: "w-[calc(36%_-_3rem)]",
-  tags: "w-[26%]",
-  links: "w-[14%]",
-  updatedAt: "w-[24%]",
+  title: "w-[calc(30%_-_3rem)]",
+  tags: "w-[24%]",
+  links: "w-[12%]",
+  views: "w-[12%]",
+  updatedAt: "w-[22%]",
   favorite: "w-12 min-w-12 max-w-none overflow-visible",
 };
 
@@ -113,17 +115,32 @@ export function KnowledgeBasePage() {
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
   const { toggleFavorite, viewCounts } = library;
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useSessionState("knowledge.search", "");
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const selectedTag = tagFilter ?? "all";
-  const [sorting, setSorting] = useState<SortingState>([
+  // The tag lives in the URL; remember it so returning via a bare /knowledge link restores it.
+  const [savedTag, setSavedTag] = useSessionState<string | undefined>(
+    "knowledge.tag",
+    undefined,
+  );
+  const [restoredTag] = useState(savedTag);
+  useEffect(() => {
+    if (tagFilter === undefined && restoredTag) {
+      void navigate({ to: "/knowledge", search: { tag: restoredTag }, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once on mount
+  }, []);
+  const [sorting, setSorting] = useSessionState<SortingState>("knowledge.sorting", [
     { id: "updatedAt", desc: true },
   ]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [pagination, setPagination] = useSessionState<PaginationState>(
+    "knowledge.pagination",
+    { pageIndex: 0, pageSize: 10 },
+  );
+  const [showFavoritesOnly, setShowFavoritesOnly] = useSessionState(
+    "knowledge.favoritesOnly",
+    false,
+  );
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
     "Knowledge base refreshed.",
@@ -162,13 +179,14 @@ export function KnowledgeBasePage() {
 
   const handleTagFilterChange = useCallback(
     (value: string) => {
+      setSavedTag(value === "all" ? undefined : value);
       void navigate({
         to: "/knowledge",
         search: value === "all" ? {} : { tag: value },
         replace: true,
       });
     },
-    [navigate],
+    [navigate, setSavedTag],
   );
 
   const columns = useMemo<ColumnDef<AppTableFeatures, KnowledgeItem>[]>(
