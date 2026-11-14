@@ -66,7 +66,7 @@ export function StartQuizDialog({
       </dl>
       {!hasGoal && (
         <p className="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600">
-          Tip: set a goal for this quiz to track your progress over time.
+          Feel free to start without a goal — you’ll still get your score and answer review. Set a goal after finishing to save your attempt and track your progress.
         </p>
       )}
     </ConfirmDialog>

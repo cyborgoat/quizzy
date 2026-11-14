@@ -19,6 +19,7 @@ export type AppSettings = {
   zoomInShortcutKey: string;
   zoomOutShortcutKey: string;
   toggleSidebarShortcutKey: string;
+  quizhubBaseUrl: string;
 };
 
 export type SaveSettingsRequest = {
@@ -35,6 +36,8 @@ export type SaveSettingsRequest = {
   zoomInShortcutKey?: string;
   zoomOutShortcutKey?: string;
   toggleSidebarShortcutKey?: string;
+  /** Empty string resets to the default quizhub URL. */
+  quizhubBaseUrl?: string;
 };
 
 export type NativeQuizFile = NativeLibraryFile;
@@ -91,6 +94,63 @@ export type SyncReport = {
   warnings: SyncWarning[];
 };
 
+export type HubKind = "quiz" | "note";
+
+export type HubItemState =
+  | "available"
+  | "nameTaken"
+  | "installed"
+  | "updateAvailable"
+  | "modifiedLocally"
+  | "removedRemotely";
+
+export type HubCategory = {
+  id: string;
+  title: string;
+  quizCount: number;
+  noteCount: number;
+};
+
+export type HubItem = {
+  kind: HubKind;
+  id: string;
+  category: string;
+  title: string;
+  tags: string[];
+  size: number;
+  updated?: string;
+  fileName: string;
+  state: HubItemState;
+};
+
+export type HubCatalog = {
+  checkedAt: number;
+  baseUrl: string;
+  generatedAt?: string;
+  categories: HubCategory[];
+  items: HubItem[];
+  skipped: string[];
+};
+
+export type HubItemRef = { kind: HubKind; id: string };
+
+export type HubInstalledItem = HubItemRef & { fileName: string; category: string };
+
+export type HubItemOutcome = HubItemRef & {
+  title: string;
+  result: "added" | "updated" | "unchanged" | "skipped" | "failed";
+  detail?: string;
+};
+
+export type HubDownloadReport = {
+  added: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  failed: number;
+  outcomes: HubItemOutcome[];
+};
+
 const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
   invoke<void>("save_settings", { request }),
 );
@@ -138,6 +198,13 @@ export const nativeApi = {
     invoke<void>("delete_goal_attempt", { goalId, attemptId }),
   getMistakeIndex: () => invoke<MistakeIndex>("get_mistake_index"),
   synchronizeAppData: () => invoke<SyncReport>("synchronize_app_data"),
+  hubFetchCatalog: (force = false) =>
+    invoke<HubCatalog>("hub_fetch_catalog", { force }),
+  hubListInstalled: () => invoke<HubInstalledItem[]>("hub_list_installed"),
+  hubDownload: (items: HubItemRef[], force = false) =>
+    invoke<HubDownloadReport>("hub_download", { items, force }),
+  hubRemove: (item: HubItemRef, options: { keepFile?: boolean; force?: boolean } = {}) =>
+    invoke<void>("hub_remove", { item, keepFile: options.keepFile, force: options.force }),
 };
 
 export function errorMessage(error: unknown) {

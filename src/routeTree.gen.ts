@@ -13,6 +13,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
+import { Route as AppHubRouteImport } from './routes/_app/hub'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as QuizQuizIdRouteImport } from './routes/quiz_.$quizId'
 import { Route as AppGoalsIndexRouteImport } from './routes/_app/goals/index'
@@ -39,6 +40,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppHistoryRoute = AppHistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHubRoute = AppHubRouteImport.update({
+  id: '/hub',
+  path: '/hub',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/': typeof AppIndexRoute
   '/history': typeof AppHistoryRoute
+  '/hub': typeof AppHubRoute
   '/settings': typeof AppSettingsRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
   '/knowledge/$knowledgeId': typeof AppKnowledgeKnowledgeIdRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/history': typeof AppHistoryRoute
+  '/hub': typeof AppHubRoute
   '/settings': typeof AppSettingsRoute
   '/quiz/$quizId': typeof QuizQuizIdRoute
   '/': typeof AppIndexRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/_app': typeof AppRouteWithChildren
   '/_app/history': typeof AppHistoryRoute
+  '/_app/hub': typeof AppHubRoute
   '/_app/settings': typeof AppSettingsRoute
   '/quiz_/$quizId': typeof QuizQuizIdRoute
   '/_app/': typeof AppIndexRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/'
     | '/history'
+    | '/hub'
     | '/settings'
     | '/quiz/$quizId'
     | '/knowledge/$knowledgeId'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
   to:
     | '/$'
     | '/history'
+    | '/hub'
     | '/settings'
     | '/quiz/$quizId'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/_app'
     | '/_app/history'
+    | '/_app/hub'
     | '/_app/settings'
     | '/quiz_/$quizId'
     | '/_app/'
@@ -202,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/hub': {
+      id: '/_app/hub'
+      path: '/hub'
+      fullPath: '/hub'
+      preLoaderRoute: typeof AppHubRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -265,6 +284,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppHistoryRoute: typeof AppHistoryRoute
+  AppHubRoute: typeof AppHubRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppKnowledgeKnowledgeIdRoute: typeof AppKnowledgeKnowledgeIdRoute
@@ -277,6 +297,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppHistoryRoute: AppHistoryRoute,
+  AppHubRoute: AppHubRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppKnowledgeKnowledgeIdRoute: AppKnowledgeKnowledgeIdRoute,

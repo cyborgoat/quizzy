@@ -2,6 +2,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useRef, useState, useEffect, type CSSProperties } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Route } from "@/routes/quiz_.$quizId";
+import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
+import { QuizReviewView } from "@/components/goals/QuizReviewView";
+import { completedQuizReview } from "@/lib/completedQuizReview";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { LoadingState } from "@/components/quiz/LoadingState";
@@ -25,69 +28,79 @@ import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
 
-function ScoredAttemptRedirect({
+function CompletedQuiz({
   quiz,
   session,
-  recordAttempt,
 }: {
   quiz: Quiz;
   session: ReturnType<typeof useQuizSession>;
-  recordAttempt: ReturnType<typeof useGoals>["recordAttempt"];
 }) {
   const navigate = useNavigate();
+  const { goals, isLoading, recordAttempt } = useGoals();
+  const goal = goals.find((item) => item.quizId === quiz.id);
   const recordedRef = useRef(false);
-  const [missingGoal, setMissingGoal] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [createGoalOpen, setCreateGoalOpen] = useState(false);
+  const review = useMemo(
+    () => completedQuizReview(session.questions, session.answers),
+    [session.questions, session.answers],
+  );
 
   useEffect(() => {
-    if (!session.isComplete || recordedRef.current) return;
+    if (isLoading || !goal || recordedRef.current) return;
     recordedRef.current = true;
-
-    void recordAttempt(quiz.id, {
-      score: session.score,
-      total: session.totalQuestions,
-      questionResults: session.questions.map((q, i) => ({
-        questionId: q.id,
-        prompt: q.prompt,
-        correct: session.answers[i]?.isCorrect ?? false,
-        answer: session.answers[i]?.answer,
-        options:
-          q.type === "single_choice" || q.type === "multiple_choice"
-            ? q.options
-            : undefined,
-        flagged: session.answers[i]?.flagged ?? false,
-      })),
-    }).then((recorded) => {
+    void recordAttempt(quiz.id, review.attempt).then((recorded) => {
       if (recorded) {
-        navigate({
+        void navigate({
           to: "/quizzes/$quizId/attempts/$attemptId",
-          params: {
-            quizId: quiz.id,
-            attemptId: recorded.attemptId,
-          },
+          params: { quizId: quiz.id, attemptId: recorded.attemptId },
           replace: true,
         });
-        return;
+      } else {
+        setSaveFailed(true);
       }
-      setMissingGoal(true);
     });
-  }, [quiz.id, session.isComplete, session.score, session.totalQuestions, session.questions, session.answers, recordAttempt, navigate]);
+  }, [quiz.id, goal, isLoading, review.attempt, recordAttempt, navigate, saveFailed]);
 
-  if (missingGoal) {
+  if (isLoading || (goal && !saveFailed)) {
     return (
       <PageShell width="quiz">
-        <ErrorState
-          title="No goal for this quiz"
-          description="Scored attempts are saved to a goal. Create a goal for this quiz to review your attempt."
-          actionLabel="Home"
-          onAction={() => navigate({ to: "/" })}
-        />
+        <InlineEmptyMessage>Saving attempt and opening review…</InlineEmptyMessage>
       </PageShell>
     );
   }
 
   return (
-    <PageShell width="quiz">
-      <InlineEmptyMessage>Saving attempt and opening review…</InlineEmptyMessage>
+    <PageShell className="space-y-5">
+      <QuizReviewView
+        quizId={quiz.id}
+        quizTitle={quiz.title}
+        items={review.items}
+        resetKey={quiz.id}
+        score={review.summary}
+        goalContext={null}
+        notification={
+          <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+              <p className="max-w-2xl">
+                {goal
+                  ? "Your results are ready to review, but this attempt couldn’t be saved. You can try saving again below."
+                  : "Nice work! You can review your score and answers below. Want to track your progress? Set a goal to save this attempt and future results. Otherwise, this review is available until you leave this page."}
+              </p>
+              {goal ? (
+                <Button size="sm" onClick={() => {
+                  recordedRef.current = false;
+                  setSaveFailed(false);
+                }}>
+                  Try saving again
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setCreateGoalOpen(true)}>Set a goal</Button>
+              )}
+            </div>
+        }
+      />
+      <Button variant="outline" onClick={session.restart}>Retake quiz</Button>
+      {!goal && <CreateGoalDialog quiz={quiz} open={createGoalOpen} onOpenChange={setCreateGoalOpen} />}
     </PageShell>
   );
 }
@@ -95,7 +108,7 @@ function ScoredAttemptRedirect({
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const navigate = useNavigate();
   const session = useQuizSession(quiz);
-  const { recordAttempt } = useGoals();
+  const { totalQuestions, goToPreviousQuestion, goToNextQuestion } = session;
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const disablePrevious = session.currentQuestionIndex === 0;
@@ -107,15 +120,15 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
       if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
       if (submitDialogOpen || exitDialogOpen) return;
       if (isEditableKeyboardTarget(event.target)) return;
-      if (session.totalQuestions === 0) return;
+      if (totalQuestions === 0) return;
 
       event.preventDefault();
 
       if (event.key === "ArrowUp" && !disablePrevious) {
-        session.goToPreviousQuestion();
+        goToPreviousQuestion();
       }
       if (event.key === "ArrowDown" && !disableNext) {
-        session.goToNextQuestion();
+        goToNextQuestion();
       }
     }
 
@@ -126,17 +139,16 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
     exitDialogOpen,
     disablePrevious,
     disableNext,
-    session.totalQuestions,
-    session.goToPreviousQuestion,
-    session.goToNextQuestion,
+    totalQuestions,
+    goToPreviousQuestion,
+    goToNextQuestion,
   ]);
 
   if (session.isComplete) {
     return (
-      <ScoredAttemptRedirect
+      <CompletedQuiz
         quiz={quiz}
         session={session}
-        recordAttempt={recordAttempt}
       />
     );
   }

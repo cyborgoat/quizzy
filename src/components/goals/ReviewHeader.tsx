@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ArrowLeft, Home, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,11 @@ import type { ReviewGoalContext } from "@/lib/quizReviewSummary";
 export function ReviewHeader({
   quizTitle,
   goalContext,
+  notification,
 }: {
   quizTitle: string;
   goalContext: ReviewGoalContext | null;
+  notification?: ReactNode;
 }) {
   const { openQuizStart } = useQuizStartDialog();
 
@@ -27,6 +30,7 @@ export function ReviewHeader({
           <ArrowLeft className="size-4" />
           History
         </Link>
+        {notification}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -62,6 +66,7 @@ export function ReviewHeader({
         <Home className="size-4" />
         Home
       </Link>
+      {notification}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

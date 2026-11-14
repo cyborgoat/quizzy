@@ -186,6 +186,8 @@ pub(crate) struct Settings {
     pub(crate) zoom_out_shortcut_key: String,
     #[serde(default = "default_toggle_sidebar_shortcut_key")]
     pub(crate) toggle_sidebar_shortcut_key: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) quizhub_base_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -205,6 +207,7 @@ pub(crate) struct AppSettings {
     zoom_in_shortcut_key: String,
     zoom_out_shortcut_key: String,
     toggle_sidebar_shortcut_key: String,
+    quizhub_base_url: String,
 }
 
 #[derive(Deserialize)]
@@ -223,6 +226,7 @@ pub(crate) struct SaveSettingsRequest {
     zoom_in_shortcut_key: Option<String>,
     zoom_out_shortcut_key: Option<String>,
     toggle_sidebar_shortcut_key: Option<String>,
+    quizhub_base_url: Option<String>,
 }
 
 pub(crate) fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -269,6 +273,7 @@ pub(crate) fn write_settings(app: &AppHandle, settings: &Settings) -> Result<(),
 #[tauri::command]
 pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
     let settings = read_settings(&app)?;
+    let quizhub_base_url = crate::hub_sync::effective_base_url(&settings);
     let working_directory_available = settings
         .working_directory
         .as_ref()
@@ -289,6 +294,7 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         zoom_in_shortcut_key: settings.zoom_in_shortcut_key.clone(),
         zoom_out_shortcut_key: settings.zoom_out_shortcut_key.clone(),
         toggle_sidebar_shortcut_key: settings.toggle_sidebar_shortcut_key.clone(),
+        quizhub_base_url,
     })
 }
 
@@ -366,6 +372,15 @@ pub(crate) fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Res
         {
             return Err("Shortcuts must be unique.".to_string());
         }
+    }
+
+    if let Some(base_url) = request.quizhub_base_url {
+        let trimmed = base_url.trim();
+        settings.quizhub_base_url = if trimmed.is_empty() {
+            None
+        } else {
+            Some(crate::hub_sync::normalize_base_url(trimmed)?)
+        };
     }
 
     if let Some(path) = request.working_directory {

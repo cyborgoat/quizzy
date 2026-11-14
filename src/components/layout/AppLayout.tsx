@@ -1,12 +1,12 @@
 import type { CSSProperties } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { QuizStartDialogProvider } from "@/contexts/QuizStartDialogContext";
+import { QuizhubInstalledProvider } from "@/contexts/QuizhubInstalledContext";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export function AppLayout() {
   return (
-    <QuizStartDialogProvider>
+    <QuizhubInstalledProvider>
       <SidebarProvider
         defaultOpen={false}
         storageKey="app_sidebar_open"
@@ -23,6 +23,6 @@ export function AppLayout() {
           <Outlet />
         </SidebarInset>
       </SidebarProvider>
-    </QuizStartDialogProvider>
+    </QuizhubInstalledProvider>
   );
 }

@@ -1,0 +1,52 @@
+{
+  "id": "ai-ml-basics",
+  "title": "Machine Learning Basics",
+  "description": "Core ideas behind training and evaluating machine learning models.",
+  "tags": ["machine-learning", "fundamentals"],
+  "questions": [
+    {
+      "id": "supervised-data",
+      "type": "single_choice",
+      "prompt": "What does **supervised learning** require that unsupervised learning does not?",
+      "options": ["Labeled examples", "A GPU", "A neural network", "More than one feature"],
+      "answerIndex": 0,
+      "explanation": "Supervised learning fits a mapping from inputs to known targets, so every training example needs a label. Unsupervised methods such as clustering find structure without labels."
+    },
+    {
+      "id": "gradient-descent-step",
+      "type": "single_choice",
+      "prompt": "In gradient descent with learning rate $\\eta$, which update moves parameters $\\theta$ toward a lower loss $L$?",
+      "options": [
+        "$\\theta \\leftarrow \\theta + \\eta \\nabla_\\theta L$",
+        "$\\theta \\leftarrow \\theta - \\eta \\nabla_\\theta L$",
+        "$\\theta \\leftarrow \\theta - \\eta L$",
+        "$\\theta \\leftarrow \\eta \\nabla_\\theta L$"
+      ],
+      "answerIndex": 1,
+      "explanation": "The gradient points in the direction of steepest *increase* of the loss, so we step against it: $$\\theta \\leftarrow \\theta - \\eta \\nabla_\\theta L(\\theta)$$"
+    },
+    {
+      "id": "regularization-techniques",
+      "type": "multiple_choice",
+      "prompt": "Which of these are common techniques for reducing overfitting?",
+      "options": ["L2 weight decay", "Dropout", "Early stopping", "Training for more epochs on the same data"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "Weight decay, dropout and early stopping all limit how closely a model can fit noise in the training set. Training longer on the same data usually makes overfitting worse."
+    },
+    {
+      "id": "test-set-tuning",
+      "type": "true_false",
+      "prompt": "It is good practice to tune hyperparameters by repeatedly checking performance on the test set.",
+      "answer": false,
+      "explanation": "Tuning on the test set leaks information about it into your choices, so the final score becomes optimistic. Use a separate validation set (or cross-validation) for tuning and touch the test set once."
+    },
+    {
+      "id": "bias-variance",
+      "type": "single_choice",
+      "prompt": "A model has low training error but much higher validation error. What is the most likely problem?",
+      "options": ["High variance (overfitting)", "High bias (underfitting)", "Too little regularization is impossible", "The labels are balanced"],
+      "answerIndex": 0,
+      "explanation": "A large gap between training and validation error is the classic sign of high variance: the model memorized training specifics that do not generalize."
+    }
+  ]
+}

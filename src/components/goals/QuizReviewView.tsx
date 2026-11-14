@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { AttemptHistoryCard } from "@/components/goals/AttemptHistoryPanel";
 import { ReviewHeader } from "@/components/goals/ReviewHeader";
 import { ReviewScoreSummary } from "@/components/goals/ReviewScoreSummary";
@@ -44,6 +44,7 @@ export function QuizReviewView({
   score,
   goalContext,
   quizAvailable = true,
+  notification,
 }: {
   quizId: string;
   quizTitle: string;
@@ -52,6 +53,7 @@ export function QuizReviewView({
   score: ReviewScoreSummaryData;
   goalContext: ReviewGoalContext | null;
   quizAvailable?: boolean;
+  notification?: ReactNode;
 }) {
   const navigation = useAttemptReviewNavigation(items);
   const attemptHistory = goalContext?.attemptHistory;
@@ -93,7 +95,7 @@ export function QuizReviewView({
 
   return (
     <>
-      <ReviewHeader quizTitle={quizTitle} goalContext={goalContext} />
+      <ReviewHeader quizTitle={quizTitle} goalContext={goalContext} notification={notification} />
 
       <div
         className={

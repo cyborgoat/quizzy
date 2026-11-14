@@ -11,6 +11,8 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "rea
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KnowledgeFavoriteButton } from "@/components/knowledge/KnowledgeFavoriteButton";
+import { QuizhubBadge } from "@/components/quizhub/QuizhubBadge";
+import { useQuizhubInstalledFiles } from "@/contexts/quizhub-installed-context";
 import { Route } from "@/routes/_app/knowledge/index";
 import {
   DataTableColumnFilterHeader,
@@ -189,14 +191,21 @@ export function KnowledgeBasePage() {
     [navigate, setSavedTag],
   );
 
+  const hubNoteFiles = useQuizhubInstalledFiles().notes;
   const columns = useMemo<ColumnDef<AppTableFeatures, KnowledgeItem>[]>(
     () => [
       {
         accessorKey: "title",
         header: () => <DataTableColumnHeader label="Title" />,
-        cell: ({ row }) => (
-          <DataTableTruncatedCell value={row.original.title} />
-        ),
+        cell: ({ row }) =>
+          hubNoteFiles.has(row.original.fileName) ? (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <DataTableTruncatedCell value={row.original.title} />
+              <QuizhubBadge />
+            </div>
+          ) : (
+            <DataTableTruncatedCell value={row.original.title} />
+          ),
       },
       {
         accessorKey: "tags",
@@ -263,7 +272,7 @@ export function KnowledgeBasePage() {
         enableSorting: false,
       },
     ],
-    [handleTagFilterChange, selectedTag, tagFilterOptions, toggleFavorite, viewCounts],
+    [handleTagFilterChange, hubNoteFiles, selectedTag, tagFilterOptions, toggleFavorite, viewCounts],
   );
 
   const table = useTable({

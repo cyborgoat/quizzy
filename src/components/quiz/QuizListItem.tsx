@@ -4,6 +4,8 @@ import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { knowledgeTagBadgeClassName } from "@/components/knowledge/knowledgeStyles";
 import { QuizStatusIcon } from "@/components/quiz/QuizStatusIcon";
+import { QuizhubBadge } from "@/components/quizhub/QuizhubBadge";
+import { useQuizhubInstalledFiles } from "@/contexts/quizhub-installed-context";
 import { CardShine } from "@/components/ui/card-shine";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ export function QuizListItem({
   const { goals } = useGoals();
   const { favoriteQuizIds, setQuizFavorite } = useQuizLibrary();
   const favorite = favoriteQuizIds.has(source.quiz.id);
+  const fromQuizhub = useQuizhubInstalledFiles().quizzes.has(source.fileName);
   const [savingFavorite, setSavingFavorite] = useState(false);
 
   async function toggleFavorite() {
@@ -53,8 +56,9 @@ export function QuizListItem({
         </span>
         <div className="min-w-0 flex-1">
           <h2 className={cn(listItemTitleClassName, "truncate leading-6")} title={source.quiz.title}>{source.quiz.title}</h2>
-          <p className="truncate text-xs text-zinc-500" title={source.fileName}>
-            {source.fileName}
+          <p className="flex min-w-0 items-center gap-1.5 text-xs text-zinc-500" title={source.fileName}>
+            <span className="truncate">{source.fileName}</span>
+            {fromQuizhub && <QuizhubBadge />}
           </p>
         </div>
         <Button

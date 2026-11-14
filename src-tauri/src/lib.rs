@@ -5,6 +5,7 @@ mod data_cleanup;
 mod data_sync;
 mod fs_utils;
 mod goals_storage;
+mod hub_sync;
 mod knowledge_files;
 mod mistake_index;
 mod quiz_archive;
@@ -34,6 +35,7 @@ pub fn run() {
 
     builder
         .plugin(tauri_plugin_dialog::init())
+        .manage(hub_sync::HubState::default())
         .setup(|app| {
             data_cleanup::spawn_cleanup(app.handle());
             Ok(())
@@ -63,7 +65,11 @@ pub fn run() {
             app_data_commands::get_goal_attempt,
             app_data_commands::delete_goal_attempt,
             app_data_commands::get_mistake_index,
-            app_data_commands::synchronize_app_data
+            app_data_commands::synchronize_app_data,
+            hub_sync::hub_fetch_catalog,
+            hub_sync::hub_list_installed,
+            hub_sync::hub_download,
+            hub_sync::hub_remove
         ])
         .build(tauri::generate_context!())
         .expect("error while building Quizzy")
