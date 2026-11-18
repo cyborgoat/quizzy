@@ -411,7 +411,9 @@ function CategoryGrid({
           </span>
           <span className="flex flex-wrap gap-1.5">
             {category.downloadedCount > 0 && (
-              <Badge className={stateBadgeClass.installed}>{category.downloadedCount} downloaded</Badge>
+              <Badge className="border-zinc-200 bg-zinc-100 text-zinc-600">
+                {category.downloadedCount} downloaded
+              </Badge>
             )}
             {category.updateCount > 0 && (
               <Badge className={stateBadgeClass.updateAvailable}>
