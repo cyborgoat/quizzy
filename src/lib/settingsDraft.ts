@@ -13,6 +13,8 @@ export type SettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  quizhubEnabled: boolean;
+  quizhubBaseUrl: string;
   minMistakes: string;
   minFlags: string;
   maxCorrectness: string;
@@ -41,6 +43,8 @@ export type ParsedSettingsDraft = {
   name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  quizhubEnabled: boolean;
+  quizhubBaseUrl: string;
   minMistakes: number;
   minFlags: number;
   maxCorrectness: number;
@@ -56,6 +60,8 @@ export type PersistedSettingsSnapshot = {
   userName: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  quizhubEnabled: boolean;
+  quizhubBaseUrl: string;
   minMistakes: number;
   minFlags: number;
   maxCorrectnessPercentage: number;
@@ -69,6 +75,8 @@ export function draftFromPersisted({
   userName,
   shuffleQuestions,
   shuffleOptions,
+  quizhubEnabled,
+  quizhubBaseUrl,
   minMistakes,
   minFlags,
   maxCorrectnessPercentage,
@@ -88,6 +96,8 @@ export function draftFromPersisted({
     name: userName,
     shuffleQuestions,
     shuffleOptions,
+    quizhubEnabled,
+    quizhubBaseUrl,
     minMistakes: String(minMistakes),
     minFlags: String(minFlags),
     maxCorrectness: String(maxCorrectnessPercentage),
@@ -102,6 +112,8 @@ export function hasSettingsChanges(draft: SettingsDraft, persisted: SettingsDraf
     draft.pendingDir !== null ||
     draft.shuffleQuestions !== persisted.shuffleQuestions ||
     draft.shuffleOptions !== persisted.shuffleOptions ||
+    draft.quizhubEnabled !== persisted.quizhubEnabled ||
+    draft.quizhubBaseUrl !== persisted.quizhubBaseUrl ||
     draft.minMistakes !== persisted.minMistakes ||
     draft.minFlags !== persisted.minFlags ||
     draft.maxCorrectness !== persisted.maxCorrectness
@@ -169,6 +181,8 @@ export function validateSettingsDraft(
       name: draft.name.trim(),
       shuffleQuestions: draft.shuffleQuestions,
       shuffleOptions: draft.shuffleOptions,
+      quizhubEnabled: draft.quizhubEnabled,
+      quizhubBaseUrl: draft.quizhubBaseUrl.trim(),
       minMistakes: parsedMinMistakes,
       minFlags: parsedMinFlags,
       maxCorrectness: parsedMaxCorrectness,
@@ -233,6 +247,8 @@ export function toSaveSettingsRequest(parsed: ParsedSettingsDraft): SaveSettings
     profileName: parsed.name,
     shuffleQuestions: parsed.shuffleQuestions,
     shuffleOptions: parsed.shuffleOptions,
+    quizhubEnabled: parsed.quizhubEnabled,
+    quizhubBaseUrl: parsed.quizhubBaseUrl,
     mistakeLogMinMistakes: parsed.minMistakes,
     mistakeLogMinFlags: parsed.minFlags,
     mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,

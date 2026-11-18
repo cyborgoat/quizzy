@@ -69,6 +69,7 @@ pub fn run() {
             hub_sync::hub_fetch_catalog,
             hub_sync::hub_list_installed,
             hub_sync::hub_download,
+            hub_sync::hub_preview_item,
             hub_sync::hub_remove
         ])
         .build(tauri::generate_context!())

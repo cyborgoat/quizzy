@@ -19,6 +19,7 @@ export type AppSettings = {
   zoomInShortcutKey: string;
   zoomOutShortcutKey: string;
   toggleSidebarShortcutKey: string;
+  quizhubEnabled: boolean;
   quizhubBaseUrl: string;
 };
 
@@ -36,6 +37,7 @@ export type SaveSettingsRequest = {
   zoomInShortcutKey?: string;
   zoomOutShortcutKey?: string;
   toggleSidebarShortcutKey?: string;
+  quizhubEnabled?: boolean;
   /** Empty string resets to the default quizhub URL. */
   quizhubBaseUrl?: string;
 };
@@ -151,6 +153,13 @@ export type HubDownloadReport = {
   outcomes: HubItemOutcome[];
 };
 
+export type HubPreview = {
+  kind: HubKind;
+  id: string;
+  title: string;
+  contents: string;
+};
+
 const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
   invoke<void>("save_settings", { request }),
 );
@@ -203,6 +212,8 @@ export const nativeApi = {
   hubListInstalled: () => invoke<HubInstalledItem[]>("hub_list_installed"),
   hubDownload: (items: HubItemRef[], force = false) =>
     invoke<HubDownloadReport>("hub_download", { items, force }),
+  hubPreviewItem: (item: HubItemRef) =>
+    invoke<HubPreview>("hub_preview_item", { item }),
   hubRemove: (item: HubItemRef, options: { keepFile?: boolean; force?: boolean } = {}) =>
     invoke<void>("hub_remove", { item, keepFile: options.keepFile, force: options.force }),
 };

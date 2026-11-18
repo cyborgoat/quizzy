@@ -1,4 +1,4 @@
-import { CloudDownload } from "lucide-react";
+import { PackagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Marks a quiz or note that was downloaded from quizhub. */
@@ -11,7 +11,7 @@ export function QuizhubBadge({ className }: { className?: string }) {
         className,
       )}
     >
-      <CloudDownload className="size-2.5" aria-hidden="true" />
+      <PackagePlus className="size-2.5" aria-hidden="true" />
       Quizhub
     </span>
   );

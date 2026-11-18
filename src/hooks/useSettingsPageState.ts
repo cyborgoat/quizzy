@@ -6,6 +6,7 @@ import { useAppShortcuts } from "@/hooks/useAppShortcuts";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
+import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { serializeKeybind, SHORTCUT_FIELDS, type ShortcutDraftKey } from "@/lib/keybinds";
 import { errorMessage, nativeApi, type SaveSettingsRequest, type SyncReport } from "@/lib/native";
@@ -27,6 +28,8 @@ const PERSISTED_DRAFT_FIELDS = [
   "name",
   "shuffleQuestions",
   "shuffleOptions",
+  "quizhubEnabled",
+  "quizhubBaseUrl",
   "minMistakes",
   "minFlags",
   "maxCorrectness",
@@ -45,6 +48,12 @@ export function useSettingsPageState() {
     setShuffleQuestions,
     setShuffleOptions,
   } = useQuizPreferences();
+  const {
+    quizhubEnabled,
+    setQuizhubEnabled,
+    quizhubBaseUrl,
+    setQuizhubBaseUrl,
+  } = useQuizhubPreferences();
   const {
     knowledgeLink,
     knowledgeNewNote,
@@ -85,6 +94,8 @@ export function useSettingsPageState() {
       userName,
       shuffleQuestions,
       shuffleOptions,
+      quizhubEnabled,
+      quizhubBaseUrl,
       minMistakes,
       minFlags,
       maxCorrectnessPercentage,
@@ -99,6 +110,8 @@ export function useSettingsPageState() {
     userName,
     shuffleQuestions,
     shuffleOptions,
+    quizhubEnabled,
+    quizhubBaseUrl,
     minMistakes,
     minFlags,
     maxCorrectnessPercentage,
@@ -227,6 +240,68 @@ export function useSettingsPageState() {
         updateDraft({ shuffleOptions: previous });
       },
     );
+  }
+
+  function handleQuizhubEnabledChange(value: boolean) {
+    if (savingFieldsRef.current.has("quizhubEnabled")) return;
+    const previous = quizhubEnabled;
+    updateDraft({ quizhubEnabled: value });
+    void persistSetting(
+      "quizhubEnabled",
+      { quizhubEnabled: value },
+      () => setQuizhubEnabled(value),
+      () => {
+        setQuizhubEnabled(previous);
+        updateDraft({ quizhubEnabled: previous });
+      },
+    );
+  }
+
+  function handleQuizhubBaseUrlChange(value: string) {
+    updateDraft({ quizhubBaseUrl: value });
+  }
+
+  function commitQuizhubBaseUrl() {
+    if (savingFieldsRef.current.has("quizhubBaseUrl")) return;
+    const next = draft.quizhubBaseUrl.trim();
+    const previous = quizhubBaseUrl;
+    if (!next) {
+      updateDraft({ quizhubBaseUrl: previous });
+      return;
+    }
+    if (next === previous) {
+      updateDraft({ quizhubBaseUrl: previous });
+      return;
+    }
+    void persistSetting(
+      "quizhubBaseUrl",
+      { quizhubBaseUrl: next },
+      () => setQuizhubBaseUrl(next),
+      () => {
+        setQuizhubBaseUrl(previous);
+        updateDraft({ quizhubBaseUrl: previous });
+      },
+    );
+  }
+
+  function resetQuizhubBaseUrl() {
+    if (savingFieldsRef.current.has("quizhubBaseUrl")) return;
+    const previous = quizhubBaseUrl;
+    void (async () => {
+      setSaving("quizhubBaseUrl", true);
+      try {
+        await nativeApi.saveSettings({ quizhubBaseUrl: "" });
+        const settings = await nativeApi.getSettings();
+        setQuizhubBaseUrl(settings.quizhubBaseUrl);
+        updateDraft({ quizhubBaseUrl: settings.quizhubBaseUrl });
+      } catch (error) {
+        setQuizhubBaseUrl(previous);
+        updateDraft({ quizhubBaseUrl: previous });
+        toast.error(errorMessage(error));
+      } finally {
+        setSaving("quizhubBaseUrl", false);
+      }
+    })();
   }
 
   function handleNumericChange(field: NumericSettingsFieldKey, value: string) {
@@ -397,6 +472,10 @@ export function useSettingsPageState() {
     commitName,
     handleShuffleQuestionsChange,
     handleShuffleOptionsChange,
+    handleQuizhubEnabledChange,
+    handleQuizhubBaseUrlChange,
+    commitQuizhubBaseUrl,
+    resetQuizhubBaseUrl,
     handleNumericChange,
     commitNumericSetting,
     handleShortcutChange,

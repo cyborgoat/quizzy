@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import {
   draftFromPersisted,
   hasSettingsChanges,
@@ -12,6 +13,8 @@ const persistedSnapshot = {
   userName: "Alex",
   shuffleQuestions: false,
   shuffleOptions: true,
+  quizhubEnabled: false,
+  quizhubBaseUrl: QUIZHUB_DEFAULT_BASE_URL,
   minMistakes: 2,
   minFlags: 1,
   maxCorrectnessPercentage: 40,
@@ -28,6 +31,8 @@ describe("settingsDraft", () => {
       name: "Alex",
       shuffleQuestions: false,
       shuffleOptions: true,
+      quizhubEnabled: false,
+      quizhubBaseUrl: QUIZHUB_DEFAULT_BASE_URL,
       minMistakes: "2",
       minFlags: "1",
       maxCorrectness: "40",
@@ -61,6 +66,8 @@ describe("settingsDraft", () => {
         name: "Alex",
         shuffleQuestions: false,
         shuffleOptions: true,
+        quizhubEnabled: false,
+        quizhubBaseUrl: QUIZHUB_DEFAULT_BASE_URL,
         minMistakes: 2,
         minFlags: 1,
         maxCorrectness: 40,
@@ -84,6 +91,8 @@ describe("settingsDraft", () => {
       profileName: "Alex",
       shuffleQuestions: false,
       shuffleOptions: true,
+      quizhubEnabled: false,
+      quizhubBaseUrl: QUIZHUB_DEFAULT_BASE_URL,
       mistakeLogMinMistakes: 2,
       mistakeLogMinFlags: 1,
       mistakeLogMaxCorrectnessPercentage: 40,

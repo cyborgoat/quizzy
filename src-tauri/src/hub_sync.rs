@@ -982,6 +982,104 @@ fn update_lock(
     write_lock_file(path, &lock)
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HubPreview {
+    kind: HubKind,
+    id: String,
+    title: String,
+    /// Verified remote file contents as UTF-8 text. Not written to disk.
+    contents: String,
+}
+
+/// Prefers the local copy when this item was downloaded from quizhub; otherwise fetches remotely.
+/// Does not install or modify local files.
+#[tauri::command]
+pub(crate) async fn hub_preview_item(
+    app: AppHandle,
+    state: State<'_, HubState>,
+    item: HubItemRef,
+) -> Result<HubPreview, String> {
+    let local_preview = {
+        let app = app.clone();
+        let item = item.clone();
+        run_blocking(move || read_local_hub_preview(&app, &item)).await?
+    };
+    if let Some(preview) = local_preview {
+        return Ok(preview);
+    }
+
+    let base_url = {
+        let app = app.clone();
+        run_blocking(move || {
+            let settings = read_settings(&app)?;
+            Ok(effective_base_url(&settings))
+        })
+        .await?
+    };
+    restore_manifest_cache(&app, &state, &base_url);
+    let client = http_client()?;
+    let manifest = fetch_manifest(&client, &state, &base_url, false).await?;
+    let Some(entry) = manifest.items.iter().find(|candidate| {
+        candidate.id == item.id && HubKind::parse(&candidate.kind) == Some(item.kind)
+    }) else {
+        return Err("This item is no longer published by quizhub.".to_string());
+    };
+    let bytes = download_item(&client, &base_url, entry).await?;
+    let contents = String::from_utf8(bytes).map_err(|_| {
+        format!(
+            "{} is not valid UTF-8 text and cannot be previewed.",
+            entry.path
+        )
+    })?;
+    Ok(HubPreview {
+        kind: item.kind,
+        id: entry.id.clone(),
+        title: entry.title.clone(),
+        contents,
+    })
+}
+
+/// Returns a preview from the installed local file when this workspace still tracks the item.
+fn read_local_hub_preview(app: &AppHandle, item: &HubItemRef) -> Result<Option<HubPreview>, String> {
+    let ctx = match local_context(app) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+    let file_name = match local_file_name(item.kind, &item.id) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+    let path = match ctx.dirs.path_for(item.kind, &file_name) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+    if !path.is_file() {
+        return Ok(None);
+    }
+
+    let lock = read_lock_file(&ctx.lock_path)?;
+    let key = lock_key(item.kind, &item.id);
+    let Some(entry) = lock
+        .workspaces
+        .get(&ctx.workspace)
+        .and_then(|entries| entries.get(&key))
+    else {
+        // Local file exists but was not installed from quizhub (e.g. nameTaken).
+        return Ok(None);
+    };
+
+    let contents = fs::read_to_string(&path).map_err(|error| {
+        format!("Unable to read the local copy of {}: {error}", entry.file_name)
+    })?;
+    Ok(Some(HubPreview {
+        kind: entry.kind,
+        id: entry.id.clone(),
+        title: entry.title.clone(),
+        contents,
+    }))
+}
+
 /// Deletes a downloaded item. Refuses when the file was edited locally unless `force` is set.
 /// With `keep_file`, only forgets the quizhub link and leaves the file as a local file.
 #[tauri::command]

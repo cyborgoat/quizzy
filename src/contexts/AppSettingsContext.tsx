@@ -3,9 +3,11 @@ import { toast } from "sonner";
 import { AppShortcutsContext } from "@/contexts/app-shortcuts-context";
 import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
 import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
+import { QuizhubPreferencesContext } from "@/contexts/quizhub-preferences-context";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
+import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import {
   DEFAULT_KEYBINDS,
@@ -33,6 +35,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [userName, setUserNameState] = useState("");
   const [shuffleQuestions, setShuffleQuestionsState] = useState(false);
   const [shuffleOptions, setShuffleOptionsState] = useState(false);
+  const [quizhubEnabled, setQuizhubEnabledState] = useState(false);
+  const [quizhubBaseUrl, setQuizhubBaseUrlState] = useState(QUIZHUB_DEFAULT_BASE_URL);
   const [fontSize, setFontSizeState] = useState(UI_FONT_SIZE_DEFAULT);
   const [minMistakes, setMinMistakesState] = useState(1);
   const [minFlags, setMinFlagsState] = useState(1);
@@ -94,6 +98,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setUserNameState(settings.profileName);
       setShuffleQuestionsState(settings.shuffleQuestions);
       setShuffleOptionsState(settings.shuffleOptions);
+      setQuizhubEnabledState(settings.quizhubEnabled);
+      setQuizhubBaseUrlState(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
       setFontSizeState(nextFontSize);
       setMinMistakesState(settings.mistakeLogMinMistakes);
       setMinFlagsState(settings.mistakeLogMinFlags);
@@ -191,29 +197,38 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             setShuffleOptions: setShuffleOptionsState,
           }}
         >
-          <AppShortcutsContext.Provider
+          <QuizhubPreferencesContext.Provider
             value={{
-              ...parsedShortcuts,
-              setKnowledgeLink: setKnowledgeLinkShortcutState,
-              setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
-              setZoomIn: setZoomInShortcutState,
-              setZoomOut: setZoomOutShortcutState,
-              setToggleSidebar: setToggleSidebarShortcutState,
+              quizhubEnabled,
+              setQuizhubEnabled: setQuizhubEnabledState,
+              quizhubBaseUrl,
+              setQuizhubBaseUrl: setQuizhubBaseUrlState,
             }}
           >
-            <MistakeLogSettingsContext.Provider
+            <AppShortcutsContext.Provider
               value={{
-                minMistakes,
-                minFlags,
-                maxCorrectnessPercentage,
-                setMinMistakes: setMinMistakesState,
-                setMinFlags: setMinFlagsState,
-                setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+                ...parsedShortcuts,
+                setKnowledgeLink: setKnowledgeLinkShortcutState,
+                setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
+                setZoomIn: setZoomInShortcutState,
+                setZoomOut: setZoomOutShortcutState,
+                setToggleSidebar: setToggleSidebarShortcutState,
               }}
             >
-              {children}
-            </MistakeLogSettingsContext.Provider>
-          </AppShortcutsContext.Provider>
+              <MistakeLogSettingsContext.Provider
+                value={{
+                  minMistakes,
+                  minFlags,
+                  maxCorrectnessPercentage,
+                  setMinMistakes: setMinMistakesState,
+                  setMinFlags: setMinFlagsState,
+                  setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+                }}
+              >
+                {children}
+              </MistakeLogSettingsContext.Provider>
+            </AppShortcutsContext.Provider>
+          </QuizhubPreferencesContext.Provider>
         </QuizPreferencesContext.Provider>
       </UiPreferencesContext.Provider>
     </UserProfileContext.Provider>

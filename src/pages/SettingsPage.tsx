@@ -5,6 +5,7 @@ import { SettingsDirectorySection } from "@/components/settings/SettingsDirector
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
+import { SettingsQuizhubSection } from "@/components/settings/SettingsQuizhubSection";
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
@@ -24,6 +25,10 @@ export function SettingsPage() {
     commitName,
     handleShuffleQuestionsChange,
     handleShuffleOptionsChange,
+    handleQuizhubEnabledChange,
+    handleQuizhubBaseUrlChange,
+    commitQuizhubBaseUrl,
+    resetQuizhubBaseUrl,
     handleNumericChange,
     commitNumericSetting,
     handleShortcutChange,
@@ -59,6 +64,15 @@ export function SettingsPage() {
         savingFields={savingFields}
         onShuffleQuestionsChange={handleShuffleQuestionsChange}
         onShuffleOptionsChange={handleShuffleOptionsChange}
+      />
+
+      <SettingsQuizhubSection
+        draft={draft}
+        savingFields={savingFields}
+        onQuizhubEnabledChange={handleQuizhubEnabledChange}
+        onQuizhubBaseUrlChange={handleQuizhubBaseUrlChange}
+        onQuizhubBaseUrlCommit={commitQuizhubBaseUrl}
+        onQuizhubBaseUrlReset={resetQuizhubBaseUrl}
       />
 
       <SettingsShortcutsSection
