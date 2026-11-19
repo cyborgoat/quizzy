@@ -16,6 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
 
 function AppSidebarHeader() {
   const { toggleSidebar } = useSidebar();
@@ -51,6 +52,7 @@ function AppSidebarHeader() {
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { quizhubEnabled } = useQuizhubPreferences();
 
   return (
     <Sidebar collapsible="icon">
@@ -110,18 +112,20 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === "/hub"}
-              className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
-            >
-              <Link to="/hub">
-                <PackagePlus className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Quizhub</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {quizhubEnabled && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/hub"}
+                className="hover:bg-zinc-200 data-[active=true]:bg-zinc-300 data-[active=true]:font-medium group-data-[collapsible=icon]:justify-center"
+              >
+                <Link to="/hub">
+                  <PackagePlus className="size-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">Quizhub</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
 
