@@ -116,26 +116,6 @@ export function QuizListItem({
             </p>
           </div>
           <div className="flex shrink-0 items-start gap-0.5">
-          <Button
-            size="icon"
-            variant="ghost"
-            className={cn(revealActionClassName, "size-6 shrink-0")}
-            onClick={() => onOpenDetails(source.quiz.id)}
-            aria-label={`Open details for ${source.quiz.title}`}
-            title="Details"
-          >
-            <FileText className="size-4" />
-          </Button>
-          <IconActionButton
-            icon={Star}
-            label={favorite ? `Unfavorite ${source.quiz.title}` : `Favorite ${source.quiz.title}`}
-            aria-pressed={favorite}
-            disabled={savingFavorite}
-            className={cn("size-6 shrink-0 text-zinc-400", favorite && "text-amber-500 hover:text-amber-600")}
-            onClick={() => void toggleFavorite()}
-          >
-            <Star className={cn("size-4", favorite && "fill-current")} />
-          </IconActionButton>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -201,6 +181,26 @@ export function QuizListItem({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button
+            size="icon"
+            variant="ghost"
+            className={cn(revealActionClassName, "size-6 shrink-0")}
+            onClick={() => onOpenDetails(source.quiz.id)}
+            aria-label={`Open details for ${source.quiz.title}`}
+            title="Details"
+          >
+            <FileText className="size-4" />
+          </Button>
+          <IconActionButton
+            icon={Star}
+            label={favorite ? `Unfavorite ${source.quiz.title}` : `Favorite ${source.quiz.title}`}
+            aria-pressed={favorite}
+            disabled={savingFavorite}
+            className={cn("size-6 shrink-0 text-zinc-400", favorite && "text-amber-500 hover:text-amber-600")}
+            onClick={() => void toggleFavorite()}
+          >
+            <Star className={cn("size-4", favorite && "fill-current")} />
+          </IconActionButton>
           </div>
         </div>
 
