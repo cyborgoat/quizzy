@@ -1,7 +1,7 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileUp, CircleHelp, FolderOpen, RefreshCw } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
 import { ImportHelpDialog } from "@/components/quiz/ImportHelpDialog";
@@ -43,7 +43,10 @@ export function HomePage() {
   const { userName } = useUserProfile();
   const { goals } = useGoals();
   const navigate = useNavigate();
+  const router = useRouter();
   const { details: detailsQuizId } = Route.useSearch();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const detailsTrigger = useRef<{ quizId: string; element: HTMLButtonElement } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuizLibraryFilter>("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -129,7 +132,9 @@ export function HomePage() {
           className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
         />
         <div>
-          <h1 className={pageTitleClassName}>Hello, {userName || "there"}</h1>
+          <h1 ref={headingRef} tabIndex={-1} className={pageTitleClassName}>
+            Hello, {userName || "there"}
+          </h1>
           <p className={pageDescriptionClassName}>
             Ready to practice? Pick a quiz below and get started.
           </p>
@@ -264,9 +269,10 @@ export function HomePage() {
               >
                 <QuizList
                   quizzes={filteredQuizzes}
-                  onOpenDetails={(quizId) =>
-                    navigate({ to: "/", search: { details: quizId } })
-                  }
+                  onOpenDetails={(quizId, element) => {
+                    detailsTrigger.current = { quizId, element };
+                    void navigate({ to: "/", search: { details: quizId } });
+                  }}
                 />
               </div>
             ) : (
@@ -330,13 +336,27 @@ export function HomePage() {
         onAddSamples={handleAddSamples}
       />
 
-      <QuizDetailsDialog
-        source={detailsSource}
-        goal={detailsGoal}
-        onOpenChange={(open) => {
-          if (!open) navigate({ to: "/", search: {} });
-        }}
-      />
+      {detailsSource && (
+        <QuizDetailsDialog
+          key={detailsSource.quiz.id}
+          source={detailsSource}
+          goal={detailsGoal}
+          onClose={async () => {
+            const { pathname, search } = router.state.location;
+            if (pathname === "/" && search.details === detailsQuizId) {
+              await navigate({ to: "/", search: {}, replace: true });
+            }
+          }}
+          restoreFocus={() => {
+            const trigger = detailsTrigger.current;
+            if (trigger?.quizId === detailsSource.quiz.id && trigger.element.isConnected) {
+              trigger.element.focus();
+            } else {
+              headingRef.current?.focus();
+            }
+          }}
+        />
+      )}
     </PageShell>
   );
 }

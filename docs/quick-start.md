@@ -35,14 +35,14 @@ application, and opens the desktop window.
 3. Click **Save** to apply both settings.
 4. Return to the home page, click **Open quiz folder**, and add one or more quiz
    JSON files with the system file manager.
-5. Click **Start** on a quiz card. A confirmation dialog opens over the home page
-   with the question-type breakdown; click **Start quiz** to begin.
+5. Open a quiz card, then choose **Start quiz** in its details. Review the
+   question-type breakdown and click **Start quiz** to begin.
 6. Answer in any order, use flags for questions to revisit, and submit the quiz
    when ready.
 7. Review the final score, correct answers, and explanations.
-8. Optionally create a **Goal** from the Goals page or the target icon on a quiz
-   card. Each quiz can have one goal. Completing a quiz saves an attempt to its
-   goal.
+8. Optionally create a **Goal** from the Goals page or choose **Add goal** in the
+   quiz details. Each quiz can have one goal. Completing a quiz saves an attempt
+   to its goal.
 9. Open **Mistake Log** from the sidebar to
    review questions missed in scored attempts. Adjust thresholds in **Settings** if
    needed.
