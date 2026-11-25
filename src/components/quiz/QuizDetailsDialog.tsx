@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconActionButton } from "@/components/ui/icon-action-button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGoals } from "@/hooks/useGoals";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
@@ -234,69 +235,70 @@ export function QuizDetailsDialog({
             </section>
           </div>
 
-          <footer className="flex shrink-0 items-center gap-4 border-t border-zinc-200 px-6 py-4">
-            <span className="min-w-0 flex-1 truncate text-xs text-zinc-500" title={fileName}>
-              {fileName}
-            </span>
-            {archived ? (
-              <IconActionButton
-                icon={ArchiveRestore}
-                label={managementAction === "restore" ? "Restoring…" : "Restore to start"}
-                variant="default"
-                tooltipSide="top"
-                disabled={isManagingQuiz}
-                onClick={() => void handleArchiveChange(false)}
-              />
-            ) : (
-              <IconActionButton
-                icon={Play}
-                label={attemptCount > 0 ? "Retake quiz" : "Start quiz"}
-                variant="default"
-                tooltipSide="top"
-                disabled={isManagingQuiz}
-                onClick={() => void handleStart()}
-              />
-            )}
-          </footer>
-
-          <div className="absolute right-4 top-4 flex items-center gap-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          <TooltipProvider delayDuration={500} skipDelayDuration={0}>
+            <footer className="flex shrink-0 items-center gap-4 border-t border-zinc-200 px-6 py-4">
+              <span className="min-w-0 flex-1 truncate text-xs text-zinc-500" title={fileName}>
+                {fileName}
+              </span>
+              {archived ? (
                 <IconActionButton
-                  icon={MoreHorizontal}
-                  label="Manage quiz"
-                  className="text-zinc-500 aria-expanded:bg-zinc-100"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="bottom" align="end" className="z-60">
-                {!archived && (
-                  <DropdownMenuItem
-                    disabled={isManagingQuiz}
-                    onSelect={() => void handleArchiveChange(true)}
-                  >
-                    <Archive aria-hidden="true" />
-                    {managementAction === "archive" ? "Archiving…" : "Archive quiz"}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  variant="destructive"
+                  icon={ArchiveRestore}
+                  label={managementAction === "restore" ? "Restoring…" : "Restore to start"}
+                  variant="default"
+                  tooltipSide="top"
                   disabled={isManagingQuiz}
-                  onSelect={() => void handleDeleteQuiz()}
+                  onClick={() => void handleArchiveChange(false)}
+                />
+              ) : (
+                <Button
+                  size="sm"
+                  disabled={isManagingQuiz}
+                  onClick={() => void handleStart()}
                 >
-                  <Trash2 aria-hidden="true" />
-                  {managementAction === "delete" ? "Deleting…" : "Delete quiz"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DialogClose asChild>
-              <IconActionButton
-                icon={X}
-                label="Close"
-                className="text-zinc-500 hover:bg-zinc-100"
-                showTooltip={false}
-              />
-            </DialogClose>
-          </div>
+                  <Play className="size-3.5 shrink-0" aria-hidden="true" />
+                  {attemptCount > 0 ? "Retake quiz" : "Start quiz"}
+                </Button>
+              )}
+            </footer>
+
+            <div className="absolute right-4 top-4 flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconActionButton
+                    icon={MoreHorizontal}
+                    label="Manage quiz"
+                    className="text-zinc-500 aria-expanded:bg-zinc-100"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end" className="z-60">
+                  {!archived && (
+                    <DropdownMenuItem
+                      disabled={isManagingQuiz}
+                      onSelect={() => void handleArchiveChange(true)}
+                    >
+                      <Archive aria-hidden="true" />
+                      {managementAction === "archive" ? "Archiving…" : "Archive quiz"}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isManagingQuiz}
+                    onSelect={() => void handleDeleteQuiz()}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    {managementAction === "delete" ? "Deleting…" : "Delete quiz"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DialogClose asChild>
+                <IconActionButton
+                  icon={X}
+                  label="Close"
+                  className="text-zinc-500 hover:bg-zinc-100"
+                />
+              </DialogClose>
+            </div>
+          </TooltipProvider>
         </DialogContent>
       </Dialog>
       {goal ? (
