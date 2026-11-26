@@ -54,7 +54,8 @@ launches. If the directory becomes unavailable, Quizzy keeps the configured path
 and prompts you to update it in Settings.
 
 Reference files for developers live in `sample-quizzes/`. **How to import** on
-the home page explains the quiz format and can re-add the welcome sample.
+the home page is a compact markdown guide with a **Copy prompt** action for
+LLM-generated quizzes, plus import and open-folder shortcuts.
 
 ## Frontend-only development
 

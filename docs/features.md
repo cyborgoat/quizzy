@@ -39,10 +39,10 @@ Available actions on the home page:
   operation and a toast confirms completion.
 - **Import quiz file** copies a chosen `.json` file into the working directory.
   It never overwrites an existing file.
-- **How to import** opens a guide with import steps, the file format with a
-  copyable example, an **Add welcome sample** button, and a **Copy AI prompt**
-  button for generating quiz files with an AI assistant. The same guide is
-  offered on the empty library screen.
+- **How to import** opens a compact markdown guide (import steps, format, and
+  example) with **Import quiz file** / **Open quiz folder** actions and a
+  **Copy prompt** control in the content corner. The same guide is offered
+  on the empty library screen.
 - **Open quiz folder** opens the configured working directory in the system file
   manager.
 - **Search, filter, and sort** narrow the library by keyword and status, then

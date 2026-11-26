@@ -1,4 +1,7 @@
-import type { MessageKey } from "@/lib/i18n-messages";
+import type { AppLocale } from "@/lib/locale";
+import importHelpEn from "@/content/import-help.en.md?raw";
+import importHelpEs from "@/content/import-help.es.md?raw";
+import importHelpZh from "@/content/import-help.zh.md?raw";
 
 export const EXAMPLE_QUIZ_JSON = `{
   "id": "web-basics",
@@ -30,20 +33,15 @@ export const EXAMPLE_QUIZ_JSON = `{
   ]
 }`;
 
-export const FORMAT_RULES: {
-  field?: string;
-  fieldKey?: MessageKey;
-  ruleKey: MessageKey;
-}[] = [
-  { field: "id", ruleKey: "import.rule.id" },
-  { field: "title", ruleKey: "import.rule.title" },
-  { field: "description, tags", ruleKey: "import.rule.descriptionTags" },
-  { field: "questions", ruleKey: "import.rule.questions" },
-  { field: "single_choice", ruleKey: "import.rule.single_choice" },
-  { field: "multiple_choice", ruleKey: "import.rule.multiple_choice" },
-  { field: "true_false", ruleKey: "import.rule.true_false" },
-  { fieldKey: "import.rule.everyQuestionField", ruleKey: "import.rule.everyQuestion" },
-];
+const IMPORT_HELP_MARKDOWN: Record<AppLocale, string> = {
+  en: importHelpEn,
+  es: importHelpEs,
+  zh: importHelpZh,
+};
+
+export function getImportHelpMarkdown(locale: AppLocale) {
+  return IMPORT_HELP_MARKDOWN[locale];
+}
 
 /** Sent to an AI assistant, so it stays in English regardless of the UI language. */
 export const AI_PROMPT_TEMPLATE = `Create a quiz about {topic} as a single JSON file for the Quizzy app.

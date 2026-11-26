@@ -39,7 +39,7 @@ import { Route } from "@/routes/_app/index";
 export function HomePage() {
   const library = useQuizLibrary();
   const { goals } = useGoals();
-  const { locale, onboardingCompleted, settingsReady } = useAppLocale();
+  const { onboardingCompleted, settingsReady } = useAppLocale();
   const { t } = useI18n();
   const navigate = useNavigate();
   const router = useRouter();
@@ -104,19 +104,6 @@ export function HomePage() {
       toast.error(errorMessage(error));
     } finally {
       setIsImporting(false);
-    }
-  }
-
-  async function handleAddSamples() {
-    try {
-      const { added, skipped } = await library.addSampleQuizzes(locale);
-      if (added.length > 0) {
-        toast.success(t("toast.welcomeAdded"));
-      } else if (skipped.length > 0) {
-        toast.info(t("toast.welcomeExists"));
-      }
-    } catch (error) {
-      toast.error(errorMessage(error));
     }
   }
 
@@ -330,7 +317,6 @@ export function HomePage() {
           void handleImportQuiz();
         }}
         onOpenFolder={() => void library.openQuizFolder()}
-        onAddSamples={handleAddSamples}
       />
 
       {detailsSource && (
