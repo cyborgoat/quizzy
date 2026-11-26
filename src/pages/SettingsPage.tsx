@@ -7,10 +7,12 @@ import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistake
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
 import { SettingsQuizhubSection } from "@/components/settings/SettingsQuizhubSection";
+import { SettingsResetSection } from "@/components/settings/SettingsResetSection";
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { useAppLocale } from "@/hooks/useAppLocale";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
+import { useSettingsReset } from "@/hooks/useSettingsReset";
 import { useI18n } from "@/lib/i18n";
 import type { AppLocale } from "@/lib/locale";
 
@@ -41,6 +43,7 @@ export function SettingsPage() {
     handlePickDirectory,
     handleSynchronize,
   } = useSettingsPageState();
+  const { busyLevel, reset } = useSettingsReset();
 
   return (
     <PageShell className="space-y-6">
@@ -109,6 +112,12 @@ export function SettingsPage() {
         syncSections={syncSections}
         lastSyncReport={lastSyncReport}
         onSynchronize={() => void handleSynchronize()}
+      />
+
+      <SettingsResetSection
+        busyLevel={busyLevel}
+        directoryAvailable={directoryAvailable}
+        onReset={(level) => void reset(level)}
       />
 
       <SettingsAboutSection />

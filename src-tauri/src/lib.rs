@@ -2,6 +2,7 @@ use tauri::{AppHandle, Manager};
 
 mod app_data_commands;
 mod data_cleanup;
+mod data_reset;
 mod data_sync;
 mod fs_utils;
 mod goals_storage;
@@ -64,6 +65,7 @@ pub fn run() {
             app_data_commands::delete_goal_attempt,
             app_data_commands::get_mistake_index,
             app_data_commands::synchronize_app_data,
+            data_reset::reset_app_data,
             hub_sync::hub_fetch_catalog,
             hub_sync::hub_list_installed,
             hub_sync::hub_download,

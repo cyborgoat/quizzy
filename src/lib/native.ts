@@ -199,6 +199,17 @@ export type HubPreview = {
   contents: string;
 };
 
+export type ResetLevel =
+  | "quizhubCache"
+  | "studyHistory"
+  | "libraryMetadata"
+  | "factory";
+
+export type ResetReport = {
+  level: ResetLevel;
+  cleared: string[];
+};
+
 const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
   invoke<void>("save_settings", { request }),
 );
@@ -246,6 +257,7 @@ export const nativeApi = {
     invoke<void>("delete_goal_attempt", { workingDirectory, goalId, attemptId }),
   getMistakeIndex: (workingDirectory: string) => invoke<MistakeIndex>("get_mistake_index", { workingDirectory }),
   synchronizeAppData: () => invoke<SyncReport>("synchronize_app_data"),
+  resetAppData: (level: ResetLevel) => invoke<ResetReport>("reset_app_data", { level }),
   hubFetchCatalog: (scope: HubScope, locale: string | null, force: boolean) =>
     invoke<HubCatalog>("hub_fetch_catalog", { scope, locale, force }),
   hubListInstalled: (scope: HubScope) => invoke<HubInstalledItem[]>("hub_list_installed", { scope }),

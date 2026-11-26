@@ -190,6 +190,52 @@ pub fn record_knowledge_view(
     Ok(count)
 }
 
+/// Clears archives, favorites, and knowledge view counts for one working directory.
+pub(crate) fn clear_directory_metadata(
+    app: &AppHandle,
+    directory_key: &str,
+) -> Result<bool, String> {
+    let _guard = REGISTRY_WRITE_LOCK
+        .lock()
+        .map_err(|_| "The library registry is unavailable.")?;
+    let mut registry = read_registry(app)?;
+    let removed_archives = registry.directories.remove(directory_key).is_some();
+    let removed_favorites = registry.favorites.remove(directory_key).is_some();
+    let removed_views = registry.knowledge_views.remove(directory_key).is_some();
+    let changed = removed_archives || removed_favorites || removed_views;
+    if !changed {
+        return Ok(false);
+    }
+    if registry.directories.is_empty()
+        && registry.favorites.is_empty()
+        && registry.knowledge_views.is_empty()
+    {
+        let path = registry_path(app)?;
+        if path.exists() {
+            fs::remove_file(&path).map_err(|error| {
+                format!("Unable to remove the quiz archive registry: {error}")
+            })?;
+        }
+    } else {
+        write_registry(app, &registry)?;
+    }
+    Ok(true)
+}
+
+/// Removes the entire archive/favorites/views registry.
+pub(crate) fn clear_all_metadata(app: &AppHandle) -> Result<bool, String> {
+    let _guard = REGISTRY_WRITE_LOCK
+        .lock()
+        .map_err(|_| "The library registry is unavailable.")?;
+    let path = registry_path(app)?;
+    if !path.exists() {
+        return Ok(false);
+    }
+    fs::remove_file(&path)
+        .map_err(|error| format!("Unable to remove the quiz archive registry: {error}"))?;
+    Ok(true)
+}
+
 pub(crate) fn rename_registry_update(
     config: &Path,
     directory_key: &str,

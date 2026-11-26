@@ -335,6 +335,64 @@ fn write_lock_file(path: &Path, lock: &HubLock) -> Result<(), String> {
     atomic_write(path, &contents, true)
 }
 
+/// Removes on-disk QuizHub HTTP catalog/manifest cache files. Returns how many files were deleted.
+pub(crate) fn clear_disk_caches(app: &AppHandle) -> Result<usize, String> {
+    let directory = app
+        .path()
+        .app_config_dir()
+        .map_err(|error| format!("Unable to locate the app configuration directory: {error}"))?;
+    if !directory.is_dir() {
+        return Ok(0);
+    }
+    let mut removed = 0usize;
+    let entries = fs::read_dir(&directory)
+        .map_err(|error| format!("Unable to read the app configuration directory: {error}"))?;
+    for entry in entries.filter_map(Result::ok) {
+        let path = entry.path();
+        let is_cache = path.is_file()
+            && path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with("quizhub-cache-") && name.ends_with(".json"));
+        if is_cache {
+            fs::remove_file(&path)
+                .map_err(|error| format!("Unable to remove QuizHub cache {}: {error}", path.display()))?;
+            removed += 1;
+        }
+    }
+    Ok(removed)
+}
+
+/// Drops QuizHub install provenance for one working directory. Downloaded files are left alone.
+pub(crate) fn clear_workspace_lock(app: &AppHandle, workspace: &str) -> Result<bool, String> {
+    let path = lock_path(app)?;
+    let mut lock = read_lock_file(&path)?;
+    let removed = lock.workspaces.remove(workspace).is_some();
+    if removed {
+        if lock.workspaces.is_empty() {
+            if path.exists() {
+                fs::remove_file(&path).map_err(|error| {
+                    format!("Unable to remove the quizhub lock file: {error}")
+                })?;
+            }
+        } else {
+            write_lock_file(&path, &lock)?;
+        }
+    }
+    Ok(removed)
+}
+
+/// Removes the entire QuizHub install lock file.
+pub(crate) fn clear_all_locks(app: &AppHandle) -> Result<bool, String> {
+    let path = lock_path(app)?;
+    if !path.exists() {
+        return Ok(false);
+    }
+    fs::remove_file(&path)
+        .map_err(|error| format!("Unable to remove the quizhub lock file: {error}"))?;
+    Ok(true)
+}
+
 fn local_sha256(path: &Path) -> Option<String> {
     fs::read(path).ok().map(|bytes| sha256_hex(&bytes))
 }
@@ -368,6 +426,20 @@ pub(crate) struct HubState {
     locales: DocumentCache<Locales>,
     manifests: DocumentCache<Manifest>,
     mutations: Mutex<()>,
+}
+
+impl HubState {
+    pub(crate) fn clear_document_caches(&self) -> Result<(), String> {
+        self.locales
+            .lock()
+            .map_err(|_| "The QuizHub cache is unavailable.".to_string())?
+            .clear();
+        self.manifests
+            .lock()
+            .map_err(|_| "The QuizHub cache is unavailable.".to_string())?
+            .clear();
+        Ok(())
+    }
 }
 
 fn http_client() -> Result<reqwest::Client, String> {
