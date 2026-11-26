@@ -154,7 +154,7 @@ where
     deserializer.deserialize_any(UiFontSizeVisitor)
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Settings {
     pub(crate) working_directory: Option<String>,
@@ -194,6 +194,48 @@ pub(crate) struct Settings {
     /// App / QuizHub / welcome-sample locale (`en`, `zh`). Empty until the user chooses.
     #[serde(default)]
     pub(crate) app_locale: String,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            working_directory: None,
+            profile_name: String::new(),
+            shuffle_questions: false,
+            shuffle_options: false,
+            legacy_shuffle_mode: None,
+            mistake_log_min_mistakes: default_mistake_log_min_mistakes(),
+            mistake_log_min_flags: default_mistake_log_min_flags(),
+            mistake_log_max_correctness_percentage: default_mistake_log_max_correctness_percentage(),
+            ui_font_size: default_ui_font_size(),
+            knowledge_link_shortcut_key: default_knowledge_link_shortcut_key(),
+            knowledge_new_note_shortcut_key: default_knowledge_new_note_shortcut_key(),
+            zoom_in_shortcut_key: default_zoom_in_shortcut_key(),
+            zoom_out_shortcut_key: default_zoom_out_shortcut_key(),
+            toggle_sidebar_shortcut_key: default_toggle_sidebar_shortcut_key(),
+            quizhub_enabled: false,
+            quizhub_base_url: None,
+            app_locale: String::new(),
+        }
+    }
+}
+
+fn ensure_shortcut_defaults(settings: &mut Settings) {
+    if settings.knowledge_link_shortcut_key.trim().is_empty() {
+        settings.knowledge_link_shortcut_key = default_knowledge_link_shortcut_key();
+    }
+    if settings.knowledge_new_note_shortcut_key.trim().is_empty() {
+        settings.knowledge_new_note_shortcut_key = default_knowledge_new_note_shortcut_key();
+    }
+    if settings.zoom_in_shortcut_key.trim().is_empty() {
+        settings.zoom_in_shortcut_key = default_zoom_in_shortcut_key();
+    }
+    if settings.zoom_out_shortcut_key.trim().is_empty() {
+        settings.zoom_out_shortcut_key = default_zoom_out_shortcut_key();
+    }
+    if settings.toggle_sidebar_shortcut_key.trim().is_empty() {
+        settings.toggle_sidebar_shortcut_key = default_toggle_sidebar_shortcut_key();
+    }
 }
 
 #[derive(Serialize)]
@@ -265,6 +307,7 @@ pub(crate) fn read_settings(app: &AppHandle) -> Result<Settings, String> {
     {
         settings.shuffle_questions = true;
     }
+    ensure_shortcut_defaults(&mut settings);
 
     Ok(settings)
 }
@@ -334,6 +377,10 @@ pub(crate) fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Res
 }
 
 fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Result<(), String> {
+    // Partial saves (locale, directory, …) still load Settings::default() when no file exists.
+    // Fill shortcut defaults before uniqueness checks so empty strings do not collide.
+    ensure_shortcut_defaults(settings);
+
     if let Some(profile_name) = request.profile_name {
         settings.profile_name = profile_name;
     }
@@ -372,6 +419,12 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
         settings.ui_font_size = font_size;
     }
 
+    let updating_shortcuts = request.knowledge_link_shortcut_key.is_some()
+        || request.knowledge_new_note_shortcut_key.is_some()
+        || request.zoom_in_shortcut_key.is_some()
+        || request.zoom_out_shortcut_key.is_some()
+        || request.toggle_sidebar_shortcut_key.is_some();
+
     if let Some(link_key) = request.knowledge_link_shortcut_key {
         settings.knowledge_link_shortcut_key = normalize_keybind(&link_key)?;
     }
@@ -392,17 +445,19 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
         settings.toggle_sidebar_shortcut_key = normalize_keybind(&toggle_sidebar_key)?;
     }
 
-    let shortcut_values = [
-        settings.knowledge_link_shortcut_key.clone(),
-        settings.knowledge_new_note_shortcut_key.clone(),
-        settings.zoom_in_shortcut_key.clone(),
-        settings.zoom_out_shortcut_key.clone(),
-        settings.toggle_sidebar_shortcut_key.clone(),
-    ];
-    for (index, value) in shortcut_values.iter().enumerate() {
-        if shortcut_values[..index].contains(value) || shortcut_values[index + 1..].contains(value)
-        {
-            return Err("Shortcuts must be unique.".to_string());
+    if updating_shortcuts {
+        let shortcut_values = [
+            settings.knowledge_link_shortcut_key.as_str(),
+            settings.knowledge_new_note_shortcut_key.as_str(),
+            settings.zoom_in_shortcut_key.as_str(),
+            settings.zoom_out_shortcut_key.as_str(),
+            settings.toggle_sidebar_shortcut_key.as_str(),
+        ];
+        for (index, value) in shortcut_values.iter().enumerate() {
+            if shortcut_values[..index].contains(value) || shortcut_values[index + 1..].contains(value)
+            {
+                return Err("Shortcuts must be unique.".to_string());
+            }
         }
     }
 
@@ -439,7 +494,62 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_keybind;
+    use super::{
+        apply_settings, ensure_shortcut_defaults, normalize_keybind, SaveSettingsRequest, Settings,
+    };
+
+    #[test]
+    fn default_settings_have_unique_shortcuts() {
+        let settings = Settings::default();
+        let keys = [
+            settings.knowledge_link_shortcut_key.as_str(),
+            settings.knowledge_new_note_shortcut_key.as_str(),
+            settings.zoom_in_shortcut_key.as_str(),
+            settings.zoom_out_shortcut_key.as_str(),
+            settings.toggle_sidebar_shortcut_key.as_str(),
+        ];
+        for key in keys {
+            assert!(!key.is_empty());
+            assert_eq!(keys.iter().filter(|candidate| **candidate == key).count(), 1);
+        }
+    }
+
+    #[test]
+    fn saving_locale_on_fresh_settings_does_not_require_shortcut_fields() {
+        let mut settings = Settings {
+            knowledge_link_shortcut_key: String::new(),
+            knowledge_new_note_shortcut_key: String::new(),
+            zoom_in_shortcut_key: String::new(),
+            zoom_out_shortcut_key: String::new(),
+            toggle_sidebar_shortcut_key: String::new(),
+            ..Settings::default()
+        };
+        apply_settings(
+            &mut settings,
+            SaveSettingsRequest {
+                working_directory: None,
+                profile_name: None,
+                shuffle_questions: None,
+                shuffle_options: None,
+                mistake_log_min_mistakes: None,
+                mistake_log_min_flags: None,
+                mistake_log_max_correctness_percentage: None,
+                ui_font_size: None,
+                knowledge_link_shortcut_key: None,
+                knowledge_new_note_shortcut_key: None,
+                zoom_in_shortcut_key: None,
+                zoom_out_shortcut_key: None,
+                toggle_sidebar_shortcut_key: None,
+                quizhub_enabled: None,
+                quizhub_base_url: None,
+                app_locale: Some("zh".to_string()),
+            },
+        )
+        .expect("locale save");
+        assert_eq!(settings.app_locale, "zh");
+        ensure_shortcut_defaults(&mut settings);
+        assert_eq!(settings.knowledge_link_shortcut_key, "mod+l");
+    }
 
     #[test]
     fn normalize_keybind_accepts_legacy_single_letter_shortcuts() {
