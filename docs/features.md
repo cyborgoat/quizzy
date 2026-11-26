@@ -276,8 +276,8 @@ you pick a different edition on the QuizHub page. You can preview items, downloa
 into the working folder, update when a newer version is published, and remove the
 QuizHub link (optionally keeping the local file). Browse position is kept across
 downloads and language switches. File-name conflicts are resolved in a dialog
-before writing. Install provenance is stored in `quizhub-lock.json` under the
-working directory; temporary HTTP caches live in the app-config directory.
+before writing. Install provenance is stored in `quizhub-lock.json` in the
+app-config directory alongside temporary HTTP catalog caches.
 
 ## Quiz library
 

@@ -829,16 +829,14 @@ impl LocalContext {
     }
 
     fn entries(&self, locale: Option<&str>) -> Result<BTreeMap<String, LockEntry>, String> {
+        // Locale-scoped lookups match edition only. Do not require `base_url` to match the
+        // current setting so remove/catalog still see installs after a QuizHub URL change.
         Ok(read_lock_file(&self.lock_path)?
             .workspaces
             .remove(&self.workspace)
             .unwrap_or_default()
             .into_iter()
-            .filter(|(_, entry)| {
-                locale.is_none_or(|id| {
-                    entry.locale.as_deref() == Some(id) && entry.base_url == self.base_url
-                })
-            })
+            .filter(|(_, entry)| locale.is_none_or(|id| entry.locale.as_deref() == Some(id)))
             .collect())
     }
 }

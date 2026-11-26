@@ -44,6 +44,10 @@ export function createHubCatalogCache(fetchCatalog: (force: boolean) => Promise<
     await refresh(false, true);
     if (snapshot.catalog) await checkForUpdates();
   }
+  function invalidate() {
+    snapshot = { catalog: null, error: null, isRefreshing: false };
+    listeners.forEach((listener) => listener());
+  }
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => {
@@ -53,5 +57,6 @@ export function createHubCatalogCache(fetchCatalog: (force: boolean) => Promise<
     refresh,
     visit,
     checkForUpdates,
+    invalidate,
   };
 }

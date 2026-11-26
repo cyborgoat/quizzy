@@ -2,6 +2,7 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useAppSynchronize } from "@/hooks/useAppSynchronize";
+import { clearHubCatalogCaches } from "@/hooks/useQuizhubCatalog";
 import { useI18n, type MessageKey } from "@/lib/i18n";
 import { errorMessage, nativeApi, type ResetLevel } from "@/lib/native";
 import { notifyQuizhubChanged } from "@/lib/quizhub";
@@ -75,6 +76,7 @@ export function useSettingsReset() {
         }
 
         if (level === "quizhubCache" || level === "libraryMetadata") {
+          clearHubCatalogCaches();
           notifyQuizhubChanged();
         }
 

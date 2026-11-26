@@ -8,7 +8,6 @@ import {
   type ShortcutDraftKey,
 } from "@/lib/keybinds";
 import type { MessageKey } from "@/lib/i18n-messages";
-import type { SaveSettingsRequest } from "@/lib/native";
 
 export type SettingsDraft = {
   shuffleQuestions: boolean;
@@ -38,22 +37,6 @@ export type NumericSettingsFieldKey =
   | "minMistakes"
   | "minFlags"
   | "maxCorrectness";
-
-export type ParsedSettingsDraft = {
-  shuffleQuestions: boolean;
-  shuffleOptions: boolean;
-  quizhubEnabled: boolean;
-  quizhubBaseUrl: string;
-  minMistakes: number;
-  minFlags: number;
-  maxCorrectness: number;
-  knowledgeLinkShortcut: string;
-  knowledgeNewNoteShortcut: string;
-  zoomInShortcut: string;
-  zoomOutShortcut: string;
-  toggleSidebarShortcut: string;
-  pendingDir: string | null;
-};
 
 export type PersistedSettingsSnapshot = {
   shuffleQuestions: boolean;
@@ -99,90 +82,6 @@ export function draftFromPersisted({
     maxCorrectness: String(maxCorrectnessPercentage),
     ...shortcuts,
     pendingDir: null,
-  };
-}
-
-export function hasSettingsChanges(draft: SettingsDraft, persisted: SettingsDraft) {
-  if (
-    draft.pendingDir !== null ||
-    draft.shuffleQuestions !== persisted.shuffleQuestions ||
-    draft.shuffleOptions !== persisted.shuffleOptions ||
-    draft.quizhubEnabled !== persisted.quizhubEnabled ||
-    draft.quizhubBaseUrl !== persisted.quizhubBaseUrl ||
-    draft.minMistakes !== persisted.minMistakes ||
-    draft.minFlags !== persisted.minFlags ||
-    draft.maxCorrectness !== persisted.maxCorrectness
-  ) {
-    return true;
-  }
-
-  return SHORTCUT_FIELDS.some((field) => draft[field.draftKey] !== persisted[field.draftKey]);
-}
-
-export function validateSettingsDraft(
-  draft: SettingsDraft,
-):
-  | { ok: true; parsed: ParsedSettingsDraft }
-  | { ok: false; errors: SettingsDraftErrors } {
-  const errors: SettingsDraftErrors = {};
-
-  const parsedMinMistakes = Number(draft.minMistakes);
-  if (!Number.isInteger(parsedMinMistakes) || parsedMinMistakes < 1) {
-    errors.minMistakes = "settings.validation.minOne";
-  }
-
-  const parsedMinFlags = Number(draft.minFlags);
-  if (!Number.isInteger(parsedMinFlags) || parsedMinFlags < 1) {
-    errors.minFlags = "settings.validation.minOne";
-  }
-
-  const parsedMaxCorrectness = Number(draft.maxCorrectness);
-  if (
-    !Number.isFinite(parsedMaxCorrectness) ||
-    parsedMaxCorrectness < 0 ||
-    parsedMaxCorrectness > 100
-  ) {
-    errors.maxCorrectness = "settings.validation.percent";
-  }
-
-  const shortcutFields = Object.fromEntries(
-    SHORTCUT_FIELDS.map((field) => [field.draftKey, draft[field.draftKey]]),
-  ) as Record<ShortcutDraftKey, string>;
-
-  for (const field of SHORTCUT_FIELDS) {
-    const error = validateKeybindSerialized(draft[field.draftKey]);
-    if (error) errors[field.draftKey] = error;
-  }
-
-  const duplicate = findDuplicateKeybind(shortcutFields);
-  if (duplicate) {
-    errors[duplicate.field as SettingsFieldKey] = duplicate.message;
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return { ok: false, errors };
-  }
-
-  const normalizedShortcuts = Object.fromEntries(
-    SHORTCUT_FIELDS.map((field) => [
-      field.draftKey,
-      normalizeShortcutDraftValue(draft[field.draftKey], field.defaultBind),
-    ]),
-  ) as Pick<ParsedSettingsDraft, ShortcutDraftKey>;
-
-  return {
-    ok: true,
-    parsed: {
-      shuffleQuestions: draft.shuffleQuestions,
-      shuffleOptions: draft.shuffleOptions,
-      quizhubEnabled: draft.quizhubEnabled,
-      quizhubBaseUrl: draft.quizhubBaseUrl.trim(),
-      minMistakes: parsedMinMistakes,
-      minFlags: parsedMinFlags,
-      maxCorrectness: parsedMaxCorrectness,
-      ...normalizedShortcuts,
-      pendingDir: draft.pendingDir,
-    },
   };
 }
 
@@ -234,26 +133,4 @@ export function validateShortcutSettings(
       ]),
     ) as Record<ShortcutDraftKey, string>,
   };
-}
-
-export function toSaveSettingsRequest(parsed: ParsedSettingsDraft): SaveSettingsRequest {
-  const request: SaveSettingsRequest = {
-    shuffleQuestions: parsed.shuffleQuestions,
-    shuffleOptions: parsed.shuffleOptions,
-    quizhubEnabled: parsed.quizhubEnabled,
-    quizhubBaseUrl: parsed.quizhubBaseUrl,
-    mistakeLogMinMistakes: parsed.minMistakes,
-    mistakeLogMinFlags: parsed.minFlags,
-    mistakeLogMaxCorrectnessPercentage: parsed.maxCorrectness,
-  };
-
-  for (const field of SHORTCUT_FIELDS) {
-    request[field.apiKey] = parsed[field.draftKey];
-  }
-
-  if (parsed.pendingDir !== null) {
-    request.workingDirectory = parsed.pendingDir;
-  }
-
-  return request;
 }

@@ -90,4 +90,13 @@ describe("Quizhub catalog cache", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(cache.getSnapshot().error).toBe("offline");
   });
+
+  it("clears the snapshot on invalidate so resets do not keep stale catalogs", async () => {
+    const fetch = vi.fn().mockResolvedValue(catalog());
+    const cache = createHubCatalogCache(fetch);
+    await cache.visit();
+    expect(cache.getSnapshot().catalog).not.toBeNull();
+    cache.invalidate();
+    expect(cache.getSnapshot()).toEqual({ catalog: null, error: null, isRefreshing: false });
+  });
 });

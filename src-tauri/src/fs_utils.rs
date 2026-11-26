@@ -11,6 +11,7 @@ use tauri::AppHandle;
 use crate::settings::{read_settings, Settings};
 
 pub(crate) const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
+pub(crate) const DATA_VERSION_FILE: &str = "data-version";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -11,11 +11,10 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-use crate::goals_storage::GOALS_DIR;
+use crate::{fs_utils::DATA_VERSION_FILE, goals_storage::GOALS_DIR};
 
 /// Bump when a release stops using another file, and add that file to `DEPRECATED_FILES`.
 const DATA_VERSION: u32 = 2;
-const DATA_VERSION_FILE: &str = "data-version";
 
 /// Files in the config directory that no current release reads or writes.
 const DEPRECATED_FILES: &[&str] = &["mistake-index.json", "goals.json.bak"];

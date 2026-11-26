@@ -4,7 +4,7 @@
 
 Quiz content remains in the user-selected working directory (top-level `.json`
 quizzes and `knowledge-base/*.md` notes). QuizHub downloads write into that same
-folder and record provenance in `quizhub-lock.json` there.
+folder; install provenance is recorded in the app-config directory.
 
 Quizzy stores application data in the Tauri app-config directory:
 
@@ -12,6 +12,7 @@ Quizzy stores application data in the Tauri app-config directory:
 <Tauri app config directory>/settings.json
 <Tauri app config directory>/data-version
 <Tauri app config directory>/quiz-archive.json       # archives, favorites, knowledge views
+<Tauri app config directory>/quizhub-lock.json       # QuizHub install provenance
 <Tauri app config directory>/libraries/
   <sha256(working-directory)>/
     goals/
@@ -81,7 +82,7 @@ The frontend exposes these operations through `src/lib/native.ts`:
 | `synchronize_app_data` | Rescan quiz/knowledge folders, repair goal attempt indexes, refresh goal titles from quiz files, rebuild the mistake index when changed, and return a structured `SyncReport` |
 | `reset_app_data` | Clear QuizHub cache, study history, library metadata, or factory-reset app-config (never deletes working-folder files) |
 | `hub_fetch_catalog` | Fetch and cache a QuizHub catalog for a locale |
-| `hub_list_installed` | List QuizHub install records from the working-directory lock file |
+| `hub_list_installed` | List QuizHub install records from the app-config lock file |
 | `hub_download` | Download a catalog item into the working directory (conflict-aware) |
 | `hub_preview_item` | Preview a catalog item (local copy preferred when installed from QuizHub) |
 | `hub_remove` | Forget a QuizHub install (optionally keep the local file) |

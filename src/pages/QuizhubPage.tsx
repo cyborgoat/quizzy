@@ -243,6 +243,23 @@ function QuizhubBrowser({
   const activeDomain = domains.find((domain) => domain.id === domainId);
   const activeCategory = activeDomain?.categories.find((category) => category.id === categoryId) ??
     (grouped?.removed?.id === categoryId ? grouped?.removed : null);
+
+  // Drop browse position when the active edition no longer has that domain/category.
+  useLayoutEffect(() => {
+    if (!grouped) return;
+    if (domainId && !domains.some((domain) => domain.id === domainId)) {
+      setDomainId(null);
+      setCategoryId(null);
+      return;
+    }
+    if (
+      categoryId &&
+      categoryId !== grouped.removed?.id &&
+      !activeDomain?.categories.some((category) => category.id === categoryId)
+    ) {
+      setCategoryId(null);
+    }
+  }, [grouped, domains, domainId, categoryId, activeDomain]);
   const updateCount = canInstall
     ? catalog?.items.filter((item) => item.state === "updateAvailable").length ?? 0
     : 0;
@@ -468,7 +485,7 @@ function QuizhubBrowser({
             <div className="flex items-center gap-2">
               <Languages className="size-4 text-zinc-600" aria-hidden="true" />
               <label htmlFor="quizhub-language" className="text-sm font-medium text-zinc-800">{t("home.languageLabel")}</label>
-              <Select value={language} onValueChange={onSelectLocale}>
+              <Select value={language} onValueChange={onSelectLocale} disabled={isWorking}>
                 <SelectTrigger id="quizhub-language" className="w-36 bg-white"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {languages.map((edition) => (
@@ -607,14 +624,13 @@ function DomainGrid({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {domains.map((domain) => (
-        <button key={domain.id} type="button" onClick={() => onOpen(domain.id)} className={domainTileClass}>
-          <ChevronRight className={cn(tileArrowClass, "group-hover:text-blue-700")} aria-hidden="true" />
+        <button key={domain.id} type="button" onClick={() => onOpen(domain.id)} className={catalogTileClass}>
+          <ChevronRight className={cn(tileArrowClass, "group-hover:text-zinc-700")} aria-hidden="true" />
           <span className="flex items-center gap-2 text-base font-semibold text-zinc-950">
             <BookPlus
               className={cn(
-                "size-4 shrink-0 text-blue-700/80 transition-[color,filter] duration-300 ease-out",
-                "group-hover:animate-cloud-float group-hover:text-blue-800",
-                "group-hover:drop-shadow-[0_0_6px_rgba(29,78,216,0.4)]",
+                "size-4 shrink-0 text-zinc-500 transition-colors duration-300 ease-out",
+                "group-hover:animate-cloud-float group-hover:text-zinc-900",
                 "motion-reduce:transition-colors motion-reduce:group-hover:animate-none",
               )}
               aria-hidden="true"
@@ -648,9 +664,6 @@ const tileArrowClass =
 
 const catalogTileClass =
   "group relative flex min-h-24 flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 pr-10 text-left shadow-sm transition-colors hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-sky-600";
-
-const domainTileClass =
-  "group relative flex min-h-24 flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 pr-10 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-300 hover:border-blue-300 hover:bg-gradient-to-br hover:from-blue-50/90 hover:to-indigo-50/40 hover:shadow-md hover:shadow-blue-100/80 focus-visible:outline-2 focus-visible:outline-blue-700";
 
 function CategoryGrid({
   categories,

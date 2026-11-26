@@ -7,7 +7,9 @@ use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
-    fs_utils::{canonical_directory, directory_from_settings, normalize_stored_path},
+    fs_utils::{
+        canonical_directory, directory_from_settings, normalize_stored_path, DATA_VERSION_FILE,
+    },
     goals_storage::library_goals_root,
     hub_sync::{self, HubState},
     quiz_archive,
@@ -15,7 +17,6 @@ use crate::{
 };
 
 const LIBRARIES_DIR: &str = "libraries";
-const DATA_VERSION_FILE: &str = "data-version";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

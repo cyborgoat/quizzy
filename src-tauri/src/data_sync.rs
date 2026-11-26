@@ -7,7 +7,10 @@ use std::{
 use tauri::AppHandle;
 
 use crate::{
-    fs_utils::{canonical_directory, directory_from_settings, normalize_stored_path},
+    fs_utils::{
+        canonical_directory, directory_from_settings, is_json_extension, is_md_extension,
+        normalize_stored_path, KNOWLEDGE_BASE_FOLDER,
+    },
     goals_storage::{
         goal_meta_relative_path, goals_storage_root, list_goals, repair_attempt_summaries,
         update_goal_quiz_title, GOAL_META_FILE,
@@ -16,7 +19,6 @@ use crate::{
 };
 
 const MAX_SYNC_CHANGES: usize = 20;
-const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,14 +60,6 @@ use serde::Serialize;
 struct QuizCatalogEntry {
     id: String,
     title: String,
-}
-
-fn is_json_extension(extension: &str) -> bool {
-    extension.eq_ignore_ascii_case("json")
-}
-
-fn is_md_extension(extension: &str) -> bool {
-    extension.eq_ignore_ascii_case("md")
 }
 
 fn push_change(report: &mut SyncReport, kind: &str, path: Option<String>, detail: String) {
