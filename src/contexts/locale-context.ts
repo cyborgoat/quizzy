@@ -8,7 +8,10 @@ export type LocaleContextValue = {
   localeConfigured: boolean;
   /** True after settings.json has been loaded once. */
   settingsReady: boolean;
+  /** True after the first-launch wizard has been finished. */
+  onboardingCompleted: boolean;
   setAppLocale: (locale: AppLocale) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 };
 
 export const LocaleContext = createContext<LocaleContextValue | null>(null);

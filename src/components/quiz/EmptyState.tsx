@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { FolderOpen } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function EmptyState({
   title,
@@ -11,6 +12,7 @@ export function EmptyState({
   actionIcon,
   actionVariant,
   onAction,
+  className,
 }: {
   title: string;
   description: string;
@@ -20,9 +22,15 @@ export function EmptyState({
   actionIcon?: ReactNode;
   actionVariant?: ButtonProps["variant"];
   onAction?: () => void;
+  className?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center">
+    <section
+      className={cn(
+        "rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center",
+        className,
+      )}
+    >
       {icon ?? (
         <FolderOpen className="mx-auto mb-4 size-9 text-zinc-400" aria-hidden="true" />
       )}

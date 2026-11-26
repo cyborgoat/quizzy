@@ -23,6 +23,7 @@ export type AppSettings = {
   quizhubBaseUrl: string;
   /** Empty until the user chooses a language on first launch. */
   appLocale: string;
+  onboardingCompleted: boolean;
 };
 
 export type SaveSettingsRequest = {
@@ -43,6 +44,7 @@ export type SaveSettingsRequest = {
   /** Empty string resets to the default quizhub URL. */
   quizhubBaseUrl?: string;
   appLocale?: string;
+  onboardingCompleted?: boolean;
 };
 
 export type NativeQuizFile = NativeLibraryFile;

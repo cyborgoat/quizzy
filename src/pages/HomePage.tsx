@@ -10,11 +10,7 @@ import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
 import { FilterSortMenu } from "@/components/ui/filter-sort-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  pageDescriptionClassName,
-  pageTitleClassName,
-} from "@/components/ui/typography";
+import { FirstLaunchWizard } from "@/components/onboarding/FirstLaunchWizard";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { QuizList } from "@/components/quiz/QuizList";
@@ -22,12 +18,9 @@ import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useAppLocale } from "@/hooks/useAppLocale";
 import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
-import { usePickWorkingDirectory } from "@/hooks/usePickWorkingDirectory";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizLibrarySort } from "@/hooks/useQuizLibrarySort";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { useI18n } from "@/lib/i18n";
-import { APP_LOCALES, localeDisplayName, type AppLocale } from "@/lib/locale";
 import { errorMessage } from "@/lib/native";
 import {
   filterQuizSources,
@@ -45,16 +38,13 @@ import { Route } from "@/routes/_app/index";
 
 export function HomePage() {
   const library = useQuizLibrary();
-  const { userName } = useUserProfile();
   const { goals } = useGoals();
-  const { locale, setAppLocale } = useAppLocale();
+  const { onboardingCompleted, settingsReady } = useAppLocale();
   const { t } = useI18n();
-  const { pickWorkingDirectory, isPicking } = usePickWorkingDirectory();
   const navigate = useNavigate();
   const router = useRouter();
-  const [isSavingLocale, setIsSavingLocale] = useState(false);
   const { details: detailsQuizId } = Route.useSearch();
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const libraryHeadingRef = useRef<HTMLHeadingElement>(null);
   const detailsTrigger = useRef<{ quizId: string; element: HTMLButtonElement } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<QuizLibraryFilter>("all");
@@ -130,39 +120,16 @@ export function HomePage() {
     }
   }
 
-  async function handleLocaleChange(next: AppLocale) {
-    if (next === locale || isSavingLocale) return;
-    setIsSavingLocale(true);
-    try {
-      await setAppLocale(next);
-    } finally {
-      setIsSavingLocale(false);
-    }
-  }
-
-  async function handleChooseDirectory() {
-    await setAppLocale(locale);
-    await pickWorkingDirectory();
+  if (settingsReady && !onboardingCompleted) {
+    return (
+      <PageShell>
+        <FirstLaunchWizard />
+      </PageShell>
+    );
   }
 
   return (
     <PageShell>
-      <div className="mb-8 flex items-center gap-4 lg:gap-5">
-        <img
-          src="/quizzy-logo.svg"
-          alt="Quizzy logo"
-          className="size-14 shrink-0 rounded-xl border border-zinc-200 bg-white shadow-sm lg:size-16"
-        />
-        <div>
-          <h1 ref={headingRef} tabIndex={-1} className={pageTitleClassName}>
-            {t("home.greeting", { name: userName || t("home.greetingFallback") })}
-          </h1>
-          <p className={pageDescriptionClassName}>
-            {t("home.subtitle")}
-          </p>
-        </div>
-      </div>
-
       <WorkingDirectoryGate
         isLoading={library.isLoading}
         directoryPath={library.directoryPath}
@@ -173,47 +140,16 @@ export function HomePage() {
         unavailableTitle={t("home.unavailableTitle")}
         unavailableDescription={t("home.unavailableDescription")}
         onOpenSettings={() => navigate({ to: "/settings" })}
-        chooseDirectoryBusy={isPicking || isSavingLocale}
-        action={
-          <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-stretch gap-4">
-            <div className="space-y-2 text-left">
-              <label htmlFor="home-app-locale" className="block text-sm font-medium text-zinc-800">
-                {t("home.languageLabel")}
-              </label>
-              <Select
-                value={locale}
-                disabled={isSavingLocale || isPicking}
-                onValueChange={(value) => void handleLocaleChange(value as AppLocale)}
-              >
-                <SelectTrigger id="home-app-locale" className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {APP_LOCALES.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      {localeDisplayName(id)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs leading-5 text-zinc-500">{t("home.languageHint")}</p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button disabled={isPicking || isSavingLocale} onClick={() => void handleChooseDirectory()}>
-                {isPicking ? t("home.choosingDirectory") : t("home.chooseDirectory")}
-              </Button>
-              <Button variant="outline" onClick={() => navigate({ to: "/settings" })}>
-                {t("home.openSettings")}
-              </Button>
-            </div>
-          </div>
-        }
       >
         <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-950 lg:text-xl">
+            <h1
+              ref={libraryHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold tracking-tight text-zinc-950 outline-none lg:text-xl"
+            >
               Quiz Library
-            </h2>
+            </h1>
             <div className="flex items-center gap-2">
               <IconActionButton
                 icon={CircleHelp}
@@ -409,7 +345,7 @@ export function HomePage() {
             if (trigger?.quizId === detailsSource.quiz.id && trigger.element.isConnected) {
               trigger.element.focus();
             } else {
-              headingRef.current?.focus();
+              libraryHeadingRef.current?.focus();
             }
           }}
         />

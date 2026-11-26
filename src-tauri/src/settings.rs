@@ -194,6 +194,9 @@ pub(crate) struct Settings {
     /// App / QuizHub / welcome-sample locale (`en`, `zh`). Empty until the user chooses.
     #[serde(default)]
     pub(crate) app_locale: String,
+    /// `None` means the field was never written (pre-wizard installs). Resolved in `get_settings`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) onboarding_completed: Option<bool>,
 }
 
 impl Default for Settings {
@@ -216,6 +219,7 @@ impl Default for Settings {
             quizhub_enabled: false,
             quizhub_base_url: None,
             app_locale: String::new(),
+            onboarding_completed: None,
         }
     }
 }
@@ -258,6 +262,7 @@ pub(crate) struct AppSettings {
     quizhub_enabled: bool,
     quizhub_base_url: String,
     app_locale: String,
+    onboarding_completed: bool,
 }
 
 #[derive(Deserialize)]
@@ -279,6 +284,7 @@ pub(crate) struct SaveSettingsRequest {
     quizhub_enabled: Option<bool>,
     quizhub_base_url: Option<String>,
     app_locale: Option<String>,
+    onboarding_completed: Option<bool>,
 }
 
 pub(crate) fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -328,6 +334,10 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         .as_ref()
         .map(|path| Path::new(path).is_dir())
         .unwrap_or(false);
+    // Legacy installs already had a working directory before the wizard existed.
+    let onboarding_completed = settings
+        .onboarding_completed
+        .unwrap_or_else(|| settings.working_directory.is_some());
     Ok(AppSettings {
         working_directory: settings.working_directory,
         working_directory_available,
@@ -346,6 +356,7 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         quizhub_enabled: settings.quizhub_enabled,
         quizhub_base_url,
         app_locale: settings.app_locale,
+        onboarding_completed,
     })
 }
 
@@ -478,6 +489,10 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
         settings.app_locale = normalize_app_locale(&app_locale)?;
     }
 
+    if let Some(onboarding_completed) = request.onboarding_completed {
+        settings.onboarding_completed = Some(onboarding_completed);
+    }
+
     if let Some(path) = request.working_directory {
         let directory = PathBuf::from(&path);
         if !directory.is_dir() {
@@ -543,6 +558,7 @@ mod tests {
                 quizhub_enabled: None,
                 quizhub_base_url: None,
                 app_locale: Some("zh".to_string()),
+                onboarding_completed: None,
             },
         )
         .expect("locale save");

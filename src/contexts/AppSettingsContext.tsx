@@ -41,6 +41,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [quizhubEnabled, setQuizhubEnabledState] = useState(false);
   const [quizhubBaseUrl, setQuizhubBaseUrlState] = useState(QUIZHUB_DEFAULT_BASE_URL);
   const [appLocale, setAppLocaleState] = useState<AppLocale | "">("");
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
   const [settingsReady, setSettingsReady] = useState(false);
   const [fontSize, setFontSizeState] = useState(UI_FONT_SIZE_DEFAULT);
   const [minMistakes, setMinMistakesState] = useState(1);
@@ -106,6 +107,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setQuizhubEnabledState(settings.quizhubEnabled);
       setQuizhubBaseUrlState(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
       setAppLocaleState(isAppLocale(settings.appLocale) ? settings.appLocale : "");
+      setOnboardingCompleted(settings.onboardingCompleted);
       setFontSizeState(nextFontSize);
       setMinMistakesState(settings.mistakeLogMinMistakes);
       setMinFlagsState(settings.mistakeLogMinFlags);
@@ -138,6 +140,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       throw error;
     }
   }, [appLocale]);
+
+  const completeOnboarding = useCallback(async () => {
+    setOnboardingCompleted(true);
+    try {
+      await nativeApi.saveSettings({ onboardingCompleted: true });
+    } catch (error) {
+      setOnboardingCompleted(false);
+      toast.error(errorMessage(error));
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
     applyUiPreferences(fontSize);
@@ -207,10 +220,19 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     () => ({
       locale: effectiveLocale,
       localeConfigured,
-      setAppLocale,
       settingsReady,
+      onboardingCompleted,
+      setAppLocale,
+      completeOnboarding,
     }),
-    [effectiveLocale, localeConfigured, setAppLocale, settingsReady],
+    [
+      effectiveLocale,
+      localeConfigured,
+      settingsReady,
+      onboardingCompleted,
+      setAppLocale,
+      completeOnboarding,
+    ],
   );
 
   return (
