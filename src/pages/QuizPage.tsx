@@ -189,9 +189,11 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
             onMultiple={session.toggleMultipleChoiceAnswer}
             onTrueFalse={session.selectTrueFalseAnswer}
           />
-          <div className="mt-6 flex items-center justify-between">
+          <div className="mt-6 flex items-center justify-between gap-3">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="gap-1 px-1 text-zinc-700 hover:bg-transparent hover:text-zinc-950"
               onClick={session.goToPreviousQuestion}
               disabled={disablePrevious}
             >
@@ -199,7 +201,9 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
               {t("quiz.previous")}
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="gap-1 px-1 text-zinc-700 hover:bg-transparent hover:text-zinc-950"
               onClick={session.goToNextQuestion}
               disabled={disableNext}
             >
