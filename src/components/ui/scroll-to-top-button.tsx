@@ -2,8 +2,11 @@ import { ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function ScrollToTopButton({ threshold = 400 }: { threshold?: number }) {
+  const { t } = useI18n();
+
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -18,8 +21,8 @@ export function ScrollToTopButton({ threshold = 400 }: { threshold?: number }) {
       type="button"
       size="icon"
       variant="outline"
-      aria-label="Scroll to top"
-      title="Back to top"
+      aria-label={t("ui.scrollToTop")}
+      title={t("ui.backToTop")}
       tabIndex={visible ? 0 : -1}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className={cn(

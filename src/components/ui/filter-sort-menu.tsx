@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export type FilterMenuSection = {
   label: string;
@@ -29,7 +30,7 @@ export function FilterSortMenu({
   sections,
   toggles = [],
   active = false,
-  label = "Filter and sort",
+  label,
 }: {
   sections: FilterMenuSection[];
   toggles?: {
@@ -40,6 +41,9 @@ export function FilterSortMenu({
   active?: boolean;
   label?: string;
 }) {
+  const { t } = useI18n();
+  label ??= t("common.filterAndSort");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

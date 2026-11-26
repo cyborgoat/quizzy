@@ -1,3 +1,5 @@
+import type { MessageKey } from "@/lib/i18n-messages";
+
 export const EXAMPLE_QUIZ_JSON = `{
   "id": "web-basics",
   "title": "Web Basics",
@@ -28,26 +30,22 @@ export const EXAMPLE_QUIZ_JSON = `{
   ]
 }`;
 
-export const FORMAT_RULES: { field: string; rule: string }[] = [
-  { field: "id", rule: "Required. Must be unique across all quiz files." },
-  { field: "title", rule: "Required." },
-  { field: "description, tags", rule: "Optional. Tags is a list of strings." },
-  { field: "questions", rule: "At least one. Question ids must be unique within the quiz." },
-  {
-    field: "single_choice",
-    rule: "options (2 or more) and answerIndex (0-based index of the correct option).",
-  },
-  {
-    field: "multiple_choice",
-    rule: "options (2 or more) and answerIndices (unique 0-based indexes). Scored as an exact match.",
-  },
-  { field: "true_false", rule: "answer is true or false." },
-  {
-    field: "every question",
-    rule: "id, type and prompt are required; explanation is optional. Text supports Markdown, tables, code blocks and KaTeX math.",
-  },
+export const FORMAT_RULES: {
+  field?: string;
+  fieldKey?: MessageKey;
+  ruleKey: MessageKey;
+}[] = [
+  { field: "id", ruleKey: "import.rule.id" },
+  { field: "title", ruleKey: "import.rule.title" },
+  { field: "description, tags", ruleKey: "import.rule.descriptionTags" },
+  { field: "questions", ruleKey: "import.rule.questions" },
+  { field: "single_choice", ruleKey: "import.rule.single_choice" },
+  { field: "multiple_choice", ruleKey: "import.rule.multiple_choice" },
+  { field: "true_false", ruleKey: "import.rule.true_false" },
+  { fieldKey: "import.rule.everyQuestionField", ruleKey: "import.rule.everyQuestion" },
 ];
 
+/** Sent to an AI assistant, so it stays in English regardless of the UI language. */
 export const AI_PROMPT_TEMPLATE = `Create a quiz about {topic} as a single JSON file for the Quizzy app.
 
 Rules:

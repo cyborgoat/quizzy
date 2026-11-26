@@ -19,6 +19,7 @@ import { formatShortDate } from "@/lib/formatDate";
 import { isUnsavedKnowledgeDraft } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function KnowledgeDetailViewer({
   item,
@@ -30,6 +31,8 @@ export function KnowledgeDetailViewer({
   stackedLinkedQuestionPreview?: boolean;
 }) {
   const { toggleFavorite, items } = useKnowledgeLibrary();
+  const { t } = useI18n();
+
   const persistedItem = items.find((entry) => entry.id === item.id);
   const favorite = persistedItem?.favorite ?? item.favorite;
   const hasContent = item.content.trim().length > 0;
@@ -44,7 +47,7 @@ export function KnowledgeDetailViewer({
     setIsCopying(true);
     try {
       await copyTextToClipboard(serializeKnowledgeFile(item, item.content));
-      toast.success("Markdown copied to clipboard.");
+      toast.success(t("knowledge.markdownCopied"));
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -71,7 +74,7 @@ export function KnowledgeDetailViewer({
             {item.title}
           </h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Updated {formatShortDate(item.updatedAt)}
+            {t("knowledge.updatedOn", { date: formatShortDate(item.updatedAt) })}
             {fileLocation && (
               <>
                 {" "}
@@ -97,13 +100,13 @@ export function KnowledgeDetailViewer({
             {hasContent && (
               <IconActionButton
                 icon={Copy}
-                label="Copy"
+                label={t("import.copy")}
                 onClick={() => void handleCopyMarkdown()}
                 disabled={isCopying}
               />
             )}
             {onEdit && (
-              <IconActionButton icon={Pencil} label="Edit" onClick={onEdit} />
+              <IconActionButton icon={Pencil} label={t("common.edit")} onClick={onEdit} />
             )}
           </div>
         )}
@@ -121,7 +124,7 @@ export function KnowledgeDetailViewer({
 
       {item.linkedQuizQuestions.length > 0 && (
         <section className="mt-5 min-w-0">
-          <h2 className={sectionLabelClassName}>Linked questions</h2>
+          <h2 className={sectionLabelClassName}>{t("knowledge.linkedQuestions")}</h2>
           <div className="mt-1.5">
             <LinkedQuestionList
               links={item.linkedQuizQuestions}
@@ -139,7 +142,7 @@ export function KnowledgeDetailViewer({
           </KnowledgeProse>
         ) : (
           <div className="py-8 text-center">
-            <p className="text-sm text-zinc-500">No content yet.</p>
+            <p className="text-sm text-zinc-500">{t("knowledge.noContent")}</p>
           </div>
         )}
       </section>

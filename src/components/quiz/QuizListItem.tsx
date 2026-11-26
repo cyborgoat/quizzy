@@ -13,6 +13,7 @@ import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { quizProgressMetrics, quizProgressStatus } from "@/lib/quizProgress";
 import { cn } from "@/lib/utils";
 import type { QuizSource } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 export function QuizListItem({
   source,
@@ -22,6 +23,8 @@ export function QuizListItem({
   onOpenDetails: (quizId: string, trigger: HTMLButtonElement) => void;
 }) {
   const { goals } = useGoals();
+  const { t } = useI18n();
+
   const { favoriteQuizIds, setQuizFavorite } = useQuizLibrary();
   const favorite = favoriteQuizIds.has(source.quiz.id);
   const fromQuizhub = useQuizhubInstalledFiles().quizzes.has(source.fileName);
@@ -39,14 +42,17 @@ export function QuizListItem({
   const goal = goals.find((item) => item.quizId === source.quiz.id);
   const status = source.archived ? "archived" : quizProgressStatus(goal);
   const { attemptCount, highestScore } = quizProgressMetrics(goal);
-  const attemptSummary = `${attemptCount} ${attemptCount === 1 ? "attempt" : "attempts"}`;
+  const attemptSummary = t(attemptCount === 1 ? "quiz.card.attemptsOne" : "quiz.card.attemptsMany", {
+    count: attemptCount,
+  });
+  const questionCount = source.quiz.questions.length;
 
   return (
     <article className="group relative flex h-36 flex-col gap-2 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 px-3 pb-2 pt-2.5 shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-within:border-zinc-300 focus-within:shadow-md">
       <CardShine />
       <button
         type="button"
-        aria-label={`Open details for ${source.quiz.title}`}
+        aria-label={t("quiz.card.openDetails", { title: source.quiz.title })}
         aria-haspopup="dialog"
         className="absolute inset-0 z-10 cursor-pointer rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500"
         onClick={(event) => onOpenDetails(source.quiz.id, event.currentTarget)}
@@ -66,7 +72,7 @@ export function QuizListItem({
         </div>
         <IconActionButton
           icon={Star}
-          label={favorite ? `Unfavorite ${source.quiz.title}` : `Favorite ${source.quiz.title}`}
+          label={t(favorite ? "quiz.card.unfavorite" : "quiz.card.favorite", { title: source.quiz.title })}
           aria-pressed={favorite}
           disabled={savingFavorite}
           className={cn("relative z-20 size-6 shrink-0 text-zinc-400", favorite && "text-amber-500 hover:text-amber-600")}
@@ -87,15 +93,21 @@ export function QuizListItem({
       )}
 
       <div className="mt-auto truncate border-t border-zinc-100 pt-1.5 text-xs text-zinc-600">
-        <span>{source.quiz.questions.length} questions</span>
+        <span>
+          {t(questionCount === 1 ? "quiz.card.questionsOne" : "quiz.card.questionsMany", {
+            count: questionCount,
+          })}
+        </span>
         <span aria-hidden="true" className="mx-1">·</span>
         <span className={goal ? "font-medium text-zinc-700" : undefined}>{attemptSummary}</span>
         <span aria-hidden="true" className="mx-1">·</span>
-        <span>Best {highestScore === undefined ? "—" : `${highestScore}%`}</span>
+        <span>
+          {t("quiz.card.best", { score: highestScore === undefined ? "—" : `${highestScore}%` })}
+        </span>
         {goal?.targetScore !== undefined && (
           <>
             <span aria-hidden="true" className="mx-1">·</span>
-            <span>Target {goal.targetScore}%</span>
+            <span>{t("quiz.card.target", { score: `${goal.targetScore}%` })}</span>
           </>
         )}
       </div>

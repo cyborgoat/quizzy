@@ -8,7 +8,7 @@ import { QuizhubPreferencesContext } from "@/contexts/quizhub-preferences-contex
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
-import { I18nProvider } from "@/lib/i18n";
+import { I18nProvider } from "@/components/I18nProvider";
 import { detectSystemAppLocale, isAppLocale, type AppLocale } from "@/lib/locale";
 import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
@@ -169,11 +169,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const next = stepFontSize(fontSizeRef.current, direction);
       if (next === null) return null;
       setFontSizeState(next);
-      showZoomLevelToast(next);
+      showZoomLevelToast(next, effectiveLocale);
       void persistFontSize(next);
       return next;
     },
-    [persistFontSize],
+    [persistFontSize, effectiveLocale],
   );
 
   useEffect(() => {

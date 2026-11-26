@@ -30,6 +30,8 @@ import {
   type GoalDetailsFormValues,
 } from "@/types/goal";
 import type { Quiz } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
+import { RichText } from "@/components/ui/rich-text";
 
 const DEFAULT_FORM: GoalDetailsFormValues & { quizId: string } = {
   quizId: "",
@@ -53,6 +55,8 @@ export function CreateGoalDialog({
   triggerTooltip?: string;
 }) {
   const { addGoal } = useGoals();
+  const { t } = useI18n();
+
   const [openState, setOpenState] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [isSaving, setIsSaving] = useState(false);
@@ -91,7 +95,7 @@ export function CreateGoalDialog({
         input.targetScore < 0 ||
         input.targetScore > 100)
     ) {
-      setValidationError("Target score must be between 0 and 100.");
+      setValidationError(t("goals.targetRange"));
       return;
     }
 
@@ -125,14 +129,17 @@ export function CreateGoalDialog({
 
       <DialogContent className="max-h-[calc(100vh-2rem)] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New goal</DialogTitle>
+          <DialogTitle>{t("goals.create.title")}</DialogTitle>
           <DialogDescription>
             {quiz ? (
-              <>
-                Set a goal for <span className="font-medium text-zinc-700">{quiz.title}</span>.
-              </>
+              <RichText
+                text={t("goals.create.descriptionQuiz")}
+                slots={{
+                  title: <span className="font-medium text-zinc-700">{quiz.title}</span>,
+                }}
+              />
             ) : (
-              "Choose a quiz and set the result you want to achieve."
+              t("goals.create.descriptionChoose")
             )}
           </DialogDescription>
         </DialogHeader>
@@ -147,7 +154,7 @@ export function CreateGoalDialog({
             {!quiz && (
               <div>
                 <Label htmlFor="new-goal-quiz">
-                  Quiz <span className="text-red-500">*</span>
+                  {t("goals.create.quiz")} <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={form.quizId || undefined}
@@ -155,7 +162,7 @@ export function CreateGoalDialog({
                   disabled={isSaving}
                 >
                   <SelectTrigger id="new-goal-quiz" className="mt-1.5 w-full">
-                    <SelectValue placeholder="Select a quiz…" />
+                    <SelectValue placeholder={t("goals.create.selectQuiz")} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableQuizzes.map((candidate) => (
@@ -187,10 +194,10 @@ export function CreateGoalDialog({
               onClick={() => handleOpenChange(false)}
               disabled={isSaving}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!selectedQuizId || isSaving}>
-              {isSaving ? "Creating..." : "Create"}
+              {isSaving ? t("goals.create.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

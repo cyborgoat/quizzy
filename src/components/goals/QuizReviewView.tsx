@@ -22,18 +22,20 @@ import type {
   ReviewScoreSummaryData,
 } from "@/lib/quizReviewSummary";
 import type { QuestionReviewItem } from "@/types/review";
+import { useI18n } from "@/lib/i18n";
+import type { TFunction } from "@/lib/i18n";
 
-function emptyFilterMessage(filters: ReviewFilters) {
+function emptyFilterMessage(filters: ReviewFilters, t: TFunction) {
   if (filters.size === 0) {
-    return "No filters selected.";
+    return t("review.empty.noFilters");
   }
   if (filters.size === 1) {
     const [kind] = filters;
-    if (kind === "incorrect") return "Perfect score — no incorrect answers.";
-    if (kind === "flagged") return "No flagged questions in this attempt.";
-    if (kind === "correct") return "No correct answers in this attempt.";
+    if (kind === "incorrect") return t("review.empty.perfect");
+    if (kind === "flagged") return t("review.empty.noFlagged");
+    if (kind === "correct") return t("review.empty.noCorrect");
   }
-  return "No questions match the selected filters.";
+  return t("review.empty.noMatch");
 }
 
 export function QuizReviewView({
@@ -55,6 +57,8 @@ export function QuizReviewView({
   quizAvailable?: boolean;
   notification?: ReactNode;
 }) {
+  const { t } = useI18n();
+
   const navigation = useAttemptReviewNavigation(items);
   const attemptHistory = goalContext?.attemptHistory;
   const hasAttemptHistory = Boolean(attemptHistory);
@@ -87,10 +91,10 @@ export function QuizReviewView({
   }
 
   const filters: { value: ReviewFilterKind | "all"; label: string; count: number }[] = [
-    { value: "incorrect", label: "Incorrect", count: filterCounts.incorrect },
-    { value: "correct", label: "Correct", count: filterCounts.correct },
-    { value: "flagged", label: "Flagged", count: filterCounts.flagged },
-    { value: "all", label: "All", count: filterCounts.all },
+    { value: "incorrect", label: t("review.filter.incorrect"), count: filterCounts.incorrect },
+    { value: "correct", label: t("review.filter.correct"), count: filterCounts.correct },
+    { value: "flagged", label: t("review.filter.flagged"), count: filterCounts.flagged },
+    { value: "all", label: t("review.filter.all"), count: filterCounts.all },
   ];
 
   return (
@@ -122,19 +126,19 @@ export function QuizReviewView({
 
       <section>
         <h2 className={cn("mb-3", sectionLabelClassName)}>
-          Answer review
+          {t("review.answerReview")}
         </h2>
         {!quizAvailable ? (
           <InlineEmptyMessage>
-            This quiz is unavailable, so question details cannot be shown.
+            {t("review.quizUnavailable")}
           </InlineEmptyMessage>
         ) : items.length === 0 ? (
           <InlineEmptyMessage>
-            No matching questions found for this attempt.
+            {t("review.noMatchingQuestions")}
           </InlineEmptyMessage>
         ) : (
           <div key={resetKey} className="space-y-3">
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter questions">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("review.filterAria")}>
               {filters.map(({ value, label, count }) => {
                 const isActive =
                   value === "all"
@@ -156,7 +160,7 @@ export function QuizReviewView({
             </div>
 
             {filteredItems.length === 0 ? (
-              <InlineEmptyMessage>{emptyFilterMessage(navigation.filters)}</InlineEmptyMessage>
+              <InlineEmptyMessage>{emptyFilterMessage(navigation.filters, t)}</InlineEmptyMessage>
             ) : (
               currentItem && (
                 <QuestionReviewCard

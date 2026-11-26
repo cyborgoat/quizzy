@@ -9,6 +9,7 @@ import { searchKnowledgeItems } from "@/lib/knowledgeSearch";
 import { errorMessage } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 const linkKnowledgeNoteListboxId = "link-knowledge-note-options";
 
@@ -24,6 +25,8 @@ export function LinkKnowledgeNoteSearch({
   questionId: string;
 }) {
   const { items, saveItem } = useKnowledgeLibrary();
+  const { t } = useI18n();
+
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [isLinking, setIsLinking] = useState(false);
@@ -122,7 +125,7 @@ export function LinkKnowledgeNoteSearch({
         overlayClassName="z-60 bg-zinc-950/15 backdrop-blur-[2px]"
         className="z-60 max-w-lg gap-0 overflow-hidden p-0 shadow-xl"
       >
-        <DialogTitle className="sr-only">Link knowledge note</DialogTitle>
+        <DialogTitle className="sr-only">{t("knowledge.link.title")}</DialogTitle>
 
         <div className="relative border-b border-zinc-100">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
@@ -134,7 +137,7 @@ export function LinkKnowledgeNoteSearch({
               setHighlightedIndex(0);
             }}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search knowledge notes"
+            placeholder={t("knowledge.link.placeholder")}
             className="h-11 rounded-none border-0 bg-transparent pl-10 shadow-none focus-visible:ring-0"
             disabled={isLinking}
             autoComplete="off"
@@ -147,7 +150,7 @@ export function LinkKnowledgeNoteSearch({
                 ? `${linkKnowledgeNoteListboxId}-${options[activeIndex]?.id}`
                 : undefined
             }
-            aria-label="Search knowledge notes to link"
+            aria-label={t("knowledge.link.aria")}
           />
         </div>
 
@@ -158,7 +161,7 @@ export function LinkKnowledgeNoteSearch({
             className="max-h-64 overflow-y-auto py-1"
           >
             {options.length === 0 ? (
-              <li className="px-3 py-2.5 text-sm text-zinc-500">No matching notes.</li>
+              <li className="px-3 py-2.5 text-sm text-zinc-500">{t("knowledge.noMatchingNotes")}</li>
             ) : (
               options.map((item, index) => (
                 <li key={item.id} role="presentation">

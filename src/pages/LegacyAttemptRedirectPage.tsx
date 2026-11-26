@@ -4,8 +4,10 @@ import { PageShell } from "@/components/layout/PageShell";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { useGoals } from "@/hooks/useGoals";
 import { Route } from "@/routes/_app/goals/$goalId/attempts/$attemptId";
+import { useI18n } from "@/lib/i18n";
 
 export function LegacyAttemptRedirectPage() {
+  const { t } = useI18n();
   const { goalId, attemptId } = Route.useParams();
   const { goals, isLoading } = useGoals();
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ export function LegacyAttemptRedirectPage() {
 
   return (
     <PageShell>
-      <InlineEmptyMessage>Opening attempt…</InlineEmptyMessage>
+      <InlineEmptyMessage>{t("redirect.openingAttempt")}</InlineEmptyMessage>
     </PageShell>
   );
 }

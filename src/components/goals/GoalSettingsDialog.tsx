@@ -18,6 +18,8 @@ import {
   type Goal,
   type GoalDetailsFormValues,
 } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
+import { RichText } from "@/components/ui/rich-text";
 
 export function GoalSettingsDialog({
   goal,
@@ -29,6 +31,8 @@ export function GoalSettingsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { updateGoal, deleteGoal } = useGoals();
+  const { t } = useI18n();
+
   const [form, setForm] = useState<GoalDetailsFormValues>(() =>
     goalToDetailsForm(goal),
   );
@@ -57,7 +61,7 @@ export function GoalSettingsDialog({
         input.targetScore < 0 ||
         input.targetScore > 100)
     ) {
-      setValidationError("Target score must be between 0 and 100.");
+      setValidationError(t("goals.targetRange"));
       return;
     }
     setIsSaving(true);
@@ -70,8 +74,8 @@ export function GoalSettingsDialog({
 
   async function handleDelete() {
     const ok = await confirm(
-      `Delete the goal for "${goal.quizTitle}"? This cannot be undone.`,
-      { title: "Delete goal?", kind: "warning" },
+      t("goals.confirmDelete", { title: goal.quizTitle }),
+      { title: t("goals.confirmDeleteTitle"), kind: "warning" },
     );
     if (!ok) return;
     setIsSaving(true);
@@ -84,10 +88,14 @@ export function GoalSettingsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Goal settings</DialogTitle>
+          <DialogTitle>{t("goals.settings.title")}</DialogTitle>
           <DialogDescription>
-            Update details or change the status of{" "}
-            <span className="font-medium text-zinc-700">{goal.quizTitle}</span>.
+            <RichText
+              text={t("goals.settings.description")}
+              slots={{
+                title: <span className="font-medium text-zinc-700">{goal.quizTitle}</span>,
+              }}
+            />
           </DialogDescription>
         </DialogHeader>
 
@@ -105,7 +113,7 @@ export function GoalSettingsDialog({
           <div className="flex items-center gap-1">
             <IconActionButton
               icon={Trash2}
-              label="Delete"
+              label={t("common.delete")}
               className="text-zinc-500 hover:text-red-700"
               disabled={isSaving}
               onClick={() => void handleDelete()}
@@ -117,7 +125,7 @@ export function GoalSettingsDialog({
             disabled={isSaving}
             onClick={() => void handleSave()}
           >
-            {isSaving ? "Saving..." : "Save"}
+            {isSaving ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </DialogContent>

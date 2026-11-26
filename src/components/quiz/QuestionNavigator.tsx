@@ -2,7 +2,7 @@ import { Flag } from "lucide-react";
 import { useEffect, useRef } from "react";
 import {
   groupQuestionsByType,
-  QUESTION_TYPE_LABELS,
+  QUESTION_TYPE_LABEL_KEYS,
 } from "@/lib/questionOrder";
 import {
   SidebarGroup,
@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { QuestionAttempt, QuizQuestion } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 export function QuestionNavigator({
   questions,
@@ -26,6 +27,8 @@ export function QuestionNavigator({
   currentIndex: number;
   onSelectQuestion: (index: number) => void;
 }) {
+  const { t } = useI18n();
+
   const navRef = useRef<HTMLElement>(null);
   const activeButtonRef = useRef<HTMLButtonElement>(null);
   const questionIndexById = new Map(
@@ -42,11 +45,11 @@ export function QuestionNavigator({
   }, [currentIndex]);
 
   return (
-    <nav ref={navRef} aria-label="Quiz questions">
+    <nav ref={navRef} aria-label={t("quiz.navigator.aria")}>
       {groups.map((group) => (
         <SidebarGroup key={group.type} className="p-0">
           <SidebarGroupLabel className="px-2">
-            {QUESTION_TYPE_LABELS[group.type]}
+            {t(QUESTION_TYPE_LABEL_KEYS[group.type])}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -57,14 +60,14 @@ export function QuestionNavigator({
                 const flagged = Boolean(attempt?.flagged);
                 const current = index === currentIndex;
                 const status = [
-                  `Question ${index + 1}`,
+                  t("quiz.question", { number: index + 1 }),
                   question.prompt,
-                  answered ? "answered" : "unanswered",
-                  flagged ? "flagged for review" : "",
-                  current ? "current question" : "",
+                  answered ? t("quiz.nav.answered") : t("quiz.nav.unanswered"),
+                  flagged ? t("quiz.nav.flagged") : "",
+                  current ? t("quiz.nav.current") : "",
                 ]
                   .filter(Boolean)
-                  .join(", ");
+                  .join(t("quiz.nav.separator"));
 
                 return (
                   <SidebarMenuItem key={question.id}>
@@ -88,12 +91,12 @@ export function QuestionNavigator({
                         {index + 1}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-700 group-data-[collapsible=icon]:hidden">
-                        Question {index + 1}
+                        {t("quiz.question", { number: index + 1 })}
                       </span>
                     </SidebarMenuButton>
                     {flagged && (
                       <SidebarMenuBadge className="text-amber-700">
-                        <Flag className="size-3.5" aria-label="Flagged for review" />
+                        <Flag className="size-3.5" aria-label={t("quiz.flaggedForReview")} />
                       </SidebarMenuBadge>
                     )}
                   </SidebarMenuItem>

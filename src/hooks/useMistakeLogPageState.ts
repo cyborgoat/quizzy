@@ -24,6 +24,7 @@ import type { Goal } from "@/types/goal";
 import type { KnowledgeItem } from "@/types/knowledge";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizSource } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 type UseMistakeLogPageStateOptions = {
   qualifyingEntries: MistakeEntry[];
@@ -47,6 +48,8 @@ export function useMistakeLogPageState({
   quizzes,
   getNotesForQuestion,
 }: UseMistakeLogPageStateOptions) {
+  const { t } = useI18n();
+
   const [questionTypeFilter, setQuestionTypeFilter] = useState<QuestionTypeFilter>("all");
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_MISTAKE_SORTING);
   const [pagination, setPagination] = useState<PaginationState>({
@@ -74,8 +77,8 @@ export function useMistakeLogPageState({
   );
 
   const quizFilterOptions = useMemo(
-    () => buildMistakeQuizFilterOptions({ quizzesWithMistakes, quizFilter, quizzes, goals }),
-    [quizzesWithMistakes, quizFilter, quizzes, goals],
+    () => buildMistakeQuizFilterOptions({ quizzesWithMistakes, quizFilter, quizzes, goals, t }),
+    [quizzesWithMistakes, quizFilter, quizzes, goals, t],
   );
 
   const filterResetKey = `${quizFilter}::${questionTypeFilter}`;
@@ -111,6 +114,7 @@ export function useMistakeLogPageState({
         onQuizFilterChange,
         onQuestionTypeFilterChange: setQuestionTypeFilter,
         getNotesForQuestion,
+        t,
       }),
     [
       quizzes,
@@ -119,6 +123,7 @@ export function useMistakeLogPageState({
       questionTypeFilter,
       onQuizFilterChange,
       getNotesForQuestion,
+      t,
     ],
   );
 
@@ -221,8 +226,9 @@ export function useMistakeLogPageState({
             rawEntries,
             goals,
             quizzes,
+            t,
           }),
-    [filteredEntries.length, quizFilter, qualifyingEntries, rawEntries, goals, quizzes],
+    [filteredEntries.length, quizFilter, qualifyingEntries, rawEntries, goals, quizzes, t],
   );
 
   function clearFilters() {

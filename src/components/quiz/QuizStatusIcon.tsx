@@ -4,6 +4,7 @@ import {
   type QuizDisplayStatus,
 } from "@/components/quiz/quizStatusStyles";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const statusIcons: Record<QuizDisplayStatus, { icon: LucideIcon; className: string }> = {
@@ -14,8 +15,9 @@ const statusIcons: Record<QuizDisplayStatus, { icon: LucideIcon; className: stri
 };
 
 export function QuizStatusIcon({ status }: { status: QuizDisplayStatus }) {
+  const { t } = useI18n();
   const { icon: Icon, className } = statusIcons[status];
-  const { label } = statusStyles[status];
+  const label = t(statusStyles[status].labelKey);
   return (
     <Tooltip>
       <TooltipTrigger asChild>

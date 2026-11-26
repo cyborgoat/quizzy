@@ -21,6 +21,7 @@ import {
   validateNumericSetting,
   validateShortcutSettings,
 } from "@/lib/settingsDraft";
+import { useI18n } from "@/lib/i18n";
 import { formatSyncSections, formatSyncSummary } from "@/lib/syncReport";
 
 type SavingField = Exclude<keyof SettingsDraft, "pendingDir"> | "workingDirectory";
@@ -42,6 +43,7 @@ const PERSISTED_DRAFT_FIELDS = [
 ] as const satisfies readonly Exclude<keyof SettingsDraft, "pendingDir">[];
 
 export function useSettingsPageState() {
+  const { t } = useI18n();
   const { userName, setUserName } = useUserProfile();
   const {
     shuffleQuestions,
@@ -143,8 +145,8 @@ export function useSettingsPageState() {
 
   const displayDir = draft.pendingDir ?? library.directoryPath;
   const syncSections = useMemo(
-    () => (lastSyncReport ? formatSyncSections(lastSyncReport) : null),
-    [lastSyncReport],
+    () => (lastSyncReport ? formatSyncSections(lastSyncReport, t) : null),
+    [lastSyncReport, t],
   );
 
   function updateDraft(patch: Partial<SettingsDraft>) {
@@ -377,11 +379,11 @@ export function useSettingsPageState() {
     if (!validation.ok) {
       const nextErrors = { ...validation.errors };
       const duplicateField = SHORTCUT_FIELDS.find(
-        (item) => nextErrors[item.draftKey] === "This shortcut is already assigned.",
+        (item) => nextErrors[item.draftKey] === "settings.shortcuts.error.duplicate",
       )?.draftKey;
       if (duplicateField) {
         delete nextErrors[duplicateField];
-        nextErrors[field] = "This shortcut is already assigned.";
+        nextErrors[field] = "settings.shortcuts.error.duplicate";
       }
       clearShortcutErrors();
       setErrors((current) => ({ ...current, ...nextErrors }));
@@ -417,18 +419,20 @@ export function useSettingsPageState() {
 
   async function handleSynchronize() {
     const approved = await confirm(
-      "Synchronize all app data? Quizzy will rescan your quiz and knowledge folders, rebuild goal attempt indexes and the Mistake Log index, and refresh goals and mistakes in memory. Your quiz and knowledge files will not be modified.",
-      { title: "Synchronize data", kind: "warning" },
+      t("settings.sync.confirmMessage"),
+      { title: t("settings.sync.confirmTitle"), kind: "warning" },
     );
     if (!approved) return;
 
     try {
       const report = await synchronizeAll();
       setLastSyncReport(report);
-      toast.success(formatSyncSummary(report));
+      toast.success(formatSyncSummary(report, t));
       if (report.warnings.length > 0) {
         toast.warning(
-          `${report.warnings.length} warning${report.warnings.length === 1 ? "" : "s"} — see the synchronization summary below.`,
+          t(report.warnings.length === 1 ? "sync.warningsToastOne" : "sync.warningsToastMany", {
+            count: report.warnings.length,
+          }),
         );
       }
     } catch (error) {

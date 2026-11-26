@@ -3,6 +3,7 @@ import { panelHeadingClassName } from "@/components/ui/typography";
 import { formatShortDate } from "@/lib/formatDate";
 import { cn } from "@/lib/utils";
 import type { AttemptSummary } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 function AttemptHistoryList({
   quizId,
@@ -13,8 +14,9 @@ function AttemptHistoryList({
   attempts: AttemptSummary[];
   currentAttemptId: string;
 }) {
+  const { t } = useI18n();
   return (
-    <ul className="space-y-1" aria-label="Attempt history">
+    <ul className="space-y-1" aria-label={t("review.attemptHistory")}>
       {attempts.map((attempt) => {
         const isCurrent = attempt.id === currentAttemptId;
 
@@ -52,6 +54,7 @@ export function AttemptHistoryCard({
   attempts: AttemptSummary[];
   currentAttemptId: string;
 }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const sortedAttempts = [...attempts].reverse();
 
@@ -59,7 +62,7 @@ export function AttemptHistoryCard({
     <section className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm">
       <div className="border-b border-zinc-200/60 px-5 py-4">
         <h2 className={panelHeadingClassName}>
-          Attempt history
+          {t("review.attemptHistory")}
         </h2>
       </div>
 
@@ -78,7 +81,7 @@ export function AttemptHistoryCard({
               }
             }}
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            aria-label="Select attempt"
+            aria-label={t("review.selectAttempt")}
           >
             {sortedAttempts.map((attempt) => (
               <option key={attempt.id} value={attempt.id}>

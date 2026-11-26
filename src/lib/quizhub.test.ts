@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createTranslator } from "@/lib/i18n-messages";
 import type { HubItem } from "@/lib/native";
 import {
   filterHubItems,
@@ -70,10 +71,10 @@ describe("quizhub helpers", () => {
 
   it("summarizes download reports", () => {
     expect(
-      summarizeHubReport({ added: 2, updated: 0, unchanged: 1, skipped: 1, failed: 0, outcomes: [] }),
+      summarizeHubReport({ added: 2, updated: 0, unchanged: 1, skipped: 1, failed: 0, outcomes: [] }, createTranslator("en")),
     ).toBe("2 added, 1 already up to date, 1 skipped");
     expect(
-      summarizeHubReport({ added: 0, updated: 0, unchanged: 0, skipped: 0, failed: 0, outcomes: [] }),
+      summarizeHubReport({ added: 0, updated: 0, unchanged: 0, skipped: 0, failed: 0, outcomes: [] }, createTranslator("en")),
     ).toBe("Nothing to do");
   });
 

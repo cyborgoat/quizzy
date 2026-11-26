@@ -41,7 +41,7 @@ export function usePickWorkingDirectory() {
           directory: true,
           multiple: false,
           defaultPath: defaultPath ?? undefined,
-          title: "Choose Quizzy working directory",
+          title: t("settings.directory.pickTitle"),
         });
         if (!selected || Array.isArray(selected)) return null;
 

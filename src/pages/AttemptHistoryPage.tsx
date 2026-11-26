@@ -18,8 +18,11 @@ import {
   filterAttemptHistory,
   type AttemptHistoryEntry,
 } from "@/lib/recentAttempts";
+import { useI18n } from "@/lib/i18n";
 
 export function AttemptHistoryPage() {
+  const { t } = useI18n();
+
   const { goals, isLoading: goalsLoading, deleteAttempt } = useGoals();
   const { quizzes, isLoading: quizzesLoading } = useQuizLibrary();
   const { openQuizStart } = useQuizStartDialog();
@@ -68,8 +71,8 @@ export function AttemptHistoryPage() {
   async function handleDelete(entry: AttemptHistoryEntry) {
     if (deletingAttemptId) return;
     const approved = await confirm(
-      `Delete this attempt for "${entry.quizTitle}"? This cannot be undone.`,
-      { title: "Delete attempt?", kind: "warning" },
+      t("history.confirmDelete", { title: entry.quizTitle }),
+      { title: t("history.confirmDeleteTitle"), kind: "warning" },
     );
     if (!approved) return;
 
@@ -81,7 +84,7 @@ export function AttemptHistoryPage() {
   if (goalsLoading || quizzesLoading) {
     return (
       <PageShell layout="workspace">
-        <LoadingState message="Loading attempt history…" />
+        <LoadingState message={t("history.loading")} />
       </PageShell>
     );
   }
@@ -89,24 +92,24 @@ export function AttemptHistoryPage() {
   return (
     <PageShell layout="workspace">
       <PageHeader
-        title="History"
-        description="Review saved attempts and track your progress."
+        title={t("history.title")}
+        description={t("history.description")}
         className="shrink-0 [@media(max-height:699px)]:[&>div>p:first-of-type]:hidden"
       />
 
       <dl className="grid shrink-0 grid-cols-4 gap-4 py-2">
         {[
-          ["Attempts", String(stats.count)],
+          [t("history.stat.attempts"), String(stats.count)],
           [
-            "Average score",
+            t("history.stat.average"),
             stats.averageScore === undefined ? "—" : `${stats.averageScore}%`,
           ],
           [
-            "Best score",
+            t("history.stat.best"),
             stats.bestScore === undefined ? "—" : `${stats.bestScore}%`,
           ],
           [
-            "Pass rate",
+            t("history.stat.passRate"),
             stats.passRate === undefined ? "—" : `${stats.passRate}%`,
           ],
         ].map(([label, value]) => (
@@ -122,8 +125,8 @@ export function AttemptHistoryPage() {
       {allEntries.length === 0 ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyState
-            title="No saved attempts yet"
-            description="Attempts are recorded when you complete a quiz that has a goal. Choose a quiz to start building your history."
+            title={t("history.empty.title")}
+            description={t("history.empty.description")}
             icon={
               <History
                 className="mx-auto mb-4 size-9 text-zinc-400"
@@ -132,7 +135,7 @@ export function AttemptHistoryPage() {
             }
             action={
               <Link to="/" className={buttonClassName({ className: "mt-6" })}>
-                Browse quizzes
+                {t("history.empty.browse")}
               </Link>
             }
           />
@@ -142,10 +145,10 @@ export function AttemptHistoryPage() {
           entries={filteredEntries}
           quizFilter={resolvedQuizId}
           quizOptions={[
-            { value: "all", label: "All quizzes" },
+            { value: "all", label: t("history.allQuizzes") },
             ...quizOptions.map((option) => ({
               value: option.quizId,
-              label: `${option.quizTitle}${option.archived ? " (Archived)" : ""}${!option.quizAvailable ? " (Unavailable)" : ""}`,
+              label: `${option.quizTitle}${option.archived ? ` ${t("history.archivedSuffix")}` : ""}${!option.quizAvailable ? ` ${t("history.unavailableSuffix")}` : ""}`,
             })),
           ]}
           onQuizFilterChange={setQuizId}

@@ -1,3 +1,4 @@
+import type { MessageKey } from "@/lib/i18n-messages";
 import type { Goal } from "@/types/goal";
 import type { QuizSource } from "@/types/quiz";
 
@@ -15,13 +16,13 @@ export type QuizLibraryFilter = "all" | QuizProgressStatus | "archived";
 
 export const QUIZ_LIBRARY_FILTERS: Array<{
   value: QuizLibraryFilter;
-  label: string;
+  labelKey: MessageKey;
 }> = [
-  { value: "all", label: "All active" },
-  { value: "not-started", label: "Not started" },
-  { value: "in-progress", label: "In progress" },
-  { value: "target-reached", label: "Target reached" },
-  { value: "archived", label: "Archived" },
+  { value: "all", labelKey: "home.filter.all" },
+  { value: "not-started", labelKey: "home.filter.not-started" },
+  { value: "in-progress", labelKey: "home.filter.in-progress" },
+  { value: "target-reached", labelKey: "home.filter.target-reached" },
+  { value: "archived", labelKey: "home.filter.archived" },
 ];
 
 export function filterQuizSources(
@@ -78,59 +79,71 @@ export type QuizLibrarySort = {
 
 type QuizLibrarySortOption = {
   value: QuizLibrarySortField;
-  label: string;
+  labelKey: MessageKey;
   defaultDirection: QuizLibrarySortDirection;
   /** Direction labels, keyed by direction. */
-  directionLabels: Record<QuizLibrarySortDirection, string>;
+  directionLabelKeys: Record<QuizLibrarySortDirection, MessageKey>;
 };
 
 export const QUIZ_LIBRARY_SORT_GROUPS: Array<{
-  label: string;
+  labelKey: MessageKey;
   options: QuizLibrarySortOption[];
 }> = [
   {
-    label: "Library",
+    labelKey: "home.sort.group.library",
     options: [
       {
         value: "default",
-        label: "Default order",
+        labelKey: "home.sort.default",
         defaultDirection: "asc",
-        directionLabels: { asc: "Default order", desc: "Default order" },
+        directionLabelKeys: { asc: "home.sort.dir.default", desc: "home.sort.dir.default" },
       },
       {
         value: "title",
-        label: "Title",
+        labelKey: "home.sort.title",
         defaultDirection: "asc",
-        directionLabels: { asc: "A to Z", desc: "Z to A" },
+        directionLabelKeys: { asc: "home.sort.dir.title.asc", desc: "home.sort.dir.title.desc" },
       },
     ],
   },
   {
-    label: "Progress",
+    labelKey: "home.sort.group.progress",
     options: [
       {
         value: "recent-attempt",
-        label: "Last attempt",
+        labelKey: "home.sort.recent-attempt",
         defaultDirection: "desc",
-        directionLabels: { asc: "Oldest first", desc: "Newest first" },
+        directionLabelKeys: {
+          asc: "home.sort.dir.recent-attempt.asc",
+          desc: "home.sort.dir.recent-attempt.desc",
+        },
       },
       {
         value: "attempts",
-        label: "Attempts",
+        labelKey: "home.sort.attempts",
         defaultDirection: "desc",
-        directionLabels: { asc: "Fewest first", desc: "Most first" },
+        directionLabelKeys: {
+          asc: "home.sort.dir.attempts.asc",
+          desc: "home.sort.dir.attempts.desc",
+        },
       },
       {
         value: "best-score",
-        label: "Best score",
+        labelKey: "home.sort.best-score",
         defaultDirection: "desc",
-        directionLabels: { asc: "Lowest first", desc: "Highest first" },
+        directionLabelKeys: {
+          asc: "home.sort.dir.best-score.asc",
+          desc: "home.sort.dir.best-score.desc",
+        },
       },
       {
         value: "target-score",
-        label: "Target score",
+        labelKey: "home.sort.target-score",
         defaultDirection: "desc",
-        directionLabels: { asc: "Lowest first", desc: "Highest first" },
+        directionLabelKeys: {
+          asc: "home.sort.dir.target-score.asc",
+          desc: "home.sort.dir.target-score.desc",
+        },
       },
     ],
   },

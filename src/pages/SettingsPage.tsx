@@ -49,7 +49,7 @@ export function SettingsPage() {
     <PageShell className="space-y-6">
       <PageHeader
         title={t("nav.settings")}
-        description="Configure your profile, shortcuts, and directory."
+        description={t("settings.description")}
       />
 
       <SettingsProfileSection

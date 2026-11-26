@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createTranslator } from "@/lib/i18n-messages";
 import {
   buildMistakeQuizFilterOptions,
   describeFilteredEmptyMistakes,
@@ -8,6 +9,8 @@ import {
 import type { Goal } from "@/types/goal";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizSource } from "@/types/quiz";
+
+const t = createTranslator("en");
 
 const entry = (overrides: Partial<MistakeEntry> = {}): MistakeEntry => ({
   quizId: "quiz-1",
@@ -82,6 +85,7 @@ describe("mistakeLogDisplay", () => {
       quizFilter: "quiz-1",
       quizzes,
       goals: [],
+      t,
     });
 
     expect(options).toEqual([
@@ -93,6 +97,7 @@ describe("mistakeLogDisplay", () => {
 
   it("explains why a filtered quiz has no mistakes", () => {
     const base = {
+      t,
       qualifyingEntries: [],
       rawEntries: [],
       goals: [],
@@ -140,6 +145,7 @@ describe("mistakeLogDisplay", () => {
         rawEntries: [entry()],
         goals: [],
         quizzes,
+        t,
       }),
     ).toBe("No mistakes match the current filters.");
     expect(
@@ -149,6 +155,7 @@ describe("mistakeLogDisplay", () => {
         rawEntries: [entry()],
         goals: [],
         quizzes,
+        t,
       }),
     ).toBe("No mistakes match the current filters.");
   });

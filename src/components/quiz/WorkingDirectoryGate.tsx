@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 function CenteredGate({ children }: { children: ReactNode }) {
   return (
@@ -22,7 +23,7 @@ export function WorkingDirectoryGate({
   unavailableDescription,
   onOpenSettings,
   onChooseDirectory,
-  chooseDirectoryLabel = "Choose folder",
+  chooseDirectoryLabel,
   chooseDirectoryBusy = false,
   action,
   children,
@@ -42,6 +43,8 @@ export function WorkingDirectoryGate({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
+
   if (isLoading && !directoryPath) {
     return (
       <CenteredGate>
@@ -70,15 +73,15 @@ export function WorkingDirectoryGate({
             (onChooseDirectory ? (
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Button disabled={chooseDirectoryBusy} onClick={onChooseDirectory}>
-                  {chooseDirectoryBusy ? "Choosing…" : chooseDirectoryLabel}
+                  {chooseDirectoryBusy ? t("home.choosingDirectory") : (chooseDirectoryLabel ?? t("gate.chooseFolder"))}
                 </Button>
                 <Button variant="outline" onClick={onOpenSettings}>
-                  Open Settings
+                  {t("home.openSettings")}
                 </Button>
               </div>
             ) : undefined)
           }
-          actionLabel={action || onChooseDirectory ? undefined : "Settings"}
+          actionLabel={action || onChooseDirectory ? undefined : t("nav.settings")}
           onAction={action || onChooseDirectory ? undefined : onOpenSettings}
         />
       </CenteredGate>

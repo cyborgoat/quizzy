@@ -15,6 +15,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { QuestionAttempt, QuizQuestion } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
+import { RichText } from "@/components/ui/rich-text";
 
 export function QuizQuestionSidebar({
   questions,
@@ -32,6 +34,8 @@ export function QuizQuestionSidebar({
   onSelectQuestion: (index: number) => void;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
+  const { t } = useI18n();
+
 
   function selectQuestion(index: number) {
     onSelectQuestion(index);
@@ -48,7 +52,7 @@ export function QuizQuestionSidebar({
         <div className="flex h-full items-center gap-2 px-1">
           <SidebarTrigger tooltipSide="left" />
           <h2 className="truncate text-sm font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-            Questions
+            {t("quiz.sidebar.title")}
           </h2>
         </div>
       </SidebarHeader>
@@ -67,25 +71,38 @@ export function QuizQuestionSidebar({
       >
         <div
           className="w-full space-y-1.5 group-data-[collapsible=icon]:hidden"
-          aria-label={`${answeredCount} of ${total} questions answered, ${unansweredCount} left`}
+          aria-label={t("quiz.sidebar.progressAria", {
+            answered: answeredCount,
+            total,
+            left: unansweredCount,
+          })}
         >
           <div className="flex items-center justify-between gap-3 text-xs">
             <p className="tabular-nums text-zinc-500">
-              <span className="text-sm font-semibold text-zinc-950">{answeredCount}</span>
-              {" of "}
-              <span className="font-medium text-zinc-700">{total}</span>
-              {" answered"}
+              <RichText
+                text={t("quiz.sidebar.answeredOf")}
+                slots={{
+                  answered: (
+                    <span className="text-sm font-semibold text-zinc-950">{answeredCount}</span>
+                  ),
+                  total: <span className="font-medium text-zinc-700">{total}</span>,
+                }}
+              />
             </p>
             <p className="shrink-0 tabular-nums text-zinc-500">
-              <span className="font-semibold text-zinc-950">{unansweredCount}</span>
-              {" left"}
+              <RichText
+                text={t("quiz.sidebar.left")}
+                slots={{
+                  count: <span className="font-semibold text-zinc-950">{unansweredCount}</span>,
+                }}
+              />
             </p>
           </div>
           <Progress value={progress} className="h-1" />
           {flaggedCount > 0 && (
             <p className="inline-flex items-center gap-1 text-xs text-amber-700">
               <Flag className="size-3" aria-hidden="true" />
-              {flaggedCount} flagged for review
+              {t("quiz.sidebar.flagged", { count: flaggedCount })}
             </p>
           )}
         </div>

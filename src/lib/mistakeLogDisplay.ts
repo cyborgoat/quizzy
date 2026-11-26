@@ -1,9 +1,10 @@
 import type { ReactTable as TanStackTable, SortingState } from "@tanstack/react-table";
 import type { AppTableFeatures } from "@/lib/tableFeatures";
+import type { MessageKey, TFunction } from "@/lib/i18n-messages";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getQuestionNumber } from "@/lib/linkedQuestionLabel";
 import {
-  QUESTION_TYPE_LABELS,
+  QUESTION_TYPE_LABEL_KEYS,
   shuffleArrayKeepingKeyedItemAtIndex,
 } from "@/lib/questionOrder";
 import type { Goal } from "@/types/goal";
@@ -17,11 +18,11 @@ export const DEFAULT_MISTAKE_SORTING: SortingState = [
   { id: "mistakeCount", desc: true },
 ];
 
-export const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; label: string }[] = [
-  { value: "all", label: "All types" },
-  { value: "single_choice", label: QUESTION_TYPE_LABELS.single_choice },
-  { value: "multiple_choice", label: QUESTION_TYPE_LABELS.multiple_choice },
-  { value: "true_false", label: QUESTION_TYPE_LABELS.true_false },
+export const QUESTION_TYPE_FILTER_OPTIONS: { value: QuestionTypeFilter; labelKey: MessageKey }[] = [
+  { value: "all", labelKey: "mistakes.filter.allTypes" },
+  { value: "single_choice", labelKey: QUESTION_TYPE_LABEL_KEYS.single_choice },
+  { value: "multiple_choice", labelKey: QUESTION_TYPE_LABEL_KEYS.multiple_choice },
+  { value: "true_false", labelKey: QUESTION_TYPE_LABEL_KEYS.true_false },
 ];
 
 export const MISTAKE_COLUMN_WIDTHS: Record<string, string> = {
@@ -54,10 +55,14 @@ export function getMistakeQuestionType(
   return question?.type ?? null;
 }
 
-export function formatMistakeQuestionType(entry: MistakeEntry, quizzes: QuizSource[]) {
+export function formatMistakeQuestionType(
+  entry: MistakeEntry,
+  quizzes: QuizSource[],
+  t: TFunction,
+) {
   const type = getMistakeQuestionType(entry, quizzes);
   if (!type) return "—";
-  return QUESTION_TYPE_LABELS[type];
+  return t(QUESTION_TYPE_LABEL_KEYS[type]);
 }
 
 export function filterMistakeEntries(
@@ -176,6 +181,7 @@ export function buildMistakeQuizFilterOptions(options: {
   quizFilter: string;
   quizzes: QuizSource[];
   goals: Goal[];
+  t: TFunction;
 }) {
   const quizOptions = options.quizzesWithMistakes.map((quiz) => ({
     value: quiz.quizId,
@@ -193,7 +199,7 @@ export function buildMistakeQuizFilterOptions(options: {
     quizOptions.sort((a, b) => a.label.localeCompare(b.label));
   }
 
-  return [{ value: "all", label: "All quizzes" }, ...quizOptions];
+  return [{ value: "all", label: options.t("mistakes.filter.allQuizzes") }, ...quizOptions];
 }
 
 function resolveMistakeQuizTitle(quizId: string, quizzes: QuizSource[], goals: Goal[]) {
@@ -211,8 +217,10 @@ export function describeFilteredEmptyMistakes(options: {
   rawEntries: MistakeEntry[];
   goals: Goal[];
   quizzes: QuizSource[];
+  t: TFunction;
 }): string {
-  const fallback = "No mistakes match the current filters.";
+  const { t } = options;
+  const fallback = t("mistakes.empty.noMatch");
   if (options.quizFilter === "all") return fallback;
 
   const quizId = options.quizFilter;
@@ -221,12 +229,12 @@ export function describeFilteredEmptyMistakes(options: {
 
   const title = resolveMistakeQuizTitle(quizId, options.quizzes, options.goals);
   const goal = options.goals.find((item) => item.quizId === quizId);
-  if (!goal?.attempts.length) return `${title} has no scored attempts yet.`;
+  if (!goal?.attempts.length) return t("mistakes.empty.noAttempts", { title });
 
   const hasMistakes = options.rawEntries.some(
     (entry) => entry.quizId === quizId && (entry.mistakeCount > 0 || entry.flaggedCount > 0),
   );
   return hasMistakes
-    ? `None of the mistakes in ${title} meet your current thresholds.`
-    : `${title} has no mistakes or flagged questions.`;
+    ? t("mistakes.empty.belowThresholds", { title })
+    : t("mistakes.empty.none", { title });
 }

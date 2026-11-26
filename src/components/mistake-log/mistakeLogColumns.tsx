@@ -18,6 +18,7 @@ import { formatShortDate } from "@/lib/formatDate";
 import type { KnowledgeItem } from "@/types/knowledge";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizSource } from "@/types/quiz";
+import type { TFunction } from "@/lib/i18n";
 
 export type MistakeLogColumnOptions = {
   quizzes: QuizSource[];
@@ -27,6 +28,7 @@ export type MistakeLogColumnOptions = {
   onQuizFilterChange: (value: string) => void;
   onQuestionTypeFilterChange: (value: QuestionTypeFilter) => void;
   getNotesForQuestion: (quizId: string, questionId: string) => KnowledgeItem[];
+  t: TFunction;
 };
 
 export function buildMistakeLogColumns({
@@ -37,15 +39,16 @@ export function buildMistakeLogColumns({
   onQuizFilterChange,
   onQuestionTypeFilterChange,
   getNotesForQuestion,
+  t,
 }: MistakeLogColumnOptions): ColumnDef<AppTableFeatures, MistakeEntry>[] {
   return [
     {
       accessorKey: "quizTitle",
       header: () => (
         <DataTableColumnFilterHeader
-          label="Quiz Name"
+          label={t("mistakes.col.quiz")}
           filterValue={quizFilter}
-          menuLabel="Filter by quiz"
+          menuLabel={t("mistakes.col.filterByQuiz")}
           options={quizFilterOptions}
           onFilterChange={onQuizFilterChange}
         />
@@ -55,7 +58,7 @@ export function buildMistakeLogColumns({
     {
       id: "question",
       accessorFn: (row) => formatMistakeQuestionLabel(row, quizzes),
-      header: () => <DataTableColumnHeader label="Question" />,
+      header: () => <DataTableColumnHeader label={t("mistakes.col.question")} />,
       cell: ({ row }) => {
         const label = formatMistakeQuestionLabel(row.original, quizzes);
         return <DataTableTruncatedCell value={label} />;
@@ -63,42 +66,45 @@ export function buildMistakeLogColumns({
     },
     {
       id: "questionType",
-      accessorFn: (row) => formatMistakeQuestionType(row, quizzes),
+      accessorFn: (row) => formatMistakeQuestionType(row, quizzes, t),
       header: () => (
         <DataTableColumnFilterHeader
-          label="Question type"
+          label={t("mistakes.col.type")}
           filterValue={questionTypeFilter}
-          menuLabel="Filter by question type"
-          options={QUESTION_TYPE_FILTER_OPTIONS}
+          menuLabel={t("mistakes.col.filterByType")}
+          options={QUESTION_TYPE_FILTER_OPTIONS.map((option) => ({
+            value: option.value,
+            label: t(option.labelKey),
+          }))}
           onFilterChange={(value) => onQuestionTypeFilterChange(value as QuestionTypeFilter)}
         />
       ),
       cell: ({ row }) => {
-        const typeLabel = formatMistakeQuestionType(row.original, quizzes);
+        const typeLabel = formatMistakeQuestionType(row.original, quizzes, t);
         return <DataTableTruncatedCell value={typeLabel} variant="muted" />;
       },
     },
     {
       id: "notes",
       accessorFn: (row) => getNotesForQuestion(row.quizId, row.questionId).length,
-      header: ({ column }) => <DataTableSortableHeader label="Notes" column={column} />,
+      header: ({ column }) => <DataTableSortableHeader label={t("mistakes.col.notes")} column={column} />,
       cell: ({ row }) => (
         <DataTableNumericCell value={row.getValue<number>("notes")} mutedWhenZero />
       ),
     },
     {
       accessorKey: "flaggedCount",
-      header: ({ column }) => <DataTableSortableHeader label="Flags" column={column} />,
+      header: ({ column }) => <DataTableSortableHeader label={t("mistakes.col.flags")} column={column} />,
       cell: ({ row }) => <DataTableNumericCell value={row.original.flaggedCount} />,
     },
     {
       accessorKey: "mistakeCount",
-      header: ({ column }) => <DataTableSortableHeader label="Mistakes" column={column} />,
+      header: ({ column }) => <DataTableSortableHeader label={t("mistakes.col.mistakes")} column={column} />,
       cell: ({ row }) => <DataTableNumericCell value={row.original.mistakeCount} />,
     },
     {
       accessorKey: "correctnessPercentage",
-      header: ({ column }) => <DataTableSortableHeader label="Correctness" column={column} />,
+      header: ({ column }) => <DataTableSortableHeader label={t("mistakes.col.correctness")} column={column} />,
       cell: ({ row }) => (
         <span className={dataTableCellMutedClass}>
           {row.original.correctnessPercentage}%
@@ -117,7 +123,7 @@ export function buildMistakeLogColumns({
           : 0;
         return aTime - bTime;
       },
-      header: ({ column }) => <DataTableSortableHeader label="Last mistaken" column={column} />,
+      header: ({ column }) => <DataTableSortableHeader label={t("mistakes.col.lastMistaken")} column={column} />,
       cell: ({ row }) => (
         <span className={dataTableCellMutedClass}>
           {formatShortDate(row.original.lastMistakenAt)}

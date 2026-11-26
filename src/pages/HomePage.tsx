@@ -59,7 +59,7 @@ export function HomePage() {
   const isSearchPending = searchQuery !== deferredSearchQuery;
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
-    "Library refreshed.",
+    t("home.libraryRefreshed"),
   );
 
   const filteredQuizzes = useMemo(() => {
@@ -92,14 +92,14 @@ export function HomePage() {
       const selected = await open({
         directory: false,
         multiple: false,
-        title: "Import quiz file",
-        filters: [{ name: "Quiz JSON", extensions: ["json"] }],
+        title: t("home.importQuizFile"),
+        filters: [{ name: t("home.importFilterName"), extensions: ["json"] }],
       });
       if (!selected || Array.isArray(selected)) return;
 
       setIsImporting(true);
       const fileName = await library.importQuizFile(selected);
-      toast.success(`${fileName} imported.`);
+      toast.success(t("home.imported", { fileName }));
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -134,7 +134,7 @@ export function HomePage() {
         isLoading={library.isLoading}
         directoryPath={library.directoryPath}
         directoryAvailable={library.directoryAvailable}
-        loadingMessage="Loading Quizzy…"
+        loadingMessage={t("home.loading")}
         noDirectoryTitle={t("home.welcomeTitle")}
         noDirectoryDescription={t("home.welcomeDescription")}
         unavailableTitle={t("home.unavailableTitle")}
@@ -148,19 +148,19 @@ export function HomePage() {
               tabIndex={-1}
               className="text-lg font-semibold tracking-tight text-zinc-950 outline-none lg:text-xl"
             >
-              Quiz Library
+              {t("home.libraryTitle")}
             </h1>
             <div className="flex items-center gap-2">
               <IconActionButton
                 icon={CircleHelp}
-                label="How to import"
+                label={t("home.howToImport")}
                 variant="outline"
                 onClick={() => setHelpOpen(true)}
               />
               <IconActionButton
                 icon={FileUp}
                 label={
-                  isImporting ? "Importing quiz file…" : "Import quiz file"
+                  isImporting ? t("home.importing") : t("home.importQuizFile")
                 }
                 variant="outline"
                 onClick={() => void handleImportQuiz()}
@@ -168,7 +168,7 @@ export function HomePage() {
               />
               <IconActionButton
                 icon={RefreshCw}
-                label="Refresh"
+                label={t("home.refresh")}
                 variant="outline"
                 onClick={() => void handleRefresh()}
                 disabled={isRefreshing}
@@ -179,7 +179,7 @@ export function HomePage() {
               </IconActionButton>
               <IconActionButton
                 icon={FolderOpen}
-                label="Open folder"
+                label={t("home.openFolder")}
                 variant="outline"
                 onClick={() => void library.openQuizFolder()}
               />
@@ -191,28 +191,32 @@ export function HomePage() {
               <SearchField
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Search quizzes"
+                placeholder={t("home.searchPlaceholder")}
                 pending={isSearchPending}
                 className="min-w-0 flex-1"
               />
               <FilterSortMenu
-                label="Filter and sort quizzes"
+                label={t("home.filterSortLabel")}
                 active={hasActiveFilters}
                 sections={[
                   {
-                    label: "Status",
+                    label: t("home.menu.status"),
                     value: statusFilter,
-                    options: QUIZ_LIBRARY_FILTERS,
+                    options: QUIZ_LIBRARY_FILTERS.map((option) => ({
+                      value: option.value,
+                      label: t(option.labelKey),
+                    })),
                     onValueChange: (value) =>
                       setStatusFilter(value as QuizLibraryFilter),
                   },
                   {
-                    label: "Sort by",
+                    label: t("home.menu.sortBy"),
                     value: sortOrder.field,
                     options: QUIZ_LIBRARY_SORT_GROUPS.flatMap((group) =>
                       group.options.map((option) => ({
-                        ...option,
-                        group: group.label,
+                        value: option.value,
+                        label: t(option.labelKey),
+                        group: t(group.labelKey),
                       })),
                     ),
                     onValueChange: (value) =>
@@ -221,12 +225,12 @@ export function HomePage() {
                       ),
                   },
                   {
-                    label: "Order",
+                    label: t("home.menu.order"),
                     value: sortOrder.direction,
                     disabled: sortOrder.field === "default",
                     options: (["asc", "desc"] as const).map((value) => ({
                       value,
-                      label: sortOption.directionLabels[value],
+                      label: t(sortOption.directionLabelKeys[value]),
                     })),
                     onValueChange: (value) =>
                       setSortOrder({
@@ -237,7 +241,7 @@ export function HomePage() {
                 ]}
                 toggles={[
                   {
-                    label: "Favorites only",
+                    label: t("home.menu.favoritesOnly"),
                     checked: favoritesOnly,
                     onCheckedChange: setFavoritesOnly,
                   },
@@ -248,7 +252,7 @@ export function HomePage() {
 
           <InvalidFileReportsAlert
             reports={library.invalidReports}
-            entityLabel="quiz"
+            kind="quiz"
             className="mb-6"
           />
 
@@ -272,19 +276,19 @@ export function HomePage() {
               <EmptyState
                 title={
                   favoritesOnly
-                    ? "No favorite quizzes match"
+                    ? t("home.empty.noFavoritesTitle")
                     : statusFilter === "archived"
-                      ? "No archived quizzes"
-                      : "No quizzes match your search"
+                      ? t("home.empty.noArchivedTitle")
+                      : t("home.empty.noMatchTitle")
                 }
                 description={
                   favoritesOnly
-                    ? "Star a quiz card to save it here, or try another search or status filter."
+                    ? t("home.empty.noFavoritesDescription")
                     : statusFilter === "archived"
-                      ? "Archive a quiz from its details to find it here."
-                      : "Try another keyword or status filter."
+                      ? t("home.empty.noArchivedDescription")
+                      : t("home.empty.noMatchDescription")
                 }
-                actionLabel="Clear filters"
+                actionLabel={t("home.empty.clearFilters")}
                 actionVariant="outline"
                 onAction={() => {
                   setSearchQuery("");
@@ -295,20 +299,20 @@ export function HomePage() {
             )
           ) : (
             <EmptyState
-              title="No valid quizzes yet"
-              description="Add one or more quiz JSON files to the configured quiz folder."
+              title={t("home.empty.noQuizzesTitle")}
+              description={t("home.empty.noQuizzesDescription")}
               action={
                 <div className="mt-6 flex flex-wrap justify-center gap-2">
                   <Button onClick={() => setHelpOpen(true)}>
                     <CircleHelp className="size-4" />
-                    How to import
+                    {t("home.howToImport")}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => void library.openQuizFolder()}
                   >
                     <FolderOpen className="size-4" />
-                    Open folder
+                    {t("home.openFolder")}
                   </Button>
                 </div>
               }

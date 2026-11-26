@@ -7,6 +7,7 @@ import {
   type Keybind,
   type ShortcutDraftKey,
 } from "@/lib/keybinds";
+import type { MessageKey } from "@/lib/i18n-messages";
 import type { SaveSettingsRequest } from "@/lib/native";
 
 export type SettingsDraft = {
@@ -32,7 +33,7 @@ export type SettingsFieldKey =
   | "maxCorrectness"
   | ShortcutDraftKey;
 
-export type SettingsDraftErrors = Partial<Record<SettingsFieldKey, string>>;
+export type SettingsDraftErrors = Partial<Record<SettingsFieldKey, MessageKey>>;
 
 export type NumericSettingsFieldKey =
   | "minMistakes"
@@ -133,12 +134,12 @@ export function validateSettingsDraft(
 
   const parsedMinMistakes = Number(draft.minMistakes);
   if (!Number.isInteger(parsedMinMistakes) || parsedMinMistakes < 1) {
-    errors.minMistakes = "Enter a whole number of at least 1.";
+    errors.minMistakes = "settings.validation.minOne";
   }
 
   const parsedMinFlags = Number(draft.minFlags);
   if (!Number.isInteger(parsedMinFlags) || parsedMinFlags < 1) {
-    errors.minFlags = "Enter a whole number of at least 1.";
+    errors.minFlags = "settings.validation.minOne";
   }
 
   const parsedMaxCorrectness = Number(draft.maxCorrectness);
@@ -147,7 +148,7 @@ export function validateSettingsDraft(
     parsedMaxCorrectness < 0 ||
     parsedMaxCorrectness > 100
   ) {
-    errors.maxCorrectness = "Enter a number between 0 and 100.";
+    errors.maxCorrectness = "settings.validation.percent";
   }
 
   const shortcutFields = Object.fromEntries(
@@ -195,18 +196,18 @@ export function validateSettingsDraft(
 export function validateNumericSetting(
   field: NumericSettingsFieldKey,
   rawValue: string,
-): { ok: true; value: number } | { ok: false; error: string } {
+): { ok: true; value: number } | { ok: false; error: MessageKey } {
   const value = Number(rawValue);
 
   if (field === "minMistakes" || field === "minFlags") {
     return Number.isInteger(value) && value >= 1
       ? { ok: true, value }
-      : { ok: false, error: "Enter a whole number of at least 1." };
+      : { ok: false, error: "settings.validation.minOne" };
   }
 
   return Number.isFinite(value) && value >= 0 && value <= 100
     ? { ok: true, value }
-    : { ok: false, error: "Enter a number between 0 and 100." };
+    : { ok: false, error: "settings.validation.percent" };
 }
 
 export function validateShortcutSettings(

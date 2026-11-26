@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function AttemptResultBadge({
   passed,
@@ -7,6 +8,8 @@ export function AttemptResultBadge({
   passed: boolean;
   className?: string;
 }) {
+  const { t } = useI18n();
+
   return (
     <span
       className={cn(
@@ -15,7 +18,7 @@ export function AttemptResultBadge({
         className,
       )}
     >
-      {passed ? "Pass" : "Fail"}
+      {passed ? t("review.pass") : t("review.fail")}
     </span>
   );
 }

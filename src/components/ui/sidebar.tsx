@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useI18n } from "@/lib/i18n";
 
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -179,6 +180,7 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { t } = useI18n()
 
     if (collapsible === "none") {
       return (
@@ -210,8 +212,8 @@ const Sidebar = React.forwardRef<
             side={side}
           >
             <SheetHeader className="sr-only">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+              <SheetTitle>{t("ui.sidebar.title")}</SheetTitle>
+              <SheetDescription>{t("ui.sidebar.description")}</SheetDescription>
             </SheetHeader>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
@@ -274,7 +276,8 @@ const SidebarTrigger = React.forwardRef<
   }
 >(({ className, onClick, tooltip, tooltipSide = "right", "aria-label": ariaLabel, ...props }, ref) => {
   const { toggleSidebar, state } = useSidebar()
-  const label = tooltip ?? (state === "expanded" ? "Close sidebar" : "Open sidebar")
+  const { t } = useI18n()
+  const label = tooltip ?? (state === "expanded" ? t("ui.sidebar.close") : t("ui.sidebar.open"))
 
   return (
     <Tooltip>
@@ -310,15 +313,16 @@ const SidebarRail = React.forwardRef<
   React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
   const { toggleSidebar } = useSidebar()
+  const { t } = useI18n()
 
   return (
     <button
       ref={ref}
       data-sidebar="rail"
-      aria-label="Toggle Sidebar"
+      aria-label={t("ui.sidebar.toggle")}
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title={t("ui.sidebar.toggle")}
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-zinc-200 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex dark:hover:after:bg-white/10",
         "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",

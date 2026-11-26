@@ -4,10 +4,13 @@ import { Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsAboutSection() {
+  const { t } = useI18n();
+
   const [version, setVersion] = useState<string | null>(
-    isTauri() ? null : "Development build",
+    isTauri() ? null : "dev",
   );
 
   useEffect(() => {
@@ -19,7 +22,7 @@ export function SettingsAboutSection() {
         if (active) setVersion(`v${appVersion}`);
       })
       .catch(() => {
-        if (active) setVersion("Unavailable");
+        if (active) setVersion("unavailable");
       });
 
     return () => {
@@ -27,14 +30,23 @@ export function SettingsAboutSection() {
     };
   }, []);
 
+  const versionLabel =
+    version === null
+      ? t("common.loading")
+      : version === "dev"
+        ? t("settings.about.devBuild")
+        : version === "unavailable"
+          ? t("common.unavailable")
+          : version;
+
   return (
-    <SettingsSection icon={Info} title="About">
+    <SettingsSection icon={Info} title={t("settings.about.title")}>
       <SettingsSettingRow
         label="Quizzy"
-        description="The version currently installed on this device."
+        description={t("settings.about.versionDescription")}
       >
         <span className="inline-flex min-h-7 items-center text-xs font-medium tabular-nums text-zinc-700">
-          {version ?? "Loading…"}
+          {versionLabel}
         </span>
       </SettingsSettingRow>
     </SettingsSection>

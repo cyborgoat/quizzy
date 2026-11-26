@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { QuestionReviewIndexGrid } from "@/components/quiz/QuestionReviewIndexGrid";
 import type { ReviewGoalContext, ReviewScoreSummaryData } from "@/lib/quizReviewSummary";
+import { formatLongDate } from "@/lib/formatDate";
+import { useI18n } from "@/lib/i18n";
 
 function ResultMetric({
   label,
@@ -37,18 +39,15 @@ export function ReviewScoreSummary({
   selectedQuestionIndex: number;
   onQuestionSelect: (index: number) => void;
 }) {
+  const { t } = useI18n();
+
   const takenAt = goalContext?.attemptTakenAt;
   const targetScore = goalContext?.targetScore;
   const metTarget =
     targetScore === undefined || score.percentage >= targetScore;
 
   const formattedDate = takenAt
-    ? new Date(takenAt).toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+    ? formatLongDate(takenAt)
     : null;
 
   return (
@@ -65,7 +64,7 @@ export function ReviewScoreSummary({
                   : "border-red-300 bg-red-50 text-red-600",
               )}
             >
-              {metTarget ? "Target met" : "Below target"} · {targetScore}%
+              {metTarget ? t("review.score.target") : t("review.score.belowTarget")} · {targetScore}%
             </span>
           )}
         </div>
@@ -77,10 +76,10 @@ export function ReviewScoreSummary({
           goalContext ? "border-t border-zinc-200/60" : "",
         )}
       >
-        <ResultMetric label="Score" value={`${score.percentage}%`} prominent />
-        <ResultMetric label="Correct" value={`${score.score}/${score.total}`} />
-        <ResultMetric label="Incorrect" value={String(score.incorrectCount)} />
-        <ResultMetric label="Unanswered" value={String(score.unansweredCount)} />
+        <ResultMetric label={t("review.score.score")} value={`${score.percentage}%`} prominent />
+        <ResultMetric label={t("review.score.correct")} value={`${score.score}/${score.total}`} />
+        <ResultMetric label={t("review.score.incorrect")} value={String(score.incorrectCount)} />
+        <ResultMetric label={t("review.score.unanswered")} value={String(score.unansweredCount)} />
       </div>
 
       {score.indexItems.length > 0 && (

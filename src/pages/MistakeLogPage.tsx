@@ -15,8 +15,12 @@ import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLog } from "@/hooks/useMistakeLog";
 import { useMistakeLogPageState } from "@/hooks/useMistakeLogPageState";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useI18n } from "@/lib/i18n";
+import { RichText } from "@/components/ui/rich-text";
 
 export function MistakeLogPage() {
+  const { t } = useI18n();
+
   const { quizId } = Route.useSearch();
   const navigate = useNavigate();
   const quizFilter = quizId ?? "all";
@@ -74,22 +78,29 @@ export function MistakeLogPage() {
   return (
     <PageShell layout="workspace">
       <PageHeader
-        title="Mistake Log"
-        description="Review mistakes and flagged questions at your own pace."
+        title={t("mistakes.title")}
+        description={t("mistakes.description")}
         className="shrink-0 [@media(max-height:699px)]:[&>div>p:first-of-type]:hidden"
       >
         <p className="mt-1 text-xs text-zinc-500">
-          Thresholds: ≥{thresholds.minMistakes} mistake(s), ≥
-          {thresholds.minFlags} flag(s), ≤{thresholds.maxCorrectnessPercentage}%
-          correctness. Adjust in{" "}
-          <Link
-            to="/settings"
-            className="font-medium text-zinc-700 underline-offset-2 hover:underline"
-          >
-            <Settings className="mr-0.5 inline size-3" />
-            Settings
-          </Link>
-          .
+          <RichText
+            text={t("mistakes.thresholds", {
+              minMistakes: thresholds.minMistakes,
+              minFlags: thresholds.minFlags,
+              maxCorrectness: thresholds.maxCorrectnessPercentage,
+            })}
+            slots={{
+              settings: (
+                <Link
+                  to="/settings"
+                  className="font-medium text-zinc-700 underline-offset-2 hover:underline"
+                >
+                  <Settings className="mr-0.5 inline size-3" />
+                  {t("nav.settings")}
+                </Link>
+              ),
+            }}
+          />
         </p>
       </PageHeader>
 
@@ -98,7 +109,7 @@ export function MistakeLogPage() {
           variant="destructive"
           className="max-h-[20dvh] shrink-0 overflow-auto"
         >
-          <AlertTitle>Unable to load mistake data</AlertTitle>
+          <AlertTitle>{t("mistakes.loadError")}</AlertTitle>
           <AlertDescription>
             <div className="flex flex-wrap items-center gap-3">
               <span>{error}</span>
@@ -107,7 +118,7 @@ export function MistakeLogPage() {
                 size="sm"
                 onClick={() => void refetch()}
               >
-                Retry
+                {t("common.retry")}
               </Button>
             </div>
           </AlertDescription>
@@ -115,7 +126,7 @@ export function MistakeLogPage() {
       )}
 
       {isLoading ? (
-        <LoadingState message="Loading mistake data…" className="py-12" />
+        <LoadingState message={t("mistakes.loading")} className="py-12" />
       ) : emptyReason ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyMistakeLog reason={emptyReason} thresholds={thresholds} />

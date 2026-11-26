@@ -1,4 +1,5 @@
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
+import type { MessageKey } from "@/lib/i18n";
 
 const DRAFT_STORAGE_PREFIX = "knowledge-draft:";
 
@@ -71,12 +72,14 @@ export function formatTagsInput(tags: string[]) {
   return tags.join(", ");
 }
 
-export function validateKnowledgeNote(item: Pick<KnowledgeItem, "title" | "content">) {
+export function validateKnowledgeNote(
+  item: Pick<KnowledgeItem, "title" | "content">,
+): MessageKey | null {
   if (!item.title.trim()) {
-    return "Title is required.";
+    return "knowledge.validation.title";
   }
   if (!item.content.trim()) {
-    return "Content is required.";
+    return "knowledge.validation.content";
   }
   return null;
 }

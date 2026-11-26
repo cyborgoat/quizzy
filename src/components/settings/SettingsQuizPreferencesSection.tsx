@@ -3,6 +3,7 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsSettingRow } from "@/components/settings/SettingsSettingRow";
 import { Switch } from "@/components/ui/switch";
 import type { SettingsDraft } from "@/lib/settingsDraft";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsQuizPreferencesSection({
   draft,
@@ -15,29 +16,31 @@ export function SettingsQuizPreferencesSection({
   onShuffleQuestionsChange: (value: boolean) => void;
   onShuffleOptionsChange: (value: boolean) => void;
 }) {
+  const { t } = useI18n();
+
   return (
-    <SettingsSection icon={Shuffle} title="Quiz preferences">
+    <SettingsSection icon={Shuffle} title={t("settings.quizPrefs.title")}>
       <SettingsSettingRow
-        label="Shuffle questions"
-        description="Randomize order within each question type group. Mistake Log review keeps file order."
+        label={t("settings.quizPrefs.shuffleQuestions")}
+        description={t("settings.quizPrefs.shuffleQuestionsDescription")}
       >
         <Switch
           checked={draft.shuffleQuestions}
           disabled={savingFields.has("shuffleQuestions")}
           onCheckedChange={onShuffleQuestionsChange}
-          aria-label="Shuffle questions"
+          aria-label={t("settings.quizPrefs.shuffleQuestions")}
         />
       </SettingsSettingRow>
 
       <SettingsSettingRow
-        label="Shuffle options"
-        description="Randomize answer order while keeping correct answers mapped. Mistake Log keeps file order."
+        label={t("settings.quizPrefs.shuffleOptions")}
+        description={t("settings.quizPrefs.shuffleOptionsDescription")}
       >
         <Switch
           checked={draft.shuffleOptions}
           disabled={savingFields.has("shuffleOptions")}
           onCheckedChange={onShuffleOptionsChange}
-          aria-label="Shuffle options"
+          aria-label={t("settings.quizPrefs.shuffleOptions")}
         />
       </SettingsSettingRow>
     </SettingsSection>

@@ -1,5 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 type InvalidFileReport = {
   fileName: string;
@@ -8,19 +9,22 @@ type InvalidFileReport = {
 
 export function InvalidFileReportsAlert({
   reports,
-  entityLabel,
+  kind,
   className,
 }: {
   reports: InvalidFileReport[];
-  entityLabel: string;
+  kind: "quiz" | "knowledge";
   className?: string;
 }) {
+  const { t } = useI18n();
   if (reports.length === 0) return null;
 
   return (
     <Alert variant="destructive" className={cn(className)}>
       <AlertTitle>
-        {reports.length} invalid {entityLabel} file(s) were skipped
+        {t(kind === "quiz" ? "files.invalidSkippedQuiz" : "files.invalidSkippedKnowledge", {
+          count: reports.length,
+        })}
       </AlertTitle>
       <AlertDescription>
         <ul className="mt-2 space-y-2 wrap-break-word">

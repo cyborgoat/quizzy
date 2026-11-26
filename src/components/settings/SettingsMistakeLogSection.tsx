@@ -8,6 +8,7 @@ import type {
   SettingsDraft,
   SettingsDraftErrors,
 } from "@/lib/settingsDraft";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsMistakeLogSection({
   draft,
@@ -22,12 +23,14 @@ export function SettingsMistakeLogSection({
   onValueChange: (field: NumericSettingsFieldKey, value: string) => void;
   onValueCommit: (field: NumericSettingsFieldKey) => void;
 }) {
+  const { t } = useI18n();
+
   return (
-    <SettingsSection icon={ClipboardList} title="Mistake Log">
+    <SettingsSection icon={ClipboardList} title={t("nav.mistakes")}>
       <SettingsSettingRow
-        label="Min mistakes"
-        description="Required mistakes when correctness is below the max."
-        error={errors.minMistakes}
+        label={t("settings.mistakeLog.minMistakes")}
+        description={t("settings.mistakeLog.minMistakesDescription")}
+        error={errors.minMistakes && t(errors.minMistakes)}
       >
         <Input
           id="min-mistakes"
@@ -44,9 +47,9 @@ export function SettingsMistakeLogSection({
       </SettingsSettingRow>
 
       <SettingsSettingRow
-        label="Min flags"
-        description="Flagged questions need at least this many flags."
-        error={errors.minFlags}
+        label={t("settings.mistakeLog.minFlags")}
+        description={t("settings.mistakeLog.minFlagsDescription")}
+        error={errors.minFlags && t(errors.minFlags)}
       >
         <Input
           id="min-flags"
@@ -63,9 +66,9 @@ export function SettingsMistakeLogSection({
       </SettingsSettingRow>
 
       <SettingsSettingRow
-        label="Max correctness %"
-        description="Per-question correctness across scored attempts."
-        error={errors.maxCorrectness}
+        label={t("settings.mistakeLog.maxCorrectness")}
+        description={t("settings.mistakeLog.maxCorrectnessDescription")}
+        error={errors.maxCorrectness && t(errors.maxCorrectness)}
       >
         <Input
           id="max-correctness"

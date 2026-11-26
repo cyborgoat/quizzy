@@ -5,11 +5,7 @@ import { QuestionExplanation } from "@/components/quiz/QuestionExplanation";
 import { ReviewQuestionDetail } from "@/components/quiz/ReviewQuestionDetail";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
-
-const STUDY_EXPLANATION_PLACEHOLDER =
-  "Submit your answer to see the explanation.";
-const STUDY_REFERENCES_PLACEHOLDER =
-  "Submit your answer to see the references.";
+import { useI18n } from "@/lib/i18n";
 
 export function ReviewQuestionSplitPanel({
   question,
@@ -34,6 +30,8 @@ export function ReviewQuestionSplitPanel({
   flat?: boolean;
   layout?: "flow" | "workspace";
 }) {
+  const { t } = useI18n();
+
   const [studyRevealed, setStudyRevealed] = useState(!concealAnswers);
   const [activeTab, setActiveTab] = useState<"question" | "explanation">(
     "question",
@@ -62,11 +60,11 @@ export function ReviewQuestionSplitPanel({
         <QuestionExplanation
           explanation={question.explanation}
           placeholder={
-            studyPlaceholder ? STUDY_EXPLANATION_PLACEHOLDER : undefined
+            studyPlaceholder ? t("review.studyExplanationPlaceholder") : undefined
           }
         />
       ) : workspace ? (
-        <p className="text-xs text-zinc-500">No explanation provided.</p>
+        <p className="text-xs text-zinc-500">{t("review.noExplanation")}</p>
       ) : null}
       {quizId && (
         <QuestionKnowledgeNotesPanel
@@ -75,7 +73,7 @@ export function ReviewQuestionSplitPanel({
           currentNoteId={currentNoteId}
           noteDialogLayer={noteDialogLayer}
           placeholder={
-            studyPlaceholder ? STUDY_REFERENCES_PLACEHOLDER : undefined
+            studyPlaceholder ? t("review.studyReferencesPlaceholder") : undefined
           }
         />
       )}
@@ -115,7 +113,7 @@ export function ReviewQuestionSplitPanel({
       <div
         ref={tabsRef}
         role="tablist"
-        aria-label="Review content"
+        aria-label={t("review.tablist")}
         className="flex shrink-0 gap-4 border-b border-zinc-200 md:hidden"
         onKeyDown={(event) => {
           if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
@@ -153,7 +151,7 @@ export function ReviewQuestionSplitPanel({
                 : "border-transparent text-zinc-500",
             )}
           >
-            {tab === "question" ? "Question" : "Explanation & references"}
+            {tab === "question" ? t("review.tab.question") : t("review.tab.explanation")}
           </button>
         ))}
       </div>
@@ -161,7 +159,7 @@ export function ReviewQuestionSplitPanel({
         <div
           id={`${tabsId}-question-panel`}
           role="tabpanel"
-          aria-label="Question and answer choices"
+          aria-label={t("review.panel.question")}
           tabIndex={0}
           className={cn(
             "min-h-0 min-w-0 overflow-auto overscroll-contain py-3 pr-2 [scrollbar-gutter:stable] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 md:pr-4",
@@ -173,7 +171,7 @@ export function ReviewQuestionSplitPanel({
         <div
           id={`${tabsId}-explanation-panel`}
           role="tabpanel"
-          aria-label="Explanation and references"
+          aria-label={t("review.panel.explanation")}
           tabIndex={0}
           className={cn(
             "min-h-0 min-w-0 overflow-auto overscroll-contain py-3 pr-2 [scrollbar-gutter:stable] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 md:border-l md:border-zinc-200 md:pl-4",

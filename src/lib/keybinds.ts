@@ -1,3 +1,5 @@
+import type { MessageKey } from "@/lib/i18n-messages";
+
 export type Keybind = {
   key: string;
   mod: boolean;
@@ -19,42 +21,46 @@ export const SHORTCUT_FIELDS = [
     apiKey: "knowledgeLinkShortcutKey",
     contextBindKey: "knowledgeLink",
     defaultBind: DEFAULT_KEYBINDS.knowledgeLink,
-    label: "Link knowledge note",
-    description: "Opens the link search from the references panel.",
+    labelKey: "settings.shortcuts.knowledgeLink.label",
+    descriptionKey: "settings.shortcuts.knowledgeLink.description",
   },
   {
     draftKey: "knowledgeNewNoteShortcut",
     apiKey: "knowledgeNewNoteShortcutKey",
     contextBindKey: "knowledgeNewNote",
     defaultBind: DEFAULT_KEYBINDS.knowledgeNewNote,
-    label: "New knowledge note",
-    description: "Creates a note linked to the current question.",
+    labelKey: "settings.shortcuts.knowledgeNewNote.label",
+    descriptionKey: "settings.shortcuts.knowledgeNewNote.description",
   },
   {
     draftKey: "zoomInShortcut",
     apiKey: "zoomInShortcutKey",
     contextBindKey: "zoomIn",
     defaultBind: DEFAULT_KEYBINDS.zoomIn,
-    label: "Zoom in",
-    description: "Increases app font size in 5% steps.",
+    labelKey: "settings.shortcuts.zoomIn.label",
+    descriptionKey: "settings.shortcuts.zoomIn.description",
   },
   {
     draftKey: "zoomOutShortcut",
     apiKey: "zoomOutShortcutKey",
     contextBindKey: "zoomOut",
     defaultBind: DEFAULT_KEYBINDS.zoomOut,
-    label: "Zoom out",
-    description: "Decreases app font size in 5% steps. Ctrl/Cmd + scroll wheel also works.",
+    labelKey: "settings.shortcuts.zoomOut.label",
+    descriptionKey: "settings.shortcuts.zoomOut.description",
   },
   {
     draftKey: "toggleSidebarShortcut",
     apiKey: "toggleSidebarShortcutKey",
     contextBindKey: "toggleSidebar",
     defaultBind: DEFAULT_KEYBINDS.toggleSidebar,
-    label: "Toggle question sidebar",
-    description: "Shows or hides the question navigator during a quiz.",
+    labelKey: "settings.shortcuts.toggleSidebar.label",
+    descriptionKey: "settings.shortcuts.toggleSidebar.description",
   },
-] as const;
+] as const satisfies readonly {
+  labelKey: MessageKey;
+  descriptionKey: MessageKey;
+  [field: string]: unknown;
+}[];
 
 export type ShortcutDraftKey = (typeof SHORTCUT_FIELDS)[number]["draftKey"];
 
@@ -178,29 +184,29 @@ export function matchesKeybind(event: KeyboardEvent, bind: Keybind) {
   return bind.mod === mod && bind.alt === event.altKey && bind.shift === event.shiftKey;
 }
 
-export function validateKeybindSerialized(value: string): string | null {
+export function validateKeybindSerialized(value: string): MessageKey | null {
   const trimmed = value.trim();
-  if (!trimmed) return "Record a shortcut.";
+  if (!trimmed) return "settings.shortcuts.error.record";
 
   if (!trimmed.includes("+")) {
     if (trimmed.length === 1 && /^[a-z]$/i.test(trimmed)) {
       return null;
     }
-    return "Shortcut format is invalid.";
+    return "settings.shortcuts.error.format";
   }
 
   const bind = parseKeybind(trimmed, DEFAULT_KEYBINDS.knowledgeLink);
-  if (!bind.key) return "Shortcut is invalid.";
+  if (!bind.key) return "settings.shortcuts.error.invalid";
 
   const hasModifier = bind.mod || bind.alt || bind.shift;
-  if (!hasModifier) return "Include at least one modifier key.";
+  if (!hasModifier) return "settings.shortcuts.error.modifier";
 
   return null;
 }
 
 export function findDuplicateKeybind(
   values: Record<string, string>,
-): { field: string; message: string } | null {
+): { field: string; message: MessageKey } | null {
   const seen = new Map<string, string>();
 
   for (const [field, raw] of Object.entries(values)) {
@@ -211,7 +217,7 @@ export function findDuplicateKeybind(
     if (previous) {
       return {
         field,
-        message: "This shortcut is already assigned.",
+        message: "settings.shortcuts.error.duplicate",
       };
     }
     seen.set(serialized, field);

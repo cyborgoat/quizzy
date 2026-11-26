@@ -15,6 +15,7 @@ import { formatKeybind } from "@/lib/keybinds";
 import { useShortcutHandler } from "@/hooks/useShortcutHandler";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function QuestionKnowledgeNotesPanel({
   quizId,
@@ -30,6 +31,8 @@ export function QuestionKnowledgeNotesPanel({
   placeholder?: string;
 }) {
   const linkedNotes = useKnowledgeForQuestion(quizId, questionId);
+  const { t } = useI18n();
+
   const { items, saveItem } = useKnowledgeLibrary();
   const { knowledgeLink, knowledgeNewNote } = useAppShortcuts();
   const {
@@ -64,12 +67,12 @@ export function QuestionKnowledgeNotesPanel({
 
   const handleOpenLinkSearch = useCallback(() => {
     if (placeholder) {
-      toast.info("Exit study mode or submit your answer first to link a knowledge note.");
+      toast.info(t("knowledge.linkBlocked"));
       return;
     }
     if (!hasLinkableNotes) return;
     setLinkSearchOpen(true);
-  }, [hasLinkableNotes, placeholder]);
+  }, [hasLinkableNotes, placeholder, t]);
 
   const handleUnlinkNote = useCallback(
     async (item: KnowledgeItem) => {
@@ -100,8 +103,8 @@ export function QuestionKnowledgeNotesPanel({
       onLink={handleOpenLinkSearch}
       onAdd={handleAddNote}
       linkDisabled={!hasLinkableNotes}
-      linkLabel={`Link (${formatKeybind(knowledgeLink)})`}
-      newNoteLabel={`New note (${formatKeybind(knowledgeNewNote)})`}
+      linkLabel={t("knowledge.linkWithShortcut", { shortcut: formatKeybind(knowledgeLink) })}
+      newNoteLabel={t("knowledge.newNoteWithShortcut", { shortcut: formatKeybind(knowledgeNewNote) })}
     />
   );
 

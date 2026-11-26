@@ -4,6 +4,7 @@ import { UnavailableQuestionCard } from "@/components/quiz/UnavailableQuestionMe
 import type { AnswerRecord, QuizQuestion } from "@/types/quiz";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function QuestionReviewCard({
   header,
@@ -42,6 +43,8 @@ export function QuestionReviewCard({
   flat?: boolean;
   layout?: "flow" | "workspace";
 }) {
+  const { t } = useI18n();
+
   const workspace = layout === "workspace";
   const showHeader = Boolean(header || headerActions);
 
@@ -95,7 +98,7 @@ export function QuestionReviewCard({
 
       <div
         className={workspace ? "flex min-h-0 flex-1 flex-col" : "space-y-3"}
-        aria-label="Question review"
+        aria-label={t("review.cardAria")}
       >
         {(!workspace || !showHeader) && (
           <ReviewQuestionNavigationBar

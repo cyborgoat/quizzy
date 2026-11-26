@@ -12,13 +12,16 @@ import {
 } from "@/lib/importHelpContent";
 import { errorMessage } from "@/lib/native";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
+import { RichText } from "@/components/ui/rich-text";
+import type { MessageKey } from "@/lib/i18n-messages";
 
 type HelpTab = "import" | "format" | "samples";
 
-const TABS: { value: HelpTab; label: string }[] = [
-  { value: "import", label: "Import" },
-  { value: "format", label: "File format" },
-  { value: "samples", label: "Samples & AI" },
+const TABS: { value: HelpTab; labelKey: MessageKey }[] = [
+  { value: "import", labelKey: "import.tab.import" },
+  { value: "format", labelKey: "import.tab.format" },
+  { value: "samples", labelKey: "import.tab.samples" },
 ];
 
 export function ImportHelpDialog({
@@ -38,6 +41,8 @@ export function ImportHelpDialog({
 }) {
   const [tab, setTab] = useState<HelpTab>("import");
   const [isAddingSamples, setIsAddingSamples] = useState(false);
+  const { t } = useI18n();
+
 
   async function copy(text: string, message: string) {
     try {
@@ -61,11 +66,11 @@ export function ImportHelpDialog({
     <ResizableDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title="How to import a quiz"
-      description="Quizzy reads quizzes from JSON files in your quiz folder."
+      title={t("import.title")}
+      description={t("import.description")}
       footer={
         <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
-          Close
+          {t("common.close")}
         </Button>
       }
     >
@@ -84,7 +89,7 @@ export function ImportHelpDialog({
                 : "text-zinc-600 hover:text-zinc-950",
             )}
           >
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -92,22 +97,24 @@ export function ImportHelpDialog({
       {tab === "import" && (
         <div className="space-y-5 text-sm leading-6 text-zinc-700">
           <section>
-            <h3 className={sectionLabelClassName}>Option 1 · Import a file</h3>
+            <h3 className={sectionLabelClassName}>{t("import.opt1.title")}</h3>
             <p className="mt-2">
-              Click the <FileUp className="inline size-4 align-text-bottom" aria-hidden="true" />{" "}
-              <strong>Import quiz file</strong> button on the Quiz Library, pick a{" "}
-              <code>.json</code> file, and Quizzy copies it into your quiz folder.
+              <RichText
+                text={t("import.opt1.body")}
+                slots={{
+                  icon: <FileUp className="inline size-4 align-text-bottom" aria-hidden="true" />,
+                }}
+              />
             </p>
             <Button className="mt-3" size="sm" disabled={!canUseLibrary} onClick={onImport}>
               <FileUp className="size-4" />
-              Import a file now
+              {t("import.opt1.action")}
             </Button>
           </section>
           <section>
-            <h3 className={sectionLabelClassName}>Option 2 · Drop files into the folder</h3>
+            <h3 className={sectionLabelClassName}>{t("import.opt2.title")}</h3>
             <p className="mt-2">
-              Open the quiz folder, add your <code>.json</code> files, then press{" "}
-              <strong>Refresh</strong>. Only files directly in the folder are read.
+              <RichText text={t("import.opt2.body")} />
             </p>
             <Button
               className="mt-3"
@@ -117,15 +124,13 @@ export function ImportHelpDialog({
               onClick={onOpenFolder}
             >
               <FolderOpen className="size-4" />
-              Open quiz folder
+              {t("import.opt2.action")}
             </Button>
           </section>
           <section>
-            <h3 className={sectionLabelClassName}>If a file doesn't show up</h3>
+            <h3 className={sectionLabelClassName}>{t("import.missing.title")}</h3>
             <p className="mt-2">
-              Quizzy lists invalid files in a red notice on the Quiz Library with the reasons.
-              Common causes: malformed JSON, a missing field, or a quiz <code>id</code> already
-              used by another file.
+              <RichText text={t("import.missing.body")} />
             </p>
           </section>
         </div>
@@ -136,27 +141,29 @@ export function ImportHelpDialog({
           <dl className="overflow-hidden rounded-lg border border-zinc-200">
             {FORMAT_RULES.map((row, index) => (
               <div
-                key={row.field}
+                key={row.field ?? row.fieldKey}
                 className={cn(
                   "grid gap-1 px-3 py-2 sm:grid-cols-[10rem_1fr] sm:gap-3",
                   index > 0 && "border-t border-zinc-200",
                 )}
               >
-                <dt className="font-mono text-xs font-semibold text-zinc-950">{row.field}</dt>
-                <dd>{row.rule}</dd>
+                <dt className="font-mono text-xs font-semibold text-zinc-950">
+                  {row.fieldKey ? t(row.fieldKey) : row.field}
+                </dt>
+                <dd>{t(row.ruleKey)}</dd>
               </div>
             ))}
           </dl>
           <section>
             <div className="flex items-center justify-between">
-              <h3 className={sectionLabelClassName}>Example</h3>
+              <h3 className={sectionLabelClassName}>{t("import.example")}</h3>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => void copy(EXAMPLE_QUIZ_JSON, "Example copied.")}
+                onClick={() => void copy(EXAMPLE_QUIZ_JSON, t("import.exampleCopied"))}
               >
                 <Copy className="size-3.5" />
-                Copy
+                {t("import.copy")}
               </Button>
             </div>
             <pre className="mt-2 max-h-72 overflow-auto rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5">
@@ -169,10 +176,9 @@ export function ImportHelpDialog({
       {tab === "samples" && (
         <div className="space-y-5 text-sm leading-6 text-zinc-700">
           <section>
-            <h3 className={sectionLabelClassName}>Welcome sample</h3>
+            <h3 className={sectionLabelClassName}>{t("import.samples.welcomeTitle")}</h3>
             <p className="mt-2">
-              Adds the <strong>Welcome to Quizzy</strong> quiz and a linked knowledge note that
-              teach the app basics. Existing files are never overwritten.
+              <RichText text={t("import.samples.welcomeBody")} />
             </p>
             <Button
               className="mt-3"
@@ -181,23 +187,22 @@ export function ImportHelpDialog({
               onClick={() => void addSamples()}
             >
               <FlaskConical className="size-4" />
-              {isAddingSamples ? "Adding…" : "Add welcome sample"}
+              {isAddingSamples ? t("import.samples.adding") : t("import.samples.add")}
             </Button>
           </section>
           <section>
-            <h3 className={sectionLabelClassName}>Generate a quiz with AI</h3>
+            <h3 className={sectionLabelClassName}>{t("import.ai.title")}</h3>
             <p className="mt-2">
-              Copy this prompt into any AI assistant, replace <code>{"{topic}"}</code> with your
-              subject, and save the reply as a <code>.json</code> file. Then import it.
+              <RichText text={t("import.ai.body")} />
             </p>
             <Button
               className="mt-3"
               size="sm"
               variant="outline"
-              onClick={() => void copy(AI_PROMPT_TEMPLATE, "Prompt copied.")}
+              onClick={() => void copy(AI_PROMPT_TEMPLATE, t("import.ai.copied"))}
             >
               <Sparkles className="size-4" />
-              Copy AI prompt
+              {t("import.ai.copy")}
             </Button>
           </section>
         </div>

@@ -7,6 +7,7 @@ import { toggleOutlineButtonClass } from "@/lib/toggleOutlineButtonClass";
 import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { isOptionSelected } from "@/lib/quizReview";
 import type { QuizQuestion, SubmittedAnswer } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 export function QuestionContent({
   question,
@@ -25,17 +26,19 @@ export function QuestionContent({
   onMultiple: (index: number) => void;
   onTrueFalse: (answer: boolean) => void;
 }) {
-  const options = getQuestionOptions(question);
+  const { t } = useI18n();
+
+  const options = getQuestionOptions(question, t);
 
   return (
     <section aria-labelledby="question-prompt">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className={sectionLabelClassName}>
-          {questionTypeHint(question.type)}
+          {questionTypeHint(question.type, t)}
         </p>
         <IconActionButton
           icon={Flag}
-          label={flagged ? "Unflag" : "Flag"}
+          label={flagged ? t("quiz.unflag") : t("quiz.flag")}
           variant="outline"
           className={toggleOutlineButtonClass(flagged)}
           aria-pressed={flagged}

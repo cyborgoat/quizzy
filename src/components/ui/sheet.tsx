@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useI18n } from "@/lib/i18n";
 
 const Sheet = SheetPrimitive.Root
 
@@ -53,6 +54,11 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+function SheetCloseLabel() {
+  const { t } = useI18n();
+  return <span className="sr-only">{t("common.close")}</span>;
+}
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
@@ -66,7 +72,7 @@ const SheetContent = React.forwardRef<
     >
       <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-oklch(1 0 0) transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-oklch(0.705 0.015 286.067) focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-oklch(0.967 0.001 286.375) dark:ring-offset-oklch(0.141 0.005 285.823) dark:focus:ring-oklch(0.552 0.016 285.938) dark:data-[state=open]:bg-oklch(0.274 0.006 286.033)">
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <SheetCloseLabel />
       </SheetPrimitive.Close>
       {children}
     </SheetPrimitive.Content>

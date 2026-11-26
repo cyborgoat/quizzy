@@ -1,6 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 function optionLabel(index: number) {
   return `${String.fromCharCode(65 + index)}.`;
@@ -27,16 +28,18 @@ export function AnswerOptionRow({
   flat?: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useI18n();
+
   const ariaLabel = locked
     ? [
-        `Option ${optionLabel(index)} ${text}`,
-        isCorrectAnswer && "correct answer",
-        isIncorrectSelection && "your incorrect selection",
-        selected && !isIncorrectSelection && !isCorrectAnswer && "your selection",
-        selected && isCorrectAnswer && "your correct selection",
+        t("quiz.option.aria", { label: optionLabel(index), text }),
+        isCorrectAnswer && t("quiz.option.correct"),
+        isIncorrectSelection && t("quiz.option.yourIncorrect"),
+        selected && !isIncorrectSelection && !isCorrectAnswer && t("quiz.option.yourSelection"),
+        selected && isCorrectAnswer && t("quiz.option.yourCorrect"),
       ]
         .filter(Boolean)
-        .join(", ")
+        .join(t("quiz.nav.separator"))
     : undefined;
 
   return (

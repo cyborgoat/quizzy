@@ -8,6 +8,7 @@ import {
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { errorMessage } from "@/lib/native";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 const codeFontClass = "font-mono";
 
@@ -20,6 +21,8 @@ export function MarkdownFencedCodeBlock({
   source: string;
   className?: string;
 }) {
+  const { t } = useI18n();
+
   const [copied, setCopied] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const languageLabel = getCodeBlockLanguageLabel(language);
@@ -30,7 +33,7 @@ export function MarkdownFencedCodeBlock({
     try {
       await copyTextToClipboard(source);
       setCopied(true);
-      toast.success("Code copied to clipboard.");
+      toast.success(t("markdown.codeCopied"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error(errorMessage(error));
@@ -51,7 +54,7 @@ export function MarkdownFencedCodeBlock({
             className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-zinc-200/80 bg-white/90 text-zinc-700 shadow-sm transition hover:bg-white disabled:opacity-60"
             onClick={() => void handleCopy()}
             disabled={isCopying}
-            aria-label={copied ? "Copied" : "Copy code"}
+            aria-label={copied ? t("markdown.copied") : t("markdown.copyCode")}
           >
             {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
           </button>

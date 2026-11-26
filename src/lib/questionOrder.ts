@@ -1,3 +1,4 @@
+import type { MessageKey } from "@/lib/i18n-messages";
 import type { QuizQuestion } from "@/types/quiz";
 
 const TYPE_ORDER: Record<QuizQuestion["type"], number> = {
@@ -6,11 +7,11 @@ const TYPE_ORDER: Record<QuizQuestion["type"], number> = {
   true_false: 2,
 };
 
-export const QUESTION_TYPE_LABELS: Record<QuizQuestion["type"], string> = {
-  single_choice: "Single choice",
-  multiple_choice: "Multiple choice",
-  true_false: "True or false",
-};
+export const QUESTION_TYPE_LABEL_KEYS = {
+  single_choice: "question.type.single_choice",
+  multiple_choice: "question.type.multiple_choice",
+  true_false: "question.type.true_false",
+} as const satisfies Record<QuizQuestion["type"], MessageKey>;
 
 export function orderQuestionsByType(questions: QuizQuestion[]): QuizQuestion[] {
   return [...questions]

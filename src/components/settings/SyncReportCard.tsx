@@ -1,6 +1,7 @@
 import { panelHeadingClassName } from "@/components/ui/typography";
 import type { SyncReport } from "@/lib/native";
 import type { SyncReportSections } from "@/lib/syncReport";
+import { useI18n } from "@/lib/i18n";
 
 export function SyncReportCard({
   sections,
@@ -9,13 +10,15 @@ export function SyncReportCard({
   sections: SyncReportSections;
   report: SyncReport;
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="pt-1">
-      <h3 className={panelHeadingClassName}>{sections.title}</h3>
+      <h3 className={panelHeadingClassName}>{t("sync.report.title")}</h3>
 
       <div className="mt-2 space-y-2 text-sm text-zinc-700">
         <div>
-          <p className="text-xs font-medium text-zinc-800">Rescanned</p>
+          <p className="text-xs font-medium text-zinc-800">{t("sync.report.rescanned")}</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-zinc-600">
             {sections.rescanned.map((line) => (
               <li key={line}>{line}</li>
@@ -25,11 +28,11 @@ export function SyncReportCard({
 
         {sections.alreadyInSync ? (
           <p className="text-xs text-zinc-600">
-            Everything was already in sync. Libraries were refreshed in memory.
+            {t("sync.report.alreadyInSync")}
           </p>
         ) : sections.repaired.length > 0 ? (
           <div>
-            <p className="text-xs font-medium text-zinc-800">Repaired</p>
+            <p className="text-xs font-medium text-zinc-800">{t("sync.report.repaired")}</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-zinc-600">
               {sections.repaired.map((line) => (
                 <li key={line}>{line}</li>
@@ -40,7 +43,7 @@ export function SyncReportCard({
 
         {sections.warnings.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-amber-800">Warnings</p>
+            <p className="text-xs font-medium text-amber-800">{t("sync.report.warnings")}</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-amber-700">
               {sections.warnings.map((line) => (
                 <li key={line}>{line}</li>
@@ -51,7 +54,7 @@ export function SyncReportCard({
 
         {report.changes.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-zinc-800">Files changed</p>
+            <p className="text-xs font-medium text-zinc-800">{t("sync.report.filesChanged")}</p>
             <ul className="mt-1 divide-y divide-zinc-100">
               {report.changes.map((change, index) => (
                 <li
@@ -67,7 +70,7 @@ export function SyncReportCard({
             </ul>
             {report.changesTruncated && (
               <p className="mt-1.5 text-xs text-zinc-500">
-                Additional changes were applied but omitted from this list.
+                {t("sync.report.changesTruncated")}
               </p>
             )}
           </div>

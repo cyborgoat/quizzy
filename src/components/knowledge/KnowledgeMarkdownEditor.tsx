@@ -30,6 +30,8 @@ import {
 } from "@mdxeditor/editor";
 import { CODE_BLOCK_LANGUAGES } from "@/lib/codeBlockLanguages";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
+import { getMdxEditorTranslation } from "@/lib/mdxEditorTranslation";
 
 function handleEditorTableWheel(wrapper: HTMLElement, event: WheelEvent) {
   const target = event.target;
@@ -137,6 +139,7 @@ export function KnowledgeMarkdownEditor({
   fillHeight?: boolean;
   className?: string;
 }) {
+  const { t, locale } = useI18n();
   const editorRef = useRef<MDXEditorMethods>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
   const lastEmittedRef = useRef(value);
@@ -179,10 +182,11 @@ export function KnowledgeMarkdownEditor({
         markdown={value}
         onChange={handleChange}
         readOnly={disabled}
-        placeholder="Write your notes…"
+        placeholder={t("knowledge.editor.placeholder")}
         contentEditableClassName="knowledge-prose knowledge-mdx-content"
         className="knowledge-mdx-root"
         plugins={editorPlugins}
+        translation={getMdxEditorTranslation(locale)}
       />
     </div>
   );
@@ -195,6 +199,7 @@ const LazyKnowledgeMarkdownEditor = lazy(async () => ({
 export function KnowledgeMarkdownEditorLazy(
   props: ComponentProps<typeof KnowledgeMarkdownEditor>,
 ) {
+  const { t } = useI18n();
   return (
     <Suspense
       fallback={
@@ -204,7 +209,7 @@ export function KnowledgeMarkdownEditorLazy(
             props.fillHeight && "flex min-h-0 flex-1 items-center justify-center",
           )}
         >
-          Loading editor…
+          {t("knowledge.editor.loading")}
         </div>
       }
     >

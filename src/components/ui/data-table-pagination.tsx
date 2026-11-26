@@ -24,6 +24,7 @@ import {
   PAGE_JUMP_THRESHOLD,
   PAGE_SIZE_OPTIONS,
 } from "@/lib/dataTablePagination";
+import { useI18n } from "@/lib/i18n";
 
 export function DataTablePaginationFooter<TData extends RowData>({
   table,
@@ -32,6 +33,8 @@ export function DataTablePaginationFooter<TData extends RowData>({
   table: ReactTable<AppTableFeatures, TData>;
   pageSizeOptions?: readonly number[];
 }) {
+  const { t } = useI18n();
+
   const pageCount = table.getPageCount();
   const pageIndex = table.state.pagination.pageIndex;
   const pageSize = table.state.pagination.pageSize;
@@ -96,7 +99,7 @@ export function DataTablePaginationFooter<TData extends RowData>({
             {pageCount >= PAGE_JUMP_THRESHOLD && (
               <div className="flex items-center gap-1.5">
                 <Label htmlFor="go-to-page" className="text-[11px] text-zinc-500">
-                  Go to page
+                  {t("ui.pagination.goToPage")}
                 </Label>
                 <Input
                   id="go-to-page"
@@ -119,14 +122,14 @@ export function DataTablePaginationFooter<TData extends RowData>({
                     }
                   }}
                   onBlur={() => commitPageJump(pageJumpDraft)}
-                  aria-label="Go to page"
+                  aria-label={t("ui.pagination.goToPage")}
                 />
               </div>
             )}
 
             <div className="flex items-center gap-1.5">
               <Label htmlFor="rows-per-page" className="text-[11px] text-zinc-500">
-                Rows per page
+                {t("ui.pagination.rowsPerPage")}
               </Label>
               <Select
                 value={String(pageSize)}

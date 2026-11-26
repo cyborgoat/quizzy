@@ -151,7 +151,7 @@ export function FirstLaunchWizard() {
   if (!settingsReady || !stepReady) {
     return (
       <div className="flex min-h-[calc(100svh-(var(--app-page-py)*2))] items-center justify-center">
-        <p className="text-sm text-zinc-500">Loading Quizzy…</p>
+        <p className="text-sm text-zinc-500">{t("app.loading")}</p>
       </div>
     );
   }

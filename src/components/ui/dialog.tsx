@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
 import { dialogContentMotionClassName } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -33,6 +34,8 @@ export function DialogContent({
   showClose?: boolean;
   overlayClassName?: string;
 }) {
+  const { t } = useI18n();
+
   return (
     <DialogPortal>
       <DialogOverlay className={overlayClassName} />
@@ -51,7 +54,7 @@ export function DialogContent({
               size="icon"
               variant="ghost"
               className="absolute right-4 top-4 text-zinc-500 hover:bg-zinc-100"
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="size-4" />
             </Button>

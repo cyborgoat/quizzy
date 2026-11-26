@@ -27,6 +27,7 @@ import { MISTAKE_LOG_PAGE_SIZE_OPTIONS } from "@/lib/dataTablePagination";
 import type { AppTableFeatures } from "@/lib/tableFeatures";
 import { cn } from "@/lib/utils";
 import type { MistakeEntry } from "@/types/mistakeLog";
+import { useI18n } from "@/lib/i18n";
 
 export function MistakeLogTable({
   table,
@@ -49,6 +50,8 @@ export function MistakeLogTable({
   onClearFilters: () => void;
 }) {
   const contentId = useId();
+  const { t } = useI18n();
+
   const listRef = useRef<HTMLDivElement>(null);
   const activeKey = activeEntry
     ? questionLinkKey(activeEntry.quizId, activeEntry.questionId)
@@ -73,7 +76,7 @@ export function MistakeLogTable({
 
   return (
     <section
-      aria-label="Mistake list"
+      aria-label={t("mistakes.listAria")}
       className={cn(
         "flex shrink-0 flex-col border-b border-zinc-200",
         expanded && "h-[clamp(max(160px,11rem),30dvh,max(260px,11rem))]",
@@ -94,7 +97,7 @@ export function MistakeLogTable({
             )}
             aria-hidden="true"
           />
-          Mistake list{" "}
+          {t("mistakes.list")}{" "}
           <span className="font-normal tabular-nums text-zinc-500">
             ({entryCount})
           </span>
@@ -147,7 +150,7 @@ export function MistakeLogTable({
                       className="mt-3"
                       onClick={onClearFilters}
                     >
-                      Clear filters
+                      {t("mistakes.clearFilters")}
                     </Button>
                   </TableCell>
                 </TableRow>

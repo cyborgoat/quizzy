@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n";
 
 export function ExitQuizDialog({
   open,
@@ -14,20 +15,22 @@ export function ExitQuizDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <ConfirmDialog
       open={open}
       leading={<AlertTriangle className="size-8 text-amber-500" aria-hidden="true" />}
-      title="Leave this quiz?"
-      description="Going back to home will end your current attempt. Any answers you have entered so far will not be saved."
-      cancelLabel="Continue"
-      confirmLabel="Leave"
+      title={t("exit.title")}
+      description={t("exit.description")}
+      cancelLabel={t("submit.cancel")}
+      confirmLabel={t("exit.confirm")}
       onCancel={onCancel}
       onConfirm={onConfirm}
     >
       {answeredCount > 0 && (
         <p className="mt-4 rounded-lg bg-zinc-100 p-3 text-sm text-zinc-700">
-          You have answered {answeredCount} of {totalQuestions} questions.
+          {t("exit.progress", { answered: answeredCount, total: totalQuestions })}
         </p>
       )}
     </ConfirmDialog>

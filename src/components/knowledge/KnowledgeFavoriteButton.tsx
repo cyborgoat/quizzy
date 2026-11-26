@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function KnowledgeFavoriteButton({
   favorite,
@@ -15,10 +16,12 @@ export function KnowledgeFavoriteButton({
   className?: string;
   showTooltip?: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <IconActionButton
       icon={Star}
-      label={favorite ? "Unfavorite" : "Favorite"}
+      label={favorite ? t("knowledge.unfavorite") : t("knowledge.favorite")}
       variant="ghost"
       showTooltip={showTooltip}
       className={cn(

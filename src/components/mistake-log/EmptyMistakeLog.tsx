@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { buttonClassName } from "@/components/ui/button-styles";
 import type { MistakeLogThresholds } from "@/types/mistakeLog";
+import { useI18n } from "@/lib/i18n";
 
 export function EmptyMistakeLog({
   reason,
@@ -10,11 +11,13 @@ export function EmptyMistakeLog({
   reason: "no_attempts" | "no_mistakes" | "thresholds_exclude_all";
   thresholds: MistakeLogThresholds;
 }) {
+  const { t } = useI18n();
+
   if (reason === "no_attempts") {
     return (
       <EmptyState
-        title="No mistakes recorded yet"
-        description="Complete a scored quiz to build your Mistake Log."
+        title={t("mistakes.emptyState.noAttemptsTitle")}
+        description={t("mistakes.emptyState.noAttemptsDescription")}
       />
     );
   }
@@ -22,19 +25,23 @@ export function EmptyMistakeLog({
   if (reason === "no_mistakes") {
     return (
       <EmptyState
-        title="No mistakes or flags found"
-        description="No mistakes or flagged questions found in your scored attempts."
+        title={t("mistakes.emptyState.noMistakesTitle")}
+        description={t("mistakes.emptyState.noMistakesDescription")}
       />
     );
   }
 
   return (
     <EmptyState
-      title="No mistakes meet your current thresholds"
-      description={`Showing questions with at least ${thresholds.minMistakes} mistake(s) and correctness at or below ${thresholds.maxCorrectnessPercentage}%, or with at least ${thresholds.minFlags} flag(s).`}
+      title={t("mistakes.emptyState.thresholdsTitle")}
+      description={t("mistakes.emptyState.thresholdsDescription", {
+        minMistakes: thresholds.minMistakes,
+        maxCorrectness: thresholds.maxCorrectnessPercentage,
+        minFlags: thresholds.minFlags,
+      })}
       action={
         <Link to="/settings" className={buttonClassName({ className: "mt-6" })}>
-          Settings
+          {t("nav.settings")}
         </Link>
       }
     />

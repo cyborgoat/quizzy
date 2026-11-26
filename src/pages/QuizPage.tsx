@@ -27,6 +27,7 @@ import { useQuizSession } from "@/hooks/useQuizSession";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
 import type { Quiz } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 function CompletedQuiz({
   quiz,
@@ -36,6 +37,7 @@ function CompletedQuiz({
   session: ReturnType<typeof useQuizSession>;
 }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { goals, isLoading, recordAttempt } = useGoals();
   const goal = goals.find((item) => item.quizId === quiz.id);
   const recordedRef = useRef(false);
@@ -65,7 +67,7 @@ function CompletedQuiz({
   if (isLoading || (goal && !saveFailed)) {
     return (
       <PageShell width="quiz">
-        <InlineEmptyMessage>Saving attempt and opening review…</InlineEmptyMessage>
+        <InlineEmptyMessage>{t("quiz.savingAttempt")}</InlineEmptyMessage>
       </PageShell>
     );
   }
@@ -82,24 +84,22 @@ function CompletedQuiz({
         notification={
           <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
               <p className="max-w-2xl">
-                {goal
-                  ? "Your results are ready to review, but this attempt couldn’t be saved. You can try saving again below."
-                  : "Nice work! You can review your score and answers below. Want to track your progress? Set a goal to save this attempt and future results. Otherwise, this review is available until you leave this page."}
+                {goal ? t("quiz.saveFailed") : t("quiz.completedNoGoal")}
               </p>
               {goal ? (
                 <Button size="sm" onClick={() => {
                   recordedRef.current = false;
                   setSaveFailed(false);
                 }}>
-                  Try saving again
+                  {t("quiz.trySaving")}
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => setCreateGoalOpen(true)}>Set a goal</Button>
+                <Button size="sm" onClick={() => setCreateGoalOpen(true)}>{t("quiz.setGoal")}</Button>
               )}
             </div>
         }
       />
-      <Button variant="outline" onClick={session.restart}>Retake quiz</Button>
+      <Button variant="outline" onClick={session.restart}>{t("details.retake")}</Button>
       {!goal && <CreateGoalDialog quiz={quiz} open={createGoalOpen} onOpenChange={setCreateGoalOpen} />}
     </PageShell>
   );
@@ -107,6 +107,7 @@ function CompletedQuiz({
 
 function QuizSessionPage({ quiz }: { quiz: Quiz }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const session = useQuizSession(quiz);
   const { totalQuestions, goToPreviousQuestion, goToNextQuestion } = session;
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
@@ -195,14 +196,14 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
               disabled={disablePrevious}
             >
               <ChevronLeft className="size-4" />
-              Previous
+              {t("quiz.previous")}
             </Button>
             <Button
               variant="outline"
               onClick={session.goToNextQuestion}
               disabled={disableNext}
             >
-              Next
+              {t("quiz.next")}
               <ChevronRight className="size-4" />
             </Button>
           </div>
@@ -238,6 +239,7 @@ function QuizSessionPage({ quiz }: { quiz: Quiz }) {
 }
 
 export function QuizPage() {
+  const { t } = useI18n();
   const { quizId } = Route.useParams();
   const navigate = useNavigate();
   const library = useQuizLibrary();
@@ -248,15 +250,15 @@ export function QuizPage() {
   const quiz = source?.quiz;
 
   if (library.isLoading && !quiz) {
-    return <LoadingState message="Loading quiz…" />;
+    return <LoadingState message={t("quiz.loading")} />;
   }
   if (!quiz) {
     return (
       <PageShell width="quiz">
         <ErrorState
-          title="Quiz not found"
-          description="This quiz is unavailable or its file is no longer valid."
-          actionLabel="Home"
+          title={t("quiz.notFoundTitle")}
+          description={t("quiz.notFoundDescription")}
+          actionLabel={t("nav.home")}
           onAction={() => navigate({ to: "/" })}
         />
       </PageShell>
@@ -267,9 +269,9 @@ export function QuizPage() {
     return (
       <PageShell width="quiz">
         <ErrorState
-          title="Quiz is archived"
-          description="Restore this quiz from the Archived filter before starting it."
-          actionLabel="Home"
+          title={t("quiz.archivedTitle")}
+          description={t("quiz.archivedDescription")}
+          actionLabel={t("nav.home")}
           onAction={() => navigate({ to: "/" })}
         />
       </PageShell>

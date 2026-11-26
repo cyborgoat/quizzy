@@ -1,15 +1,19 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
-const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
-  <nav
-    role="navigation"
-    aria-label="pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-);
+const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => {
+  const { t } = useI18n();
+  return (
+    <nav
+      role="navigation"
+      aria-label={t("ui.pagination.nav")}
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  );
+};
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
@@ -50,32 +54,41 @@ const PaginationLink = ({ className, isActive, ...props }: PaginationLinkProps) 
 const PaginationPrevious = ({
   className,
   ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to previous page" className={cn("size-6 p-0", className)} {...props}>
-    <ChevronLeft className="size-3" />
-  </PaginationLink>
-);
+}: React.ComponentProps<typeof PaginationLink>) => {
+  const { t } = useI18n();
+  return (
+    <PaginationLink aria-label={t("ui.pagination.previous")} className={cn("size-6 p-0", className)} {...props}>
+      <ChevronLeft className="size-3" />
+    </PaginationLink>
+  );
+};
 
 const PaginationNext = ({
   className,
   ...props
-}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to next page" className={cn("size-6 p-0", className)} {...props}>
-    <ChevronRight className="size-3" />
-  </PaginationLink>
-);
+}: React.ComponentProps<typeof PaginationLink>) => {
+  const { t } = useI18n();
+  return (
+    <PaginationLink aria-label={t("ui.pagination.next")} className={cn("size-6 p-0", className)} {...props}>
+      <ChevronRight className="size-3" />
+    </PaginationLink>
+  );
+};
 
-const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => (
-  <span
-    aria-hidden
-    aria-disabled="true"
-    className={cn("pointer-events-none flex size-6 select-none items-center justify-center text-zinc-400", className)}
-    {...props}
-  >
-    <MoreHorizontal className="size-3.5" />
-    <span className="sr-only">More pages</span>
-  </span>
-);
+const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => {
+  const { t } = useI18n();
+  return (
+    <span
+      aria-hidden
+      aria-disabled="true"
+      className={cn("pointer-events-none flex size-6 select-none items-center justify-center text-zinc-400", className)}
+      {...props}
+    >
+      <MoreHorizontal className="size-3.5" />
+      <span className="sr-only">{t("ui.pagination.morePages")}</span>
+    </span>
+  );
+};
 
 export {
   Pagination,

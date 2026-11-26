@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import type { GoalDetailsFormValues } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 export function GoalDetailsFields({
   idPrefix,
@@ -12,6 +13,8 @@ export function GoalDetailsFields({
   onChange: (field: keyof GoalDetailsFormValues, value: string) => void;
   disabled?: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-3">
       <div>
@@ -19,7 +22,7 @@ export function GoalDetailsFields({
           className="mb-1.5 block text-xs font-medium text-zinc-700"
           htmlFor={`${idPrefix}-score`}
         >
-          Target score (%)
+          {t("goals.field.targetScore")}
         </label>
         <Input
           id={`${idPrefix}-score`}
@@ -28,7 +31,7 @@ export function GoalDetailsFields({
           max={100}
           value={values.targetScore}
           onChange={(e) => onChange("targetScore", e.target.value)}
-          placeholder="e.g. 80"
+          placeholder={t("goals.field.targetPlaceholder")}
           className="w-32"
           disabled={disabled}
         />
@@ -39,13 +42,13 @@ export function GoalDetailsFields({
           className="mb-1.5 block text-xs font-medium text-zinc-700"
           htmlFor={`${idPrefix}-description`}
         >
-          Description <span className="font-normal text-zinc-400">(optional)</span>
+          {t("goals.field.description")} <span className="font-normal text-zinc-400">{t("goals.field.optional")}</span>
         </label>
         <Input
           id={`${idPrefix}-description`}
           value={values.description}
           onChange={(e) => onChange("description", e.target.value)}
-          placeholder="e.g. Score at least 80% without hints"
+          placeholder={t("goals.field.descriptionPlaceholder")}
           className="sm:max-w-md"
           disabled={disabled}
         />

@@ -6,6 +6,7 @@ import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import type { LibrarySession } from "@/contexts/working-directory-context";
 import { errorMessage, nativeApi } from "@/lib/native";
 import { goalMeta, toAttemptSummary, type Goal, type GoalAttempt, type GoalDetailsInput } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -24,6 +25,8 @@ function normalizeAttempt(attempt: GoalAttempt): GoalAttempt {
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
   const { session } = useWorkingDirectory();
+  const { t } = useI18n();
+
   const [snapshot, setSnapshot] = useState<{ session: LibrarySession; goals: Goal[] } | null>(null);
   const goals = snapshot?.session === session ? snapshot?.goals ?? [] : [];
   const [goalsVersion, setGoalsVersion] = useState(0);
@@ -83,7 +86,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
   async function addGoal(data: Omit<Goal, "id" | "createdAt" | "attempts">) {
     if (!session?.isCurrent()) return false;
     if (goals.some((goal) => goal.quizId === data.quizId)) {
-      toast.error("This quiz already has a goal.");
+      toast.error(t("goals.toast.alreadyHasGoal"));
       return false;
     }
     const newGoal: Goal = {
@@ -96,7 +99,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       await nativeApi.upsertGoal(session.path, goalMeta(newGoal));
       if (!session.isCurrent()) return false;
       updateGoals((current) => [...current, newGoal]);
-      toast.success("Goal created.");
+      toast.success(t("goals.toast.created"));
       return true;
     } catch (error) {
       toast.error(errorMessage(error));
@@ -119,7 +122,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       updateGoals((current) =>
         current.map((item) => (item.id === id ? updated : item)),
       );
-      toast.success("Goal updated.");
+      toast.success(t("goals.toast.updated"));
       return true;
     } catch (error) {
       toast.error(errorMessage(error));
@@ -178,7 +181,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
       }
       updateGoals((current) => current.filter((goal) => goal.id !== id));
       bumpGoalsVersion();
-      toast.success("Goal deleted.");
+      toast.success(t("goals.toast.deleted"));
       return true;
     } catch (error) {
       toast.error(errorMessage(error));
@@ -203,21 +206,21 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
         ),
       );
       bumpGoalsVersion();
-      toast.success("Attempt deleted.");
+      toast.success(t("goals.toast.attemptDeleted"));
     } catch (error) {
       toast.error(errorMessage(error));
     }
   }
 
   async function loadGoalAttempt(goalId: string, attemptId: string) {
-    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    if (!session?.isCurrent()) throw new Error(t("error.directoryChanged"));
     const cacheKey = attemptCacheKey(goalId, attemptId);
     const attempts = attemptsFor(session);
     const cached = attempts.get(cacheKey);
     if (cached) return cached;
 
     const attempt = normalizeAttempt(await nativeApi.getGoalAttempt(session.path, goalId, attemptId));
-    if (!session.isCurrent()) throw new Error("The working directory changed.");
+    if (!session.isCurrent()) throw new Error(t("error.directoryChanged"));
     attempts.set(cacheKey, attempt);
     return attempt;
   }

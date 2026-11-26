@@ -12,13 +12,9 @@ import { quizSchema } from "@/data/quizSchema";
 import { splitFrontMatter } from "@/lib/frontMatter";
 import { errorMessage, nativeApi, type HubItem, type HubPreview, type HubSelection } from "@/lib/native";
 import { isDownloadable, isFromHub } from "@/lib/quizhub";
-import type { Quiz, QuizQuestion } from "@/types/quiz";
-
-const questionTypeLabel: Record<QuizQuestion["type"], string> = {
-  single_choice: "Single choice",
-  multiple_choice: "Multiple choice",
-  true_false: "True / false",
-};
+import type { Quiz } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
+import { QUESTION_TYPE_LABEL_KEYS } from "@/lib/questionOrder";
 
 export function QuizhubPreviewDialog({
   item,
@@ -39,6 +35,7 @@ export function QuizhubPreviewDialog({
   isDownloading?: boolean;
   isWorking?: boolean;
 }) {
+  const { t } = useI18n();
   const open = item !== null;
   const [snapshot, setSnapshot] = useState<{
     item: HubItem;
@@ -80,15 +77,20 @@ export function QuizhubPreviewDialog({
   const canRemove = Boolean(isFromHub(activeItem.state) && onRemove);
   const canStartQuiz = Boolean(activeItem.kind === "quiz" && isFromHub(activeItem.state) && onStartQuiz);
   const fromLocal = isFromHub(activeItem.state);
-  const downloadLabel = activeItem.state === "updateAvailable" ? "Update" : activeItem.state === "installed" ? "Download again" : "Download";
+  const downloadLabel =
+    activeItem.state === "updateAvailable"
+      ? t("hub.update")
+      : activeItem.state === "installed"
+        ? t("hub.downloadAgain")
+        : t("hub.download");
   const description =
     activeItem.kind === "quiz"
       ? fromLocal
-        ? "Preview of your local quiz. Answers are hidden."
-        : "Quiz preview from Quizhub. Answers are hidden."
+        ? t("hub.preview.quizLocal")
+        : t("hub.preview.quizRemote")
       : fromLocal
-        ? "Preview of your local knowledge note."
-        : "Knowledge preview from Quizhub.";
+        ? t("hub.preview.noteLocal")
+        : t("hub.preview.noteRemote");
 
   return (
     <ResizableDialogShell
@@ -107,12 +109,12 @@ export function QuizhubPreviewDialog({
               onClick={() => onRemove?.(activeItem)}
             >
               <Trash2 className="size-3.5" />
-              Remove
+              {t("hub.preview.remove")}
             </Button>
           )}
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
-              Close
+              {t("common.close")}
             </Button>
             {canStartQuiz && (
               <Button
@@ -122,7 +124,7 @@ export function QuizhubPreviewDialog({
                 onClick={() => onStartQuiz?.(activeItem)}
               >
                 <Play className="size-3.5 fill-current" />
-                Start quiz
+                {t("details.start")}
               </Button>
             )}
             {canDownload && (
@@ -138,8 +140,8 @@ export function QuizhubPreviewDialog({
                 )}
                 {isDownloading
                   ? activeItem.state === "updateAvailable"
-                    ? "Updating…"
-                    : "Downloading…"
+                    ? t("hub.updating")
+                    : t("hub.downloading")
                   : downloadLabel}
               </Button>
             )}
@@ -151,9 +153,9 @@ export function QuizhubPreviewDialog({
         <PreviewSkeleton kind={activeItem.kind} />
       ) : error ? (
         <ErrorState
-          title="Couldn't load preview"
+          title={t("hub.preview.loadFailed")}
           description={error}
-          actionLabel="Try again"
+          actionLabel={t("hub.tryAgain")}
           onAction={() => setReloadKey((current) => current + 1)}
         />
       ) : preview ? (
@@ -168,9 +170,10 @@ export function QuizhubPreviewDialog({
 }
 
 function PreviewSkeleton({ kind }: { kind: HubItem["kind"] }) {
+  const { t } = useI18n();
   if (kind === "note") {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="Loading preview">
+      <div className="space-y-4" aria-busy="true" aria-label={t("hub.preview.loading")}>
         <Skeleton className="h-7 w-2/3" />
         <div className="flex gap-1.5">
           <Skeleton className="h-5 w-14 rounded-full" />
@@ -189,7 +192,7 @@ function PreviewSkeleton({ kind }: { kind: HubItem["kind"] }) {
   }
 
   return (
-    <div className="space-y-5" aria-busy="true" aria-label="Loading preview">
+    <div className="space-y-5" aria-busy="true" aria-label={t("hub.preview.loading")}>
       <Skeleton className="h-4 w-4/5" />
       <div className="flex gap-2">
         <Skeleton className="h-5 w-20 rounded-full" />
@@ -218,6 +221,7 @@ function PreviewSkeleton({ kind }: { kind: HubItem["kind"] }) {
 }
 
 function QuizPreviewBody({ contents }: { contents: string }) {
+  const { t } = useI18n();
   let quiz: Quiz | null = null;
   let parseError: string | null = null;
 
@@ -227,15 +231,15 @@ function QuizPreviewBody({ contents }: { contents: string }) {
     if (result.success) {
       quiz = result.data;
     } else {
-      parseError = result.error.issues[0]?.message ?? "Quiz file is invalid.";
+      parseError = result.error.issues[0]?.message ?? t("hub.preview.invalidQuiz");
     }
   } catch {
-    parseError = "Quiz file is not valid JSON.";
+    parseError = t("hub.preview.invalidJson");
   }
 
   if (!quiz) {
     return (
-      <p className="text-sm text-red-600">{parseError ?? "Unable to parse quiz."}</p>
+      <p className="text-sm text-red-600">{parseError ?? t("hub.preview.unableToParse")}</p>
     );
   }
 
@@ -246,7 +250,9 @@ function QuizPreviewBody({ contents }: { contents: string }) {
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge className="border-zinc-200 bg-zinc-50 text-zinc-700">
-          {quiz.questions.length} {quiz.questions.length === 1 ? "question" : "questions"}
+          {t(quiz.questions.length === 1 ? "quiz.card.questionsOne" : "quiz.card.questionsMany", {
+            count: quiz.questions.length,
+          })}
         </Badge>
         {quiz.tags.map((tag) => (
           <Badge key={tag} className="border-zinc-200 bg-zinc-50 text-zinc-600">
@@ -262,10 +268,10 @@ function QuizPreviewBody({ contents }: { contents: string }) {
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium tabular-nums text-zinc-500">
-                Q{index + 1}
+                {t("question.shortLabel", { number: index + 1 })}
               </span>
               <Badge className="border-zinc-200 bg-white px-2 py-0 text-[11px] text-zinc-600">
-                {questionTypeLabel[question.type]}
+                {t(QUESTION_TYPE_LABEL_KEYS[question.type])}
               </Badge>
             </div>
             <div className="mt-2 text-sm text-zinc-950">
@@ -273,8 +279,8 @@ function QuizPreviewBody({ contents }: { contents: string }) {
             </div>
             {question.type === "true_false" ? (
               <ul className="mt-2 space-y-1 text-sm text-zinc-600">
-                <li>True</li>
-                <li>False</li>
+                <li>{t("question.true")}</li>
+                <li>{t("question.false")}</li>
               </ul>
             ) : (
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-600">
@@ -293,6 +299,7 @@ function QuizPreviewBody({ contents }: { contents: string }) {
 }
 
 function NotePreviewBody({ contents }: { contents: string }) {
+  const { t } = useI18n();
   const split = splitFrontMatter(contents);
   if ("error" in split) {
     return (
@@ -322,7 +329,7 @@ function NotePreviewBody({ contents }: { contents: string }) {
           <MarkdownContent variant="prose">{split.content}</MarkdownContent>
         </KnowledgeProse>
       ) : (
-        <p className="text-sm text-zinc-500">This note has no body content.</p>
+        <p className="text-sm text-zinc-500">{t("hub.preview.noBody")}</p>
       )}
     </div>
   );

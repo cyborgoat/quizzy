@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SyncReport } from "@/lib/native";
 import type { SyncReportSections } from "@/lib/syncReport";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsSyncSection({
   isSyncing,
@@ -17,11 +18,12 @@ export function SettingsSyncSection({
   lastSyncReport: SyncReport | null;
   onSynchronize: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
-    <SettingsSection icon={RefreshCw} title="Data synchronization">
+    <SettingsSection icon={RefreshCw} title={t("settings.sync.title")}>
       <p className="text-xs text-zinc-500">
-        Rescan quiz and knowledge folders, repair indexes, and refresh in-app data after external
-        file changes. Quiz and knowledge files are not modified.
+        {t("settings.sync.description")}
       </p>
       <div className="mt-2">
         <Button
@@ -31,7 +33,7 @@ export function SettingsSyncSection({
           disabled={isSyncing}
         >
           <RefreshCw className={cn("size-3.5", isSyncing && "animate-spin")} />
-          {isSyncing ? "Synchronizing…" : "Synchronize data"}
+          {isSyncing ? t("settings.sync.syncing") : t("settings.sync.action")}
         </Button>
       </div>
 

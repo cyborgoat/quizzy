@@ -10,6 +10,7 @@ import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import { cn } from "@/lib/utils";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function LinkedQuestionList({
   links,
@@ -21,6 +22,8 @@ export function LinkedQuestionList({
   previewLayer?: DialogStackLayer;
 }) {
   const { quizzes } = useQuizLibrary();
+  const { t } = useI18n();
+
   const [previewLink, setPreviewLink] = useState<LinkedQuizQuestion | null>(null);
   const warnings = getLinkWarnings({ linkedQuizQuestions: links }, quizzes);
   const warningKeys = new Set(
@@ -28,7 +31,7 @@ export function LinkedQuestionList({
   );
 
   if (links.length === 0) {
-    return <p className="text-sm text-zinc-500">No linked questions.</p>;
+    return <p className="text-sm text-zinc-500">{t("knowledge.noLinkedQuestions")}</p>;
   }
 
   return (

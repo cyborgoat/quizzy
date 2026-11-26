@@ -6,6 +6,7 @@ import { sectionLabelClassName } from "@/components/ui/section-label";
 import { pageTitleClassName } from "@/components/ui/typography";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import type { ReviewGoalContext } from "@/lib/quizReviewSummary";
+import { useI18n } from "@/lib/i18n";
 
 export function ReviewHeader({
   quizTitle,
@@ -17,6 +18,8 @@ export function ReviewHeader({
   notification?: ReactNode;
 }) {
   const { openQuizStart } = useQuizStartDialog();
+  const { t } = useI18n();
+
 
   if (goalContext) {
     const { goal } = goalContext;
@@ -28,14 +31,14 @@ export function ReviewHeader({
           className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
         >
           <ArrowLeft className="size-4" />
-          History
+          {t("nav.history")}
         </Link>
         {notification}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className={sectionLabelClassName}>
-              Attempt review
+              {t("review.attemptReview")}
             </p>
             <h1 className={`mt-1 ${pageTitleClassName}`}>{quizTitle}</h1>
             {goal.description.trim() && (
@@ -50,7 +53,7 @@ export function ReviewHeader({
             }
           >
             <RotateCcw className="size-4" />
-            Retake
+            {t("review.retake")}
           </Button>
         </div>
       </header>
@@ -64,7 +67,7 @@ export function ReviewHeader({
         className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
       >
         <Home className="size-4" />
-        Home
+        {t("nav.home")}
       </Link>
       {notification}
 

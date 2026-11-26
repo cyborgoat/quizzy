@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
+import { useI18n } from "@/lib/i18n";
 
 export function ReviewQuestionNavigationBar({
   position,
@@ -18,6 +19,8 @@ export function ReviewQuestionNavigationBar({
   disablePrevious?: boolean;
   disableNext?: boolean;
 }) {
+  const { t } = useI18n();
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -42,7 +45,7 @@ export function ReviewQuestionNavigationBar({
     <div className="flex items-center justify-center gap-2">
       <IconActionButton
         icon={ChevronLeft}
-        label="Previous"
+        label={t("review.previous")}
         onClick={onPrevious}
         disabled={disablePrevious}
       />
@@ -51,7 +54,7 @@ export function ReviewQuestionNavigationBar({
       </p>
       <IconActionButton
         icon={ChevronRight}
-        label="Next"
+        label={t("review.next")}
         onClick={onNext}
         disabled={disableNext}
       />

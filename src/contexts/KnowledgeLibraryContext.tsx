@@ -15,12 +15,15 @@ import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
 import { QUIZHUB_CHANGED_EVENT } from "@/lib/quizhub";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 const EMPTY_LIBRARY: ParsedKnowledgeLibrary = { items: [], invalidReports: [] };
 
 const EMPTY_COUNTS: Record<string, number> = {};
 
 export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+
   const {
     library,
     setLibrary,
@@ -83,12 +86,12 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   );
 
   async function createItem(draft: CreateKnowledgeDraft) {
-    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    if (!session?.isCurrent()) throw new Error(t("error.directoryChanged"));
     const title = draft.title.trim();
     const content = draft.content?.trim() ?? "";
     const validationError = validateKnowledgeNote({ title, content });
     if (validationError) {
-      throw new Error(validationError);
+      throw new Error(t(validationError));
     }
     const existingFileNames = new Set(items.map((item) => item.fileName));
     const { fileName, id } = resolveUniqueFileName(slugifyTitle(title), existingFileNames);
@@ -115,7 +118,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     item: KnowledgeItem,
     options?: { preserveUpdatedAt?: boolean },
   ) {
-    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    if (!session?.isCurrent()) throw new Error(t("error.directoryChanged"));
     const updated = {
       ...item,
       updatedAt: options?.preserveUpdatedAt ? item.updatedAt : new Date().toISOString(),
@@ -139,7 +142,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   }
 
   async function deleteItem(fileName: string) {
-    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    if (!session?.isCurrent()) throw new Error(t("error.directoryChanged"));
     await nativeApi.deleteKnowledgeFile(session.path, fileName);
     await refresh({ background: true });
   }

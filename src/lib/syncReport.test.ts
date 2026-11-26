@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { createTranslator } from "@/lib/i18n-messages";
 import { formatSyncSections, formatSyncSummary } from "@/lib/syncReport";
 import type { SyncReport } from "@/lib/native";
+
+const t = createTranslator("en");
 
 function emptyReport(overrides: Partial<SyncReport> = {}): SyncReport {
   return {
@@ -25,9 +28,10 @@ describe("syncReport", () => {
   it("reports already in sync when nothing was repaired", () => {
     const sections = formatSyncSections(
       emptyReport({ quizzesScanned: 2, knowledgeNotesScanned: 1 }),
+      t,
     );
     expect(sections.alreadyInSync).toBe(true);
-    expect(formatSyncSummary(emptyReport({ quizzesScanned: 2 }))).toBe(
+    expect(formatSyncSummary(emptyReport({ quizzesScanned: 2 }), t)).toBe(
       "Synchronized: libraries refreshed; no app data files needed changes.",
     );
   });
@@ -46,12 +50,12 @@ describe("syncReport", () => {
       ],
     });
 
-    expect(formatSyncSummary(report)).toContain("2 attempt indexes rebuilt");
-    expect(formatSyncSummary(report)).toContain("1 goal title updated");
-    expect(formatSyncSummary(report)).toContain("14 questions");
-    expect(formatSyncSummary(report)).toContain("missing quiz file");
+    expect(formatSyncSummary(report, t)).toContain("2 attempt indexes rebuilt");
+    expect(formatSyncSummary(report, t)).toContain("1 goal title updated");
+    expect(formatSyncSummary(report, t)).toContain("14 questions");
+    expect(formatSyncSummary(report, t)).toContain("missing quiz file");
 
-    const sections = formatSyncSections(report);
+    const sections = formatSyncSections(report, t);
     expect(sections.repaired.length).toBeGreaterThan(0);
     expect(sections.warnings).toHaveLength(1);
     expect(sections.alreadyInSync).toBe(false);
@@ -67,6 +71,7 @@ describe("syncReport", () => {
           },
         ],
       }),
+      t,
     );
 
     expect(sections.rescanned[0]).toContain("unavailable");

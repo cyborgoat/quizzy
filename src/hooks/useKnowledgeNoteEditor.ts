@@ -11,6 +11,7 @@ import {
 } from "@/lib/knowledgeDraft";
 import { errorMessage } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 type KnowledgeLibraryActions = {
   items: KnowledgeItem[];
@@ -45,6 +46,8 @@ export function useKnowledgeNoteEditor({
   onDeleted,
   onDiscardNewDraft,
 }: UseKnowledgeNoteEditorOptions) {
+  const { t } = useI18n();
+
   const [mode, setMode] = useState<"view" | "edit">(initialMode);
   const [draft, setDraft] = useState(source);
   const [tagsInput, setTagsInput] = useState(() => formatTagsInput(source.tags));
@@ -89,7 +92,7 @@ export function useKnowledgeNoteEditor({
   async function save() {
     const validationError = validateKnowledgeNote(draft);
     if (validationError) {
-      toast.error(validationError);
+      toast.error(t(validationError));
       return;
     }
 
@@ -107,7 +110,7 @@ export function useKnowledgeNoteEditor({
         clearKnowledgeDraft(draft.id);
         resetFromSource(created, "view");
         onCreated?.(created);
-        toast.success("Knowledge note saved.");
+        toast.success(t("knowledge.saved"));
         return;
       }
 
@@ -115,7 +118,7 @@ export function useKnowledgeNoteEditor({
       await saveItem(updated);
       resetFromSource(updated, "view");
       onUpdated?.(updated);
-      toast.success("Knowledge note saved.");
+      toast.success(t("knowledge.saved"));
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -131,15 +134,15 @@ export function useKnowledgeNoteEditor({
     }
 
     const approved = await confirm(
-      `Delete "${draft.title}"? This cannot be undone.`,
-      { title: "Delete note?", kind: "warning" },
+      t("knowledge.confirmDelete", { title: draft.title }),
+      { title: t("knowledge.confirmDeleteTitle"), kind: "warning" },
     );
     if (!approved) return;
 
     setIsDeleting(true);
     try {
       await deleteItem(draft.fileName);
-      toast.success("Knowledge note deleted.");
+      toast.success(t("knowledge.deleted"));
       onDeleted?.();
     } catch (error) {
       toast.error(errorMessage(error));

@@ -7,6 +7,7 @@ import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { questionLinkKey } from "@/lib/knowledgeLinks";
 import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function LinkedQuestionPicker({
   value,
@@ -18,6 +19,8 @@ export function LinkedQuestionPicker({
   disabled?: boolean;
 }) {
   const { quizzes } = useQuizLibrary();
+  const { t } = useI18n();
+
   const [search, setSearch] = useState("");
 
   const warnings = useMemo(
@@ -100,7 +103,7 @@ export function LinkedQuestionPicker({
                   className="rounded p-0.5 hover:bg-zinc-200/80"
                   onClick={() => removeLink(link)}
                   disabled={disabled}
-                  aria-label="Remove linked question"
+                  aria-label={t("knowledge.removeLinked")}
                 >
                   <X className="size-3" />
                 </button>
@@ -115,7 +118,7 @@ export function LinkedQuestionPicker({
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search quizzes and questions to link"
+          placeholder={t("knowledge.searchQuestions")}
           className="h-9 pl-9"
           disabled={disabled}
         />
@@ -123,7 +126,7 @@ export function LinkedQuestionPicker({
         {showSuggestions && (
           <ul className="absolute top-full z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-zinc-200 bg-white py-1 shadow-sm">
             {options.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-zinc-500">No matching questions.</li>
+              <li className="px-3 py-2 text-sm text-zinc-500">{t("knowledge.noMatchingQuestions")}</li>
             ) : (
               options.map((option) => {
                 const key = questionLinkKey(option.quizId, option.questionId);
@@ -158,8 +161,9 @@ export function LinkedQuestionPicker({
 
       {warnings.length > 0 && (
         <p className="text-xs text-amber-700">
-          {warnings.length} linked question{warnings.length === 1 ? "" : "s"} could not be found in
-          the current quiz library.
+          {t(warnings.length === 1 ? "knowledge.linkWarningOne" : "knowledge.linkWarningMany", {
+            count: warnings.length,
+          })}
         </p>
       )}
     </div>

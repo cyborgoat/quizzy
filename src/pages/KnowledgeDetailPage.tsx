@@ -14,12 +14,15 @@ import { useKnowledgeNoteEditor } from "@/hooks/useKnowledgeNoteEditor";
 import { resolveKnowledgeNoteSource } from "@/lib/knowledgeDraft";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 type KnowledgeDetailLocationState = {
   knowledgeDraft?: KnowledgeItem;
 };
 
 export function KnowledgeDetailPage() {
+  const { t } = useI18n();
+
   const { knowledgeId } = Route.useParams();
   const { edit: editParam } = Route.useSearch();
   const navigate = useNavigate();
@@ -108,16 +111,16 @@ export function KnowledgeDetailPage() {
     return (
       <PageShell className="overflow-x-clip">
         <Alert>
-          <AlertTitle>Knowledge note not found</AlertTitle>
+          <AlertTitle>{t("knowledge.notFoundTitle")}</AlertTitle>
           <AlertDescription>
             <div className="flex flex-wrap items-center gap-3">
-              <span>The note may have been deleted or is still loading.</span>
+              <span>{t("knowledge.notFoundDescription")}</span>
               <Link
                 to="/knowledge"
                 className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 transition-colors hover:text-zinc-700"
               >
                 <ArrowLeft className="size-3.5" />
-                Back to Knowledge Base
+                {t("knowledge.backToList")}
               </Link>
             </div>
           </AlertDescription>
@@ -163,7 +166,7 @@ export function KnowledgeDetailPage() {
             onClick={handleCancel}
           >
             <ArrowLeft className="size-3.5" />
-            Back
+            {t("common.back")}
           </Button>
         ) : (
           <Link
@@ -171,7 +174,7 @@ export function KnowledgeDetailPage() {
             className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-1 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100/60"
           >
             <ArrowLeft className="size-3.5" />
-            Back
+            {t("common.back")}
           </Link>
         )}
 
@@ -179,20 +182,20 @@ export function KnowledgeDetailPage() {
           <div className="flex shrink-0 flex-wrap items-center gap-1">
             <IconActionButton
               icon={X}
-              label="Cancel"
+              label={t("common.cancel")}
               onClick={handleCancel}
               disabled={isSaving || isDeleting}
             />
             {!isNewDraft && (
               <IconActionButton
                 icon={Trash2}
-                label="Delete"
+                label={t("common.delete")}
                 onClick={() => void deleteNote()}
                 disabled={isDeleting || isSaving}
               />
             )}
             <Button size="sm" onClick={() => void save()} disabled={isSaving || isDeleting}>
-              {isSaving ? "Saving..." : "Save"}
+              {isSaving ? t("common.saving") : t("common.save")}
             </Button>
           </div>
         )}

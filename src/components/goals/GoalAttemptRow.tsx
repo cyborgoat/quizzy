@@ -5,6 +5,7 @@ import { AttemptResultBadge } from "@/components/goals/AttemptResultBadge";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { formatShortDate } from "@/lib/formatDate";
 import { attemptPassed, type AttemptSummary } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 export function GoalAttemptRow({
   quizId,
@@ -23,6 +24,8 @@ export function GoalAttemptRow({
   deleteLabel?: string;
   showQuizTitle?: boolean;
 }) {
+  const { t } = useI18n();
+
   const dateLabel = formatShortDate(attempt.takenAt);
   const passed = attemptPassed(attempt, targetScore);
   const scoreLabel = `${attempt.percentage}% (${attempt.score}/${attempt.total})`;
@@ -51,7 +54,7 @@ export function GoalAttemptRow({
       {onDelete && (
         <IconActionButton
           icon={Trash2}
-          label={deleteLabel ?? `Delete attempt from ${dateLabel}`}
+          label={deleteLabel ?? t("goals.attempt.delete", { date: dateLabel })}
           showTooltip={false}
           className="size-7 shrink-0 pointer-events-none text-zinc-500 opacity-0 transition-opacity hover:text-red-700 group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
           onClick={(event) => onDelete(event)}

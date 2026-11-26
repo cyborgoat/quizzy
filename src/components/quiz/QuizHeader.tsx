@@ -5,6 +5,7 @@ import { sectionLabelClassName } from "@/components/ui/section-label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function QuizHeader({
   title,
@@ -20,6 +21,8 @@ export function QuizHeader({
   answered: number;
 }) {
   const isMobile = useIsMobile();
+  const { t } = useI18n();
+
 
   return (
     <header className={`${quizChromeHeaderClass} bg-white`}>
@@ -27,7 +30,7 @@ export function QuizHeader({
         {isMobile && (
           <SidebarTrigger
             className="size-9 shrink-0 border border-zinc-200 bg-white hover:bg-zinc-100"
-            tooltip="Open question sidebar"
+            tooltip={t("quiz.openSidebar")}
             tooltipSide="bottom"
           />
         )}
@@ -45,7 +48,7 @@ export function QuizHeader({
           </div>
           <div className="mt-1.5 flex items-center gap-2">
             <Progress value={(answered / total) * 100} />
-            <span className="shrink-0 text-xs text-zinc-500">{answered} answered</span>
+            <span className="shrink-0 text-xs text-zinc-500">{t("quiz.answeredCount", { count: answered })}</span>
           </div>
         </div>
       </div>

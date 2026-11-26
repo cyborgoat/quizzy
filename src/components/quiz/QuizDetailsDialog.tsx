@@ -42,6 +42,7 @@ import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { quizProgressMetrics, quizProgressStatus } from "@/lib/quizProgress";
 import type { Goal } from "@/types/goal";
 import type { QuizSource } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 export function QuizDetailsDialog({
   source,
@@ -55,6 +56,8 @@ export function QuizDetailsDialog({
   restoreFocus: () => void;
 }) {
   const { deleteAttempt, refreshAfterSync } = useGoals();
+  const { t } = useI18n();
+
   const { setQuizArchived, deleteQuizFile } = useQuizLibrary();
   const { openQuizStart } = useQuizStartDialog();
   const navigate = useNavigate();
@@ -85,8 +88,8 @@ export function QuizDetailsDialog({
 
   async function handleDeleteQuiz() {
     const approved = await confirm(
-      `Permanently delete "${quiz.title}"? The quiz file, goal, attempts, and mistake history will be removed. This cannot be undone.`,
-      { title: "Delete quiz permanently?", kind: "warning" },
+      t("details.confirmDelete", { title: quiz.title }),
+      { title: t("details.confirmDeleteTitle"), kind: "warning" },
     );
     if (!approved) return;
 
@@ -110,8 +113,8 @@ export function QuizDetailsDialog({
     event.preventDefault();
     event.stopPropagation();
     if (!goal) return;
-    const approved = await confirm("Delete this attempt? This cannot be undone.", {
-      title: "Delete attempt?",
+    const approved = await confirm(t("details.confirmDeleteAttempt"), {
+      title: t("details.confirmDeleteAttemptTitle"),
       kind: "warning",
     });
     if (approved) await deleteAttempt(goal.id, attemptId);
@@ -141,24 +144,24 @@ export function QuizDetailsDialog({
                 {quiz.title}
               </DialogTitle>
               <DialogDescription>
-                {goal?.description.trim() || quiz.description || "No description provided."}
+                {goal?.description.trim() || quiz.description || t("details.noDescription")}
               </DialogDescription>
             </DialogHeader>
 
             <section className="mt-5">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <h3 className="text-sm font-semibold text-zinc-950">Progress</h3>
+                <h3 className="text-sm font-semibold text-zinc-950">{t("details.progress")}</h3>
                 {goal ? (
                   <IconActionButton
                     icon={Pencil}
-                    label="Goal settings"
+                    label={t("details.goalSettings")}
                     disabled={isManagingQuiz}
                     onClick={() => setSettingsOpen(true)}
                   />
                 ) : !archived && (
                   <IconActionButton
                     icon={Target}
-                    label="Add goal"
+                    label={t("details.addGoal")}
                     disabled={isManagingQuiz}
                     onClick={() => setCreateGoalOpen(true)}
                   />
@@ -167,10 +170,10 @@ export function QuizDetailsDialog({
 
               <dl className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200 text-sm sm:grid-cols-4">
                 {[
-                  ["Questions", quiz.questions.length],
-                  ["Attempts", attemptCount],
-                  ["Highest score", highestScore === undefined ? "—" : `${highestScore}%`],
-                  ["Target", goal?.targetScore === undefined ? "—" : `${goal.targetScore}%`],
+                  [t("details.questions"), quiz.questions.length],
+                  [t("details.attempts"), attemptCount],
+                  [t("details.highestScore"), highestScore === undefined ? "—" : `${highestScore}%`],
+                  [t("details.target"), goal?.targetScore === undefined ? "—" : `${goal.targetScore}%`],
                 ].map(([label, value]) => (
                   <div key={label} className="bg-white px-3 py-3">
                     <dt className="text-xs text-zinc-500">{label}</dt>
@@ -182,11 +185,11 @@ export function QuizDetailsDialog({
 
             <section className="mt-6 border-t border-zinc-200 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <h3 className="text-sm font-semibold text-zinc-950">Attempt history</h3>
+                <h3 className="text-sm font-semibold text-zinc-950">{t("details.attemptHistory")}</h3>
                 {goal && (
                   <Dialog>
                     <DialogTrigger asChild>
-                      <IconActionButton icon={ClipboardList} label="View mistakes" />
+                      <IconActionButton icon={ClipboardList} label={t("details.viewMistakes")} />
                     </DialogTrigger>
                     <DialogContent
                       role="alertdialog"
@@ -196,17 +199,17 @@ export function QuizDetailsDialog({
                     >
                       <DialogTitle className="flex items-center gap-2">
                         <TriangleAlert className="size-5 shrink-0 text-amber-600" aria-hidden="true" />
-                        Open Mistakes page?
+                        {t("details.openMistakesTitle")}
                       </DialogTitle>
                       <DialogDescription>
-                        You’ll leave the quiz details and open the Mistakes page for this quiz.
+                        {t("details.openMistakesDescription")}
                       </DialogDescription>
                       <DialogFooter>
                         <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
+                          <Button variant="outline">{t("common.cancel")}</Button>
                         </DialogClose>
                         <Button onClick={() => void navigate({ to: "/mistakes", search: { quizId: quiz.id } })}>
-                          View mistakes
+                          {t("details.viewMistakes")}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -215,7 +218,7 @@ export function QuizDetailsDialog({
               </div>
               {attempts.length === 0 ? (
                 <p className="mt-3 rounded-lg border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-500">
-                  No saved attempts yet. Add a goal before starting if you want results to be recorded.
+                  {t("details.noAttempts")}
                 </p>
               ) : (
                 <ul className="-mx-3 mt-2 divide-y divide-zinc-100">
@@ -243,7 +246,7 @@ export function QuizDetailsDialog({
               {archived ? (
                 <IconActionButton
                   icon={ArchiveRestore}
-                  label={managementAction === "restore" ? "Restoring…" : "Restore to start"}
+                  label={managementAction === "restore" ? t("details.restoring") : t("details.restoreToStart")}
                   variant="default"
                   tooltipSide="top"
                   disabled={isManagingQuiz}
@@ -256,7 +259,7 @@ export function QuizDetailsDialog({
                   onClick={() => void handleStart()}
                 >
                   <Play className="size-3.5 shrink-0" aria-hidden="true" />
-                  {attemptCount > 0 ? "Retake quiz" : "Start quiz"}
+                  {attemptCount > 0 ? t("details.retake") : t("details.start")}
                 </Button>
               )}
             </footer>
@@ -266,7 +269,7 @@ export function QuizDetailsDialog({
                 <DropdownMenuTrigger asChild>
                   <IconActionButton
                     icon={MoreHorizontal}
-                    label="Manage quiz"
+                    label={t("details.manage")}
                     className="text-zinc-500 aria-expanded:bg-zinc-100"
                   />
                 </DropdownMenuTrigger>
@@ -277,7 +280,7 @@ export function QuizDetailsDialog({
                       onSelect={() => void handleArchiveChange(true)}
                     >
                       <Archive aria-hidden="true" />
-                      {managementAction === "archive" ? "Archiving…" : "Archive quiz"}
+                      {managementAction === "archive" ? t("details.archiving") : t("details.archive")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
@@ -286,14 +289,14 @@ export function QuizDetailsDialog({
                     onSelect={() => void handleDeleteQuiz()}
                   >
                     <Trash2 aria-hidden="true" />
-                    {managementAction === "delete" ? "Deleting…" : "Delete quiz"}
+                    {managementAction === "delete" ? t("details.deleting") : t("details.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <DialogClose asChild>
                 <IconActionButton
                   icon={X}
-                  label="Close"
+                  label={t("common.close")}
                   className="text-zinc-500 hover:bg-zinc-100"
                 />
               </DialogClose>

@@ -8,6 +8,7 @@ import { buildMistakeAnswerRecord } from "@/lib/mistakeLogReview";
 import type { MistakeEntry } from "@/types/mistakeLog";
 import type { QuizQuestion } from "@/types/quiz";
 import { MistakeStatusBadge } from "./MistakeStatusBadge";
+import { useI18n } from "@/lib/i18n";
 
 export function MistakeLogReviewSection({
   entry,
@@ -38,12 +39,14 @@ export function MistakeLogReviewSection({
   disablePrevious: boolean;
   disableNext: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <QuestionReviewCard
       layout="workspace"
       header={
         <>
-          <h2 className={panelHeadingClassName}>Review mistake</h2>
+          <h2 className={panelHeadingClassName}>{t("mistakes.review.title")}</h2>
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
             <span className="max-w-48 truncate" title={entry.quizTitle}>
               {entry.quizTitle}
@@ -52,7 +55,7 @@ export function MistakeLogReviewSection({
               ·
             </span>
             <span className="shrink-0">
-              Last mistaken {formatShortDate(entry.lastMistakenAt)}
+              {t("mistakes.review.lastMistaken", { date: formatShortDate(entry.lastMistakenAt) })}
             </span>
             <MistakeStatusBadge count={entry.mistakeCount} variant="mistakes" />
             <MistakeStatusBadge count={entry.flaggedCount} variant="flags" />
@@ -63,14 +66,14 @@ export function MistakeLogReviewSection({
         <>
           <IconActionButton
             icon={Shuffle}
-            label={shuffleEnabled ? "Sorted order" : "Shuffle order"}
+            label={shuffleEnabled ? t("mistakes.review.sorted") : t("mistakes.review.shuffle")}
             variant="outline"
             className={toggleOutlineButtonClass(shuffleEnabled)}
             onClick={onToggleShuffle}
           />
           <IconActionButton
             icon={BookOpen}
-            label={studyMode ? "Review mode" : "Study mode"}
+            label={studyMode ? t("mistakes.review.reviewMode") : t("mistakes.review.studyMode")}
             variant="outline"
             className={toggleOutlineButtonClass(studyMode)}
             onClick={() => onStudyModeChange(!studyMode)}

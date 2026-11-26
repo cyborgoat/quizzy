@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import type { SettingsDraft } from "@/lib/settingsDraft";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsQuizhubSection({
   draft,
@@ -28,20 +29,22 @@ export function SettingsQuizhubSection({
   onQuizhubBaseUrlCommit: () => void;
   onQuizhubBaseUrlReset: () => void;
 }) {
+  const { t } = useI18n();
+
   const savingUrl = savingFields.has("quizhubBaseUrl");
   const isDefaultSource = draft.quizhubBaseUrl.trim() === QUIZHUB_DEFAULT_BASE_URL;
 
   return (
-    <SettingsSection icon={PackagePlus} title="Quizhub">
+    <SettingsSection icon={PackagePlus} title={t("settings.quizhub.title")}>
       <SettingsSettingRow
-        label="Enable Quizhub"
-        description="Browse and download curated quizzes and notes into your working directory."
+        label={t("settings.quizhub.enable")}
+        description={t("settings.quizhub.enableDescription")}
       >
         <Switch
           checked={draft.quizhubEnabled}
           disabled={savingFields.has("quizhubEnabled")}
           onCheckedChange={onQuizhubEnabledChange}
-          aria-label="Enable Quizhub"
+          aria-label={t("settings.quizhub.enable")}
         />
       </SettingsSettingRow>
 
@@ -49,9 +52,9 @@ export function SettingsQuizhubSection({
         <AccordionItem value="source-url">
           <AccordionTrigger className="justify-between gap-3 px-0 py-3 hover:bg-transparent">
             <div className="min-w-0 text-left">
-              <p className="text-sm font-medium text-zinc-950">Source URL</p>
+              <p className="text-sm font-medium text-zinc-950">{t("settings.quizhub.sourceUrl")}</p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Advanced: change the catalog location if you host your own Quizhub.
+                {t("settings.quizhub.sourceUrlDescription")}
               </p>
             </div>
             <ChevronDown className="accordion-chevron size-4 shrink-0 text-zinc-500 transition-transform duration-200 motion-reduce:transition-none" />
@@ -68,7 +71,7 @@ export function SettingsQuizhubSection({
                     event.currentTarget.blur();
                   }
                 }}
-                aria-label="Quizhub source URL"
+                aria-label={t("settings.quizhub.sourceUrlAria")}
                 placeholder={QUIZHUB_DEFAULT_BASE_URL}
                 className="h-8 min-w-0 flex-1 font-mono text-xs"
               />
@@ -78,7 +81,7 @@ export function SettingsQuizhubSection({
                 disabled={savingUrl || isDefaultSource}
                 onClick={() => onQuizhubBaseUrlReset()}
               >
-                Reset
+                {t("common.reset")}
               </Button>
             </div>
           </AccordionContent>

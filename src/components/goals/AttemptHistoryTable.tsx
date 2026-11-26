@@ -33,11 +33,12 @@ import {
   tableWorkspaceHeaderClass,
   tableWorkspaceScrollClass,
 } from "@/components/ui/table-workspace";
-import { formatShortDate } from "@/lib/formatDate";
+import { formatDateTime, formatShortDate, formatTimeOfDay } from "@/lib/formatDate";
 import type { AttemptHistoryEntry } from "@/lib/recentAttempts";
 import { appTableFeatures, type AppTableFeatures } from "@/lib/tableFeatures";
 import { cn } from "@/lib/utils";
 import { attemptPassed } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 const widths: Record<string, string> = {
   quizTitle: "w-[32%]",
@@ -65,6 +66,8 @@ export function AttemptHistoryTable({
   onDelete: (entry: AttemptHistoryEntry) => void;
   onRetake: (entry: AttemptHistoryEntry) => void;
 }) {
+  const { t } = useI18n();
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -78,8 +81,8 @@ export function AttemptHistoryTable({
         accessorKey: "quizTitle",
         header: () => (
           <DataTableColumnFilterHeader
-            label="Quiz"
-            menuLabel="Filter by quiz"
+            label={t("history.col.quiz")}
+            menuLabel={t("history.col.filterByQuiz")}
             filterValue={quizFilter}
             options={quizOptions}
             onFilterChange={(value) => {
@@ -93,27 +96,27 @@ export function AttemptHistoryTable({
         id: "takenAt",
         accessorFn: (entry) => Date.parse(entry.attempt.takenAt),
         header: ({ column }) => (
-          <DataTableSortableHeader label="Taken" column={column} />
+          <DataTableSortableHeader label={t("history.col.taken")} column={column} />
         ),
       },
       {
         id: "score",
         accessorFn: (entry) => entry.attempt.percentage,
         header: ({ column }) => (
-          <DataTableSortableHeader label="Score" column={column} />
+          <DataTableSortableHeader label={t("history.col.score")} column={column} />
         ),
       },
       {
         id: "mistakes",
         accessorFn: (entry) => entry.attempt.incorrectCount,
         header: ({ column }) => (
-          <DataTableSortableHeader label="Mistakes" column={column} />
+          <DataTableSortableHeader label={t("history.col.mistakes")} column={column} />
         ),
       },
-      { id: "result", header: () => <DataTableColumnHeader label="Result" /> },
-      { id: "actions", header: () => <span className="sr-only">Actions</span> },
+      { id: "result", header: () => <DataTableColumnHeader label={t("history.col.result")} /> },
+      { id: "actions", header: () => <span className="sr-only">{t("history.col.actions")}</span> },
     ],
-    [quizFilter, quizOptions, onQuizFilterChange],
+    [quizFilter, quizOptions, onQuizFilterChange, t],
   );
   const table = useTable({
     features: appTableFeatures,
@@ -129,7 +132,7 @@ export function AttemptHistoryTable({
 
   return (
     <TableWorkspace
-      title="Saved attempts"
+      title={t("history.savedAttempts")}
       count={entries.length}
       footer={<DataTablePaginationFooter table={table} />}
     >
@@ -162,7 +165,7 @@ export function AttemptHistoryTable({
                 colSpan={columns.length}
                 className="py-8 text-center text-sm text-zinc-500"
               >
-                No attempts match the selected quiz.
+                {t("history.noMatch")}
               </TableCell>
             </TableRow>
           )}
@@ -183,12 +186,12 @@ export function AttemptHistoryTable({
                   <div className="mt-1 flex gap-1">
                     {entry.archived && (
                       <Badge className="px-1.5 py-0 text-[10px] font-normal">
-                        Archived
+                        {t("history.archived")}
                       </Badge>
                     )}
                     {!entry.quizAvailable && (
                       <Badge className="px-1.5 py-0 text-[10px] font-normal">
-                        Unavailable
+                        {t("history.unavailable")}
                       </Badge>
                     )}
                   </div>
@@ -199,16 +202,13 @@ export function AttemptHistoryTable({
               >
                 <time
                   dateTime={entry.attempt.takenAt}
-                  title={new Date(entry.attempt.takenAt).toLocaleString()}
+                  title={formatDateTime(entry.attempt.takenAt)}
                 >
                   <span className="block">
                     {formatShortDate(entry.attempt.takenAt)}
                   </span>
                   <span className="text-[11px]">
-                    {new Date(entry.attempt.takenAt).toLocaleTimeString(
-                      undefined,
-                      { hour: "numeric", minute: "2-digit" },
-                    )}
+                    {formatTimeOfDay(entry.attempt.takenAt)}
                   </span>
                 </time>
               </TableCell>
@@ -235,7 +235,7 @@ export function AttemptHistoryTable({
                   {!entry.archived && entry.quizAvailable && (
                     <IconActionButton
                       icon={RotateCcw}
-                      label="Retake quiz"
+                      label={t("history.retake")}
                       className="shrink-0 text-zinc-500"
                       onClick={() => onRetake(entry)}
                     />
@@ -244,8 +244,8 @@ export function AttemptHistoryTable({
                     icon={Trash2}
                     label={
                       deletingAttemptId === entry.attempt.id
-                        ? "Deleting attempt…"
-                        : "Delete attempt"
+                        ? t("history.deleting")
+                        : t("history.delete")
                     }
                     disabled={deletingAttemptId !== null}
                     className="shrink-0 text-zinc-500 hover:bg-red-50 hover:text-red-700 focus-visible:bg-red-50 focus-visible:text-red-700"

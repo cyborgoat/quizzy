@@ -10,6 +10,7 @@ import {
 import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
 import { dialogContentMotionClassName } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export type DialogStackLayer = "default" | "stacked" | "elevated";
 
@@ -42,6 +43,8 @@ export function ResizableDialogShell({
   constraints?: DialogSizeConstraints;
   bodyClassName?: string;
 }) {
+  const { t } = useI18n();
+
   const { size, startResizeDrag } = useResizableDialogSize({
     enabled: open,
     constraints,
@@ -78,7 +81,7 @@ export function ResizableDialogShell({
               type="button"
               size="icon"
               variant="ghost"
-              aria-label="Resize dialog"
+              aria-label={t("ui.resizeDialog")}
               className="absolute right-4 top-3 size-8 cursor-nwse-resize text-zinc-900 hover:bg-zinc-100/60 active:cursor-nwse-resize"
               disabled={resizeDisabled}
               onPointerDown={startResizeDrag}

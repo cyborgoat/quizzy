@@ -14,6 +14,7 @@ import { getQuestionOptions, questionTypeHint } from "@/lib/quizDisplay";
 import { isAnswerCorrect } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizQuestion, SubmittedAnswer } from "@/types/quiz";
+import { useI18n } from "@/lib/i18n";
 
 function hasStudyAnswer(question: QuizQuestion, answer?: SubmittedAnswer) {
   if (!answer || question.type !== answer.type) return false;
@@ -65,6 +66,8 @@ export function ReviewQuestionDetail({
   flat?: boolean;
   onStudyRevealChange?: (revealed: boolean) => void;
 }) {
+  const { t } = useI18n();
+
   const [studyAnswer, setStudyAnswer] = useState<SubmittedAnswer | undefined>();
   const [studySubmitted, setStudySubmitted] = useState(false);
 
@@ -76,7 +79,7 @@ export function ReviewQuestionDetail({
   const activeAnswer = revealed && concealAnswers ? studyAnswer : record?.answer;
   const studyIsCorrect =
     studySubmitted && studyAnswer ? isAnswerCorrect(question, studyAnswer) : false;
-  const options = getQuestionOptions(question);
+  const options = getQuestionOptions(question, t);
 
   return (
     <article
@@ -94,13 +97,13 @@ export function ReviewQuestionDetail({
             "grid-center size-6 shrink-0 rounded-md bg-zinc-200 text-xs font-semibold tabular-nums text-zinc-700",
             !flat && "border border-zinc-200",
           )}
-          aria-label={`Question ${index + 1}`}
+          aria-label={t("review.questionAria", { number: index + 1 })}
         >
           {index + 1}
         </span>
         <div className={cn("min-w-0 flex-1", compact ? "space-y-2" : "space-y-3")}>
           <p className={sectionLabelClassName}>
-            {questionTypeHint(question.type)}
+            {questionTypeHint(question.type, t)}
           </p>
 
           <div
@@ -151,7 +154,7 @@ export function ReviewQuestionDetail({
                 disabled={!hasStudyAnswer(question, studyAnswer)}
                 onClick={() => setStudySubmitted(true)}
               >
-                Submit
+                {t("review.submitStudy")}
               </Button>
             </div>
           )}
@@ -166,12 +169,12 @@ export function ReviewQuestionDetail({
               {studyIsCorrect ? (
                 <>
                   <CheckCircle className="size-3.5 shrink-0" aria-hidden="true" />
-                  Correct
+                  {t("review.correct")}
                 </>
               ) : (
                 <>
                   <XCircle className="size-3.5 shrink-0" aria-hidden="true" />
-                  Incorrect
+                  {t("review.incorrect")}
                 </>
               )}
             </p>

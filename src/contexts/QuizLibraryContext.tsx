@@ -5,6 +5,7 @@ import { parseQuizFiles, type ParsedQuizLibrary } from "@/data/quizRepository";
 import { useDirectoryLibrary } from "@/hooks/useDirectoryLibrary";
 import type { ResolvedLibraryFile } from "@/lib/fileVersionCache";
 import { errorMessage, nativeApi } from "@/lib/native";
+import { useI18n } from "@/lib/i18n";
 
 type QuizLibrary = ParsedQuizLibrary & { favoriteQuizIds: ReadonlySet<string> };
 const EMPTY_LIBRARY: QuizLibrary = { quizzes: [], invalidReports: [], favoriteQuizIds: new Set() };
@@ -21,6 +22,8 @@ const parseQuizLibrary = (files: ResolvedLibraryFile[], metadata: Awaited<Return
 });
 
 export function QuizLibraryProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+
   const {
     library,
     setLibrary,
@@ -72,7 +75,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
           source.quiz.id === quizId ? { ...source, archived } : source,
         ),
       );
-      toast.success(archived ? "Quiz archived." : "Quiz restored.");
+      toast.success(t(archived ? "library.quizArchived" : "library.quizRestored"));
       return true;
     } catch (error) {
       await refresh({ background: true });
@@ -105,7 +108,7 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
       await nativeApi.deleteQuizFile(session.path, fileName);
       if (!session.isCurrent()) return false;
       setQuizzes((current) => current.filter((source) => source.fileName !== fileName));
-      toast.success("Quiz permanently deleted.");
+      toast.success(t("library.quizDeleted"));
       return true;
     } catch (error) {
       await refresh({ background: true });

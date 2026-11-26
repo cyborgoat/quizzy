@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/quiz/LoadingState";
 import { useGoals } from "@/hooks/useGoals";
 import { errorMessage } from "@/lib/native";
 import type { Goal, GoalAttempt } from "@/types/goal";
+import { useI18n } from "@/lib/i18n";
 
 function AttemptReviewLoader({
   goal,
@@ -18,6 +19,8 @@ function AttemptReviewLoader({
   attemptId: string;
 }) {
   const { loadGoalAttempt } = useGoals();
+  const { t } = useI18n();
+
   const [attempt, setAttempt] = useState<GoalAttempt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +49,7 @@ function AttemptReviewLoader({
   if (loading) {
     return (
       <PageShell className="space-y-5">
-        <InlineEmptyMessage>Loading attempt…</InlineEmptyMessage>
+        <InlineEmptyMessage>{t("review.loadingAttempt")}</InlineEmptyMessage>
       </PageShell>
     );
   }
@@ -55,9 +58,9 @@ function AttemptReviewLoader({
     return (
       <PageShell className="space-y-5">
         <ErrorState
-          title="Attempt unavailable"
-          description={error ?? "Attempt details are unavailable."}
-          actionLabel="Quiz dashboard"
+          title={t("review.attemptUnavailableTitle")}
+          description={error ?? t("review.attemptUnavailableDescription")}
+          actionLabel={t("review.quizDashboard")}
           onAction={() => navigate({ to: "/", search: { details: goal.quizId } })}
         />
       </PageShell>
@@ -72,6 +75,7 @@ function AttemptReviewLoader({
 }
 
 export function AttemptReviewPage() {
+  const { t } = useI18n();
   const { quizId, attemptId } = Route.useParams();
   const navigate = useNavigate();
   const { goals, isLoading } = useGoals();
@@ -79,7 +83,7 @@ export function AttemptReviewPage() {
   if (isLoading) {
     return (
       <PageShell>
-        <LoadingState message="Loading attempt…" />
+        <LoadingState message={t("review.loadingAttempt")} />
       </PageShell>
     );
   }
@@ -91,9 +95,9 @@ export function AttemptReviewPage() {
     return (
       <PageShell>
         <ErrorState
-          title="Invalid review link"
-          description="This attempt review link is missing required information."
-          actionLabel="Quiz dashboard"
+          title={t("review.invalidLinkTitle")}
+          description={t("review.invalidLinkDescription")}
+          actionLabel={t("review.quizDashboard")}
           onAction={() => navigate({ to: "/", search: {} })}
         />
       </PageShell>
@@ -104,9 +108,9 @@ export function AttemptReviewPage() {
     return (
       <PageShell>
         <ErrorState
-          title="Goal or attempt not found"
-          description="This goal or attempt may have been deleted or is no longer available."
-          actionLabel="Quiz dashboard"
+          title={t("review.notFoundTitle")}
+          description={t("review.notFoundDescription")}
+          actionLabel={t("review.quizDashboard")}
           onAction={() => navigate({ to: "/", search: {} })}
         />
       </PageShell>

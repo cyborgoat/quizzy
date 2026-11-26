@@ -18,6 +18,7 @@ import { formatQuizQuestionLabel } from "@/lib/linkedQuestionLabel";
 import { resolveLinkedQuestion } from "@/lib/linkedQuestionLookup";
 import { getLinkWarnings } from "@/lib/knowledgeValidation";
 import type { LinkedQuizQuestion } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 function noteDialogLayerForPreview(
   previewLayer: DialogStackLayer,
@@ -39,6 +40,8 @@ export function LinkedQuestionPreviewDialog({
   layer?: DialogStackLayer;
 }) {
   const { quizzes } = useQuizLibrary();
+  const { t } = useI18n();
+
   const { openQuizStart } = useQuizStartDialog();
 
   const resolved = useMemo(
@@ -63,7 +66,7 @@ export function LinkedQuestionPreviewDialog({
       open={open}
       onOpenChange={onOpenChange}
       layer={layer}
-      title="Linked question"
+      title={t("knowledge.preview.title")}
       description={label}
       footer={
         <>
@@ -71,14 +74,14 @@ export function LinkedQuestionPreviewDialog({
             <Button
               size="sm"
               disabled={isArchived}
-              title={isArchived ? "Restore this quiz to retake it" : undefined}
+              title={isArchived ? t("knowledge.preview.restoreHint") : undefined}
               onClick={() => {
                 onOpenChange(false);
                 openQuizStart({ quizId: link.quizId });
               }}
             >
               <Play className="size-3.5 fill-current" />
-              Retake quiz
+              {t("details.retake")}
             </Button>
           )}
           <Dialog.Close asChild>
@@ -87,7 +90,7 @@ export function LinkedQuestionPreviewDialog({
               variant="ghost"
               className={knowledgeDialogCloseButtonClassName}
             >
-              Close
+              {t("common.close")}
             </Button>
           </Dialog.Close>
         </>
@@ -98,7 +101,7 @@ export function LinkedQuestionPreviewDialog({
       ) : (
         <div className="space-y-6">
           <section className="min-w-0">
-            <h2 className={sectionLabelClassName}>Quiz</h2>
+            <h2 className={sectionLabelClassName}>{t("knowledge.preview.quiz")}</h2>
             <p className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
               {resolved.quiz.title}
             </p>
@@ -120,10 +123,9 @@ export function LinkedQuestionPreviewDialog({
 
           {hasLinkWarning && (
             <Alert>
-              <AlertTitle>Outdated link</AlertTitle>
+              <AlertTitle>{t("knowledge.preview.outdatedTitle")}</AlertTitle>
               <AlertDescription>
-                This link may be outdated because the quiz or question could not be fully
-                verified.
+                {t("knowledge.preview.outdatedDescription")}
               </AlertDescription>
             </Alert>
           )}

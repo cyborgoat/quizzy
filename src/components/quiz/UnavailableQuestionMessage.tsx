@@ -1,4 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useI18n } from "@/lib/i18n";
 
 export function UnavailableQuestionCard({
   prompt,
@@ -7,6 +8,8 @@ export function UnavailableQuestionCard({
   prompt?: string;
   flat?: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <article
       className={
@@ -21,20 +24,19 @@ export function UnavailableQuestionCard({
           prompt ? "mt-3 text-sm text-zinc-600" : "text-sm text-zinc-600"
         }
       >
-        This question could not be loaded from the quiz file. It may have been
-        removed or the quiz file is unavailable.
+        {t("quiz.unavailable.card")}
       </p>
     </article>
   );
 }
 
 export function UnavailableQuestionAlert() {
+  const { t } = useI18n();
   return (
     <Alert>
-      <AlertTitle>Question unavailable</AlertTitle>
+      <AlertTitle>{t("quiz.unavailable.title")}</AlertTitle>
       <AlertDescription>
-        This question could not be loaded. The quiz or question may have been
-        removed or is unavailable in your working directory.
+        {t("quiz.unavailable.alert")}
       </AlertDescription>
     </Alert>
   );

@@ -19,6 +19,7 @@ import {
 } from "@/lib/knowledgeDraft";
 import { getKnowledgeNoteDialogSizeConstraints } from "@/lib/resizableDialogFrame";
 import type { KnowledgeItem, LinkedQuizQuestion } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function KnowledgeNoteEditDialog({
   item,
@@ -38,6 +39,8 @@ export function KnowledgeNoteEditDialog({
   layer?: DialogStackLayer;
 }) {
   const library = useKnowledgeLibrary();
+  const { t } = useI18n();
+
   const { items } = library;
   const source = resolveKnowledgeNoteSource(item.id, items, item) ?? item;
 
@@ -98,10 +101,10 @@ export function KnowledgeNoteEditDialog({
       layer={layer}
       resizeDisabled={isSaving || isDeleting}
       constraints={dialogConstraints}
-      title={isViewMode ? "Knowledge note" : "Edit knowledge note"}
+      title={isViewMode ? t("knowledge.dialog.viewTitle") : t("knowledge.dialog.editTitle")}
       description={
         isViewMode
-          ? "Review the note and return to the question when you are done."
+          ? t("knowledge.dialog.viewDescription")
           : undefined
       }
       bodyClassName={
@@ -116,27 +119,27 @@ export function KnowledgeNoteEditDialog({
               className={knowledgeDialogCloseButtonClassName}
               disabled={isSaving || isDeleting}
             >
-              Close
+              {t("common.close")}
             </Button>
           </Dialog.Close>
         ) : (
           <>
             <IconActionButton
               icon={X}
-              label="Cancel"
+              label={t("common.cancel")}
               onClick={cancelEdit}
               disabled={isSaving || isDeleting}
             />
             {!isNewDraft && (
               <IconActionButton
                 icon={Trash2}
-                label="Delete"
+                label={t("common.delete")}
                 onClick={() => void deleteNote()}
                 disabled={isDeleting || isSaving}
               />
             )}
             <Button size="sm" onClick={() => void save()} disabled={isSaving || isDeleting}>
-              {isSaving ? "Saving..." : "Save"}
+              {isSaving ? t("common.saving") : t("common.save")}
             </Button>
           </>
         )

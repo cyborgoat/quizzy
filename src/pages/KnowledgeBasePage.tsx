@@ -58,6 +58,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useI18n } from "@/lib/i18n";
+import type { TFunction } from "@/lib/i18n";
 
 function formatTagsLabel(tags: string[]) {
   if (tags.length === 0) return "—";
@@ -85,34 +87,37 @@ function noMatchingNotesMessage(
   showFavoritesOnly: boolean,
   isSearchActive: boolean,
   selectedTag: string,
+  t: TFunction,
 ) {
   if (showFavoritesOnly) {
     if (isSearchActive && selectedTag !== "all") {
-      return "No favorite notes match your search and tag filter.";
+      return t("knowledge.noMatch.favSearchTag");
     }
     if (isSearchActive) {
-      return "No favorite notes match your search.";
+      return t("knowledge.noMatch.favSearch");
     }
     if (selectedTag !== "all") {
-      return "No favorite notes match the selected tag.";
+      return t("knowledge.noMatch.favTag");
     }
-    return "No favorite notes yet. Star notes from the list or detail page.";
+    return t("knowledge.noMatch.favNone");
   }
 
   if (isSearchActive && selectedTag !== "all") {
-    return "No notes match your search and tag filter.";
+    return t("knowledge.noMatch.searchTag");
   }
   if (isSearchActive) {
-    return "No notes match your search.";
+    return t("knowledge.noMatch.search");
   }
   if (selectedTag !== "all") {
-    return "No notes match the selected tag.";
+    return t("knowledge.noMatch.tag");
   }
 
-  return "No matching notes.";
+  return t("knowledge.noMatch.default");
 }
 
 export function KnowledgeBasePage() {
+  const { t } = useI18n();
+
   const { tag: tagFilter } = Route.useSearch();
   const navigate = useNavigate();
   const library = useKnowledgeLibrary();
@@ -145,7 +150,7 @@ export function KnowledgeBasePage() {
   );
   const { isRefreshing, handleRefresh } = useLibraryRefresh(
     () => library.refresh(),
-    "Knowledge base refreshed.",
+    t("knowledge.refreshed"),
   );
 
   const allTags = useMemo(
@@ -155,10 +160,10 @@ export function KnowledgeBasePage() {
 
   const tagFilterOptions = useMemo(
     () => [
-      { value: "all", label: "All tags" },
+      { value: "all", label: t("knowledge.filter.allTags") },
       ...allTags.map((tag) => ({ value: tag, label: tag })),
     ],
-    [allTags],
+    [allTags, t],
   );
 
   const isSearchActive = deferredSearchQuery.trim().length > 0;
@@ -196,7 +201,7 @@ export function KnowledgeBasePage() {
     () => [
       {
         accessorKey: "title",
-        header: () => <DataTableColumnHeader label="Title" />,
+        header: () => <DataTableColumnHeader label={t("knowledge.col.title")} />,
         cell: ({ row }) =>
           hubNoteFiles.has(row.original.fileName) ? (
             <div className="flex min-w-0 items-center gap-1.5">
@@ -211,9 +216,9 @@ export function KnowledgeBasePage() {
         accessorKey: "tags",
         header: () => (
           <DataTableColumnFilterHeader
-            label="Tags"
+            label={t("knowledge.col.tags")}
             filterValue={selectedTag}
-            menuLabel="Filter by tag"
+            menuLabel={t("knowledge.col.filterByTag")}
             options={tagFilterOptions}
             onFilterChange={handleTagFilterChange}
           />
@@ -227,7 +232,7 @@ export function KnowledgeBasePage() {
         id: "links",
         accessorFn: (row) => row.linkedQuizQuestions.length,
         header: ({ column }) => (
-          <DataTableSortableHeader label="Links" column={column} />
+          <DataTableSortableHeader label={t("knowledge.col.links")} column={column} />
         ),
         cell: ({ row }) => (
           <DataTableNumericCell
@@ -240,7 +245,7 @@ export function KnowledgeBasePage() {
         id: "views",
         accessorFn: (row) => viewCounts[row.id] ?? 0,
         header: ({ column }) => (
-          <DataTableSortableHeader label="Views" column={column} />
+          <DataTableSortableHeader label={t("knowledge.col.views")} column={column} />
         ),
         cell: ({ row }) => (
           <DataTableNumericCell value={viewCounts[row.original.id] ?? 0} mutedWhenZero />
@@ -249,7 +254,7 @@ export function KnowledgeBasePage() {
       {
         accessorKey: "updatedAt",
         header: ({ column }) => (
-          <DataTableSortableHeader label="Updated" column={column} />
+          <DataTableSortableHeader label={t("knowledge.col.updated")} column={column} />
         ),
         cell: ({ row }) => (
           <span className={dataTableCellMutedClass}>
@@ -260,7 +265,7 @@ export function KnowledgeBasePage() {
       {
         id: "favorite",
         accessorKey: "favorite",
-        header: () => <span className="sr-only">Favorite</span>,
+        header: () => <span className="sr-only">{t("knowledge.favorite")}</span>,
         cell: ({ row }) => (
           <div className="flex justify-center">
             <KnowledgeFavoriteButton
@@ -272,7 +277,7 @@ export function KnowledgeBasePage() {
         enableSorting: false,
       },
     ],
-    [handleTagFilterChange, hubNoteFiles, selectedTag, tagFilterOptions, toggleFavorite, viewCounts],
+    [handleTagFilterChange, hubNoteFiles, selectedTag, t, tagFilterOptions, toggleFavorite, viewCounts],
   );
 
   const table = useTable({
@@ -305,21 +310,21 @@ export function KnowledgeBasePage() {
   return (
     <PageShell layout="workspace">
       <PageHeader
-        title="Knowledge Base"
-        description="Your notes, concepts, and linked quiz references."
+        title={t("knowledge.title")}
+        description={t("knowledge.description")}
         className="shrink-0 [@media(max-height:699px)]:[&>div>p:first-of-type]:hidden"
         actions={
           <>
             <IconActionButton
               icon={FolderOpen}
-              label="Open folder"
+              label={t("home.openFolder")}
               variant="outline"
               onClick={() => void library.openKnowledgeFolder()}
               disabled={!library.directoryAvailable}
             />
             <IconActionButton
               icon={RefreshCw}
-              label="Refresh"
+              label={t("home.refresh")}
               variant="outline"
               onClick={() => void handleRefresh()}
               disabled={isRefreshing}
@@ -330,7 +335,7 @@ export function KnowledgeBasePage() {
             </IconActionButton>
             <IconActionButton
               icon={Plus}
-              label="New note"
+              label={t("knowledge.newNote")}
               variant="default"
               onClick={handleNewNote}
               disabled={!library.directoryAvailable}
@@ -344,17 +349,17 @@ export function KnowledgeBasePage() {
           isLoading={library.isLoading}
           directoryPath={library.directoryPath}
           directoryAvailable={library.directoryAvailable}
-          loadingMessage="Loading knowledge base…"
-          noDirectoryTitle="Choose a working directory first"
-          noDirectoryDescription="Knowledge notes are stored in a knowledge-base folder inside your working directory. Set that folder up from Home or Settings."
-          unavailableTitle="Working directory unavailable"
-          unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
+          loadingMessage={t("knowledge.loading")}
+          noDirectoryTitle={t("knowledge.noDirTitle")}
+          noDirectoryDescription={t("knowledge.noDirDescription")}
+          unavailableTitle={t("home.unavailableTitle")}
+          unavailableDescription={t("knowledge.unavailableDescription")}
           onOpenSettings={() => navigate({ to: "/settings" })}
         >
           <>
             <InvalidFileReportsAlert
               reports={library.invalidReports}
-              entityLabel="knowledge"
+              kind="knowledge"
               className="max-h-[20dvh] shrink-0 overflow-auto"
             />
 
@@ -362,7 +367,7 @@ export function KnowledgeBasePage() {
               <SearchField
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Search notes"
+                placeholder={t("knowledge.searchNotes")}
                 pending={isSearchPending}
                 className="shrink-0 py-1"
               />
@@ -370,14 +375,14 @@ export function KnowledgeBasePage() {
 
             {library.items.length === 0 ? (
               <EmptyState
-                title="No knowledge notes yet"
-                description="Create your first note to capture concepts and link them to quiz questions."
-                actionLabel="New note"
+                title={t("knowledge.empty.title")}
+                description={t("knowledge.empty.description")}
+                actionLabel={t("knowledge.newNote")}
                 onAction={handleNewNote}
               />
             ) : (
               <TableWorkspace
-                title="Notes"
+                title={t("knowledge.notes")}
                 count={filteredItems.length}
                 actions={
                   <div className="flex items-center gap-2">
@@ -385,13 +390,13 @@ export function KnowledgeBasePage() {
                       htmlFor="knowledge-show-favorites"
                       className="cursor-pointer text-xs font-normal text-zinc-600"
                     >
-                      Show favorites
+                      {t("knowledge.showFavorites")}
                     </Label>
                     <Switch
                       id="knowledge-show-favorites"
                       checked={showFavoritesOnly}
                       onCheckedChange={setShowFavoritesOnly}
-                      aria-label="Show favorites only"
+                      aria-label={t("knowledge.showFavoritesAria")}
                     />
                   </div>
                 }
@@ -448,6 +453,7 @@ export function KnowledgeBasePage() {
                             showFavoritesOnly,
                             isSearchActive,
                             selectedTag,
+                            t,
                           )}
                         </TableCell>
                       </TableRow>

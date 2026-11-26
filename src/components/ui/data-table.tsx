@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export const dataTableHeadClass = "h-auto px-3 py-2 text-left align-middle";
 export const dataTableCellClass = "px-3 py-2 text-left align-middle";
@@ -89,12 +90,14 @@ export function DataTableColumnFilterHeader({
 export function DataTableSearchHeader({
   value,
   onChange,
-  placeholder = "Search…",
+  placeholder: placeholderProp,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const { t } = useI18n();
+  const placeholder = placeholderProp ?? t("ui.search");
   return (
     <div className="flex min-w-0 items-center gap-1.5">
       <Search className="size-3 shrink-0 text-zinc-400" aria-hidden="true" />

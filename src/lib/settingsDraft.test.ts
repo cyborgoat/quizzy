@@ -125,7 +125,7 @@ describe("settingsDraft", () => {
     expect(validateNumericSetting("minMistakes", "2")).toEqual({ ok: true, value: 2 });
     expect(validateNumericSetting("minFlags", "0")).toEqual({
       ok: false,
-      error: "Enter a whole number of at least 1.",
+      error: "settings.validation.minOne",
     });
     expect(validateNumericSetting("maxCorrectness", "40.5")).toEqual({
       ok: true,

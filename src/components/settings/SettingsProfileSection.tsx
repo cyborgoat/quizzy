@@ -3,6 +3,7 @@ import { SettingsField } from "@/components/settings/SettingsField";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import type { SettingsDraft } from "@/lib/settingsDraft";
+import { useI18n } from "@/lib/i18n";
 
 export function SettingsProfileSection({
   draft,
@@ -15,12 +16,14 @@ export function SettingsProfileSection({
   onNameChange: (name: string) => void;
   onNameCommit: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
-    <SettingsSection icon={User} title="Profile">
+    <SettingsSection icon={User} title={t("settings.profile.title")}>
       <SettingsField
         id="full-name"
-        label="Full name"
-        hint="Shown on the home page."
+        label={t("settings.profile.nameLabel")}
+        hint={t("settings.profile.nameHint")}
       >
         <Input
           id="full-name"
@@ -29,7 +32,7 @@ export function SettingsProfileSection({
           onChange={(e) => onNameChange(e.target.value)}
           onBlur={onNameCommit}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          placeholder="Your full name"
+          placeholder={t("settings.profile.namePlaceholder")}
           className="max-w-xs"
         />
       </SettingsField>

@@ -14,9 +14,9 @@ afterEach(() => {
 
 describe("validateKnowledgeNote", () => {
   it("requires title and content", () => {
-    expect(validateKnowledgeNote({ title: "", content: "" })).toBe("Title is required.");
+    expect(validateKnowledgeNote({ title: "", content: "" })).toBe("knowledge.validation.title");
     expect(validateKnowledgeNote({ title: "Hooks", content: "" })).toBe(
-      "Content is required.",
+      "knowledge.validation.content",
     );
     expect(validateKnowledgeNote({ title: "Hooks", content: "Notes" })).toBeNull();
   });

@@ -7,6 +7,7 @@ import type {
   HubItemState,
   HubKind,
 } from "@/lib/native";
+import type { MessageKey, TFunction } from "@/lib/i18n-messages";
 
 /** Matches the Rust `DEFAULT_BASE_URL` in hub_sync. Empty settings reset to this. */
 export const QUIZHUB_DEFAULT_BASE_URL = "https://cyborgoat.github.io/quizhub/";
@@ -21,19 +22,19 @@ export function hubItemKey(item: HubItemRef) {
   return `${item.kind}/${item.id}`;
 }
 
-export const hubStateLabel: Record<HubItemState, string> = {
-  available: "Not downloaded",
-  installed: "Downloaded",
-  updateAvailable: "Update available",
-  removedRemotely: "Removed from hub",
-};
+export const hubStateLabelKey = {
+  available: "hub.state.available",
+  installed: "hub.state.installed",
+  updateAvailable: "hub.state.updateAvailable",
+  removedRemotely: "hub.state.removedRemotely",
+} as const satisfies Record<HubItemState, MessageKey>;
 
-export const hubStateDescription: Record<HubItemState, string> = {
-  available: "Available to download.",
-  installed: "This item is recorded as downloaded.",
-  updateAvailable: "A newer version is available. QuizHub checks your local file when you update.",
-  removedRemotely: "Quizhub no longer publishes this item. Your copy is kept.",
-};
+export const hubStateDescriptionKey = {
+  available: "hub.stateDescription.available",
+  installed: "hub.stateDescription.installed",
+  updateAvailable: "hub.stateDescription.updateAvailable",
+  removedRemotely: "hub.stateDescription.removedRemotely",
+} as const satisfies Record<HubItemState, MessageKey>;
 
 /** Items eligible for row and bulk downloads. */
 export function isDownloadable(state: HubItemState) {
@@ -131,14 +132,17 @@ export function filterHubItems(items: HubItem[], query: string) {
   );
 }
 
-export function summarizeHubReport(report: Omit<HubDownloadReport, "conflicts">) {
+export function summarizeHubReport(
+  report: Omit<HubDownloadReport, "conflicts">,
+  t: TFunction,
+) {
   const parts: string[] = [];
-  if (report.added) parts.push(`${report.added} added`);
-  if (report.updated) parts.push(`${report.updated} updated`);
-  if (report.unchanged) parts.push(`${report.unchanged} already up to date`);
-  if (report.skipped) parts.push(`${report.skipped} skipped`);
-  if (report.failed) parts.push(`${report.failed} failed`);
-  return parts.length ? parts.join(", ") : "Nothing to do";
+  if (report.added) parts.push(t("hub.report.added", { count: report.added }));
+  if (report.updated) parts.push(t("hub.report.updated", { count: report.updated }));
+  if (report.unchanged) parts.push(t("hub.report.unchanged", { count: report.unchanged }));
+  if (report.skipped) parts.push(t("hub.report.skipped", { count: report.skipped }));
+  if (report.failed) parts.push(t("hub.report.failed", { count: report.failed }));
+  return parts.length ? parts.join(t("hub.report.separator")) : t("hub.report.nothing");
 }
 
 /** File names of downloaded items, per kind, for marking library entries. */

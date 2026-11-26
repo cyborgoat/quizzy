@@ -54,7 +54,7 @@ describe("keybinds", () => {
       }),
     ).toEqual({
       field: "toggleSidebarShortcut",
-      message: "This shortcut is already assigned.",
+      message: "settings.shortcuts.error.duplicate",
     });
   });
 

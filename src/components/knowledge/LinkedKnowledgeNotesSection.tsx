@@ -4,6 +4,7 @@ import { sectionLabelClassName } from "@/components/ui/section-label";
 import { numberedListLinkClassName, NumberedListRow } from "@/components/ui/numbered-list-row";
 import { cn } from "@/lib/utils";
 import type { KnowledgeItem } from "@/types/knowledge";
+import { useI18n } from "@/lib/i18n";
 
 export function LinkedKnowledgeNotesSection({
   notes,
@@ -11,7 +12,7 @@ export function LinkedKnowledgeNotesSection({
   onUnlinkNote,
   currentNoteId,
   headerActions,
-  emptyDescription = "No linked references.",
+  emptyDescription,
   placeholder,
 }: {
   notes: KnowledgeItem[];
@@ -22,11 +23,13 @@ export function LinkedKnowledgeNotesSection({
   emptyDescription?: string;
   placeholder?: string;
 }) {
+  const { t } = useI18n();
+
   return (
     <section className="min-w-0">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className={sectionLabelClassName}>
-          References{!placeholder && notes.length > 0 ? ` (${notes.length})` : ""}
+          {t("knowledge.references")}{!placeholder && notes.length > 0 ? ` (${notes.length})` : ""}
         </h2>
         {!placeholder && headerActions}
       </div>
@@ -34,7 +37,7 @@ export function LinkedKnowledgeNotesSection({
       {placeholder ? (
         <p className="mt-1.5 text-xs leading-snug text-zinc-500">{placeholder}</p>
       ) : notes.length === 0 ? (
-        <p className="mt-1.5 text-xs leading-snug text-zinc-500">{emptyDescription}</p>
+        <p className="mt-1.5 text-xs leading-snug text-zinc-500">{emptyDescription ?? t("knowledge.noReferences")}</p>
       ) : (
         <ol className="mt-1.5 list-none space-y-1">
           {notes.map((item, index) => (
@@ -52,7 +55,7 @@ export function LinkedKnowledgeNotesSection({
                   <span className="truncate">
                     {item.title}
                     {item.id === currentNoteId && (
-                      <span className="font-normal text-zinc-500"> — this note</span>
+                      <span className="font-normal text-zinc-500"> — {t("knowledge.thisNote")}</span>
                     )}
                   </span>
                 </button>
@@ -64,7 +67,7 @@ export function LinkedKnowledgeNotesSection({
                       onUnlinkNote(item);
                     }}
                     className="grid-center size-7 shrink-0 rounded-md text-zinc-400 opacity-0 transition-opacity hover:bg-zinc-100 hover:text-red-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 group-hover:opacity-100"
-                    aria-label={`Unlink ${item.title}`}
+                    aria-label={t("knowledge.unlink", { title: item.title })}
                   >
                     <Trash2 className="size-3.5" />
                   </button>

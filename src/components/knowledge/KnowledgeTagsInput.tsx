@@ -7,6 +7,7 @@ import {
   searchKnowledgeTags,
 } from "@/lib/knowledgeTags";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function KnowledgeTagsInput({
   value,
@@ -21,6 +22,8 @@ export function KnowledgeTagsInput({
   id?: string;
   className?: string;
 }) {
+  const { t } = useI18n();
+
   const { items } = useKnowledgeLibrary();
   const [focused, setFocused] = useState(false);
   const blurTimeoutRef = useRef<number | null>(null);
@@ -82,7 +85,7 @@ export function KnowledgeTagsInput({
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder="e.g. react, hooks"
+        placeholder={t("knowledge.field.tagsPlaceholder")}
         disabled={disabled}
         autoComplete="off"
         aria-autocomplete="list"
@@ -98,7 +101,7 @@ export function KnowledgeTagsInput({
           className="absolute top-full z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-zinc-200 bg-white py-1 shadow-sm"
         >
           {suggestions.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-zinc-500">No matching tags.</li>
+            <li className="px-3 py-2 text-sm text-zinc-500">{t("knowledge.noMatchingTags")}</li>
           ) : (
             suggestions.map((tag) => (
               <li key={tag} role="option">

@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n";
 
 export function SubmitQuizDialog({
   open,
@@ -16,25 +17,27 @@ export function SubmitQuizDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <ConfirmDialog
       open={open}
       leading={<AlertTriangle className="size-8 text-amber-500" aria-hidden="true" />}
-      title="Submit this quiz?"
-      description="Submission is final. Correct answers and explanations will be shown after you submit."
-      cancelLabel="Continue"
-      confirmLabel="Submit"
+      title={t("submit.title")}
+      description={t("submit.description")}
+      cancelLabel={t("submit.cancel")}
+      confirmLabel={t("common.submit")}
       onCancel={onCancel}
       onConfirm={onConfirm}
     >
       <dl className="mt-5 grid grid-cols-3 gap-3 text-center text-sm">
-        <SummaryCount label="Answered" value={answeredCount} />
-        <SummaryCount label="Unanswered" value={unansweredCount} />
-        <SummaryCount label="Flagged" value={flaggedCount} />
+        <SummaryCount label={t("submit.answered")} value={answeredCount} />
+        <SummaryCount label={t("submit.unanswered")} value={unansweredCount} />
+        <SummaryCount label={t("submit.flagged")} value={flaggedCount} />
       </dl>
       {unansweredCount > 0 && (
         <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          Unanswered questions will be scored as incorrect.
+          {t("submit.unansweredNote")}
         </p>
       )}
     </ConfirmDialog>
