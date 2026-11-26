@@ -830,15 +830,40 @@ async fn selected_manifest(
     ctx: &LocalContext,
     selection: &HubSelection,
 ) -> Result<Manifest, String> {
-    let (catalog, _) = fetch_locales(client, state, ctx, false).await?;
+    // Always revalidate: hub paths/ids can change between catalog browses, and a stale
+    // disk cache would 404 on download (e.g. locale suffix renames).
+    let (catalog, _) = fetch_locales(client, state, ctx, true).await?;
     let url = manifest_url(&ctx.base_url, &catalog.document, &selection.locale)?;
     if url.as_str() != selection.manifest_url {
         return Err("The QuizHub edition moved. Refresh the catalog and try again.".to_string());
     }
-    Ok(fetch_manifest(client, state, ctx, &url, false)
+    Ok(fetch_manifest(client, state, ctx, &url, true)
         .await?
         .0
         .document)
+}
+
+/// Resolves a catalog item, accepting `{id}-{locale}` when hubs rename entries to add a locale suffix.
+fn manifest_item<'a>(
+    manifest: &'a Manifest,
+    kind: HubKind,
+    id: &str,
+    locale: &str,
+) -> Option<&'a ManifestItem> {
+    let matches = |candidate: &&ManifestItem| {
+        candidate.id == id && HubKind::parse(&candidate.kind) == Some(kind)
+    };
+    if let Some(item) = manifest.items.iter().find(matches) {
+        return Some(item);
+    }
+    let suffix = format!("-{locale}");
+    if id.ends_with(&suffix) || locale.is_empty() {
+        return None;
+    }
+    let aliased = format!("{id}{suffix}");
+    manifest.items.iter().find(|candidate| {
+        candidate.id == aliased && HubKind::parse(&candidate.kind) == Some(kind)
+    })
 }
 
 #[tauri::command]
@@ -1069,9 +1094,9 @@ async fn download_into(
     let mut report = HubDownloadReport::default();
 
     for requested in items {
-        let Some(item) = manifest.items.iter().find(|candidate| {
-            candidate.id == requested.id && HubKind::parse(&candidate.kind) == Some(requested.kind)
-        }) else {
+        let Some(item) =
+            manifest_item(&manifest, requested.kind, &requested.id, &selection.locale)
+        else {
             report.outcomes.push(HubItemOutcome {
                 kind: requested.kind,
                 id: requested.id.clone(),
@@ -1319,9 +1344,7 @@ pub(crate) async fn hub_preview_item(
 
     let client = http_client()?;
     let manifest = selected_manifest(&client, &state, &ctx, &selection).await?;
-    let Some(entry) = manifest.items.iter().find(|candidate| {
-        candidate.id == item.id && HubKind::parse(&candidate.kind) == Some(item.kind)
-    }) else {
+    let Some(entry) = manifest_item(&manifest, item.kind, &item.id, &selection.locale) else {
         return Err("This item is no longer published by quizhub.".to_string());
     };
     let bytes = download_item(&client, &selection.manifest_url, entry).await?;
@@ -1551,6 +1574,31 @@ mod tests {
         assert!(verify_download(&entry, b"{}").is_ok());
         assert!(verify_download(&entry, b"{ }").is_err());
         assert!(verify_download(&entry, b"[]").is_err());
+    }
+
+    #[test]
+    fn resolves_locale_suffixed_manifest_aliases() {
+        let manifest = Manifest {
+            schema_version: 1,
+            generated_at: None,
+            domains: vec![],
+            categories: vec![],
+            items: vec![item("note", "ai-gradient-descent-zh", b"note")],
+        };
+        assert_eq!(
+            manifest_item(&manifest, HubKind::Note, "ai-gradient-descent-zh", "zh")
+                .unwrap()
+                .id,
+            "ai-gradient-descent-zh"
+        );
+        assert_eq!(
+            manifest_item(&manifest, HubKind::Note, "ai-gradient-descent", "zh")
+                .unwrap()
+                .id,
+            "ai-gradient-descent-zh"
+        );
+        assert!(manifest_item(&manifest, HubKind::Note, "ai-gradient-descent", "en").is_none());
+        assert!(manifest_item(&manifest, HubKind::Quiz, "ai-gradient-descent", "zh").is_none());
     }
 
     #[test]

@@ -137,15 +137,22 @@ function QuizhubWorkspace({ scope }: { scope: HubScope }) {
   const [knownLocales, setKnownLocales] = useState<HubLocale[]>([]);
   const snapshot = useQuizhubCatalog(scope, locale);
   const { catalog } = snapshot;
-  const key = JSON.stringify([catalog?.activeLocale, catalog?.manifestUrl]);
 
   function selectLanguage(id: string) {
+    if (id === (catalog?.activeLocale ?? locale)) return;
     setKnownLocales(catalog?.locales ?? knownLocales);
     localStorage.setItem(preference, id);
     setLocale(id);
   }
-  return <QuizhubBrowser key={key} scope={scope} languages={catalog?.locales ?? knownLocales}
-    language={catalog?.activeLocale ?? locale ?? undefined} onSelectLocale={selectLanguage} {...snapshot} />;
+  return (
+    <QuizhubBrowser
+      scope={scope}
+      languages={catalog?.locales ?? knownLocales}
+      language={catalog?.activeLocale ?? locale ?? undefined}
+      onSelectLocale={selectLanguage}
+      {...snapshot}
+    />
+  );
 }
 
 function QuizhubBrowser({
@@ -171,9 +178,11 @@ function QuizhubBrowser({
   const [conflict, setConflict] = useState<HubConflict | null>(null);
   const resolveConflict = useRef<((decision: HubResolution | null) => void) | null>(null);
   function finishConflict(decision: HubResolution | null) {
-    resolveConflict.current?.(decision);
+    const resolve = resolveConflict.current;
+    if (!resolve) return;
     resolveConflict.current = null;
     setConflict(null);
+    resolve(decision);
   }
   useLayoutEffect(() => {
     isActive.current = true;
@@ -191,6 +200,21 @@ function QuizhubBrowser({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [previewItem, setPreviewItem] = useState<HubItem | null>(null);
+  const previousLanguage = useRef(language);
+
+  // Keep domain/category when switching editions; drop locale-specific UI only.
+  useLayoutEffect(() => {
+    if (previousLanguage.current === language) return;
+    previousLanguage.current = language;
+    setQuery("");
+    setSelected(new Set());
+    setPreviewItem(null);
+    const resolve = resolveConflict.current;
+    resolveConflict.current = null;
+    setConflict(null);
+    resolve?.(null);
+  }, [language]);
+
   const activeLocale = catalog?.activeLocale;
   const manifestUrl = catalog?.manifestUrl;
   const selection = useMemo(() => activeLocale && manifestUrl
@@ -228,10 +252,14 @@ function QuizhubBrowser({
     setDownloadingKeys(new Set(items.map(hubItemKey)));
     setIsWorking(true);
     try {
+      // Revalidate so renamed hub paths/ids are picked up before the download round-trip.
+      await load(true, true);
+      if (!isActive.current) return;
       const report = await nativeApi.hubDownload(selection, items);
       const pending = [...report.conflicts];
       while (pending.length > 0 && isActive.current) {
         const next = pending.shift()!;
+        // Close preview first so its overlay does not sit above the conflict dialog.
         setPreviewItem(null);
         const decision = await new Promise<HubResolution | null>((resolve) => {
           resolveConflict.current = resolve;
@@ -473,7 +501,7 @@ function QuizhubBrowser({
         )}
       </div>
 
-      {conflict && <QuizhubConflictDialog key={JSON.stringify(conflict)} conflict={conflict} onResolve={finishConflict} />}
+      <QuizhubConflictDialog conflict={conflict} onResolve={finishConflict} />
 
       <QuizhubPreviewDialog
         item={previewItem}

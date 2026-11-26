@@ -1,5 +1,5 @@
 import { Download, Play, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { ErrorState } from "@/components/quiz/ErrorState";
@@ -69,15 +69,20 @@ export function QuizhubPreviewDialog({
     return () => { active = false; };
   }, [item, selection, reloadKey]);
 
-  if (!item) return null;
+  // Keep the last item for the close animation so the shell is not force-unmounted
+  // while open (that fights the conflict dialog and can drop the browse view).
+  const shown = useRef(item);
+  if (item) shown.current = item;
+  const activeItem = item ?? shown.current;
+  if (!activeItem) return null;
 
-  const canDownload = Boolean((isDownloadable(item.state) || item.state === "installed") && onDownload);
-  const canRemove = Boolean(isFromHub(item.state) && onRemove);
-  const canStartQuiz = Boolean(item.kind === "quiz" && isFromHub(item.state) && onStartQuiz);
-  const fromLocal = isFromHub(item.state);
-  const downloadLabel = item.state === "updateAvailable" ? "Update" : item.state === "installed" ? "Download again" : "Download";
+  const canDownload = Boolean((isDownloadable(activeItem.state) || activeItem.state === "installed") && onDownload);
+  const canRemove = Boolean(isFromHub(activeItem.state) && onRemove);
+  const canStartQuiz = Boolean(activeItem.kind === "quiz" && isFromHub(activeItem.state) && onStartQuiz);
+  const fromLocal = isFromHub(activeItem.state);
+  const downloadLabel = activeItem.state === "updateAvailable" ? "Update" : activeItem.state === "installed" ? "Download again" : "Download";
   const description =
-    item.kind === "quiz"
+    activeItem.kind === "quiz"
       ? fromLocal
         ? "Preview of your local quiz. Answers are hidden."
         : "Quiz preview from Quizhub. Answers are hidden."
@@ -89,7 +94,7 @@ export function QuizhubPreviewDialog({
     <ResizableDialogShell
       open={open}
       onOpenChange={onOpenChange}
-      title={item.title}
+      title={activeItem.title}
       description={description}
       footer={
         <div className="flex w-full items-center gap-2">
@@ -99,7 +104,7 @@ export function QuizhubPreviewDialog({
               variant="ghost"
               className="text-red-600 hover:bg-red-50 hover:text-red-700"
               disabled={isWorking}
-              onClick={() => onRemove?.(item)}
+              onClick={() => onRemove?.(activeItem)}
             >
               <Trash2 className="size-3.5" />
               Remove
@@ -114,7 +119,7 @@ export function QuizhubPreviewDialog({
                 size="sm"
                 variant={canDownload ? "outline" : "default"}
                 disabled={isWorking}
-                onClick={() => onStartQuiz?.(item)}
+                onClick={() => onStartQuiz?.(activeItem)}
               >
                 <Play className="size-3.5 fill-current" />
                 Start quiz
@@ -124,7 +129,7 @@ export function QuizhubPreviewDialog({
               <Button
                 size="sm"
                 disabled={isDownloading}
-                onClick={() => onDownload?.(item)}
+                onClick={() => onDownload?.(activeItem)}
               >
                 {isDownloading ? (
                   <Spinner className="size-3.5" />
@@ -132,7 +137,7 @@ export function QuizhubPreviewDialog({
                   <Download className="size-3.5" />
                 )}
                 {isDownloading
-                  ? item.state === "updateAvailable"
+                  ? activeItem.state === "updateAvailable"
                     ? "Updating…"
                     : "Downloading…"
                   : downloadLabel}
@@ -143,7 +148,7 @@ export function QuizhubPreviewDialog({
       }
     >
       {isLoading ? (
-        <PreviewSkeleton kind={item.kind} />
+        <PreviewSkeleton kind={activeItem.kind} />
       ) : error ? (
         <ErrorState
           title="Couldn't load preview"
