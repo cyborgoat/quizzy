@@ -39,7 +39,7 @@ import { Route } from "@/routes/_app/index";
 export function HomePage() {
   const library = useQuizLibrary();
   const { goals } = useGoals();
-  const { onboardingCompleted, settingsReady } = useAppLocale();
+  const { locale, onboardingCompleted, settingsReady } = useAppLocale();
   const { t } = useI18n();
   const navigate = useNavigate();
   const router = useRouter();
@@ -109,7 +109,7 @@ export function HomePage() {
 
   async function handleAddSamples() {
     try {
-      const { added, skipped } = await library.addSampleQuizzes();
+      const { added, skipped } = await library.addSampleQuizzes(locale);
       if (added.length > 0) {
         toast.success(t("toast.welcomeAdded"));
       } else if (skipped.length > 0) {

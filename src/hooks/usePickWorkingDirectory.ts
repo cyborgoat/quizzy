@@ -13,6 +13,8 @@ type PickOptions = {
   onSettled?: () => void;
   /** When false, skip success toasts (caller shows its own). Default true. */
   notify?: boolean;
+  /** Locale used to seed the Welcome quiz/note (falls back to saved appLocale). */
+  locale?: string;
 };
 
 export type PickWorkingDirectoryResult = {
@@ -48,7 +50,7 @@ export function usePickWorkingDirectory() {
 
         let seededWelcome = false;
         try {
-          const samples = await nativeApi.addSampleQuizzes();
+          const samples = await nativeApi.addSampleQuizzes(options?.locale);
           seededWelcome = samples.added.length > 0;
         } catch (error) {
           toast.error(errorMessage(error));

@@ -67,7 +67,8 @@ export function FirstLaunchWizard() {
   ]);
 
   async function handleLocaleChange(next: AppLocale) {
-    if (next === locale || savingLocale) return;
+    if (savingLocale) return;
+    if (next === locale && localeConfigured) return;
     setSavingLocale(true);
     try {
       await setAppLocale(next);
@@ -88,13 +89,19 @@ export function FirstLaunchWizard() {
     }
   }
 
+  async function ensureLocaleSaved() {
+    await setAppLocale(locale);
+  }
+
   async function handleChooseDirectory() {
-    await pickWorkingDirectory({ notify: false });
+    await ensureLocaleSaved();
+    await pickWorkingDirectory({ notify: false, locale });
   }
 
   async function handleContinueFromDirectory() {
+    await ensureLocaleSaved();
     if (!hasDirectory) {
-      const result = await pickWorkingDirectory({ notify: false });
+      const result = await pickWorkingDirectory({ notify: false, locale });
       if (!result) return;
     }
     setDraftEnabled(quizhubEnabled);

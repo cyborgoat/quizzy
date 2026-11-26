@@ -223,8 +223,8 @@ export const nativeApi = {
     invoke<NativeQuizFile[]>("read_working_directory", { workingDirectory, knownVersions }),
   importQuizFile: (sourcePath: string) =>
     invoke<string>("import_quiz_file", { sourcePath }),
-  addSampleQuizzes: () =>
-    invoke<{ added: string[]; skipped: string[] }>("add_sample_quizzes"),
+  addSampleQuizzes: (locale?: string) =>
+    invoke<{ added: string[]; skipped: string[] }>("add_sample_quizzes", { locale: locale ?? null }),
   listFavoriteQuizIds: (workingDirectory: string) => invoke<string[]>("list_favorite_quiz_ids", { workingDirectory }),
   setQuizFavorite: (workingDirectory: string, quizId: string, favorite: boolean) =>
     invoke<void>("set_quiz_favorite", { workingDirectory, quizId, favorite }),

@@ -124,16 +124,26 @@ fn write_missing_samples(directory: &Path, locale: &str) -> Result<AddSampleQuiz
     Ok(AddSampleQuizzesResult { added, skipped })
 }
 
-/// Writes the Welcome to Quizzy quiz and note when missing, using the saved app locale.
+/// Writes the Welcome to Quizzy quiz and note when missing.
+///
+/// Prefer an explicit `locale` from the caller (first-launch choice). Otherwise use the saved
+/// `appLocale`, falling back to English.
 #[tauri::command]
-pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
+pub(crate) fn add_sample_quizzes(
+    app: AppHandle,
+    locale: Option<String>,
+) -> Result<AddSampleQuizzesResult, String> {
     let settings = crate::settings::read_settings(&app)?;
-    let locale = if settings.app_locale.trim().is_empty() {
-        "en"
-    } else {
-        settings.app_locale.trim()
-    };
-    write_missing_samples(&configured_directory(&app)?, locale)
+    let resolved = locale
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            let saved = settings.app_locale.trim();
+            (!saved.is_empty()).then_some(saved)
+        })
+        .unwrap_or("en");
+    write_missing_samples(&configured_directory(&app)?, resolved)
 }
 
 #[tauri::command]
@@ -298,6 +308,30 @@ mod tests {
         );
 
         fs::remove_dir_all(dir).expect("cleanup");
+    }
+
+    #[test]
+    fn samples_follow_requested_locale_content() {
+        let dir = test_directory("samples-locale");
+        let zh = write_missing_samples(&dir, "zh").expect("zh seed");
+        assert_eq!(
+            zh.added,
+            ["welcome-to-quizzy.json", "knowledge-base/welcome-to-quizzy.md"]
+        );
+        let quiz = fs::read_to_string(dir.join("welcome-to-quizzy.json")).expect("quiz");
+        assert!(quiz.contains("欢迎使用 Quizzy"));
+        assert!(!quiz.contains("\"title\": \"Welcome to Quizzy\""));
+        fs::remove_dir_all(dir).expect("cleanup");
+
+        let dir_en = test_directory("samples-locale-en");
+        let en = write_missing_samples(&dir_en, "en").expect("en seed");
+        assert_eq!(
+            en.added,
+            ["welcome-to-quizzy.json", "knowledge-base/welcome-to-quizzy.md"]
+        );
+        let quiz_en = fs::read_to_string(dir_en.join("welcome-to-quizzy.json")).expect("quiz");
+        assert!(quiz_en.contains("\"title\": \"Welcome to Quizzy\""));
+        fs::remove_dir_all(dir_en).expect("cleanup");
     }
 
     #[test]

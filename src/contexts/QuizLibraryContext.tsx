@@ -56,8 +56,8 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     return fileName;
   }
 
-  async function addSampleQuizzes() {
-    const result = await nativeApi.addSampleQuizzes();
+  async function addSampleQuizzes(locale?: string) {
+    const result = await nativeApi.addSampleQuizzes(locale);
     await refresh();
     return result;
   }
