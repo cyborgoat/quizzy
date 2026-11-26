@@ -1,0 +1,44 @@
+{
+  "id": "ai-transformers",
+  "title": "Transformers and Attention",
+  "description": "How self-attention works and why transformers power modern language models.",
+  "tags": ["deep-learning", "transformers", "llm"],
+  "questions": [
+    {
+      "id": "scaling-factor",
+      "type": "single_choice",
+      "prompt": "In scaled dot-product attention $$\\text{Attention}(Q,K,V)=\\text{softmax}\\!\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V$$ why are the scores divided by $\\sqrt{d_k}$?",
+      "options": [
+        "To keep the dot products from growing with $d_k$ and saturating the softmax",
+        "To make the output the same length as the input",
+        "To remove the need for the value matrix $V$",
+        "To make attention causal"
+      ],
+      "answerIndex": 0,
+      "explanation": "If query and key entries have unit variance, their dot product has variance $d_k$. Without scaling, large scores push softmax into regions with tiny gradients."
+    },
+    {
+      "id": "positional-encoding",
+      "type": "true_false",
+      "prompt": "Self-attention on its own has no notion of token order, which is why transformers add positional information.",
+      "answer": true,
+      "explanation": "Without positional information, permuting the input tokens just permutes the outputs. Positional encodings (sinusoidal, learned, rotary and others) inject order."
+    },
+    {
+      "id": "causal-mask",
+      "type": "single_choice",
+      "prompt": "A decoder builds its attention mask like this:\n\n```python\nmask = torch.triu(torch.ones(n, n), diagonal=1).bool()\nscores = scores.masked_fill(mask, float(\"-inf\"))\n```\n\nWhich positions can token $i$ attend to?",
+      "options": ["Only positions $j \\le i$", "Only positions $j > i$", "All positions", "Only position $i$"],
+      "answerIndex": 0,
+      "explanation": "`triu(..., diagonal=1)` marks everything strictly above the diagonal (future positions). Those get $-\\infty$, so softmax gives them zero weight, leaving the current and earlier tokens."
+    },
+    {
+      "id": "transformer-parts",
+      "type": "multiple_choice",
+      "prompt": "Which components appear in a standard transformer block?",
+      "options": ["Multi-head attention", "Position-wise feed-forward network", "Residual connections with layer normalization", "Recurrent hidden state passed between tokens"],
+      "answerIndices": [0, 1, 2],
+      "explanation": "A block combines attention, a feed-forward network, and residual connections with normalization. Transformers process tokens in parallel and do not carry an RNN-style hidden state between positions."
+    }
+  ]
+}
