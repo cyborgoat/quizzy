@@ -7,9 +7,9 @@ use std::{
 use tauri::AppHandle;
 
 use crate::fs_utils::{
-    atomic_write, checked_directory, configured_directory, is_json_extension,
-    open_directory_in_file_manager, read_library_files, read_text_file, resolve_quiz_path,
-    QuizFile,
+    atomic_write, checked_directory, configured_directory, is_json_extension, knowledge_base_for,
+    open_directory_in_file_manager, read_library_files, read_text_file, resolve_knowledge_path,
+    resolve_quiz_path, QuizFile,
 };
 use crate::{goals_storage, quiz_archive};
 
@@ -65,24 +65,15 @@ pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<St
     Ok(file_name)
 }
 
-pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 4] = [
-    (
-        "css-basics.json",
-        include_str!("../../sample-quizzes/css-basics.json"),
-    ),
-    (
-        "javascript-basics.json",
-        include_str!("../../sample-quizzes/javascript-basics.json"),
-    ),
-    (
-        "react-basics.json",
-        include_str!("../../sample-quizzes/react-basics.json"),
-    ),
-    (
-        "markdown-showcase.json",
-        include_str!("../../sample-quizzes/markdown-showcase.json"),
-    ),
-];
+pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 1] = [(
+    "welcome-to-quizzy.json",
+    include_str!("../../sample-quizzes/welcome-to-quizzy.json"),
+)];
+
+pub(crate) const SAMPLE_KNOWLEDGE_NOTES: [(&str, &str); 1] = [(
+    "welcome-to-quizzy.md",
+    include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.md"),
+)];
 
 #[derive(Serialize)]
 pub(crate) struct AddSampleQuizzesResult {
@@ -102,9 +93,21 @@ fn write_missing_samples(directory: &Path) -> Result<AddSampleQuizzesResult, Str
         atomic_write(&destination, contents.as_bytes(), false)?;
         added.push(file_name.to_string());
     }
+    let notes = knowledge_base_for(directory)?;
+    for (file_name, contents) in SAMPLE_KNOWLEDGE_NOTES {
+        let destination = resolve_knowledge_path(&notes, file_name)?;
+        if destination.exists() {
+            skipped.push(format!("knowledge-base/{file_name}"));
+            continue;
+        }
+        atomic_write(&destination, contents.as_bytes(), false)?;
+        added.push(format!("knowledge-base/{file_name}"));
+    }
     Ok(AddSampleQuizzesResult { added, skipped })
 }
 
+/// Writes the Welcome to Quizzy quiz and note when missing. Safe to call after the
+/// working directory is first configured.
 #[tauri::command]
 pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
     write_missing_samples(&configured_directory(&app)?)
@@ -252,19 +255,23 @@ mod tests {
     #[test]
     fn samples_are_added_once_and_never_overwritten() {
         let dir = test_directory("samples");
-        fs::write(dir.join("css-basics.json"), "custom").expect("write existing");
+        fs::write(dir.join("welcome-to-quizzy.json"), "custom").expect("write existing");
 
         let first = write_missing_samples(&dir).expect("first run");
-        assert_eq!(first.added.len(), SAMPLE_QUIZZES.len() - 1);
-        assert_eq!(first.skipped, ["css-basics.json"]);
+        assert_eq!(first.added, ["knowledge-base/welcome-to-quizzy.md"]);
+        assert_eq!(first.skipped, ["welcome-to-quizzy.json"]);
         assert_eq!(
-            fs::read_to_string(dir.join("css-basics.json")).expect("read"),
+            fs::read_to_string(dir.join("welcome-to-quizzy.json")).expect("read"),
             "custom"
         );
+        assert!(dir.join("knowledge-base/welcome-to-quizzy.md").is_file());
 
         let second = write_missing_samples(&dir).expect("second run");
         assert!(second.added.is_empty());
-        assert_eq!(second.skipped.len(), SAMPLE_QUIZZES.len());
+        assert_eq!(
+            second.skipped,
+            ["welcome-to-quizzy.json", "knowledge-base/welcome-to-quizzy.md"]
+        );
 
         fs::remove_dir_all(dir).expect("cleanup");
     }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { LoadingState } from "@/components/quiz/LoadingState";
+import { Button } from "@/components/ui/button";
 
 export function WorkingDirectoryGate({
   isLoading,
@@ -12,6 +13,9 @@ export function WorkingDirectoryGate({
   unavailableTitle,
   unavailableDescription,
   onOpenSettings,
+  onChooseDirectory,
+  chooseDirectoryLabel = "Choose folder",
+  chooseDirectoryBusy = false,
   children,
 }: {
   isLoading: boolean;
@@ -23,6 +27,9 @@ export function WorkingDirectoryGate({
   unavailableTitle: string;
   unavailableDescription: string;
   onOpenSettings: () => void;
+  onChooseDirectory?: () => void;
+  chooseDirectoryLabel?: string;
+  chooseDirectoryBusy?: boolean;
   children: ReactNode;
 }) {
   if (isLoading && !directoryPath) {
@@ -30,12 +37,25 @@ export function WorkingDirectoryGate({
   }
 
   if (!directoryAvailable) {
+    const needsSetup = !directoryPath;
     return (
       <EmptyState
-        title={directoryPath ? unavailableTitle : noDirectoryTitle}
-        description={directoryPath ? unavailableDescription : noDirectoryDescription}
-        actionLabel="Settings"
-        onAction={onOpenSettings}
+        title={needsSetup ? noDirectoryTitle : unavailableTitle}
+        description={needsSetup ? noDirectoryDescription : unavailableDescription}
+        action={
+          onChooseDirectory ? (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button disabled={chooseDirectoryBusy} onClick={onChooseDirectory}>
+                {chooseDirectoryBusy ? "Choosing…" : chooseDirectoryLabel}
+              </Button>
+              <Button variant="outline" onClick={onOpenSettings}>
+                Open Settings
+              </Button>
+            </div>
+          ) : undefined
+        }
+        actionLabel={onChooseDirectory ? undefined : "Settings"}
+        onAction={onChooseDirectory ? undefined : onOpenSettings}
       />
     );
   }

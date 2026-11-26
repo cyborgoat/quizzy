@@ -72,12 +72,11 @@ Prefer to build it yourself? See [Build from source](#build-from-source).
 
 ## Quick start
 
-1. Launch Quizzy and open **Settings**.
-2. Enter your name and choose a **working directory** for your quizzes, then click **Save**.
-3. Back on the home page, click **How to import → Add sample quizzes** to try
-   the app right away, or **Open quiz folder** to drop in your own JSON files.
-4. Click **Start** on a quiz, answer the questions, and submit.
-5. Open **History** to review the attempt, and **Mistake Log** to see what to
+1. Launch Quizzy and choose a **working directory** from the home page guidance.
+   Quizzy adds a **Welcome to Quizzy** quiz and note so you can learn the app.
+2. Optionally open **Settings** to set your name and preferences.
+3. Click **Start** on the welcome quiz (or import your own JSON), answer, and submit.
+4. Open **History** to review the attempt, and **Mistake Log** to see what to
    study next.
 
 A minimal quiz looks like this:

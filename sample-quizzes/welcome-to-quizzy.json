@@ -1,0 +1,74 @@
+{
+  "id": "welcome-to-quizzy",
+  "title": "Welcome to Quizzy",
+  "description": "A short tour of Quizzy: your quiz folder, practice flow, knowledge notes, goals, and imports.",
+  "tags": ["welcome", "getting-started"],
+  "questions": [
+    {
+      "id": "working-directory",
+      "type": "single_choice",
+      "prompt": "Where does Quizzy look for your quiz `.json` files?",
+      "options": [
+        "Only inside the app install folder",
+        "The working directory you choose in Settings",
+        "A fixed cloud account",
+        "Your browser downloads folder only"
+      ],
+      "answerIndex": 1,
+      "explanation": "Quizzy reads and writes quizzes in the working directory you select. You can change it later in Settings."
+    },
+    {
+      "id": "start-quiz",
+      "type": "single_choice",
+      "prompt": "How do you begin a scored practice attempt?",
+      "options": [
+        "Open a quiz from the library, then choose Start",
+        "Only by importing a file",
+        "By editing Settings first every time",
+        "By creating a knowledge note"
+      ],
+      "answerIndex": 0,
+      "explanation": "From Home, open a quiz card and start an attempt. Your answers are scored when you finish."
+    },
+    {
+      "id": "knowledge-notes",
+      "type": "true_false",
+      "prompt": "Knowledge notes live in a `knowledge-base` folder next to your quizzes and can link to specific questions.",
+      "answer": true,
+      "explanation": "Quizzy keeps markdown notes under `knowledge-base/`. You can link a note to quiz questions and open it while reviewing."
+    },
+    {
+      "id": "mistake-log",
+      "type": "multiple_choice",
+      "prompt": "Which of these help you improve after practice?",
+      "options": [
+        "Mistake Log for questions you often miss",
+        "Goals with a target score on a quiz",
+        "Deleting your working directory",
+        "Reviewing past attempts from History"
+      ],
+      "answerIndices": [0, 1, 3],
+      "explanation": "Mistake Log, Goals, and History are built for review. Your working directory should stay available so Quizzy can load your library."
+    },
+    {
+      "id": "import-more",
+      "type": "single_choice",
+      "prompt": "How can you add more quizzes after this welcome file?",
+      "options": [
+        "Only by reinstalling Quizzy",
+        "Import a `.json` quiz, use How to import / AI prompts, or browse QuizHub if enabled",
+        "Only by renaming this welcome quiz",
+        "Quizzes cannot be added later"
+      ],
+      "answerIndex": 1,
+      "explanation": "Use **Import quiz file**, the import help AI prompt, or enable QuizHub in Settings to download curated content. Files you place in the working directory appear after refresh."
+    },
+    {
+      "id": "folder-safe",
+      "type": "true_false",
+      "prompt": "You should treat the working directory as your library: keep quiz JSON and knowledge notes there, and avoid deleting the folder while Quizzy is using it.",
+      "answer": true,
+      "explanation": "Quizzy expects that folder to stay readable. Back it up like any other documents folder if the content matters to you."
+    }
+  ]
+}

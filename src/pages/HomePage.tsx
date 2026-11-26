@@ -20,6 +20,7 @@ import { QuizList } from "@/components/quiz/QuizList";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
 import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
+import { usePickWorkingDirectory } from "@/hooks/usePickWorkingDirectory";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizLibrarySort } from "@/hooks/useQuizLibrarySort";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -42,6 +43,7 @@ export function HomePage() {
   const library = useQuizLibrary();
   const { userName } = useUserProfile();
   const { goals } = useGoals();
+  const { pickWorkingDirectory, isPicking } = usePickWorkingDirectory();
   const navigate = useNavigate();
   const router = useRouter();
   const { details: detailsQuizId } = Route.useSearch();
@@ -112,11 +114,9 @@ export function HomePage() {
     try {
       const { added, skipped } = await library.addSampleQuizzes();
       if (added.length > 0) {
-        toast.success(
-          `Added ${added.length} sample ${added.length === 1 ? "quiz" : "quizzes"}.`,
-        );
+        toast.success("Added Welcome to Quizzy.");
       } else if (skipped.length > 0) {
-        toast.info("Sample quizzes are already in your quiz folder.");
+        toast.info("Welcome to Quizzy is already in your folder.");
       }
     } catch (error) {
       toast.error(errorMessage(error));
@@ -146,11 +146,14 @@ export function HomePage() {
         directoryPath={library.directoryPath}
         directoryAvailable={library.directoryAvailable}
         loadingMessage="Loading Quizzy…"
-        noDirectoryTitle="No quiz directory set"
-        noDirectoryDescription="Choose a working directory in Settings to get started."
+        noDirectoryTitle="Welcome to Quizzy"
+        noDirectoryDescription="Choose a folder for your quizzes and notes to get started. Quizzy will add a short Welcome to Quizzy quiz and knowledge note so you can learn the app right away."
         unavailableTitle="Working directory unavailable"
-        unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
+        unavailableDescription="Quizzy could not access the configured directory. Choose a different folder or update it in Settings."
         onOpenSettings={() => navigate({ to: "/settings" })}
+        onChooseDirectory={() => void pickWorkingDirectory()}
+        chooseDirectoryLabel="Choose working directory"
+        chooseDirectoryBusy={isPicking}
       >
         <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

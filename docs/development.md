@@ -133,8 +133,9 @@ Before packaging a release:
    Knowledge Base note create/edit/link/preview in the packaged application.
 
 The files under `sample-quizzes/` (and `sample-quizzes/knowledge-base/`) can be
-copied into your working directory when manual test data is needed. Four of the
-quizzes are also embedded in the app for the **Add sample quizzes** button.
+copied into your working directory when manual test data is needed. The Welcome
+to Quizzy quiz and note are embedded and written when a working directory is
+chosen (or via **Add welcome sample**).
 
 Cross-platform release builds are handled by `.github/workflows/release.yml` when
 a version tag is pushed.

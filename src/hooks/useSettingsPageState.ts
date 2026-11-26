@@ -1,9 +1,10 @@
-import { confirm, open } from "@tauri-apps/plugin-dialog";
+import { confirm } from "@tauri-apps/plugin-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAppSynchronize } from "@/hooks/useAppSynchronize";
 import { useAppShortcuts } from "@/hooks/useAppShortcuts";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
+import { usePickWorkingDirectory } from "@/hooks/usePickWorkingDirectory";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
@@ -76,6 +77,7 @@ export function useSettingsPageState() {
   } = useMistakeLogSettings();
   const library = useQuizLibrary();
   const { synchronizeAll, isSyncing } = useAppSynchronize();
+  const { pickWorkingDirectory } = usePickWorkingDirectory();
   const [lastSyncReport, setLastSyncReport] = useState<SyncReport | null>(null);
   const [errors, setErrors] = useState<SettingsDraftErrors>({});
   const [savingFields, setSavingFields] = useState<ReadonlySet<SavingField>>(new Set());
@@ -435,29 +437,16 @@ export function useSettingsPageState() {
   }
 
   async function handlePickDirectory() {
+    setSaving("workingDirectory", true);
     try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        defaultPath: displayDir ?? undefined,
-        title: "Choose Quizzy working directory",
+      const result = await pickWorkingDirectory({
+        defaultPath: displayDir,
+        onSelecting: (path) => updateDraft({ pendingDir: path }),
+        onSettled: () => updateDraft({ pendingDir: null }),
       });
-      if (!selected || Array.isArray(selected)) return;
-
-      updateDraft({ pendingDir: selected });
-      setSaving("workingDirectory", true);
-      try {
-        await nativeApi.saveSettings({ workingDirectory: selected });
-        const report = await synchronizeAll();
-        setLastSyncReport(report);
-      } catch (error) {
-        toast.error(errorMessage(error));
-      } finally {
-        updateDraft({ pendingDir: null });
-        setSaving("workingDirectory", false);
-      }
-    } catch (error) {
-      toast.error(errorMessage(error));
+      if (result) setLastSyncReport(result.report);
+    } finally {
+      setSaving("workingDirectory", false);
     }
   }
 

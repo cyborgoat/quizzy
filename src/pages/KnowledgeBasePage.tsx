@@ -345,8 +345,8 @@ export function KnowledgeBasePage() {
           directoryPath={library.directoryPath}
           directoryAvailable={library.directoryAvailable}
           loadingMessage="Loading knowledge base…"
-          noDirectoryTitle="No working directory set"
-          noDirectoryDescription="Choose a working directory in Settings to store knowledge notes."
+          noDirectoryTitle="Choose a working directory first"
+          noDirectoryDescription="Knowledge notes are stored in a knowledge-base folder inside your working directory. Set that folder up from Home or Settings."
           unavailableTitle="Working directory unavailable"
           unavailableDescription="Quizzy could not access the configured directory. You can update it in Settings."
           onOpenSettings={() => navigate({ to: "/settings" })}

@@ -27,7 +27,7 @@ Available actions on the home page:
 - **Import quiz file** copies a chosen `.json` file into the working directory.
   It never overwrites an existing file.
 - **How to import** opens a guide with import steps, the file format with a
-  copyable example, an **Add sample quizzes** button, and a **Copy AI prompt**
+  copyable example, an **Add welcome sample** button, and a **Copy AI prompt**
   button for generating quiz files with an AI assistant. The same guide is
   offered on the empty library screen.
 - **Open quiz folder** opens the configured working directory in the system file
@@ -362,15 +362,13 @@ knowledge notes under `sample-quizzes/knowledge-base/`:
 
 | File | Contents |
 | --- | --- |
-| `react-basics.json` | React fundamentals |
-| `javascript-basics.json` | Core JavaScript behavior |
-| `css-basics.json` | CSS fundamentals |
+| `welcome-to-quizzy.json` | First-run tour quiz about using Quizzy |
+| `knowledge-base/welcome-to-quizzy.md` | Linked welcome note for the tour quiz |
 | `comprehensive-stress-test.json` | Large mixed-format quiz for edge-case testing |
 | `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
 | `markdown-showcase.md` | Knowledge note with tables, math, and other markdown features |
 
-The **Add sample quizzes** button in the import guide writes `react-basics`,
-`javascript-basics`, `css-basics` and `markdown-showcase` into the working
-directory (existing files are skipped). The large stress-test quiz and the
-knowledge note are not bundled; copy them into your working directory and
-`knowledge-base/` manually when needed.
+Choosing a working directory for the first time (or using **Add welcome sample** in
+the import guide) writes `welcome-to-quizzy.json` and
+`knowledge-base/welcome-to-quizzy.md` when those files are missing. Extra reference
+quizzes under `sample-quizzes/` are for docs and manual testing only.

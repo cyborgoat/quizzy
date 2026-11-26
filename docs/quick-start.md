@@ -30,33 +30,24 @@ application, and opens the desktop window.
 
 ## First launch
 
-1. Open **Settings** from the sidebar (bottom of the left panel).
-2. Enter your full name and click **Select folder** to choose a working directory.
-3. Click **Save** to apply both settings.
-4. Return to the home page, click **Open quiz folder**, and add one or more quiz
-   JSON files with the system file manager.
-5. Open a quiz card, then choose **Start quiz** in its details. Review the
-   question-type breakdown and click **Start quiz** to begin.
-6. Answer in any order, use flags for questions to revisit, and submit the quiz
-   when ready.
-7. Review the final score, correct answers, and explanations.
-8. Optionally create a **Goal** from the Goals page or choose **Add goal** in the
-   quiz details. Each quiz can have one goal. Completing a quiz saves an attempt
-   to its goal.
-9. Open **Mistake Log** from the sidebar to
-   review questions missed in scored attempts. Adjust thresholds in **Settings** if
-   needed.
-10. Open **Knowledge** to browse notes, link them to quiz questions, or copy
-    `sample-quizzes/knowledge-base/markdown-showcase.md` into `knowledge-base/` to test tables
-    and other markdown features.
+1. On the home page, choose **Choose working directory** and pick a folder for
+   your quizzes and notes. Quizzy writes a **Welcome to Quizzy** quiz and linked
+   knowledge note into that folder when they are missing.
+2. Optionally open **Settings** to enter your name and adjust preferences.
+3. Open the welcome quiz (or import your own `.json` files), then choose
+   **Start quiz**.
+4. Answer in any order, use flags for questions to revisit, and submit when ready.
+5. Review the final score, correct answers, and explanations.
+6. Optionally create a **Goal** from a quiz’s actions. Each quiz can have one goal.
+7. Open **Mistake Log** to review questions missed in scored attempts.
+8. Open **Knowledge** to browse notes linked to quiz questions.
 
 The selected working directory and your name are remembered between launches. If
 the directory becomes unavailable, Quizzy keeps the configured path and prompts
 you to update it in Settings.
 
-Example quiz files are in `sample-quizzes/`, and example knowledge notes are in
-`sample-quizzes/knowledge-base/`. On the home page, **How to import** explains
-the file format and can add a few sample quizzes for you.
+Reference files for developers live in `sample-quizzes/`. **How to import** on
+the home page explains the quiz format and can re-add the welcome sample.
 
 ## Frontend-only development
 

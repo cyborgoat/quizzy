@@ -169,10 +169,10 @@ export function ImportHelpDialog({
       {tab === "samples" && (
         <div className="space-y-5 text-sm leading-6 text-zinc-700">
           <section>
-            <h3 className={sectionLabelClassName}>Try sample quizzes</h3>
+            <h3 className={sectionLabelClassName}>Welcome sample</h3>
             <p className="mt-2">
-              Adds a few ready-made quizzes (CSS, JavaScript, React and a Markdown showcase) to
-              your quiz folder. Existing files are never overwritten.
+              Adds the <strong>Welcome to Quizzy</strong> quiz and a linked knowledge note that
+              teach the app basics. Existing files are never overwritten.
             </p>
             <Button
               className="mt-3"
@@ -181,7 +181,7 @@ export function ImportHelpDialog({
               onClick={() => void addSamples()}
             >
               <FlaskConical className="size-4" />
-              {isAddingSamples ? "Adding…" : "Add sample quizzes"}
+              {isAddingSamples ? "Adding…" : "Add welcome sample"}
             </Button>
           </section>
           <section>
