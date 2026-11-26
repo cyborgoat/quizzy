@@ -37,8 +37,8 @@ application, and opens the desktop window.
      **Welcome to Quizzy** quiz and linked knowledge note when they are missing.
    - Optionally enable **QuizHub** and keep the default catalog URL or set your own.
    - Read the short getting-started tips, then continue into the library.
-2. Open **Settings** anytime to change language, name, QuizHub, shortcuts, or
-   other preferences. Settings also includes leveled **Reset** actions.
+2. Open **Settings** anytime to change language, QuizHub, shortcuts, or other
+   preferences. Settings also includes leveled **Reset** actions.
 3. Open the welcome quiz (or import your own `.json` files), then choose
    **Start quiz**.
 4. Answer in any order, use flags for questions to revisit, and submit when ready.
@@ -49,9 +49,9 @@ application, and opens the desktop window.
 9. If QuizHub is enabled, open **QuizHub** in the sidebar to browse and download
    curated quizzes and notes.
 
-Language, working directory, QuizHub preference, and profile are remembered
-between launches. If the directory becomes unavailable, Quizzy keeps the
-configured path and prompts you to update it in Settings.
+Language, working directory, and QuizHub preference are remembered between
+launches. If the directory becomes unavailable, Quizzy keeps the configured path
+and prompts you to update it in Settings.
 
 Reference files for developers live in `sample-quizzes/`. **How to import** on
 the home page explains the quiz format and can re-add the welcome sample.

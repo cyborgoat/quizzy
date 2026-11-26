@@ -6,7 +6,6 @@ import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-conte
 import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
 import { QuizhubPreferencesContext } from "@/contexts/quizhub-preferences-context";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
-import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
 import { I18nProvider } from "@/components/I18nProvider";
 import { detectSystemAppLocale, isAppLocale, localeToBcp47, type AppLocale } from "@/lib/locale";
@@ -35,7 +34,6 @@ function loadShortcut(raw: string | undefined, fallback: Keybind) {
 }
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [userName, setUserNameState] = useState("");
   const [shuffleQuestions, setShuffleQuestionsState] = useState(false);
   const [shuffleOptions, setShuffleOptionsState] = useState(false);
   const [quizhubEnabled, setQuizhubEnabledState] = useState(false);
@@ -101,7 +99,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void loadAppSettings().then((settings) => {
       const nextFontSize = parseUiFontSize(settings.uiFontSize);
-      setUserNameState(settings.profileName);
       setShuffleQuestionsState(settings.shuffleQuestions);
       setShuffleOptionsState(settings.shuffleOptions);
       setQuizhubEnabledState(settings.quizhubEnabled);
@@ -238,60 +235,53 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   return (
     <LocaleContext.Provider value={localeValue}>
       <I18nProvider locale={effectiveLocale}>
-        <UserProfileContext.Provider
+        <UiPreferencesContext.Provider
           value={{
-            userName,
-            setUserName: setUserNameState,
+            fontSize,
           }}
         >
-          <UiPreferencesContext.Provider
+          <QuizPreferencesContext.Provider
             value={{
-              fontSize,
+              shuffleQuestions,
+              shuffleOptions,
+              setShuffleQuestions: setShuffleQuestionsState,
+              setShuffleOptions: setShuffleOptionsState,
             }}
           >
-            <QuizPreferencesContext.Provider
+            <QuizhubPreferencesContext.Provider
               value={{
-                shuffleQuestions,
-                shuffleOptions,
-                setShuffleQuestions: setShuffleQuestionsState,
-                setShuffleOptions: setShuffleOptionsState,
+                quizhubEnabled,
+                setQuizhubEnabled: setQuizhubEnabledState,
+                quizhubBaseUrl,
+                setQuizhubBaseUrl: setQuizhubBaseUrlState,
               }}
             >
-              <QuizhubPreferencesContext.Provider
+              <AppShortcutsContext.Provider
                 value={{
-                  quizhubEnabled,
-                  setQuizhubEnabled: setQuizhubEnabledState,
-                  quizhubBaseUrl,
-                  setQuizhubBaseUrl: setQuizhubBaseUrlState,
+                  ...parsedShortcuts,
+                  setKnowledgeLink: setKnowledgeLinkShortcutState,
+                  setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
+                  setZoomIn: setZoomInShortcutState,
+                  setZoomOut: setZoomOutShortcutState,
+                  setToggleSidebar: setToggleSidebarShortcutState,
                 }}
               >
-                <AppShortcutsContext.Provider
+                <MistakeLogSettingsContext.Provider
                   value={{
-                    ...parsedShortcuts,
-                    setKnowledgeLink: setKnowledgeLinkShortcutState,
-                    setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
-                    setZoomIn: setZoomInShortcutState,
-                    setZoomOut: setZoomOutShortcutState,
-                    setToggleSidebar: setToggleSidebarShortcutState,
+                    minMistakes,
+                    minFlags,
+                    maxCorrectnessPercentage,
+                    setMinMistakes: setMinMistakesState,
+                    setMinFlags: setMinFlagsState,
+                    setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
                   }}
                 >
-                  <MistakeLogSettingsContext.Provider
-                    value={{
-                      minMistakes,
-                      minFlags,
-                      maxCorrectnessPercentage,
-                      setMinMistakes: setMinMistakesState,
-                      setMinFlags: setMinFlagsState,
-                      setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
-                    }}
-                  >
-                    {children}
-                  </MistakeLogSettingsContext.Provider>
-                </AppShortcutsContext.Provider>
-              </QuizhubPreferencesContext.Provider>
-            </QuizPreferencesContext.Provider>
-          </UiPreferencesContext.Provider>
-        </UserProfileContext.Provider>
+                  {children}
+                </MistakeLogSettingsContext.Provider>
+              </AppShortcutsContext.Provider>
+            </QuizhubPreferencesContext.Provider>
+          </QuizPreferencesContext.Provider>
+        </UiPreferencesContext.Provider>
       </I18nProvider>
     </LocaleContext.Provider>
   );

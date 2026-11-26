@@ -11,7 +11,6 @@ import type { MessageKey } from "@/lib/i18n-messages";
 import type { SaveSettingsRequest } from "@/lib/native";
 
 export type SettingsDraft = {
-  name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   quizhubEnabled: boolean;
@@ -41,7 +40,6 @@ export type NumericSettingsFieldKey =
   | "maxCorrectness";
 
 export type ParsedSettingsDraft = {
-  name: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   quizhubEnabled: boolean;
@@ -58,7 +56,6 @@ export type ParsedSettingsDraft = {
 };
 
 export type PersistedSettingsSnapshot = {
-  userName: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   quizhubEnabled: boolean;
@@ -73,7 +70,6 @@ function normalizeShortcutDraftValue(value: string, fallback: Keybind) {
 }
 
 export function draftFromPersisted({
-  userName,
   shuffleQuestions,
   shuffleOptions,
   quizhubEnabled,
@@ -94,7 +90,6 @@ export function draftFromPersisted({
   ) as Pick<SettingsDraft, ShortcutDraftKey>;
 
   return {
-    name: userName,
     shuffleQuestions,
     shuffleOptions,
     quizhubEnabled,
@@ -109,7 +104,6 @@ export function draftFromPersisted({
 
 export function hasSettingsChanges(draft: SettingsDraft, persisted: SettingsDraft) {
   if (
-    draft.name.trim() !== persisted.name ||
     draft.pendingDir !== null ||
     draft.shuffleQuestions !== persisted.shuffleQuestions ||
     draft.shuffleOptions !== persisted.shuffleOptions ||
@@ -179,7 +173,6 @@ export function validateSettingsDraft(
   return {
     ok: true,
     parsed: {
-      name: draft.name.trim(),
       shuffleQuestions: draft.shuffleQuestions,
       shuffleOptions: draft.shuffleOptions,
       quizhubEnabled: draft.quizhubEnabled,
@@ -245,7 +238,6 @@ export function validateShortcutSettings(
 
 export function toSaveSettingsRequest(parsed: ParsedSettingsDraft): SaveSettingsRequest {
   const request: SaveSettingsRequest = {
-    profileName: parsed.name,
     shuffleQuestions: parsed.shuffleQuestions,
     shuffleOptions: parsed.shuffleOptions,
     quizhubEnabled: parsed.quizhubEnabled,

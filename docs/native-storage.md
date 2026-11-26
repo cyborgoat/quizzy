@@ -24,8 +24,8 @@ Quizzy stores application data in the Tauri app-config directory:
 <Tauri app config directory>/quizhub-cache-*.json     # temporary catalog/manifest HTTP cache
 ```
 
-`settings.json` holds the working-directory path, profile name, quiz preferences
-(such as `shuffleQuestions` and `shuffleOptions`), Mistake Log thresholds
+`settings.json` holds the working-directory path, quiz preferences (such as
+`shuffleQuestions` and `shuffleOptions`), Mistake Log thresholds
 (`mistakeLogMinMistakes` and `mistakeLogMaxCorrectnessPercentage`), keyboard
 shortcuts, UI font size, `quizhubEnabled`, optional `quizhubBaseUrl`,
 `appLocale` (`en` / `es` / `zh`), and `onboardingCompleted`.
@@ -60,8 +60,8 @@ The frontend exposes these operations through `src/lib/native.ts`:
 
 | Command | Purpose |
 | --- | --- |
-| `get_settings` | Load app settings (directory, profile, preferences, locale, QuizHub, onboarding) |
-| `save_settings` | Persist profile, preferences, locale, QuizHub, and/or working directory |
+| `get_settings` | Load app settings (directory, preferences, locale, QuizHub, onboarding) |
+| `save_settings` | Persist preferences, locale, QuizHub, and/or working directory |
 | `read_working_directory` | Read top-level JSON files; accepts known file versions and returns unchanged files without contents |
 | `import_quiz_file` | Copy a user-selected `.json` file (checked for valid JSON, never overwriting) into the working directory |
 | `add_sample_quizzes` | Write locale-matched Welcome samples into the working directory, skipping files that already exist |

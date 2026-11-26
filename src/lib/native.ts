@@ -7,7 +7,6 @@ import type { MistakeEntry } from "@/types/mistakeLog";
 export type AppSettings = {
   workingDirectory: string | null;
   workingDirectoryAvailable: boolean;
-  profileName: string;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   mistakeLogMinMistakes: number;
@@ -28,7 +27,6 @@ export type AppSettings = {
 
 export type SaveSettingsRequest = {
   workingDirectory?: string;
-  profileName?: string;
   shuffleQuestions?: boolean;
   shuffleOptions?: boolean;
   mistakeLogMinMistakes?: number;

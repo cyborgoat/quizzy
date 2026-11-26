@@ -79,7 +79,7 @@ Prefer to build it yourself? See [Build from source](#build-from-source).
 1. Launch Quizzy and complete the first-launch steps: choose a **language**, pick a
    **working folder**, optionally enable **QuizHub**, then get started. Quizzy adds
    a **Welcome to Quizzy** quiz and note in your language when the folder is empty of them.
-2. Open **Settings** anytime to set your name, preferences, language, or QuizHub source.
+2. Open **Settings** anytime to set preferences, language, or QuizHub source.
 3. Click **Start** on the welcome quiz (or import your own JSON), answer, and submit.
 4. Open **History** to review the attempt, and **Mistake Log** to see what to
    study next.

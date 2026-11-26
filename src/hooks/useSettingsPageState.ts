@@ -8,7 +8,6 @@ import { usePickWorkingDirectory } from "@/hooks/usePickWorkingDirectory";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizPreferences } from "@/hooks/useQuizPreferences";
 import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { serializeKeybind, SHORTCUT_FIELDS, type ShortcutDraftKey } from "@/lib/keybinds";
 import { errorMessage, nativeApi, type SaveSettingsRequest, type SyncReport } from "@/lib/native";
 import {
@@ -27,7 +26,6 @@ import { formatSyncSections, formatSyncSummary } from "@/lib/syncReport";
 type SavingField = Exclude<keyof SettingsDraft, "pendingDir"> | "workingDirectory";
 
 const PERSISTED_DRAFT_FIELDS = [
-  "name",
   "shuffleQuestions",
   "shuffleOptions",
   "quizhubEnabled",
@@ -44,7 +42,6 @@ const PERSISTED_DRAFT_FIELDS = [
 
 export function useSettingsPageState() {
   const { t } = useI18n();
-  const { userName, setUserName } = useUserProfile();
   const {
     shuffleQuestions,
     shuffleOptions,
@@ -95,7 +92,6 @@ export function useSettingsPageState() {
     };
 
     return draftFromPersisted({
-      userName,
       shuffleQuestions,
       shuffleOptions,
       quizhubEnabled,
@@ -111,7 +107,6 @@ export function useSettingsPageState() {
       ) as Pick<PersistedSettingsSnapshot, ShortcutDraftKey>),
     });
   }, [
-    userName,
     shuffleQuestions,
     shuffleOptions,
     quizhubEnabled,
@@ -193,27 +188,6 @@ export function useSettingsPageState() {
     } finally {
       setSaving(field, false);
     }
-  }
-
-  function handleNameChange(name: string) {
-    updateDraft({ name });
-  }
-
-  function commitName() {
-    if (savingFieldsRef.current.has("name")) return;
-    const next = draft.name.trim();
-    updateDraft({ name: next });
-    if (next === userName) return;
-    const previous = userName;
-    void persistSetting(
-      "name",
-      { profileName: next },
-      () => setUserName(next),
-      () => {
-        setUserName(previous);
-        updateDraft({ name: previous });
-      },
-    );
   }
 
   function handleShuffleQuestionsChange(value: boolean) {
@@ -464,8 +438,6 @@ export function useSettingsPageState() {
     isSyncing,
     lastSyncReport,
     syncSections,
-    handleNameChange,
-    commitName,
     handleShuffleQuestionsChange,
     handleShuffleOptionsChange,
     handleQuizhubEnabledChange,

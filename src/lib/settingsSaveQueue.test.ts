@@ -8,16 +8,16 @@ describe("settingsSaveQueue", () => {
     const firstPending = new Promise<void>((resolve) => {
       releaseFirst = resolve;
     });
-    const save = vi.fn(async (request: { profileName?: string }) => {
-      const name = request.profileName ?? "unknown";
-      events.push(`start:${name}`);
-      if (name === "first") await firstPending;
-      events.push(`finish:${name}`);
+    const save = vi.fn(async (request: { shuffleQuestions?: boolean }) => {
+      const label = request.shuffleQuestions ? "first" : "second";
+      events.push(`start:${label}`);
+      if (label === "first") await firstPending;
+      events.push(`finish:${label}`);
     });
     const enqueue = createSettingsSaveQueue(save);
 
-    const first = enqueue({ profileName: "first" });
-    const second = enqueue({ profileName: "second" });
+    const first = enqueue({ shuffleQuestions: true });
+    const second = enqueue({ shuffleQuestions: false });
     await Promise.resolve();
 
     expect(events).toEqual(["start:first"]);
@@ -33,13 +33,13 @@ describe("settingsSaveQueue", () => {
 
   it("continues after a failed write", async () => {
     const save = vi
-      .fn<(request: { profileName?: string }) => Promise<void>>()
+      .fn<(request: { shuffleQuestions?: boolean }) => Promise<void>>()
       .mockRejectedValueOnce(new Error("failed"))
       .mockResolvedValueOnce();
     const enqueue = createSettingsSaveQueue(save);
 
-    await expect(enqueue({ profileName: "first" })).rejects.toThrow("failed");
-    await expect(enqueue({ profileName: "second" })).resolves.toBeUndefined();
+    await expect(enqueue({ shuffleQuestions: true })).rejects.toThrow("failed");
+    await expect(enqueue({ shuffleQuestions: false })).resolves.toBeUndefined();
     expect(save).toHaveBeenCalledTimes(2);
   });
 });

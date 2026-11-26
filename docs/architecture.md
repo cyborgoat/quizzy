@@ -43,7 +43,7 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/knowledge` | Knowledge Base browse view |
 | `/knowledge/:knowledgeId` | Knowledge note detail (`?edit=1` opens edit mode) |
 | `/hub` | QuizHub catalog (when enabled in Settings) |
-| `/settings` | Language, profile, preferences, QuizHub, sync, and reset |
+| `/settings` | Language, preferences, QuizHub, sync, and reset |
 | `/quiz/:quizId` | Active quiz or final results (`?from=home` or `?from=goals` records the origin) |
 
 Unknown routes redirect to the home page.
@@ -54,14 +54,12 @@ exposes the page content area via TanStack Router's `<Outlet />`. The
 `/quiz/:quizId` route is non-nested at the root so it renders full-screen with
 its own `SidebarProvider` for the question navigator.
 
-### User profile and preferences state
+### Preferences state
 
-`AppSettingsProvider` loads profile name, quiz shuffle preferences, Mistake Log
-thresholds, UI font size, keyboard shortcuts, QuizHub flags, locale, and
-onboarding state from `settings.json` via `loadAppSettings`. It exposes focused
-context hooks:
+`AppSettingsProvider` loads quiz shuffle preferences, Mistake Log thresholds, UI
+font size, keyboard shortcuts, QuizHub flags, locale, and onboarding state from
+`settings.json` via `loadAppSettings`. It exposes focused context hooks:
 
-- `useUserProfile` — display name
 - `useQuizPreferences` — shuffle questions and options
 - `useMistakeLogSettings` — Mistake Log thresholds
 - `useUiPreferences` — current font size (read-only; zoom shortcuts persist immediately)
@@ -205,14 +203,11 @@ managed directly through the system file manager.
 
 ### Settings save
 
-1. The user edits profile, preferences, Mistake Log thresholds, and/or picks a
-   new directory in `SettingsPage`.
-2. Changes are staged in local component state; nothing is written yet.
-3. Clicking Save validates inputs and calls `nativeApi.saveSettings`.
-4. Providers update in-memory state for profile, shuffle preferences, and Mistake Log
-   thresholds.
-5. If a new directory was staged, React rescans the working directory.
-6. A success toast confirms the save.
+1. The user edits preferences, Mistake Log thresholds, language, QuizHub, or
+   picks a new directory in `SettingsPage`.
+2. Each control commits through `nativeApi.saveSettings` (on change or blur).
+3. Providers update in-memory state after a successful write.
+4. Changing the working directory triggers a library rescan.
 
 ### Open quiz folder
 

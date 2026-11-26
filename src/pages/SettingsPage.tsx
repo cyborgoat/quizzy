@@ -4,7 +4,6 @@ import { SettingsAboutSection } from "@/components/settings/SettingsAboutSection
 import { SettingsDirectorySection } from "@/components/settings/SettingsDirectorySection";
 import { SettingsLanguageSection } from "@/components/settings/SettingsLanguageSection";
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
-import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
 import { SettingsQuizhubSection } from "@/components/settings/SettingsQuizhubSection";
 import { SettingsResetSection } from "@/components/settings/SettingsResetSection";
@@ -29,8 +28,6 @@ export function SettingsPage() {
     isSyncing,
     lastSyncReport,
     syncSections,
-    handleNameChange,
-    commitName,
     handleShuffleQuestionsChange,
     handleShuffleOptionsChange,
     handleQuizhubEnabledChange,
@@ -50,13 +47,6 @@ export function SettingsPage() {
       <PageHeader
         title={t("nav.settings")}
         description={t("settings.description")}
-      />
-
-      <SettingsProfileSection
-        draft={draft}
-        disabled={savingFields.has("name")}
-        onNameChange={handleNameChange}
-        onNameCommit={commitName}
       />
 
       <SettingsLanguageSection

@@ -10,7 +10,6 @@ import {
 } from "@/lib/settingsDraft";
 
 const persistedSnapshot = {
-  userName: "Alex",
   shuffleQuestions: false,
   shuffleOptions: true,
   quizhubEnabled: false,
@@ -28,7 +27,6 @@ const persistedSnapshot = {
 describe("settingsDraft", () => {
   it("builds a draft from persisted settings", () => {
     expect(draftFromPersisted(persistedSnapshot)).toEqual({
-      name: "Alex",
       shuffleQuestions: false,
       shuffleOptions: true,
       quizhubEnabled: false,
@@ -48,11 +46,11 @@ describe("settingsDraft", () => {
   it("detects draft changes including pending directory", () => {
     const persisted = draftFromPersisted(persistedSnapshot);
     const unchanged = { ...persisted };
-    const changedName = { ...persisted, name: "Sam" };
+    const changedShuffle = { ...persisted, shuffleQuestions: true };
     const pendingDir = { ...persisted, pendingDir: "/tmp/quizzy" };
 
     expect(hasSettingsChanges(unchanged, persisted)).toBe(false);
-    expect(hasSettingsChanges(changedName, persisted)).toBe(true);
+    expect(hasSettingsChanges(changedShuffle, persisted)).toBe(true);
     expect(hasSettingsChanges(pendingDir, persisted)).toBe(true);
   });
 
@@ -63,7 +61,6 @@ describe("settingsDraft", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.parsed).toEqual({
-        name: "Alex",
         shuffleQuestions: false,
         shuffleOptions: true,
         quizhubEnabled: false,
@@ -88,7 +85,6 @@ describe("settingsDraft", () => {
     if (!result.ok) return;
 
     expect(toSaveSettingsRequest(result.parsed)).toEqual({
-      profileName: "Alex",
       shuffleQuestions: false,
       shuffleOptions: true,
       quizhubEnabled: false,

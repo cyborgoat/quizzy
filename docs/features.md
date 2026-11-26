@@ -10,7 +10,7 @@ screen. It contains:
 - **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
 - **History** — saved quiz attempts, progress summaries, and review shortcuts
 - **QuizHub** — optional curated catalog (shown only when QuizHub is enabled)
-- **Settings** — language, profile, quiz directory, QuizHub, preferences, shortcuts,
+- **Settings** — language, quiz directory, QuizHub, preferences, shortcuts,
   Mistake Log thresholds, synchronization, and reset (pinned to the bottom)
 
 The sidebar collapses to icon-only mode; clicking the Quizzy logo in the
@@ -195,20 +195,16 @@ Mistake Log integration:
 
 ## Settings
 
-The Settings page configures language, profile, working folder, QuizHub, quiz
-preferences, shortcuts, Mistake Log thresholds, sync, and reset. Most fields
-save when you change them or leave the field (for example on blur); there is no
-separate page-wide Save button.
+The Settings page configures language, working folder, QuizHub, quiz preferences,
+shortcuts, Mistake Log thresholds, sync, and reset. Most fields save when you
+change them or leave the field (for example on blur); there is no separate
+page-wide Save button.
 
 ### Language
 
 Choose **English**, **Spanish (Español)**, or **Chinese** for the app chrome. The
 same locale is the default QuizHub edition language and the language used when
 seeding Welcome samples. Quiz and note file contents are not translated.
-
-### Profile
-
-Optional **Full name** for your profile.
 
 ### Shortcuts
 
@@ -391,9 +387,9 @@ correct answer, the explanation when available, and whether it was flagged.
 
 ## Data lifetime
 
-Quiz files, the configured directory, language, QuizHub preference, profile name,
-and goal attempt history survive application restarts. In-progress quiz session
-state does not:
+Quiz files, the configured directory, language, QuizHub preference, and goal
+attempt history survive application restarts. In-progress quiz session state does
+not:
 
 - No answer progress is stored while a quiz is in progress.
 - Restarting or leaving a quiz clears the current session.

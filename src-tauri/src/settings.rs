@@ -159,8 +159,6 @@ where
 pub(crate) struct Settings {
     pub(crate) working_directory: Option<String>,
     #[serde(default)]
-    pub(crate) profile_name: String,
-    #[serde(default)]
     pub(crate) shuffle_questions: bool,
     #[serde(default)]
     pub(crate) shuffle_options: bool,
@@ -203,7 +201,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             working_directory: None,
-            profile_name: String::new(),
             shuffle_questions: false,
             shuffle_options: false,
             legacy_shuffle_mode: None,
@@ -247,7 +244,6 @@ fn ensure_shortcut_defaults(settings: &mut Settings) {
 pub(crate) struct AppSettings {
     working_directory: Option<String>,
     working_directory_available: bool,
-    profile_name: String,
     shuffle_questions: bool,
     shuffle_options: bool,
     mistake_log_min_mistakes: u32,
@@ -269,7 +265,6 @@ pub(crate) struct AppSettings {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SaveSettingsRequest {
     working_directory: Option<String>,
-    profile_name: Option<String>,
     shuffle_questions: Option<bool>,
     shuffle_options: Option<bool>,
     mistake_log_min_mistakes: Option<u32>,
@@ -341,7 +336,6 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
     Ok(AppSettings {
         working_directory: settings.working_directory,
         working_directory_available,
-        profile_name: settings.profile_name,
         shuffle_questions: settings.shuffle_questions,
         shuffle_options: settings.shuffle_options,
         mistake_log_min_mistakes: settings.mistake_log_min_mistakes,
@@ -392,10 +386,6 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
     // Partial saves (locale, directory, …) still load Settings::default() when no file exists.
     // Fill shortcut defaults before uniqueness checks so empty strings do not collide.
     ensure_shortcut_defaults(settings);
-
-    if let Some(profile_name) = request.profile_name {
-        settings.profile_name = profile_name;
-    }
 
     if let Some(shuffle_questions) = request.shuffle_questions {
         settings.shuffle_questions = shuffle_questions;
@@ -515,6 +505,16 @@ mod tests {
     };
 
     #[test]
+    fn legacy_profile_name_in_settings_json_is_ignored() {
+        let settings: Settings = serde_json::from_str(
+            r#"{ "workingDirectory": null, "profileName": "Alex", "shuffleQuestions": true }"#,
+        )
+        .expect("legacy settings");
+        assert!(settings.shuffle_questions);
+        assert!(settings.working_directory.is_none());
+    }
+
+    #[test]
     fn default_settings_have_unique_shortcuts() {
         let settings = Settings::default();
         let keys = [
@@ -544,7 +544,6 @@ mod tests {
             &mut settings,
             SaveSettingsRequest {
                 working_directory: None,
-                profile_name: None,
                 shuffle_questions: None,
                 shuffle_options: None,
                 mistake_log_min_mistakes: None,
@@ -568,7 +567,6 @@ mod tests {
             &mut settings,
             SaveSettingsRequest {
                 working_directory: None,
-                profile_name: None,
                 shuffle_questions: None,
                 shuffle_options: None,
                 mistake_log_min_mistakes: None,
