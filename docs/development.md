@@ -51,10 +51,10 @@ Native tests cover:
 - Mistake index aggregation, rebuild, and staleness detection
 - Data sync attempt-index repair, goal title alignment, and sync report counts
 
-Run:
+Run from the Rust crate directory:
 
 ```bash
-cargo test --manifest-path src-tauri/Cargo.toml
+cd src-tauri && cargo test
 ```
 
 If a local Rust installation has broken Cargo shims but the stable toolchain
@@ -72,7 +72,7 @@ npm run lint
 Rust:
 
 ```bash
-cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cd src-tauri && cargo fmt -- --check
 ```
 
 ## Integration verification
@@ -103,6 +103,12 @@ Use the narrowest appropriate layer:
   and `src/components/knowledge`
 - Settings workflow: `useSettingsPageState`, `src/lib/settingsDraft.ts`,
   `src/components/settings/`, and `src/pages/SettingsPage.tsx`
+- First-launch wizard: `FirstLaunchWizard` / onboarding steps, gated by
+  `onboardingCompleted` in settings
+- Localization: `src/lib/i18n.ts`, `src/lib/i18n-messages.ts`, `I18nProvider`
+- QuizHub: `src/routes/_app/hub.tsx`, `src/pages/QuizhubPage.tsx`,
+  `src/components/quizhub/`, and `src-tauri/src/hub_sync.rs`
+- Reset: `useSettingsReset` and `src-tauri/src/data_reset.rs`
 - Route configuration: `src/routes/` (generates `src/routeTree.gen.ts`)
 - Filesystem behavior: typed native adapter plus a Rust command (goal, mistake
   index, and manual sync are handled in `src-tauri/src/goals_storage.rs`,
@@ -123,19 +129,18 @@ Before packaging a release:
 1. Run `npm test`.
 2. Run `npm run lint`.
 3. Run `npm run build`.
-4. Run `cargo test --manifest-path src-tauri/Cargo.toml` and Rust formatting checks.
+4. Run `cd src-tauri && cargo test` and Rust formatting checks.
 5. Run a no-bundle Tauri build.
 6. Build platform installers with `npm run tauri build`.
-7. Test directory selection, opening and rescanning the quiz folder, quiz
-   completion, goal creation, attempt recording, attempt
-   deletion, attempt review, Mistake Log threshold filtering and question
-   review, Settings data synchronization (including result summary), and
-   Knowledge Base note create/edit/link/preview in the packaged application.
+7. Smoke-test first-launch (language → folder → QuizHub → complete), locale
+   switch, Welcome seeding, QuizHub browse/download when enabled, directory
+   rescan, quiz completion, goals and History, Mistake Log, Knowledge notes,
+   Settings sync, and leveled Reset in the packaged application.
 
 The files under `sample-quizzes/` (and `sample-quizzes/knowledge-base/`) can be
-copied into your working directory when manual test data is needed. The Welcome
-to Quizzy quiz and note are embedded and written when a working directory is
-chosen (or via **Add welcome sample**).
+copied into your working directory when manual test data is needed. Locale-matched
+Welcome quiz and note assets are embedded and written when a working directory is
+set up (or via **Add welcome sample**).
 
 Cross-platform release builds are handled by `.github/workflows/release.yml` when
 a version tag is pushed.

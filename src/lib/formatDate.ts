@@ -1,4 +1,4 @@
-import type { AppLocale } from "@/lib/locale";
+import { localeToBcp47, type AppLocale } from "@/lib/locale";
 
 let activeLocale: AppLocale = "en";
 
@@ -8,7 +8,7 @@ export function setDateLocale(locale: AppLocale) {
 }
 
 export function dateLocaleTag(): string {
-  return activeLocale === "zh" ? "zh-CN" : "en-US";
+  return localeToBcp47(activeLocale);
 }
 
 export function formatShortDate(iso: string | null): string {

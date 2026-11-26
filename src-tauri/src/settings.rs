@@ -191,7 +191,7 @@ pub(crate) struct Settings {
     pub(crate) quizhub_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) quizhub_base_url: Option<String>,
-    /// App / QuizHub / welcome-sample locale (`en`, `zh`). Empty until the user chooses.
+    /// App / QuizHub / welcome-sample locale (`en`, `es`, `zh`). Empty until the user chooses.
     #[serde(default)]
     pub(crate) app_locale: String,
     /// `None` means the field was never written (pre-wizard installs). Resolved in `get_settings`.
@@ -363,8 +363,9 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
 fn normalize_app_locale(raw: &str) -> Result<String, String> {
     match raw.trim().to_ascii_lowercase().as_str() {
         "en" => Ok("en".to_string()),
+        "es" => Ok("es".to_string()),
         "zh" => Ok("zh".to_string()),
-        other => Err(format!("Unsupported language \"{other}\". Use en or zh.")),
+        other => Err(format!("Unsupported language \"{other}\". Use en, es, or zh.")),
     }
 }
 
@@ -563,6 +564,30 @@ mod tests {
         )
         .expect("locale save");
         assert_eq!(settings.app_locale, "zh");
+        apply_settings(
+            &mut settings,
+            SaveSettingsRequest {
+                working_directory: None,
+                profile_name: None,
+                shuffle_questions: None,
+                shuffle_options: None,
+                mistake_log_min_mistakes: None,
+                mistake_log_min_flags: None,
+                mistake_log_max_correctness_percentage: None,
+                ui_font_size: None,
+                knowledge_link_shortcut_key: None,
+                knowledge_new_note_shortcut_key: None,
+                zoom_in_shortcut_key: None,
+                zoom_out_shortcut_key: None,
+                toggle_sidebar_shortcut_key: None,
+                quizhub_enabled: None,
+                quizhub_base_url: None,
+                app_locale: Some("es".to_string()),
+                onboarding_completed: None,
+            },
+        )
+        .expect("spanish locale save");
+        assert_eq!(settings.app_locale, "es");
         ensure_shortcut_defaults(&mut settings);
         assert_eq!(settings.knowledge_link_shortcut_key, "mod+l");
     }

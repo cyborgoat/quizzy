@@ -30,10 +30,15 @@ application, and opens the desktop window.
 
 ## First launch
 
-1. On the home page, choose **Choose working directory** and pick a folder for
-   your quizzes and notes. Quizzy writes a **Welcome to Quizzy** quiz and linked
-   knowledge note into that folder when they are missing.
-2. Optionally open **Settings** to enter your name and adjust preferences.
+1. Complete the first-launch wizard:
+   - Choose **language** (English, Spanish, or Chinese). This sets the UI language
+     and the Welcome sample language.
+   - Choose a **working folder** for quizzes and notes. Quizzy writes a
+     **Welcome to Quizzy** quiz and linked knowledge note when they are missing.
+   - Optionally enable **QuizHub** and keep the default catalog URL or set your own.
+   - Read the short getting-started tips, then continue into the library.
+2. Open **Settings** anytime to change language, name, QuizHub, shortcuts, or
+   other preferences. Settings also includes leveled **Reset** actions.
 3. Open the welcome quiz (or import your own `.json` files), then choose
    **Start quiz**.
 4. Answer in any order, use flags for questions to revisit, and submit when ready.
@@ -41,10 +46,12 @@ application, and opens the desktop window.
 6. Optionally create a **Goal** from a quiz’s actions. Each quiz can have one goal.
 7. Open **Mistake Log** to review questions missed in scored attempts.
 8. Open **Knowledge** to browse notes linked to quiz questions.
+9. If QuizHub is enabled, open **QuizHub** in the sidebar to browse and download
+   curated quizzes and notes.
 
-The selected working directory and your name are remembered between launches. If
-the directory becomes unavailable, Quizzy keeps the configured path and prompts
-you to update it in Settings.
+Language, working directory, QuizHub preference, and profile are remembered
+between launches. If the directory becomes unavailable, Quizzy keeps the
+configured path and prompts you to update it in Settings.
 
 Reference files for developers live in `sample-quizzes/`. **How to import** on
 the home page explains the quiz format and can re-add the welcome sample.

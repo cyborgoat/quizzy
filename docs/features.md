@@ -8,17 +8,30 @@ screen. It contains:
 - **Home** — the quiz library
 - **Mistake Log** — threshold-filtered mistakes and flagged questions from scored attempts
 - **Knowledge** — markdown notes linked to quiz questions (the Knowledge Base)
-- **History** — saved quiz attempts, progress summaries, and review shortcuts (the final main navigation item)
-- **Settings** — profile, quiz directory, quiz preferences, shortcuts, Mistake Log thresholds, and synchronization (pinned to the bottom)
+- **History** — saved quiz attempts, progress summaries, and review shortcuts
+- **QuizHub** — optional curated catalog (shown only when QuizHub is enabled)
+- **Settings** — language, profile, quiz directory, QuizHub, preferences, shortcuts,
+  Mistake Log thresholds, synchronization, and reset (pinned to the bottom)
 
 The sidebar collapses to icon-only mode; clicking the Quizzy logo in the
 sidebar header toggles it open and closed.
 
+## First launch
+
+New installs (and factory resets) open a step-by-step wizard before the library:
+
+1. **Language** — English, Spanish, or Chinese for the UI, default QuizHub edition, and Welcome sample.
+2. **Working folder** — pick where quiz JSON and knowledge notes live; Welcome files are
+   written when missing.
+3. **QuizHub** — optionally enable downloads from the default public catalog or a custom URL.
+4. **Getting started** — short tips, then enter the app.
+
+Completing the wizard sets `onboardingCompleted`. Older installs that already have a
+working directory are treated as onboarded without showing the wizard again.
+
 ## Home page
 
-The home page opens with a personalised greeting — "Hello, {name}" — drawn from
-the name set in Settings. Below the greeting, the page lists every valid quiz in
-the configured working directory.
+The home page lists every valid quiz in the configured working directory.
 
 Available actions on the home page:
 
@@ -182,19 +195,25 @@ Mistake Log integration:
 
 ## Settings
 
-The Settings page lets users configure their profile and quiz directory. Changes
-are staged locally and only committed when **Save** is clicked. Navigating away
-with unsaved changes opens a confirmation dialog.
+The Settings page configures language, profile, working folder, QuizHub, quiz
+preferences, shortcuts, Mistake Log thresholds, sync, and reset. Most fields
+save when you change them or leave the field (for example on blur); there is no
+separate page-wide Save button.
+
+### Language
+
+Choose **English**, **Spanish (Español)**, or **Chinese** for the app chrome. The
+same locale is the default QuizHub edition language and the language used when
+seeding Welcome samples. Quiz and note file contents are not translated.
 
 ### Profile
 
-The **Full name** field sets the name displayed in the home page greeting.
+Optional **Full name** for your profile.
 
 ### Shortcuts
 
 Customize keyboard shortcuts for common actions. Click a shortcut field and press
-the desired key combination to record it. Duplicate shortcuts are rejected on
-Save.
+the desired key combination to record it. Duplicate shortcuts are rejected.
 
 - **Link knowledge note** — opens the link search from the references panel
 - **New knowledge note** — creates a note linked to the current question
@@ -205,6 +224,11 @@ Save.
 
 - **Shuffle questions** randomizes question order within each question type group (quiz sessions only).
 - **Shuffle options** randomizes answer option order while keeping correct-answer mapping accurate (quiz sessions only).
+
+### QuizHub
+
+Enable or disable QuizHub, and optionally set a custom base URL (or reset to the
+default public catalog). When disabled, the QuizHub sidebar item is hidden.
 
 ### Mistake Log thresholds
 
@@ -219,8 +243,8 @@ flagged in a scored attempt (flagged questions are always included).
 ### Quiz directory
 
 The **Working directory** section shows the currently configured path. Clicking
-**Select folder** (or **Change**) opens a native directory picker and stages the
-selection. The path is written to disk only when Save is confirmed.
+**Select folder** (or **Change**) opens a native directory picker and saves the
+path when you confirm the selection.
 
 ### Data synchronization
 
@@ -235,6 +259,28 @@ After sync completes, Settings shows a summary of what was rescanned, repaired,
 and any warnings (such as a goal whose quiz file is missing). A toast provides a
 short headline; the inline card lists counts, changed app-config file paths, and
 details.
+
+### Reset
+
+**Reset…** opens a centered dialog with leveled options. Working-folder quiz and
+knowledge files are never deleted:
+
+| Level | Clears |
+| --- | --- |
+| QuizHub cache | Temporary catalog and manifest downloads |
+| Study progress | Goals, attempts, and Mistake Log data for the current folder |
+| Library metadata | Study progress plus favorites, archives, knowledge views, and QuizHub install records for the current folder |
+| Factory reset | All app-config data and preferences; returns to first-launch onboarding |
+
+## QuizHub
+
+When enabled, **QuizHub** in the sidebar browses a remote catalog of quizzes and
+knowledge notes. You can switch edition language, preview items, download into
+the working folder, update when a newer version is published, and remove the
+QuizHub link (optionally keeping the local file). Browse position is kept across
+downloads and language switches. File-name conflicts are resolved in a dialog
+before writing. Install provenance is stored in `quizhub-lock.json` under the
+working directory; temporary HTTP caches live in the app-config directory.
 
 ## Quiz library
 
@@ -251,13 +297,13 @@ Nested directories and non-JSON files are ignored at the quiz-library level. Kno
 
 ## Working directory
 
-Users choose any existing local directory. Quizzy stores its canonical path in
-the application configuration directory and reopens it on future launches.
+Users choose any existing local directory during first launch or later in
+**Settings**. Quizzy stores its canonical path in the application configuration
+directory and reopens it on future launches.
 
-The working directory is configured exclusively in **Settings**. The home page
-provides **Open quiz folder** for direct file management and **Refresh** to
-rescan the current directory. The application also rescans automatically when
-the window regains focus.
+The home page provides **Open quiz folder** for direct file management and
+**Refresh** to rescan the current directory. The application also rescans
+automatically when the window regains focus.
 
 ## Managing quiz files
 
@@ -345,12 +391,13 @@ correct answer, the explanation when available, and whether it was flagged.
 
 ## Data lifetime
 
-Quiz files, the configured directory, the user's name, and goal attempt history
-survive application restarts. In-progress quiz session state does not:
+Quiz files, the configured directory, language, QuizHub preference, profile name,
+and goal attempt history survive application restarts. In-progress quiz session
+state does not:
 
 - No answer progress is stored while a quiz is in progress.
 - Restarting or leaving a quiz clears the current session.
-- No backend, accounts, database, or cloud synchronization is used.
+- No accounts or cloud sync of your library; QuizHub only downloads when you ask.
 
 Goal metadata and completed attempt records are persisted under the Tauri app
 config directory. See [Native storage and security](native-storage.md).
@@ -362,13 +409,15 @@ knowledge notes under `sample-quizzes/knowledge-base/`:
 
 | File | Contents |
 | --- | --- |
-| `welcome-to-quizzy.json` | First-run tour quiz about using Quizzy |
+| `welcome-to-quizzy.json` | English first-run tour quiz (repo reference copy) |
+| `welcome-to-quizzy.es.json` / `.zh.json` | Spanish and Chinese Welcome quiz sources |
 | `knowledge-base/welcome-to-quizzy.md` | Linked welcome note for the tour quiz |
+| `knowledge-base/welcome-to-quizzy.es.md` / `.zh.md` | Spanish and Chinese Welcome notes |
 | `comprehensive-stress-test.json` | Large mixed-format quiz for edge-case testing |
 | `markdown-showcase.json` | Demonstrates bold, italic, code, and KaTeX math rendering |
 | `markdown-showcase.md` | Knowledge note with tables, math, and other markdown features |
 
 Choosing a working directory for the first time (or using **Add welcome sample** in
-the import guide) writes `welcome-to-quizzy.json` and
-`knowledge-base/welcome-to-quizzy.md` when those files are missing. Extra reference
+the import guide) writes locale-matched Welcome quiz and note files when those
+paths are missing (`en`, `es`, or `zh` from the app language). Extra reference
 quizzes under `sample-quizzes/` are for docs and manual testing only.

@@ -51,6 +51,10 @@ telemetry: your quizzes, attempts, and notes are ordinary files you own.
   and see them right next to the questions you struggle with.
 - **Library tools.** Search, filter, sort, favorite, and archive quizzes. Import
   files from the app, or open the folder and manage them with your file manager.
+- **QuizHub (optional).** Browse and download curated quizzes and notes into your
+  working folder from a public catalog or your own QuizHub URL.
+- **English, Spanish, and Chinese UI.** Choose a language on first launch; Welcome
+  samples follow that choice. You can change the language later in Settings.
 - **Local and private.** Data lives in your quiz folder and the app's config
   directory. Nothing is uploaded.
 
@@ -72,9 +76,10 @@ Prefer to build it yourself? See [Build from source](#build-from-source).
 
 ## Quick start
 
-1. Launch Quizzy and choose a **working directory** from the home page guidance.
-   Quizzy adds a **Welcome to Quizzy** quiz and note so you can learn the app.
-2. Optionally open **Settings** to set your name and preferences.
+1. Launch Quizzy and complete the first-launch steps: choose a **language**, pick a
+   **working folder**, optionally enable **QuizHub**, then get started. Quizzy adds
+   a **Welcome to Quizzy** quiz and note in your language when the folder is empty of them.
+2. Open **Settings** anytime to set your name, preferences, language, or QuizHub source.
 3. Click **Start** on the welcome quiz (or import your own JSON), answer, and submit.
 4. Open **History** to review the attempt, and **Mistake Log** to see what to
    study next.
@@ -139,7 +144,7 @@ Checks to run before opening a pull request:
 npm test
 npm run lint
 npm run build
-cargo test --manifest-path src-tauri/Cargo.toml
+cd src-tauri && cargo test
 ```
 
 The logo source is `public/quizzy-logo.svg`. After editing it, run

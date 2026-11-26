@@ -1,0 +1,74 @@
+{
+  "id": "welcome-to-quizzy",
+  "title": "Te damos la bienvenida a Quizzy",
+  "description": "Un breve recorrido por Quizzy: tu carpeta de cuestionarios, el flujo de práctica, las notas de conocimiento, las metas y las importaciones.",
+  "tags": ["welcome", "getting-started", "primeros-pasos"],
+  "questions": [
+    {
+      "id": "working-directory",
+      "type": "single_choice",
+      "prompt": "¿Dónde busca Quizzy tus archivos de cuestionarios `.json`?",
+      "options": [
+        "Solo dentro de la carpeta de instalación de la app",
+        "En el directorio de trabajo que eliges en Ajustes",
+        "En una cuenta en la nube fija",
+        "Solo en la carpeta de descargas de tu navegador"
+      ],
+      "answerIndex": 1,
+      "explanation": "Quizzy lee y guarda los cuestionarios en el directorio de trabajo que seleccionas. Puedes cambiarlo más adelante en Ajustes."
+    },
+    {
+      "id": "start-quiz",
+      "type": "single_choice",
+      "prompt": "¿Cómo se inicia un intento de práctica con puntuación?",
+      "options": [
+        "Abre un cuestionario de la biblioteca y elige Iniciar",
+        "Solo importando un archivo",
+        "Editando Ajustes primero cada vez",
+        "Creando una nota de conocimiento"
+      ],
+      "answerIndex": 0,
+      "explanation": "Desde Inicio, abre la tarjeta de un cuestionario y comienza un intento. Tus respuestas se califican cuando terminas."
+    },
+    {
+      "id": "knowledge-notes",
+      "type": "true_false",
+      "prompt": "Las notas de conocimiento están en una carpeta `knowledge-base` junto a tus cuestionarios y pueden vincularse a preguntas específicas.",
+      "answer": true,
+      "explanation": "Quizzy guarda notas en Markdown dentro de `knowledge-base/`. Puedes vincular una nota a preguntas de un cuestionario y abrirla mientras repasas."
+    },
+    {
+      "id": "mistake-log",
+      "type": "multiple_choice",
+      "prompt": "¿Cuáles de estas opciones te ayudan a mejorar después de practicar?",
+      "options": [
+        "El Registro de errores para las preguntas que fallas con frecuencia",
+        "Metas con una puntuación objetivo en un cuestionario",
+        "Eliminar tu directorio de trabajo",
+        "Revisar intentos anteriores desde el Historial"
+      ],
+      "answerIndices": [0, 1, 3],
+      "explanation": "El Registro de errores, las Metas y el Historial están pensados para repasar. Tu directorio de trabajo debe seguir disponible para que Quizzy pueda cargar tu biblioteca."
+    },
+    {
+      "id": "import-more",
+      "type": "single_choice",
+      "prompt": "¿Cómo puedes añadir más cuestionarios después de este archivo de bienvenida?",
+      "options": [
+        "Solo reinstalando Quizzy",
+        "Importando un cuestionario `.json`, usando Cómo importar / los prompts de IA, o explorando QuizHub si está activado",
+        "Solo cambiando el nombre de este cuestionario de bienvenida",
+        "No se pueden añadir cuestionarios más adelante"
+      ],
+      "answerIndex": 1,
+      "explanation": "Usa **Importar archivo de cuestionario**, el prompt de IA de la ayuda de importación, o activa QuizHub en Ajustes para descargar contenido seleccionado. Los archivos que coloques en el directorio de trabajo aparecen al actualizar."
+    },
+    {
+      "id": "folder-safe",
+      "type": "true_false",
+      "prompt": "Debes tratar el directorio de trabajo como tu biblioteca: guarda allí los JSON de cuestionarios y las notas de conocimiento, y evita eliminar la carpeta mientras Quizzy la esté usando.",
+      "answer": true,
+      "explanation": "Quizzy espera que esa carpeta siga siendo legible. Haz una copia de seguridad como con cualquier otra carpeta de documentos si el contenido es importante para ti."
+    }
+  ]
+}

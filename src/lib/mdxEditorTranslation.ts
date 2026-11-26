@@ -67,6 +67,72 @@ const zhStrings: Record<string, string> = {
   "toolbar.undo": "撤销 {{shortcut}}",
 };
 
+/** Spanish strings for the built-in MDXEditor UI. */
+const esStrings: Record<string, string> = {
+  "codeBlock.inlineLanguage": "Idioma",
+  "codeBlock.language": "Idioma del bloque de código",
+  "codeBlock.selectLanguage": "Seleccionar idioma del bloque de código",
+  "codeblock.delete": "Eliminar bloque de código",
+  "contentArea.editableMarkdown": "Markdown editable",
+  "createLink.cancelTooltip": "Cancelar cambios",
+  "createLink.saveTooltip": "Establecer enlace",
+  "createLink.text": "Texto del enlace",
+  "createLink.textTooltip": "Texto que se muestra para el enlace",
+  "createLink.title": "Título del enlace",
+  "createLink.titleTooltip": "Atributo title del enlace, visible al pasar el cursor",
+  "createLink.url": "URL",
+  "createLink.urlPlaceholder": "Seleccionar o pegar URL",
+  "dialog.close": "Cerrar diálogo",
+  "dialogControls.cancel": "Cancelar",
+  "dialogControls.save": "Guardar",
+  "linkPreview.copied": "¡Copiado!",
+  "linkPreview.copyToClipboard": "Copiar al portapapeles",
+  "linkPreview.edit": "Editar dirección del enlace",
+  "linkPreview.open": "Abrir {{url}} en una ventana nueva",
+  "linkPreview.remove": "Quitar enlace",
+  "table.alignCenter": "Alinear al centro",
+  "table.alignLeft": "Alinear a la izquierda",
+  "table.alignRight": "Alinear a la derecha",
+  "table.columnMenu": "Menú de columna",
+  "table.deleteColumn": "Eliminar esta columna",
+  "table.deleteRow": "Eliminar esta fila",
+  "table.deleteTable": "Eliminar tabla",
+  "table.insertColumnLeft": "Insertar columna a la izquierda",
+  "table.insertColumnRight": "Insertar columna a la derecha",
+  "table.insertRowAbove": "Insertar fila arriba",
+  "table.insertRowBelow": "Insertar fila abajo",
+  "table.rowMenu": "Menú de fila",
+  "table.textAlignment": "Alineación del texto",
+  "toolbar.blockTypeSelect.placeholder": "Tipo de bloque",
+  "toolbar.blockTypeSelect.selectBlockTypeTooltip": "Seleccionar tipo de bloque",
+  "toolbar.blockTypes.heading": "Título {{level}}",
+  "toolbar.blockTypes.paragraph": "Párrafo",
+  "toolbar.blockTypes.quote": "Cita",
+  "toolbar.bold": "Negrita",
+  "toolbar.bulletedList": "Lista con viñetas",
+  "toolbar.checkList": "Lista de tareas",
+  "toolbar.codeBlock": "Insertar bloque de código",
+  "toolbar.diffMode": "Modo comparación",
+  "toolbar.inlineCode": "Código en línea",
+  "toolbar.italic": "Cursiva",
+  "toolbar.link": "Crear enlace",
+  "toolbar.numberedList": "Lista numerada",
+  "toolbar.redo": "Rehacer {{shortcut}}",
+  "toolbar.removeBold": "Quitar negrita",
+  "toolbar.removeInlineCode": "Quitar formato de código",
+  "toolbar.removeItalic": "Quitar cursiva",
+  "toolbar.removeStrikethrough": "Quitar tachado",
+  "toolbar.removeUnderline": "Quitar subrayado",
+  "toolbar.richText": "Texto enriquecido",
+  "toolbar.source": "Modo código fuente",
+  "toolbar.strikethrough": "Tachado",
+  "toolbar.table": "Insertar tabla",
+  "toolbar.thematicBreak": "Insertar línea horizontal",
+  "toolbar.toggleGroup": "Grupo de conmutación",
+  "toolbar.underline": "Subrayado",
+  "toolbar.undo": "Deshacer {{shortcut}}",
+};
+
 function interpolate(template: string, values?: Record<string, unknown>) {
   if (!values) return template;
   return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
@@ -77,9 +143,14 @@ function interpolate(template: string, values?: Record<string, unknown>) {
 const zhTranslation: Translation = (key, defaultValue, interpolations) =>
   interpolate(zhStrings[key] ?? defaultValue, interpolations);
 
+const esTranslation: Translation = (key, defaultValue, interpolations) =>
+  interpolate(esStrings[key] ?? defaultValue, interpolations);
+
 const enTranslation: Translation = (_key, defaultValue, interpolations) =>
   interpolate(defaultValue, interpolations);
 
 export function getMdxEditorTranslation(locale: AppLocale): Translation {
-  return locale === "zh" ? zhTranslation : enTranslation;
+  if (locale === "zh") return zhTranslation;
+  if (locale === "es") return esTranslation;
+  return enTranslation;
 }

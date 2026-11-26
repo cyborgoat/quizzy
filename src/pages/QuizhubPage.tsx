@@ -29,6 +29,7 @@ import { SearchField } from "@/components/ui/search-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppLocale } from "@/hooks/useAppLocale";
+import { isAppLocale } from "@/lib/locale";
 import { useGoals } from "@/hooks/useGoals";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
@@ -153,7 +154,7 @@ function QuizhubWorkspace({ scope }: { scope: HubScope }) {
     setKnownLocales(catalog?.locales ?? knownLocales);
     localStorage.setItem(preference, id);
     setLocale(id);
-    if (id === "en" || id === "zh") void setAppLocale(id);
+    if (isAppLocale(id)) void setAppLocale(id);
   }
   return (
     <QuizhubBrowser

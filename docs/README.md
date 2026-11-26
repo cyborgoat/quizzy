@@ -3,24 +3,27 @@
 Quizzy is a local-first desktop quiz application built with Tauri v2, React,
 TypeScript, and Rust. It reads quiz files from a user-selected directory rather
 than storing quiz content in a database. A persistent sidebar provides navigation
-between the home page, Mistake Log, Knowledge Base, History, and Settings, where
-users configure their display name, quiz preferences, Mistake Log thresholds, and
-working directory.
+between Home, Mistake Log, Knowledge, History, optional QuizHub, and Settings.
+
+On first launch, a short wizard sets language (English, Spanish, or Chinese),
+working folder, and optional QuizHub. The Welcome quiz and note are written in
+that language when missing.
 
 ## Documentation map
 
-- [Quick start](quick-start.md): prerequisites, local development, and desktop builds
-- [Features and workflows](features.md): sidebar, goals, Mistake Log, Knowledge Base, scored quiz attempts, settings, quiz-folder management, and review
+- [Quick start](quick-start.md): prerequisites, first launch, local development, and desktop builds
+- [Features and workflows](features.md): sidebar, library, QuizHub, goals, Mistake Log, Knowledge, settings, sync, and reset
 - [Software architecture](architecture.md): frontend, native layer, data flow, and project structure
 - [Quiz JSON format](quiz-format.md): supported question types and validation rules
 - [Knowledge file format](knowledge-format.md): markdown note front matter, linking rules, and folder layout
-- [Native storage and security](native-storage.md): settings, quiz-folder access, filesystem boundaries, and atomic writes
+- [Native storage and security](native-storage.md): settings, app-config layout, QuizHub cache, and filesystem boundaries
 - [Development and testing](development.md): scripts, tests, formatting, and packaging
 
 Reference quiz files for development and manual quiz-folder testing are kept in
-`sample-quizzes/`. Reference knowledge notes are in `sample-quizzes/knowledge-base/`. The
-**Welcome to Quizzy** quiz and note are embedded and written when a working directory is
-first chosen (or via **Add welcome sample** in the import guide).
+`sample-quizzes/`. Reference knowledge notes are in `sample-quizzes/knowledge-base/`.
+English, Spanish, and Chinese Welcome samples are embedded and written for the
+chosen app locale when a working directory is first set up (or via **Add welcome
+sample** in the import guide).
 
 ## Technology stack
 
@@ -48,3 +51,4 @@ first chosen (or via **Add welcome sample** in the import guide).
   subsequent file refreshes.
 - Goal metadata and attempt history are persisted locally; in-progress quiz
   drafts are not.
+- UI chrome is localized (English / Spanish / Chinese); quiz and note content stay as authored.

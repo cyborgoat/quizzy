@@ -38,10 +38,12 @@ TanStack Router Vite plugin. Router bootstrap lives in `src/app/router.tsx`.
 | `/` | Quiz library (home page) |
 | `/goals` | Goal tracking |
 | `/goals/:goalId/attempts/:attemptId` | Attempt review |
+| `/history` | Attempt history feed |
 | `/mistakes` | Mistake Log (`?quizId=` scopes to one quiz) |
 | `/knowledge` | Knowledge Base browse view |
 | `/knowledge/:knowledgeId` | Knowledge note detail (`?edit=1` opens edit mode) |
-| `/settings` | User profile, preferences, and working-directory configuration |
+| `/hub` | QuizHub catalog (when enabled in Settings) |
+| `/settings` | Language, profile, preferences, QuizHub, sync, and reset |
 | `/quiz/:quizId` | Active quiz or final results (`?from=home` or `?from=goals` records the origin) |
 
 Unknown routes redirect to the home page.
@@ -55,8 +57,9 @@ its own `SidebarProvider` for the question navigator.
 ### User profile and preferences state
 
 `AppSettingsProvider` loads profile name, quiz shuffle preferences, Mistake Log
-thresholds, UI font size, and keyboard shortcuts from `settings.json` via
-`loadAppSettings`. It exposes focused context hooks:
+thresholds, UI font size, keyboard shortcuts, QuizHub flags, locale, and
+onboarding state from `settings.json` via `loadAppSettings`. It exposes focused
+context hooks:
 
 - `useUserProfile` — display name
 - `useQuizPreferences` — shuffle questions and options
@@ -64,9 +67,12 @@ thresholds, UI font size, and keyboard shortcuts from `settings.json` via
 - `useUiPreferences` — current font size (read-only; zoom shortcuts persist immediately)
 - `useAppShortcuts` — parsed keybinds and shortcut setters
 
-Settings changes are committed through `nativeApi.saveSettings` on the Settings
-page; providers update their in-memory state after a successful save. Font size
-from zoom shortcuts is persisted immediately without visiting Settings.
+UI strings are resolved through `I18nProvider` (`en` / `es` / `zh`). Settings fields
+persist through `nativeApi.saveSettings` as each control commits; providers
+update in-memory state after a successful save. Font size from zoom shortcuts is
+persisted immediately without visiting Settings. First launch is gated by
+`onboardingCompleted` and rendered by the first-launch wizard before the main
+shell.
 
 ### Library state
 
@@ -302,19 +308,20 @@ src/
     layout/       AppLayout and AppSidebar (persistent navigation)
     goals/        Goal cards, attempt review, and history panels
     mistake-log/  Mistake Log table, review section, and status badges
-    settings/     Settings section cards and sync report UI
+    onboarding/   First-launch wizard steps
+    quizhub/      Catalog preview, conflict, and badge UI
+    settings/     Settings section cards, QuizHub, sync, and reset UI
     quiz/         Quiz UI, QuestionReviewCard, ReviewQuestionSplitPanel
     ui/           shadcn-style local primitives (including Slider)
   contexts/       QuizLibraryProvider, KnowledgeLibraryProvider, GoalsProvider,
-                  preferences providers
+                  preferences providers, QuizHub installed state
   data/           Zod schema, repository parser, and tests
   hooks/          useGoals, useMistakeLog, useKnowledgeLibrary, useQuizSession, etc.
-  lib/            Native adapter, scoring, knowledge drafts, mistake threshold
-                  filtering, mistakeLogDisplay (table filters and selection),
-                  settingsDraft (draft state and validation),
-                  syncReport (sync result formatting),
-                  mistakeLogReview (answer remap for review cards)
-  pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage, etc.
+  lib/            Native adapter, scoring, i18n messages, knowledge drafts,
+                  mistake threshold filtering, mistakeLogDisplay,
+                  settingsDraft, syncReport, mistakeLogReview, quizhub helpers
+  pages/          HomePage, GoalsPage, MistakeLogPage, KnowledgeBasePage,
+                  QuizhubPage, SettingsPage, etc.
   test/           Vitest setup (browser API polyfills for Node)
   types/          Quiz, goal, knowledge, mistake log, and quiz session types
 
@@ -324,7 +331,8 @@ src-tauri/
   src/            Rust commands (`lib.rs`, `settings.rs`, `fs_utils.rs`,
                   `quiz_files.rs`, `knowledge_files.rs`,
                   `app_data_commands.rs`, `goals_storage.rs`,
-                  `mistake_index.rs`, `quiz_archive.rs`, `data_sync.rs`)
+                  `mistake_index.rs`, `quiz_archive.rs`, `data_sync.rs`,
+                  `data_reset.rs`, `hub_sync.rs`)
   Cargo.toml      Rust dependencies and crate configuration
   tauri.conf.json Desktop window, build, and bundle configuration
 

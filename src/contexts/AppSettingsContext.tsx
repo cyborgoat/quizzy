@@ -9,7 +9,7 @@ import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
 import { I18nProvider } from "@/components/I18nProvider";
-import { detectSystemAppLocale, isAppLocale, type AppLocale } from "@/lib/locale";
+import { detectSystemAppLocale, isAppLocale, localeToBcp47, type AppLocale } from "@/lib/locale";
 import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import {
@@ -126,7 +126,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const effectiveLocale: AppLocale = localeConfigured ? appLocale : detectSystemAppLocale();
 
   useEffect(() => {
-    document.documentElement.lang = effectiveLocale === "zh" ? "zh-CN" : "en";
+    document.documentElement.lang = localeToBcp47(effectiveLocale);
   }, [effectiveLocale]);
 
   const setAppLocale = useCallback(async (locale: AppLocale) => {

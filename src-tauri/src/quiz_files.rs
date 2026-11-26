@@ -66,15 +66,20 @@ pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<St
 }
 
 const WELCOME_QUIZ_EN: &str = include_str!("../../sample-quizzes/welcome-to-quizzy.json");
+const WELCOME_QUIZ_ES: &str = include_str!("../../sample-quizzes/welcome-to-quizzy.es.json");
 const WELCOME_QUIZ_ZH: &str = include_str!("../../sample-quizzes/welcome-to-quizzy.zh.json");
 const WELCOME_NOTE_EN: &str =
     include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.md");
+const WELCOME_NOTE_ES: &str =
+    include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.es.md");
 const WELCOME_NOTE_ZH: &str =
     include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.zh.md");
 
 fn welcome_quiz_for_locale(locale: &str) -> &'static str {
     if locale.eq_ignore_ascii_case("zh") {
         WELCOME_QUIZ_ZH
+    } else if locale.eq_ignore_ascii_case("es") {
+        WELCOME_QUIZ_ES
     } else {
         WELCOME_QUIZ_EN
     }
@@ -83,6 +88,8 @@ fn welcome_quiz_for_locale(locale: &str) -> &'static str {
 fn welcome_note_for_locale(locale: &str) -> &'static str {
     if locale.eq_ignore_ascii_case("zh") {
         WELCOME_NOTE_ZH
+    } else if locale.eq_ignore_ascii_case("es") {
+        WELCOME_NOTE_ES
     } else {
         WELCOME_NOTE_EN
     }
@@ -90,8 +97,9 @@ fn welcome_note_for_locale(locale: &str) -> &'static str {
 
 /// Bundled quiz payloads used by tests and locale seeding.
 #[cfg_attr(not(test), allow(dead_code))]
-pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 2] = [
+pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 3] = [
     ("welcome-to-quizzy.json", WELCOME_QUIZ_EN),
+    ("welcome-to-quizzy.es.json", WELCOME_QUIZ_ES),
     ("welcome-to-quizzy.zh.json", WELCOME_QUIZ_ZH),
 ];
 
@@ -332,6 +340,20 @@ mod tests {
         let quiz_en = fs::read_to_string(dir_en.join("welcome-to-quizzy.json")).expect("quiz");
         assert!(quiz_en.contains("\"title\": \"Welcome to Quizzy\""));
         fs::remove_dir_all(dir_en).expect("cleanup");
+
+        let dir_es = test_directory("samples-locale-es");
+        let es = write_missing_samples(&dir_es, "es").expect("es seed");
+        assert_eq!(
+            es.added,
+            ["welcome-to-quizzy.json", "knowledge-base/welcome-to-quizzy.md"]
+        );
+        let quiz_es = fs::read_to_string(dir_es.join("welcome-to-quizzy.json")).expect("quiz");
+        assert!(quiz_es.contains("Te damos la bienvenida a Quizzy"));
+        assert!(!quiz_es.contains("\"title\": \"Welcome to Quizzy\""));
+        let note_es =
+            fs::read_to_string(dir_es.join("knowledge-base/welcome-to-quizzy.md")).expect("note");
+        assert!(note_es.contains("directorio de trabajo"));
+        fs::remove_dir_all(dir_es).expect("cleanup");
     }
 
     #[test]
