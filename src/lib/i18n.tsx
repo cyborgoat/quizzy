@@ -31,23 +31,21 @@ const messages = {
     "settings.reset.title": "Reset",
     "settings.reset.description":
       "Wipe Quizzy data at different levels. Quiz and knowledge files in your working folder are never deleted.",
+    "settings.reset.action": "Reset…",
+    "settings.reset.cancel": "Cancel",
     "settings.reset.working": "Working…",
     "settings.reset.quizhubCache": "QuizHub cache",
     "settings.reset.quizhubCacheDescription":
       "Clear temporary catalog and manifest downloads. Installed quizzes and notes stay.",
-    "settings.reset.quizhubCacheAction": "Clear cache",
     "settings.reset.studyHistory": "Study progress",
     "settings.reset.studyHistoryDescription":
       "Delete goals, attempts, and Mistake Log data for the current working directory.",
-    "settings.reset.studyHistoryAction": "Clear progress",
     "settings.reset.libraryMetadata": "Library metadata",
     "settings.reset.libraryMetadataDescription":
       "Clear study progress, favorites, archives, knowledge views, and QuizHub install records for this folder. Files stay on disk.",
-    "settings.reset.libraryMetadataAction": "Clear metadata",
     "settings.reset.factory": "Factory reset",
     "settings.reset.factoryDescription":
       "Wipe all Quizzy app data and preferences, then return to first launch. Your working-folder files are kept.",
-    "settings.reset.factoryAction": "Reset app",
     "settings.reset.confirmQuizhubCache":
       "Clear the QuizHub cache? Catalogs will be downloaded again next time you browse.",
     "settings.reset.confirmStudyHistory":
@@ -95,23 +93,21 @@ const messages = {
     "settings.reset.title": "重置",
     "settings.reset.description":
       "按不同级别清除 Quizzy 数据。工作文件夹中的测验与知识文件不会被删除。",
+    "settings.reset.action": "重置…",
+    "settings.reset.cancel": "取消",
     "settings.reset.working": "处理中…",
     "settings.reset.quizhubCache": "QuizHub 缓存",
     "settings.reset.quizhubCacheDescription":
       "清除临时目录与清单下载缓存。已安装的测验与笔记会保留。",
-    "settings.reset.quizhubCacheAction": "清除缓存",
     "settings.reset.studyHistory": "学习进度",
     "settings.reset.studyHistoryDescription":
       "删除当前工作目录的目标、作答记录与错题本数据。",
-    "settings.reset.studyHistoryAction": "清除进度",
     "settings.reset.libraryMetadata": "题库元数据",
     "settings.reset.libraryMetadataDescription":
       "清除本文件夹的学习进度、收藏、归档、知识浏览次数与 QuizHub 安装记录。磁盘上的文件会保留。",
-    "settings.reset.libraryMetadataAction": "清除元数据",
     "settings.reset.factory": "恢复出厂设置",
     "settings.reset.factoryDescription":
       "清除全部 Quizzy 应用数据与偏好，并回到首次启动。工作文件夹中的文件会保留。",
-    "settings.reset.factoryAction": "重置应用",
     "settings.reset.confirmQuizhubCache":
       "清除 QuizHub 缓存？下次浏览时会重新下载目录。",
     "settings.reset.confirmStudyHistory":
