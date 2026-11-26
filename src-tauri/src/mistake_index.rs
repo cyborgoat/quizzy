@@ -10,12 +10,10 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use tauri::{AppHandle, Manager};
 
 use crate::goals_storage::{GoalAttempt, QuestionResult, SubmittedAnswer, GOALS_DIR};
 
 const MISTAKE_SHARD_FILE: &str = "mistakes.json";
-const LEGACY_MISTAKE_INDEX_FILE: &str = "mistake-index.json";
 const MISTAKE_INDEX_VERSION: u32 = 2;
 
 /// One row of the Mistake Log as sent to the UI.
@@ -208,21 +206,17 @@ fn attempt_count_for(goal_dir: &Path) -> Result<u32, String> {
 }
 
 /// Re-aggregates one goal from its attempt files and writes its shard.
-pub fn rebuild_for_goal(app: &AppHandle, goal_id: &str) -> Result<(), String> {
-    let goal_dir = crate::goals_storage::goal_directory_path(app, goal_id)?;
-    let attempts = crate::goals_storage::load_goal_attempts(app, goal_id)?;
+pub fn rebuild_for_goal(root: &Path, goal_id: &str) -> Result<(), String> {
+    let goal_dir = crate::goals_storage::goal_directory_path(root, goal_id)?;
+    let attempts = crate::goals_storage::load_goal_attempts(root, goal_id)?;
     let shard = build_shard(&attempts, attempt_count_for(&goal_dir)?);
     write_shard(&goal_dir, &shard)
 }
 
 /// Folds one freshly saved attempt into the goal's shard. Call after the attempt is persisted.
 /// Falls back to a full rebuild of that goal when the shard is missing or out of step.
-pub fn record_attempt(
-    app: &AppHandle,
-    goal_id: &str,
-    attempt: &GoalAttempt,
-) -> Result<(), String> {
-    let goal_dir = crate::goals_storage::goal_directory_path(app, goal_id)?;
+pub fn record_attempt(root: &Path, goal_id: &str, attempt: &GoalAttempt) -> Result<(), String> {
+    let goal_dir = crate::goals_storage::goal_directory_path(root, goal_id)?;
     let attempt_count = attempt_count_for(&goal_dir)?;
 
     match read_shard(&goal_dir) {
@@ -242,16 +236,8 @@ pub fn record_attempt(
                 },
             )
         }
-        _ => rebuild_for_goal(app, goal_id),
+        _ => rebuild_for_goal(root, goal_id),
     }
-}
-
-fn remove_legacy_index(app: &AppHandle) -> bool {
-    let Ok(directory) = app.path().app_config_dir() else {
-        return false;
-    };
-    let legacy = directory.join(LEGACY_MISTAKE_INDEX_FILE);
-    legacy.exists() && std::fs::remove_file(legacy).is_ok()
 }
 
 fn flatten(
@@ -274,16 +260,13 @@ fn flatten(
 
 /// Reads every goal's shard, rebuilding the stale or missing ones. Returns the index and the
 /// goal-relative paths of shards that were (re)written.
-fn collect_shards(
-    app: &AppHandle,
-    force: bool,
-) -> Result<(MistakeIndex, Vec<String>), String> {
-    let goals = crate::goals_storage::list_goals(app)?;
+fn collect_shards(root: &Path, force: bool) -> Result<(MistakeIndex, Vec<String>), String> {
+    let goals = crate::goals_storage::list_goals(root)?;
     let mut shards = Vec::with_capacity(goals.len());
     let mut written = Vec::new();
 
     for goal in &goals {
-        let goal_dir = crate::goals_storage::goal_directory_path(app, &goal.meta.id)?;
+        let goal_dir = crate::goals_storage::goal_directory_path(root, &goal.meta.id)?;
         let expected = goal.attempts.len() as u32;
         let existing = read_shard(&goal_dir);
 
@@ -294,7 +277,7 @@ fn collect_shards(
             }
         }
 
-        let attempts = crate::goals_storage::load_goal_attempts(app, &goal.meta.id)?;
+        let attempts = crate::goals_storage::load_goal_attempts(root, &goal.meta.id)?;
         let rebuilt = build_shard(&attempts, expected);
         if existing.as_ref() != Some(&rebuilt) {
             write_shard(&goal_dir, &rebuilt)?;
@@ -307,23 +290,19 @@ fn collect_shards(
 }
 
 /// Rebuilds every shard from the attempt files (used by Synchronize). Returns the index and the
-/// relative paths of files that changed, including a removed legacy `mistake-index.json`.
-pub fn rebuild_all(app: &AppHandle) -> Result<(MistakeIndex, Vec<String>), String> {
-    let (index, mut written) = collect_shards(app, true)?;
-    if remove_legacy_index(app) {
-        written.push(LEGACY_MISTAKE_INDEX_FILE.to_string());
-    }
-    Ok((index, written))
+/// relative paths of files that changed.
+pub fn rebuild_all(root: &Path) -> Result<(MistakeIndex, Vec<String>), String> {
+    collect_shards(root, true)
 }
 
-pub fn get_mistake_index(app: &AppHandle) -> Result<MistakeIndex, String> {
-    Ok(collect_shards(app, false)?.0)
+pub fn get_mistake_index(root: &Path) -> Result<MistakeIndex, String> {
+    Ok(collect_shards(root, false)?.0)
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        aggregate_attempts, apply_question_result, fold_attempt, finish_entry, rows_into_entries,
+        aggregate_attempts, apply_question_result, finish_entry, fold_attempt, rows_into_entries,
         shard_is_fresh, MistakeShard, ShardEntry, MISTAKE_INDEX_VERSION,
     };
     use crate::goals_storage::{GoalAttempt, QuestionResult, SubmittedAnswer};

@@ -10,7 +10,6 @@ export type SyncReportSections = {
 
 function hasRepairs(report: SyncReport) {
   return (
-    report.legacyGoalsMigrated ||
     report.attemptIndexesRebuilt > 0 ||
     report.attemptIndexEntriesAdded > 0 ||
     report.attemptIndexEntriesRemoved > 0 ||
@@ -37,9 +36,6 @@ export function formatSyncSections(report: SyncReport): SyncReportSections {
     );
   }
 
-  if (report.legacyGoalsMigrated) {
-    repaired.push("Migrated legacy goals file to per-goal storage.");
-  }
   if (report.attemptIndexesRebuilt > 0) {
     repaired.push(
       `Rebuilt ${report.attemptIndexesRebuilt} attempt index file${report.attemptIndexesRebuilt === 1 ? "" : "s"} (attempts/index.json).`,
@@ -94,9 +90,6 @@ export function formatSyncSummary(report: SyncReport): string {
     parts.push(
       `Mistake Log index rebuilt (${report.mistakeIndexEntries} question${report.mistakeIndexEntries === 1 ? "" : "s"})`,
     );
-  }
-  if (report.legacyGoalsMigrated) {
-    parts.push("legacy goals migrated");
   }
 
   let message = parts.length > 0 ? `Synchronized: ${parts.join(", ")}.` : "Synchronized.";

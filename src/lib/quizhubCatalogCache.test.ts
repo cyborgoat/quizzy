@@ -4,6 +4,8 @@ import { createHubCatalogCache, HUB_REFRESH_INTERVAL } from "@/lib/quizhubCatalo
 
 const catalog = (checkedAt = Date.now() / 1000): HubCatalog => ({
   baseUrl: "https://example.com/", checkedAt, categories: [], items: [], skipped: [],
+  defaultLocale: "en", activeLocale: "en", locales: [], domains: [],
+  manifestUrl: "https://example.com/en/manifest.json", editionError: null, refreshError: null,
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -69,6 +71,16 @@ describe("Quizhub catalog cache", () => {
     await cache.refresh(false, true);
     expect(fetch.mock.calls).toEqual([[false], [false]]);
     expect(cache.getSnapshot().catalog?.items[0].state).toBe("installed");
+  });
+
+  it("clears the active items when the server removes the configured edition", async () => {
+    const saved = catalog();
+    const unavailable = { ...saved, manifestUrl: null, editionError: "Edition unavailable" };
+    const fetch = vi.fn().mockResolvedValueOnce(saved).mockResolvedValueOnce(unavailable);
+    const cache = createHubCatalogCache(fetch);
+    await cache.visit();
+    await cache.refresh(true, true);
+    expect(cache.getSnapshot().catalog).toBe(unavailable);
   });
 
   it("does not immediately retry a failed initial load", async () => {

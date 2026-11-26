@@ -1,27 +1,44 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { WorkingDirectoryContext } from "@/contexts/working-directory-context";
+import { WorkingDirectoryContext, type LibrarySession } from "@/contexts/working-directory-context";
 import { errorMessage, nativeApi } from "@/lib/native";
 
 export function WorkingDirectoryProvider({ children }: { children: ReactNode }) {
-  const [directoryPath, setDirectoryPath] = useState<string | null>(null);
-  const [directoryAvailable, setDirectoryAvailable] = useState(false);
+  const [library, setLibrary] = useState({
+    directoryPath: null as string | null,
+    directoryAvailable: false,
+    session: null as LibrarySession | null,
+  });
+  const request = useRef(0);
+  const activeSession = useRef<LibrarySession | null>(null);
 
   const refresh = useCallback(async () => {
+    const id = ++request.current;
     try {
       const settings = await nativeApi.getSettings();
-      setDirectoryPath(settings.workingDirectory);
-      setDirectoryAvailable(settings.workingDirectoryAvailable);
+      if (id !== request.current) return;
+      const path = settings.workingDirectoryAvailable ? settings.workingDirectory : null;
+      if (!path) {
+        activeSession.current = null;
+      } else if (activeSession.current?.path !== path) {
+        const session: LibrarySession = { path, isCurrent: () => activeSession.current === session };
+        activeSession.current = session;
+      }
+      setLibrary({
+        directoryPath: settings.workingDirectory,
+        directoryAvailable: settings.workingDirectoryAvailable,
+        session: activeSession.current,
+      });
     } catch (error) {
-      setDirectoryAvailable(false);
+      if (id !== request.current) return;
+      activeSession.current = null;
+      setLibrary((current) => ({ ...current, directoryAvailable: false, session: null }));
       toast.error(errorMessage(error));
     }
   }, []);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect -- load directory settings on mount */
     void refresh();
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [refresh]);
 
   useEffect(() => {
@@ -34,7 +51,7 @@ export function WorkingDirectoryProvider({ children }: { children: ReactNode }) 
 
   return (
     <WorkingDirectoryContext.Provider
-      value={{ directoryPath, directoryAvailable, refresh }}
+      value={{ ...library, refresh }}
     >
       {children}
     </WorkingDirectoryContext.Provider>

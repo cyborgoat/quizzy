@@ -1,46 +1,56 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link } from "@tanstack/react-router";
 import {
-  ArrowLeft,
+  ChevronRight,
+  Languages,
   BookOpen,
   Check,
   Download,
+  FolderOpen,
   PackagePlus,
   RefreshCw,
   SquareLetterQ,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { LoadingState } from "@/components/quiz/LoadingState";
+import { QuizhubConflictDialog } from "@/components/quizhub/QuizhubConflictDialog";
 import { QuizhubPreviewDialog } from "@/components/quizhub/QuizhubPreviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-styles";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SearchField } from "@/components/ui/search-field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { useGoals } from "@/hooks/useGoals";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizStartDialog } from "@/hooks/useQuizStartDialog";
 import { useQuizhubCatalog } from "@/hooks/useQuizhubCatalog";
+import { useQuizhubScope } from "@/hooks/useQuizhubScope";
 import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
 import { formatShortDate } from "@/lib/formatDate";
 import {
   errorMessage,
   nativeApi,
+  type HubConflict,
+  type HubResolution,
   type HubItem,
   type HubItemRef,
   type HubItemState,
+  type HubScope,
+  type HubLocale,
 } from "@/lib/native";
 import {
   filterHubItems,
   formatBytes,
-  groupHubItems,
+  groupHubDomains,
   hubItemKey,
   hubStateDescription,
   hubStateLabel,
@@ -49,145 +59,21 @@ import {
   notifyQuizhubChanged,
   summarizeHubReport,
   type HubCategoryView,
+  type HubDomainView,
 } from "@/lib/quizhub";
 import { cn } from "@/lib/utils";
 
 const stateBadgeClass: Record<HubItemState, string> = {
   available: "",
-  nameTaken: "border-amber-200 bg-amber-50 text-amber-800",
   installed: "border-emerald-200 bg-emerald-50 text-emerald-800",
   updateAvailable: "border-sky-200 bg-sky-50 text-sky-800",
-  modifiedLocally: "border-amber-200 bg-amber-50 text-amber-800",
   removedRemotely: "border-zinc-300 bg-zinc-100 text-zinc-600",
 };
 
 export function QuizhubPage() {
-  const quizLibrary = useQuizLibrary();
-  const knowledgeLibrary = useKnowledgeLibrary();
+  const scope = useQuizhubScope();
   const { quizhubEnabled, setQuizhubEnabled } = useQuizhubPreferences();
-  const [isWorking, setIsWorking] = useState(false);
-  const [downloadingKeys, setDownloadingKeys] = useState<ReadonlySet<string>>(new Set());
   const [isEnabling, setIsEnabling] = useState(false);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [previewItem, setPreviewItem] = useState<HubItem | null>(null);
-
-  const directoryReady = Boolean(quizLibrary.directoryPath && quizLibrary.directoryAvailable);
-
-  const { catalog, error: loadError, isRefreshing: isLoading, refresh: load } =
-    useQuizhubCatalog(quizLibrary.directoryPath, quizhubEnabled && directoryReady);
-  const { openQuizStart } = useQuizStartDialog();
-  const quizSources = useMemo(
-    () => new Map(quizLibrary.quizzes.map((source) => [source.fileName, source])),
-    [quizLibrary.quizzes],
-  );
-
-  const categories = useMemo(
-    () => (catalog ? groupHubItems(catalog.categories, catalog.items) : []),
-    [catalog],
-  );
-  const activeCategory = categories.find((category) => category.id === categoryId) ?? null;
-  const updateCount = catalog?.items.filter((item) => item.state === "updateAvailable").length ?? 0;
-
-  async function afterChange() {
-    notifyQuizhubChanged();
-    await Promise.all([
-      quizLibrary.refresh({ background: true }),
-      knowledgeLibrary.refresh({ background: true }),
-      load(false, true),
-    ]);
-  }
-
-  async function download(items: HubItemRef[], force = false) {
-    if (items.length === 0 || isWorking) return;
-    const keys = new Set(items.map(hubItemKey));
-    setDownloadingKeys(keys);
-    setIsWorking(true);
-    try {
-      const report = await nativeApi.hubDownload(items, force);
-      const summary = summarizeHubReport(report);
-      const problems = report.outcomes.filter(
-        (outcome) => outcome.result === "failed" || outcome.result === "skipped",
-      );
-      if (report.failed > 0) {
-        toast.error(summary, {
-          description: problems.map((outcome) => `${outcome.title}: ${outcome.detail ?? outcome.result}`).join("\n"),
-        });
-      } else if (report.skipped > 0) {
-        toast.warning(summary, {
-          description: problems.map((outcome) => `${outcome.title}: ${outcome.detail ?? outcome.result}`).join("\n"),
-        });
-      } else {
-        toast.success(summary);
-        setPreviewItem(null);
-      }
-      setSelected(new Set());
-      await afterChange();
-    } catch (error) {
-      toast.error(errorMessage(error));
-    } finally {
-      setDownloadingKeys(new Set());
-      setIsWorking(false);
-    }
-  }
-
-  async function replaceWithRemote(item: HubItem) {
-    const message =
-      item.state === "modifiedLocally"
-        ? `Replace your edited copy of "${item.title}" with the quizhub version? Your changes will be lost.`
-        : `Replace the local file ${item.fileName} with "${item.title}" from quizhub? The local file will be overwritten.`;
-    const approved = await confirm(message, { title: "Replace local file?", kind: "warning" });
-    if (approved) await download([item], true);
-  }
-
-  async function remove(item: HubItem) {
-    if (isWorking) return;
-    const edited = item.state === "modifiedLocally";
-    const approved = await confirm(
-      edited
-        ? `Delete "${item.title}"? You edited it after downloading, and your changes will be lost.`
-        : `Delete "${item.title}" from your library? You can download it again later.`,
-      { title: "Remove downloaded item?", kind: "warning" },
-    );
-    if (!approved) return;
-    setIsWorking(true);
-    try {
-      await nativeApi.hubRemove(item, { force: edited });
-      toast.success(`Removed ${item.title}.`);
-      setPreviewItem(null);
-      await afterChange();
-    } catch (error) {
-      toast.error(errorMessage(error));
-    } finally {
-      setIsWorking(false);
-    }
-  }
-
-  async function keepAsLocal(item: HubItem) {
-    if (isWorking) return;
-    setIsWorking(true);
-    try {
-      await nativeApi.hubRemove(item, { keepFile: true });
-      toast.success(`${item.title} is now a local file.`);
-      await afterChange();
-    } catch (error) {
-      toast.error(errorMessage(error));
-    } finally {
-      setIsWorking(false);
-    }
-  }
-
-  function toggle(item: HubItem) {
-    if (!isDownloadable(item.state)) return;
-    setSelected((current) => {
-      const next = new Set(current);
-      const key = hubItemKey(item);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
 
   async function enableQuizhub() {
     if (isEnabling) return;
@@ -205,7 +91,7 @@ export function QuizhubPage() {
   if (!quizhubEnabled) {
     return (
       <PageShell>
-        <PageHeader title="Quizhub" description="Browse and download curated quizzes and notes." />
+        <PageHeader title="QuizHub" description="Browse and download curated quizzes and notes." />
         <div className="mt-6">
           <EmptyState
             title="Quizhub is turned off"
@@ -223,10 +109,10 @@ export function QuizhubPage() {
     );
   }
 
-  if (!directoryReady) {
+  if (!scope) {
     return (
       <PageShell>
-        <PageHeader title="Quizhub" description="Browse and download curated quizzes and notes." />
+        <PageHeader title="QuizHub" description="Browse and download curated quizzes and notes." />
         <div className="mt-6">
           <EmptyState
             title="Choose a quiz folder first"
@@ -240,6 +126,198 @@ export function QuizhubPage() {
         </div>
       </PageShell>
     );
+  }
+
+  return <QuizhubWorkspace key={JSON.stringify(scope)} scope={scope} />;
+}
+
+function QuizhubWorkspace({ scope }: { scope: HubScope }) {
+  const preference = "quizzy:quizhub-language:" + scope.baseUrl;
+  const [locale, setLocale] = useState<string | null>(() => localStorage.getItem(preference));
+  const [knownLocales, setKnownLocales] = useState<HubLocale[]>([]);
+  const snapshot = useQuizhubCatalog(scope, locale);
+  const { catalog } = snapshot;
+  const key = JSON.stringify([catalog?.activeLocale, catalog?.manifestUrl]);
+
+  function selectLanguage(id: string) {
+    setKnownLocales(catalog?.locales ?? knownLocales);
+    localStorage.setItem(preference, id);
+    setLocale(id);
+  }
+  return <QuizhubBrowser key={key} scope={scope} languages={catalog?.locales ?? knownLocales}
+    language={catalog?.activeLocale ?? locale ?? undefined} onSelectLocale={selectLanguage} {...snapshot} />;
+}
+
+function QuizhubBrowser({
+  scope,
+  catalog,
+  error: loadError,
+  isRefreshing: isLoading,
+  refresh: load,
+  languages,
+  language,
+  onSelectLocale,
+}: ReturnType<typeof useQuizhubCatalog> & {
+  scope: HubScope;
+  languages: HubLocale[];
+  language?: string;
+  onSelectLocale: (locale: string) => void;
+}) {
+  const quizLibrary = useQuizLibrary();
+  const knowledgeLibrary = useKnowledgeLibrary();
+  const { refreshAfterSync } = useGoals();
+  const { openQuizStart } = useQuizStartDialog();
+  const isActive = useRef(false);
+  const [conflict, setConflict] = useState<HubConflict | null>(null);
+  const resolveConflict = useRef<((decision: HubResolution | null) => void) | null>(null);
+  function finishConflict(decision: HubResolution | null) {
+    resolveConflict.current?.(decision);
+    resolveConflict.current = null;
+    setConflict(null);
+  }
+  useLayoutEffect(() => {
+    isActive.current = true;
+    return () => {
+      isActive.current = false;
+      resolveConflict.current?.(null);
+      resolveConflict.current = null;
+    };
+  }, []);
+
+  const [isWorking, setIsWorking] = useState(false);
+  const [downloadingKeys, setDownloadingKeys] = useState<ReadonlySet<string>>(new Set());
+  const [domainId, setDomainId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [previewItem, setPreviewItem] = useState<HubItem | null>(null);
+  const activeLocale = catalog?.activeLocale;
+  const manifestUrl = catalog?.manifestUrl;
+  const selection = useMemo(() => activeLocale && manifestUrl
+    ? { scope, locale: activeLocale, manifestUrl }
+    : null, [scope, activeLocale, manifestUrl]);
+  const canInstall = Boolean(selection);
+
+  const grouped = useMemo(
+    () => catalog ? groupHubDomains(catalog.domains, catalog.categories, catalog.items) : null,
+    [catalog],
+  );
+  const domains = grouped?.domains ?? [];
+  const activeDomain = domains.find((domain) => domain.id === domainId);
+  const activeCategory = activeDomain?.categories.find((category) => category.id === categoryId) ??
+    (grouped?.removed?.id === categoryId ? grouped?.removed : null);
+  const updateCount = canInstall
+    ? catalog?.items.filter((item) => item.state === "updateAvailable").length ?? 0
+    : 0;
+  const quizSources = useMemo(
+    () => new Map(quizLibrary.quizzes.map((source) => [source.fileName, source])),
+    [quizLibrary.quizzes],
+  );
+
+  async function afterChange() {
+    await Promise.all([
+      quizLibrary.refresh({ background: true }),
+      knowledgeLibrary.refresh({ background: true }),
+      refreshAfterSync(),
+      load(false, true),
+    ]);
+  }
+
+  async function download(items: HubItemRef[]) {
+    if (!selection || !canInstall || items.length === 0 || isWorking || !isActive.current) return;
+    setDownloadingKeys(new Set(items.map(hubItemKey)));
+    setIsWorking(true);
+    try {
+      const report = await nativeApi.hubDownload(selection, items);
+      const pending = [...report.conflicts];
+      while (pending.length > 0 && isActive.current) {
+        const next = pending.shift()!;
+        setPreviewItem(null);
+        const decision = await new Promise<HubResolution | null>((resolve) => {
+          resolveConflict.current = resolve;
+          setConflict(next);
+        });
+        if (!decision) {
+          report.skipped += 1;
+          continue;
+        }
+        const result = await nativeApi.hubDownload(selection, [decision.item], decision);
+        pending.unshift(...result.conflicts);
+        report.added += result.added;
+        report.updated += result.updated;
+        report.unchanged += result.unchanged;
+        report.skipped += result.skipped;
+        report.failed += result.failed;
+        report.outcomes.push(...result.outcomes);
+      }
+      notifyQuizhubChanged();
+      if (!isActive.current) {
+        await afterChange();
+        return;
+      }
+      const summary = summarizeHubReport(report);
+      const problems = report.outcomes.filter(
+        (outcome) => outcome.result === "failed" || outcome.result === "skipped",
+      );
+      if (report.failed > 0 || report.skipped > 0) {
+        const options = {
+          description: problems.map((outcome) => `${outcome.title}: ${outcome.detail ?? outcome.result}`).join("\n"),
+        };
+        if (report.failed > 0) toast.error(summary, options);
+        else toast.warning(summary, options);
+      } else {
+        toast.success(summary);
+        setPreviewItem(null);
+      }
+      setSelected(new Set());
+      await afterChange();
+    } catch (error) {
+      if (isActive.current) toast.error(errorMessage(error));
+    } finally {
+      if (isActive.current) {
+        setDownloadingKeys(new Set());
+        setIsWorking(false);
+      }
+    }
+  }
+
+  async function remove(item: HubItem, keepFile = false) {
+    if (!selection || !canInstall || isWorking) return;
+    if (!keepFile) {
+      const approved = await confirm(
+        `Delete "${item.title}" from your library? Any local edits will be deleted.`,
+        { title: "Remove downloaded item?", kind: "warning" },
+      );
+      if (!approved) return;
+    }
+    if (!isActive.current) return;
+    setIsWorking(true);
+    try {
+      await nativeApi.hubRemove(selection, item, { keepFile, force: !keepFile });
+      notifyQuizhubChanged();
+      if (!isActive.current) {
+        await afterChange();
+        return;
+      }
+      toast.success(keepFile ? `${item.title} is now a local file.` : `Removed ${item.title}.`);
+      setPreviewItem(null);
+      await afterChange();
+    } catch (error) {
+      if (isActive.current) toast.error(errorMessage(error));
+    } finally {
+      if (isActive.current) setIsWorking(false);
+    }
+  }
+
+  function toggle(item: HubItem) {
+    if (!canInstall || !isDownloadable(item.state)) return;
+    setSelected((current) => {
+      const next = new Set(current);
+      const key = hubItemKey(item);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   const selectedRefs: HubItemRef[] =
@@ -256,8 +334,8 @@ export function QuizhubPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Quizhub"
-        description="Browse curated quizzes and notes, and download the ones you want. Downloaded files are marked as Quizhub content; edits you make are never overwritten."
+        title="QuizHub"
+        description="Browse and download curated quizzes and notes."
         actions={
           <>
             {updateCount > 0 && (
@@ -290,6 +368,54 @@ export function QuizhubPage() {
       />
 
       <div className="mt-5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <nav aria-label="Catalog location" className="min-w-0 text-sm">
+            <ol className="flex flex-wrap items-center gap-2">
+              <li>
+                {activeDomain || activeCategory ? (
+                  <button className="font-medium text-zinc-700 hover:underline" onClick={() => {
+                    setDomainId(null);
+                    setCategoryId(null);
+                    setQuery("");
+                    setSelected(new Set());
+                  }}>QuizHub</button>
+                ) : <span aria-current="location" className="font-semibold text-zinc-950">Domains</span>}
+              </li>
+              {activeDomain && (
+                <li className="flex items-center gap-2">
+                  <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                  {activeCategory ? (
+                    <button className="font-medium text-zinc-700 hover:underline" onClick={() => {
+                      setCategoryId(null);
+                      setQuery("");
+                      setSelected(new Set());
+                    }}>{activeDomain.title}</button>
+                  ) : <span aria-current="location" className="font-semibold text-zinc-950">{activeDomain.title}</span>}
+                </li>
+              )}
+              {activeCategory && (
+                <li aria-current="location" className="flex items-center gap-2 font-semibold text-zinc-950">
+                  <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                  {activeCategory.title}
+                </li>
+              )}
+            </ol>
+          </nav>
+          {languages.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Languages className="size-4 text-zinc-600" aria-hidden="true" />
+              <label htmlFor="quizhub-language" className="text-sm font-medium text-zinc-800">Language</label>
+              <Select value={language} onValueChange={onSelectLocale}>
+                <SelectTrigger id="quizhub-language" className="w-36 bg-white"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {languages.map((edition) => (
+                    <SelectItem key={edition.id} value={edition.id}>{edition.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
         {loadError && catalog && (
           <p role="status" className="mb-3 text-sm text-amber-700">
             Couldn’t check for updates. Showing the saved catalog. {loadError}
@@ -304,30 +430,41 @@ export function QuizhubPage() {
           />
         ) : !catalog ? (
           <LoadingState message="Loading quizhub catalog…" />
+        ) : catalog.editionError ? (
+          <ErrorState
+            title="Couldn't load this edition"
+            description={catalog.editionError}
+            actionLabel="Try again"
+            onAction={() => void load(true)}
+          />
         ) : activeCategory ? (
           <CategoryView
             category={activeCategory}
+            canInstall={canInstall}
             query={query}
             onQueryChange={setQuery}
             selected={selected}
             isWorking={isWorking}
             downloadingKeys={downloadingKeys}
-            onBack={() => {
-              setCategoryId(null);
-              setQuery("");
-              setSelected(new Set());
-            }}
             onToggle={toggle}
             onSelectAll={(items) =>
               setSelected(new Set(items.filter((item) => isDownloadable(item.state)).map(hubItemKey)))
             }
             onPreview={setPreviewItem}
             onDownload={(item) => void download([item])}
-            onReplace={(item) => void replaceWithRemote(item)}
-            onKeepAsLocal={(item) => void keepAsLocal(item)}
+            onKeepAsLocal={(item) => void remove(item, true)}
           />
         ) : (
-          <CategoryGrid categories={categories} onOpen={setCategoryId} />
+          activeDomain ? (
+            <CategoryGrid categories={activeDomain.categories} onOpen={setCategoryId} />
+          ) : (
+            <DomainGrid
+              domains={domains}
+              removed={grouped?.removed}
+              onOpen={setDomainId}
+              onOpenRemoved={setCategoryId}
+            />
+          )
         )}
         {catalog && catalog.skipped.length > 0 && (
           <p className="mt-4 text-xs text-zinc-500">
@@ -336,15 +473,18 @@ export function QuizhubPage() {
         )}
       </div>
 
+      {conflict && <QuizhubConflictDialog key={JSON.stringify(conflict)} conflict={conflict} onResolve={finishConflict} />}
+
       <QuizhubPreviewDialog
         item={previewItem}
+        selection={selection}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setPreviewItem(null);
         }}
         isDownloading={Boolean(previewItem && downloadingKeys.has(hubItemKey(previewItem)))}
         isWorking={isWorking}
-        onDownload={(item) => void download([item])}
-        onRemove={(item) => void remove(item)}
+        onDownload={canInstall ? (item) => void download([item]) : undefined}
+        onRemove={canInstall ? (item) => void remove(item) : undefined}
         onStartQuiz={
           canStartPreviewQuiz
             ? (item) => {
@@ -383,6 +523,52 @@ export function QuizhubPage() {
   );
 }
 
+function DomainGrid({
+  domains,
+  removed,
+  onOpen,
+  onOpenRemoved,
+}: {
+  domains: HubDomainView[];
+  removed?: HubCategoryView;
+  onOpen: (id: string) => void;
+  onOpenRemoved: (id: string) => void;
+}) {
+  if (domains.length === 0 && !removed) {
+    return <EmptyState title="QuizHub is empty" description="No categories are published in this edition yet." />;
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {domains.map((domain) => (
+        <button key={domain.id} type="button" onClick={() => onOpen(domain.id)} className={catalogTileClass}>
+          <ChevronRight className={tileArrowClass} aria-hidden="true" />
+          <span className="flex items-center gap-2 text-base font-semibold text-zinc-950">
+            <FolderOpen className="size-4 text-zinc-500" aria-hidden="true" />
+            {domain.title}
+          </span>
+          <span className="text-xs text-zinc-500">
+            {domain.categories.length} {domain.categories.length === 1 ? "category" : "categories"}
+          </span>
+        </button>
+      ))}
+      {removed && (
+        <button type="button" onClick={() => onOpenRemoved(removed.id)} className={catalogTileClass}>
+          <ChevronRight className={tileArrowClass} aria-hidden="true" />
+          <span className="text-base font-semibold text-zinc-950">{removed.title}</span>
+          <span className="text-xs text-zinc-500">
+            {removed.items.length} {removed.items.length === 1 ? "item" : "items"} kept in this library
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+const tileArrowClass = "absolute right-4 top-4 size-4 text-zinc-500 transition-transform group-hover:translate-x-0.5";
+
+const catalogTileClass =
+  "group relative flex min-h-24 flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 pr-10 text-left shadow-sm transition-colors hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-sky-600";
+
 function CategoryGrid({
   categories,
   onOpen,
@@ -402,8 +588,9 @@ function CategoryGrid({
           key={category.id}
           type="button"
           onClick={() => onOpen(category.id)}
-          className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+          className={catalogTileClass}
         >
+          <ChevronRight className={tileArrowClass} aria-hidden="true" />
           <span className="text-base font-semibold text-zinc-950">{category.title}</span>
           <span className="text-xs text-zinc-500">
             {category.quizCount} {category.quizCount === 1 ? "quiz" : "quizzes"} · {category.noteCount}{" "}
@@ -429,52 +616,46 @@ function CategoryGrid({
 
 function CategoryView({
   category,
+  canInstall,
   query,
   onQueryChange,
   selected,
   isWorking,
   downloadingKeys,
-  onBack,
   onToggle,
   onSelectAll,
   onPreview,
   onDownload,
-  onReplace,
   onKeepAsLocal,
 }: {
   category: HubCategoryView;
+  canInstall: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   selected: ReadonlySet<string>;
   isWorking: boolean;
   downloadingKeys: ReadonlySet<string>;
-  onBack: () => void;
   onToggle: (item: HubItem) => void;
   onSelectAll: (items: HubItem[]) => void;
   onPreview: (item: HubItem) => void;
   onDownload: (item: HubItem) => void;
-  onReplace: (item: HubItem) => void;
   onKeepAsLocal: (item: HubItem) => void;
 }) {
   const items = filterHubItems(category.items, query);
   const quizzes = items.filter((item) => item.kind === "quiz");
   const notes = items.filter((item) => item.kind === "note");
-  const selectable = items.filter((item) => isDownloadable(item.state));
+  const selectable = canInstall ? items.filter((item) => isDownloadable(item.state)) : [];
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="size-3.5" />
-          All categories
-        </Button>
-        <h2 className="text-lg font-semibold text-zinc-950">{category.title}</h2>
-        <div className="ml-auto flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold text-zinc-950">{category.title}</h2>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <SearchField
             value={query}
             onChange={onQueryChange}
             placeholder="Search this category"
-            className="w-64"
+            className="w-full sm:w-64"
           />
           {selectable.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => onSelectAll(selectable)}>
@@ -493,13 +674,13 @@ function CategoryView({
               title="Quizzes"
               icon={SquareLetterQ}
               items={quizzes}
+              canInstall={canInstall}
               selected={selected}
               isWorking={isWorking}
               downloadingKeys={downloadingKeys}
               onToggle={onToggle}
               onPreview={onPreview}
               onDownload={onDownload}
-              onReplace={onReplace}
               onKeepAsLocal={onKeepAsLocal}
             />
           )}
@@ -508,13 +689,13 @@ function CategoryView({
               title="Knowledge"
               icon={BookOpen}
               items={notes}
+              canInstall={canInstall}
               selected={selected}
               isWorking={isWorking}
               downloadingKeys={downloadingKeys}
               onToggle={onToggle}
               onPreview={onPreview}
               onDownload={onDownload}
-              onReplace={onReplace}
               onKeepAsLocal={onKeepAsLocal}
             />
           )}
@@ -528,25 +709,25 @@ function HubItemSection({
   title,
   icon: Icon,
   items,
+  canInstall,
   selected,
   isWorking,
   downloadingKeys,
   onToggle,
   onPreview,
   onDownload,
-  onReplace,
   onKeepAsLocal,
 }: {
   title: string;
   icon: LucideIcon;
   items: HubItem[];
+  canInstall: boolean;
   selected: ReadonlySet<string>;
   isWorking: boolean;
   downloadingKeys: ReadonlySet<string>;
   onToggle: (item: HubItem) => void;
   onPreview: (item: HubItem) => void;
   onDownload: (item: HubItem) => void;
-  onReplace: (item: HubItem) => void;
   onKeepAsLocal: (item: HubItem) => void;
 }) {
   return (
@@ -559,7 +740,7 @@ function HubItemSection({
       <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-white">
         {items.map((item) => {
           const key = hubItemKey(item);
-          const canSelect = isDownloadable(item.state);
+          const canSelect = canInstall && isDownloadable(item.state);
           const meta = [
             item.size > 0 ? formatBytes(item.size) : null,
             item.updated ? `Updated ${formatShortDate(item.updated)}` : null,
@@ -612,14 +793,15 @@ function HubItemSection({
                   <p className="mt-0.5 truncate text-xs text-zinc-500">{meta.join(" · ")}</p>
                 )}
               </button>
-              <ItemActions
-                item={item}
-                disabled={isWorking}
-                isDownloading={downloadingKeys.has(key)}
-                onDownload={onDownload}
-                onReplace={onReplace}
-                onKeepAsLocal={onKeepAsLocal}
-              />
+              {canInstall && (
+                <ItemActions
+                  item={item}
+                  disabled={isWorking}
+                  isDownloading={downloadingKeys.has(key)}
+                  onDownload={onDownload}
+                  onKeepAsLocal={onKeepAsLocal}
+                />
+              )}
             </li>
           );
         })}
@@ -633,14 +815,12 @@ function ItemActions({
   disabled,
   isDownloading,
   onDownload,
-  onReplace,
   onKeepAsLocal,
 }: {
   item: HubItem;
   disabled: boolean;
   isDownloading: boolean;
   onDownload: (item: HubItem) => void;
-  onReplace: (item: HubItem) => void;
   onKeepAsLocal: (item: HubItem) => void;
 }) {
   const downloadIcon = isDownloading ? (
@@ -649,62 +829,24 @@ function ItemActions({
     <Download className="size-3.5" />
   );
 
-  switch (item.state) {
-    case "available":
-      return (
-        <Button
-          size="icon"
-          variant="outline"
-          aria-label={isDownloading ? `Downloading ${item.title}` : `Download ${item.title}`}
-          title={isDownloading ? "Downloading…" : "Download"}
-          disabled={disabled}
-          onClick={() => onDownload(item)}
-        >
-          {downloadIcon}
-        </Button>
-      );
-    case "updateAvailable":
-      return (
-        <Button
-          size="icon"
-          aria-label={isDownloading ? `Updating ${item.title}` : `Update ${item.title}`}
-          title={isDownloading ? "Updating…" : "Update"}
-          disabled={disabled}
-          onClick={() => onDownload(item)}
-        >
-          {downloadIcon}
-        </Button>
-      );
-    case "modifiedLocally":
-      return (
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            title="Keep your edited copy as a local file and stop tracking it from quizhub"
-            disabled={disabled}
-            onClick={() => onKeepAsLocal(item)}
-          >
-            Keep as local
-          </Button>
-          <Button size="sm" variant="outline" disabled={disabled} onClick={() => onReplace(item)}>
-            Replace with remote
-          </Button>
-        </div>
-      );
-    case "nameTaken":
-      return (
-        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onReplace(item)}>
-          Replace local file
-        </Button>
-      );
-    case "removedRemotely":
-      return (
-        <Button size="sm" variant="ghost" disabled={disabled} onClick={() => onKeepAsLocal(item)}>
-          Keep as local
-        </Button>
-      );
-    case "installed":
-      return null;
+  if (item.state === "removedRemotely") {
+    return <Button size="sm" variant="ghost" disabled={disabled} onClick={() => onKeepAsLocal(item)}>Keep as local</Button>;
   }
+  if (item.state === "installed") return null;
+
+  const label = item.state === "updateAvailable" ? "Update" : "Download";
+  return (
+    <Button
+      size="sm"
+      className="min-w-9 justify-center sm:min-w-28"
+      variant={item.state === "updateAvailable" ? "default" : "outline"}
+      aria-label={`${label} ${item.title}`}
+      title={label}
+      disabled={disabled}
+      onClick={() => onDownload(item)}
+    >
+      {downloadIcon}
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
+  );
 }

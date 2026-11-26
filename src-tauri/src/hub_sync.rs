@@ -1,23 +1,28 @@
-//! Quizhub: browse a remote catalog (`manifest.json`) and download selected quizzes and notes
+//! QuizHub: discover editions, browse their manifests, and download selected quizzes and notes
 //! into the working directory. Provenance of downloaded files is kept in `quizhub-lock.json` in
 //! the app config directory, keyed by working directory, so local edits are never overwritten.
 
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+#[path = "hub_install.rs"]
+mod hub_install;
+use hub_install::{
+    apply_changes, read_target, rename_candidate, rename_changes, suggested_name, FileChange,
+};
+
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, HashMap},
     fs,
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Arc, Mutex as MapMutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tauri::{AppHandle, Manager, State};
+use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 
 use crate::{
     app_data_commands::run_blocking,
     fs_utils::{
-        atomic_write, configured_directory, knowledge_base_directory, normalize_stored_path,
-        resolve_knowledge_path, resolve_quiz_path,
+        atomic_write, canonical_directory, directory_from_settings, knowledge_base_for,
+        normalize_stored_path, resolve_knowledge_path, resolve_quiz_path, sha256_hex,
     },
     settings::{read_settings, Settings},
 };
@@ -71,7 +76,8 @@ fn resolve_remote_url(base_url: &str, relative: &str) -> Result<reqwest::Url, St
     let url = base
         .join(relative)
         .map_err(|error| format!("Invalid remote path \"{relative}\": {error}"))?;
-    if !url.as_str().starts_with(base.as_str()) {
+    let directory = base.join(".").map_err(|error| error.to_string())?;
+    if !url.as_str().starts_with(directory.as_str()) {
         return Err(format!(
             "Refusing remote path outside the hub: \"{relative}\"."
         ));
@@ -80,7 +86,46 @@ fn resolve_remote_url(base_url: &str, relative: &str) -> Result<reqwest::Url, St
 }
 
 // ---------------------------------------------------------------------------
-// Manifest (schemaVersion 1). Unknown fields are ignored.
+// Language discovery and manifests
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Locales {
+    default_locale: String,
+    locales: Vec<HubLocale>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct HubLocale {
+    id: String,
+    name: String,
+    feed: String,
+    manifest: String,
+}
+
+fn parse_locales(bytes: &[u8]) -> Result<Locales, String> {
+    let locales: Locales = serde_json::from_slice(bytes)
+        .map_err(|error| format!("The QuizHub language catalog is invalid: {error}"))?;
+    let mut ids = std::collections::HashSet::new();
+    if locales
+        .locales
+        .iter()
+        .any(|locale| locale.id.is_empty() || !ids.insert(&locale.id))
+        || !ids.contains(&locales.default_locale)
+    {
+        return Err(
+            "The QuizHub language catalog has invalid edition IDs or a missing default."
+                .to_string(),
+        );
+    }
+    Ok(locales)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct HubDomain {
+    id: String,
+    title: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -88,6 +133,8 @@ struct Manifest {
     schema_version: u32,
     #[serde(default)]
     generated_at: Option<String>,
+    #[serde(default)]
+    domains: Vec<HubDomain>,
     #[serde(default)]
     categories: Vec<ManifestCategory>,
     #[serde(default)]
@@ -99,6 +146,8 @@ struct Manifest {
 struct ManifestCategory {
     id: String,
     title: String,
+    domain: String,
+    feed: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,16 +232,27 @@ fn lock_key(kind: HubKind, id: &str) -> String {
     format!("{}/{id}", kind.as_str())
 }
 
+#[derive(Clone)]
 struct LocalDirs {
     quizzes: PathBuf,
     notes: PathBuf,
 }
 
 impl LocalDirs {
-    fn from_app(app: &AppHandle) -> Result<Self, String> {
+    fn new(quizzes: PathBuf) -> Result<Self, String> {
+        let notes = knowledge_base_for(&quizzes)?;
+        let canonical_notes = notes
+            .canonicalize()
+            .map_err(|error| format!("Unable to resolve the knowledge-base folder: {error}"))?;
+        if canonical_notes.parent() != Some(quizzes.as_path()) {
+            return Err(
+                "The knowledge-base folder must be inside the QuizHub working directory."
+                    .to_string(),
+            );
+        }
         Ok(Self {
-            quizzes: configured_directory(app)?,
-            notes: knowledge_base_directory(app)?,
+            quizzes,
+            notes: canonical_notes,
         })
     }
 
@@ -220,6 +280,8 @@ struct LockEntry {
     remote_updated: Option<String>,
     installed_at: u64,
     base_url: String,
+    #[serde(default)]
+    locale: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -273,24 +335,6 @@ fn write_lock_file(path: &Path, lock: &HubLock) -> Result<(), String> {
     atomic_write(path, &contents, true)
 }
 
-fn workspace_key(app: &AppHandle) -> Result<String, String> {
-    let directory = configured_directory(app)?;
-    let canonical = directory
-        .canonicalize()
-        .map_err(|error| format!("Unable to resolve the working directory: {error}"))?;
-    Ok(normalize_stored_path(canonical))
-}
-
-// ---------------------------------------------------------------------------
-// Hashing and item state
-
-fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
-}
-
 fn local_sha256(path: &Path) -> Option<String> {
     fs::read(path).ok().map(|bytes| sha256_hex(&bytes))
 }
@@ -298,55 +342,32 @@ fn local_sha256(path: &Path) -> Option<String> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum HubItemState {
-    /// Not downloaded; no local file with that name.
     Available,
-    /// A local file with the same name exists that Quizzy did not download from quizhub.
-    NameTaken,
-    /// Downloaded and identical to the remote version.
     Installed,
-    /// Downloaded, unchanged locally, and the remote version is newer.
     UpdateAvailable,
-    /// Downloaded, then edited locally. Never overwritten without an explicit request.
-    ModifiedLocally,
-    /// Downloaded, but no longer published by the hub.
     RemovedRemotely,
-}
-
-/// Pure state calculation. Hashes are lowercase hex; `None` means absent.
-fn compute_state(remote: Option<&str>, lock: Option<&str>, local: Option<&str>) -> HubItemState {
-    match (remote, lock, local) {
-        (None, _, _) => HubItemState::RemovedRemotely,
-        (Some(_), None, None) => HubItemState::Available,
-        (Some(_), None, Some(_)) => HubItemState::NameTaken,
-        // Installed once, but the user deleted the file: offer it again.
-        (Some(_), Some(_), None) => HubItemState::Available,
-        (Some(remote), Some(lock), Some(local)) => {
-            if local == remote {
-                HubItemState::Installed
-            } else if local != lock {
-                HubItemState::ModifiedLocally
-            } else {
-                HubItemState::UpdateAvailable
-            }
-        }
-    }
 }
 
 // ---------------------------------------------------------------------------
 // HTTP and in-memory manifest cache
 
 #[derive(Clone, Serialize, Deserialize)]
-struct CachedManifest {
-    base_url: String,
+#[serde(rename_all = "camelCase")]
+struct CachedDocument<T> {
+    url: String,
     etag: Option<String>,
-    #[serde(default)]
     checked_at: u64,
-    manifest: Manifest,
+    document: T,
 }
+
+type DocumentSlot<T> = Arc<Mutex<Option<CachedDocument<T>>>>;
+type DocumentCache<T> = MapMutex<HashMap<String, DocumentSlot<T>>>;
 
 #[derive(Default)]
 pub(crate) struct HubState {
-    cache: Mutex<Option<CachedManifest>>,
+    locales: DocumentCache<Locales>,
+    manifests: DocumentCache<Manifest>,
+    mutations: Mutex<()>,
 }
 
 fn http_client() -> Result<reqwest::Client, String> {
@@ -357,48 +378,79 @@ fn http_client() -> Result<reqwest::Client, String> {
         .map_err(|error| format!("Unable to start the network client: {error}"))
 }
 
-async fn fetch_manifest(
+fn cache_path(directory: &Path, url: &str) -> PathBuf {
+    directory.join(format!("quizhub-cache-{}.json", sha256_hex(url.as_bytes())))
+}
+
+async fn fetch_document<T: Clone + DeserializeOwned + Serialize>(
     client: &reqwest::Client,
-    state: &HubState,
-    base_url: &str,
+    cache: &DocumentCache<T>,
+    directory: &Path,
+    url: &reqwest::Url,
     force: bool,
-) -> Result<Manifest, String> {
-    let cached_etag = {
-        let cache = state
-            .cache
-            .lock()
-            .map_err(|_| "Hub cache is unavailable.")?;
-        let entry = cache.as_ref().filter(|entry| entry.base_url == base_url);
+    parse: fn(&[u8]) -> Result<T, String>,
+) -> Result<(CachedDocument<T>, Option<String>), String> {
+    let key = url.as_str();
+    let slot = cache
+        .lock()
+        .map_err(|_| "The QuizHub cache is unavailable.")?
+        .entry(key.to_string())
+        .or_default()
+        .clone();
+    // An unrelated edition or source can load while this URL is refreshing.
+    let mut slot = slot.lock().await;
+    let path = cache_path(directory, key);
+    let cached = slot.clone().or_else(|| {
+        let bytes = fs::read(&path).ok()?;
+        let entry: CachedDocument<T> = serde_json::from_slice(&bytes).ok()?;
+        (entry.url == key).then_some(entry)
+    });
+    if let Some(entry) = &cached {
+        *slot = Some(entry.clone());
         if !force {
-            if let Some(entry) = entry {
-                return Ok(entry.manifest.clone());
-            }
+            return Ok((entry.clone(), None));
         }
-        entry.and_then(|entry| entry.etag.clone())
-    };
-    let url = resolve_remote_url(base_url, "manifest.json")?;
+    }
+
+    match request_document(client, url, cached.as_ref(), parse).await {
+        Ok(entry) => {
+            if let Ok(bytes) = serde_json::to_vec(&entry) {
+                let _ = atomic_write(&path, &bytes, true);
+            }
+            *slot = Some(entry.clone());
+            Ok((entry, None))
+        }
+        Err(error) => match cached {
+            Some(entry) => Ok((entry, Some(error))),
+            None => Err(error),
+        },
+    }
+}
+
+async fn request_document<T: Clone>(
+    client: &reqwest::Client,
+    url: &reqwest::Url,
+    cached: Option<&CachedDocument<T>>,
+    parse: fn(&[u8]) -> Result<T, String>,
+) -> Result<CachedDocument<T>, String> {
     let mut request = client.get(url.clone());
-    if let Some(etag) = &cached_etag {
+    if let Some(etag) = cached.and_then(|entry| entry.etag.as_ref()) {
         request = request.header(reqwest::header::IF_NONE_MATCH, etag);
     }
     let response = request
         .send()
         .await
-        .map_err(|error| format!("Unable to reach quizhub at {url}: {error}"))?;
-
+        .map_err(|error| format!("Unable to reach QuizHub at {url}: {error}"))?;
     if response.status() == reqwest::StatusCode::NOT_MODIFIED {
-        let mut cache = state
-            .cache
-            .lock()
-            .map_err(|_| "Hub cache is unavailable.")?;
-        if let Some(entry) = cache.as_mut().filter(|entry| entry.base_url == base_url) {
-            entry.checked_at = now_secs();
-            return Ok(entry.manifest.clone());
-        }
+        let mut entry = cached
+            .cloned()
+            .ok_or("QuizHub returned an empty refresh without a saved copy.")?;
+        entry.checked_at = now_secs();
+        return Ok(entry);
     }
     if !response.status().is_success() {
         return Err(format!(
-            "Quizhub returned HTTP {} for {url}.",
+            "QuizHub returned HTTP {} for {url}.",
             response.status().as_u16()
         ));
     }
@@ -410,27 +462,21 @@ async fn fetch_manifest(
     let bytes = response
         .bytes()
         .await
-        .map_err(|error| format!("Unable to download the quizhub manifest: {error}"))?;
+        .map_err(|error| format!("Unable to download {url}: {error}"))?;
     if bytes.len() > MAX_MANIFEST_BYTES {
-        return Err("The quizhub manifest is too large.".to_string());
+        return Err("The QuizHub catalog document is too large.".to_string());
     }
-    let manifest = parse_manifest(&bytes)?;
-    let mut cache = state
-        .cache
-        .lock()
-        .map_err(|_| "Hub cache is unavailable.")?;
-    *cache = Some(CachedManifest {
-        base_url: base_url.to_string(),
+    Ok(CachedDocument {
+        url: url.to_string(),
         etag,
         checked_at: now_secs(),
-        manifest: manifest.clone(),
-    });
-    Ok(manifest)
+        document: parse(&bytes)?,
+    })
 }
 
 async fn download_item(
     client: &reqwest::Client,
-    base_url: &str,
+    manifest_url: &str,
     item: &ManifestItem,
 ) -> Result<Vec<u8>, String> {
     if item.size > MAX_ITEM_BYTES {
@@ -439,7 +485,7 @@ async fn download_item(
             item.path
         ));
     }
-    let url = resolve_remote_url(base_url, &item.path)?;
+    let url = resolve_remote_url(manifest_url, &item.path)?;
     let response = client
         .get(url.clone())
         .send()
@@ -485,6 +531,8 @@ fn verify_download(item: &ManifestItem, bytes: &[u8]) -> Result<(), String> {
 pub(crate) struct HubCategory {
     id: String,
     title: String,
+    domain: String,
+    feed: Option<String>,
     quiz_count: u32,
     note_count: u32,
 }
@@ -509,6 +557,20 @@ pub(crate) struct HubItem {
 pub(crate) struct HubCatalog {
     base_url: String,
     checked_at: u64,
+    default_locale: String,
+    locales: Vec<HubLocale>,
+    active_locale: String,
+    manifest_url: Option<String>,
+    edition_error: Option<String>,
+    refresh_error: Option<String>,
+    #[serde(flatten)]
+    contents: HubContents,
+}
+
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HubContents {
+    domains: Vec<HubDomain>,
     #[serde(skip_serializing_if = "Option::is_none")]
     generated_at: Option<String>,
     categories: Vec<HubCategory>,
@@ -518,11 +580,11 @@ pub(crate) struct HubCatalog {
 }
 
 fn build_catalog(
-    base_url: &str,
+    manifest_url: &str,
     manifest: &Manifest,
     lock: &BTreeMap<String, LockEntry>,
     dirs: &LocalDirs,
-) -> HubCatalog {
+) -> HubContents {
     let mut items = Vec::new();
     let mut skipped = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -542,15 +604,20 @@ fn build_catalog(
             skipped.push(format!("{} (duplicate id)", entry.id));
             continue;
         }
-        let local = dirs
-            .path_for(kind, &file_name)
-            .ok()
-            .and_then(|path| local_sha256(&path));
-        let state = compute_state(
-            Some(&entry.sha256.to_ascii_lowercase()),
-            lock.get(&key).map(|locked| locked.sha256.as_str()),
-            local.as_deref(),
-        );
+        let state = match lock.get(&key) {
+            Some(installed)
+                if dirs
+                    .path_for(kind, &file_name)
+                    .is_ok_and(|path| path.is_file()) =>
+            {
+                if installed.sha256.eq_ignore_ascii_case(&entry.sha256) {
+                    HubItemState::Installed
+                } else {
+                    HubItemState::UpdateAvailable
+                }
+            }
+            _ => HubItemState::Available,
+        };
         let count = counts.entry(entry.category.as_str()).or_default();
         match kind {
             HubKind::Quiz => count.0 += 1,
@@ -605,15 +672,18 @@ fn build_catalog(
             HubCategory {
                 id: category.id.clone(),
                 title: category.title.clone(),
+                domain: category.domain.clone(),
+                feed: resolve_remote_url(manifest_url, &category.feed)
+                    .ok()
+                    .map(|url| url.to_string()),
                 quiz_count,
                 note_count,
             }
         })
         .collect();
 
-    HubCatalog {
-        base_url: base_url.to_string(),
-        checked_at: 0,
+    HubContents {
+        domains: manifest.domains.clone(),
         generated_at: manifest.generated_at.clone(),
         categories,
         items,
@@ -631,6 +701,34 @@ fn now_secs() -> u64 {
         .unwrap_or(0)
 }
 
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HubScope {
+    working_directory: String,
+    base_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HubSelection {
+    scope: HubScope,
+    locale: String,
+    manifest_url: String,
+}
+
+impl HubScope {
+    fn validate(&self, settings: &Settings, workspace: &str) -> Result<(), String> {
+        if self.working_directory != workspace || self.base_url != effective_base_url(settings) {
+            return Err(
+                "The QuizHub library or source changed. Reopen the catalog and try again."
+                    .to_string(),
+            );
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 struct LocalContext {
     base_url: String,
     lock_path: PathBuf,
@@ -638,92 +736,190 @@ struct LocalContext {
     dirs: LocalDirs,
 }
 
-fn local_context(app: &AppHandle) -> Result<LocalContext, String> {
-    let settings = read_settings(app)?;
-    Ok(LocalContext {
-        base_url: effective_base_url(&settings),
-        lock_path: lock_path(app)?,
-        workspace: workspace_key(app)?,
-        dirs: LocalDirs::from_app(app)?,
-    })
-}
-
-// The persisted manifest is only a browsing cache; local installation state is rebuilt
-// from the workspace on every catalog read. A source change uses a separate cache file.
-fn manifest_cache_path(app: &AppHandle, base_url: &str) -> Result<PathBuf, String> {
-    Ok(lock_path(app)?.with_file_name(format!(
-        "quizhub-manifest-{}.json",
-        sha256_hex(base_url.as_bytes())
-    )))
-}
-
-fn restore_manifest_cache(app: &AppHandle, state: &HubState, base_url: &str) {
-    let Ok(mut cache) = state.cache.lock() else {
-        return;
-    };
-    if cache
-        .as_ref()
-        .is_some_and(|entry| entry.base_url == base_url)
-    {
-        return;
+impl LocalContext {
+    fn new(app: &AppHandle, scope: &HubScope) -> Result<Self, String> {
+        let settings = read_settings(app)?;
+        let directory = canonical_directory(&directory_from_settings(&settings)?)?;
+        let workspace = normalize_stored_path(directory.clone());
+        scope.validate(&settings, &workspace)?;
+        Ok(Self {
+            base_url: effective_base_url(&settings),
+            lock_path: lock_path(app)?,
+            workspace,
+            dirs: LocalDirs::new(directory)?,
+        })
     }
-    let restored = manifest_cache_path(app, base_url)
-        .ok()
-        .and_then(|path| fs::read(path).ok())
-        .and_then(|bytes| serde_json::from_slice::<CachedManifest>(&bytes).ok())
-        .filter(|entry| {
-            entry.base_url == base_url && entry.manifest.schema_version <= SUPPORTED_SCHEMA_VERSION
-        });
-    *cache = restored;
+
+    fn cache_directory(&self) -> &Path {
+        self.lock_path
+            .parent()
+            .expect("lock path has a config directory")
+    }
+
+    fn entries(&self, locale: Option<&str>) -> Result<BTreeMap<String, LockEntry>, String> {
+        Ok(read_lock_file(&self.lock_path)?
+            .workspaces
+            .remove(&self.workspace)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(_, entry)| {
+                locale.is_none_or(|id| {
+                    entry.locale.as_deref() == Some(id) && entry.base_url == self.base_url
+                })
+            })
+            .collect())
+    }
 }
 
-fn persist_manifest_cache(app: &AppHandle, state: &HubState, base_url: &str) {
-    let Ok(cache) = state.cache.lock() else {
-        return;
-    };
-    if let Some(entry) = cache.as_ref().filter(|entry| entry.base_url == base_url) {
-        if let (Ok(path), Ok(bytes)) = (
-            manifest_cache_path(app, base_url),
-            serde_json::to_vec(entry),
-        ) {
-            // Cache persistence must never prevent browsing or downloading.
-            let _ = atomic_write(&path, &bytes, true);
-        }
+async fn capture_context(app: &AppHandle, scope: &HubScope) -> Result<LocalContext, String> {
+    let app = app.clone();
+    let scope = scope.clone();
+    run_blocking(move || LocalContext::new(&app, &scope)).await
+}
+
+async fn fetch_locales(
+    client: &reqwest::Client,
+    state: &HubState,
+    ctx: &LocalContext,
+    force: bool,
+) -> Result<(CachedDocument<Locales>, Option<String>), String> {
+    let url = resolve_remote_url(&ctx.base_url, "locales.json")?;
+    fetch_document(
+        client,
+        &state.locales,
+        ctx.cache_directory(),
+        &url,
+        force,
+        parse_locales,
+    )
+    .await
+}
+
+async fn fetch_manifest(
+    client: &reqwest::Client,
+    state: &HubState,
+    ctx: &LocalContext,
+    url: &reqwest::Url,
+    force: bool,
+) -> Result<(CachedDocument<Manifest>, Option<String>), String> {
+    fetch_document(
+        client,
+        &state.manifests,
+        ctx.cache_directory(),
+        url,
+        force,
+        parse_manifest,
+    )
+    .await
+}
+
+fn manifest_url(base_url: &str, locales: &Locales, locale: &str) -> Result<reqwest::Url, String> {
+    let edition = locales
+        .locales
+        .iter()
+        .find(|entry| entry.id == locale)
+        .ok_or_else(|| {
+            format!("The configured QuizHub edition {locale:?} is unavailable from this source.")
+        })?;
+    resolve_remote_url(base_url, &edition.manifest)
+}
+
+async fn selected_manifest(
+    client: &reqwest::Client,
+    state: &HubState,
+    ctx: &LocalContext,
+    selection: &HubSelection,
+) -> Result<Manifest, String> {
+    let (catalog, _) = fetch_locales(client, state, ctx, false).await?;
+    let url = manifest_url(&ctx.base_url, &catalog.document, &selection.locale)?;
+    if url.as_str() != selection.manifest_url {
+        return Err("The QuizHub edition moved. Refresh the catalog and try again.".to_string());
     }
+    Ok(fetch_manifest(client, state, ctx, &url, false)
+        .await?
+        .0
+        .document)
 }
 
 #[tauri::command]
 pub(crate) async fn hub_fetch_catalog(
     app: AppHandle,
     state: State<'_, HubState>,
-    force: Option<bool>,
+    scope: HubScope,
+    locale: Option<String>,
+    force: bool,
 ) -> Result<HubCatalog, String> {
-    let ctx = {
-        let app = app.clone();
-        run_blocking(move || local_context(&app)).await?
+    let ctx = run_blocking(move || LocalContext::new(&app, &scope)).await?;
+    load_catalog(&http_client()?, &state, ctx, locale, force).await
+}
+
+async fn load_catalog(
+    client: &reqwest::Client,
+    state: &HubState,
+    ctx: LocalContext,
+    locale: Option<String>,
+    force: bool,
+) -> Result<HubCatalog, String> {
+    let (cached, discovery_error) = fetch_locales(client, state, &ctx, force).await?;
+    let discovery = cached.document;
+    let base_url = ctx.base_url.clone();
+    let active_locale = locale
+        .filter(|id| discovery.locales.iter().any(|entry| entry.id == *id))
+        .unwrap_or_else(|| discovery.default_locale.clone());
+    let url = manifest_url(&ctx.base_url, &discovery, &active_locale);
+    let (manifest_url, contents, edition_error, refresh_error, checked_at) = match url {
+        Ok(url) => match fetch_manifest(client, state, &ctx, &url, force).await {
+            Ok((cached_manifest, manifest_error)) => {
+                let checked_at = cached.checked_at.min(cached_manifest.checked_at);
+                let manifest_url = url.to_string();
+                let contents = run_blocking({
+                    let manifest_url = manifest_url.clone();
+                    let locale = active_locale.clone();
+                    move || {
+                        Ok(build_catalog(
+                            &manifest_url,
+                            &cached_manifest.document,
+                            &ctx.entries(Some(&locale))?,
+                            &ctx.dirs,
+                        ))
+                    }
+                })
+                .await?;
+                (
+                    Some(manifest_url),
+                    contents,
+                    None,
+                    discovery_error.or(manifest_error),
+                    checked_at,
+                )
+            }
+            Err(error) => (
+                None,
+                HubContents::default(),
+                Some(error),
+                None,
+                cached.checked_at,
+            ),
+        },
+        Err(error) => (
+            None,
+            HubContents::default(),
+            Some(error),
+            None,
+            cached.checked_at,
+        ),
     };
-    restore_manifest_cache(&app, &state, &ctx.base_url);
-    let client = http_client()?;
-    let manifest = fetch_manifest(&client, &state, &ctx.base_url, force.unwrap_or(false)).await?;
-    persist_manifest_cache(&app, &state, &ctx.base_url);
-    let checked_at = state
-        .cache
-        .lock()
-        .ok()
-        .and_then(|cache| cache.as_ref().map(|entry| entry.checked_at))
-        .unwrap_or(0);
-    run_blocking(move || {
-        let lock = read_lock_file(&ctx.lock_path)?;
-        let entries = lock
-            .workspaces
-            .get(&ctx.workspace)
-            .cloned()
-            .unwrap_or_default();
-        let mut catalog = build_catalog(&ctx.base_url, &manifest, &entries, &ctx.dirs);
-        catalog.checked_at = checked_at;
-        Ok(catalog)
+    Ok(HubCatalog {
+        base_url,
+        checked_at,
+        default_locale: discovery.default_locale,
+        locales: discovery.locales,
+        active_locale,
+        manifest_url,
+        edition_error,
+        refresh_error,
+        contents,
     })
-    .await
 }
 
 #[derive(Debug, Serialize)]
@@ -738,29 +934,22 @@ pub(crate) struct HubInstalledItem {
 /// Lists downloaded items for the current working directory without touching the network,
 /// so the library can mark quizhub content.
 #[tauri::command]
-pub(crate) async fn hub_list_installed(app: AppHandle) -> Result<Vec<HubInstalledItem>, String> {
+pub(crate) async fn hub_list_installed(
+    app: AppHandle,
+    scope: HubScope,
+) -> Result<Vec<HubInstalledItem>, String> {
     run_blocking(move || {
-        let path = lock_path(&app)?;
-        let workspace = match workspace_key(&app) {
-            Ok(value) => value,
-            Err(_) => return Ok(Vec::new()),
-        };
-        let lock = read_lock_file(&path)?;
-        Ok(lock
-            .workspaces
-            .get(&workspace)
-            .map(|entries| {
-                entries
-                    .values()
-                    .map(|entry| HubInstalledItem {
-                        kind: entry.kind,
-                        id: entry.id.clone(),
-                        file_name: entry.file_name.clone(),
-                        category: entry.category.clone(),
-                    })
-                    .collect()
+        let ctx = LocalContext::new(&app, &scope)?;
+        Ok(ctx
+            .entries(None)?
+            .into_values()
+            .map(|entry| HubInstalledItem {
+                kind: entry.kind,
+                id: entry.id,
+                file_name: entry.file_name,
+                category: entry.category,
             })
-            .unwrap_or_default())
+            .collect())
     })
     .await
 }
@@ -793,6 +982,7 @@ pub(crate) struct HubDownloadReport {
     skipped: u32,
     failed: u32,
     outcomes: Vec<HubItemOutcome>,
+    conflicts: Vec<HubConflict>,
 }
 
 impl HubDownloadReport {
@@ -814,37 +1004,71 @@ impl HubDownloadReport {
     }
 }
 
-/// Downloads the requested items. With `force`, files edited locally or local files with the same
-/// name are replaced; otherwise they are skipped and reported.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HubConflict {
+    kind: HubKind,
+    id: String,
+    title: String,
+    file_name: String,
+    suggested_name: Option<String>,
+    existing_sha: String,
+    remote_sha: String,
+    message: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HubResolution {
+    item: HubItemRef,
+    existing_sha: String,
+    remote_sha: String,
+    renamed_file_name: Option<String>,
+}
+
 #[tauri::command]
 pub(crate) async fn hub_download(
     app: AppHandle,
     state: State<'_, HubState>,
+    selection: HubSelection,
     items: Vec<HubItemRef>,
-    force: Option<bool>,
+    resolution: Option<HubResolution>,
 ) -> Result<HubDownloadReport, String> {
-    let force = force.unwrap_or(false);
-    let ctx = {
-        let app = app.clone();
-        run_blocking(move || local_context(&app)).await?
-    };
-    restore_manifest_cache(&app, &state, &ctx.base_url);
-    let client = http_client()?;
-    let manifest = fetch_manifest(&client, &state, &ctx.base_url, false).await?;
-    let lock = {
-        let path = ctx.lock_path.clone();
-        run_blocking(move || read_lock_file(&path)).await?
-    };
-    let workspace_entries = lock
-        .workspaces
-        .get(&ctx.workspace)
-        .cloned()
-        .unwrap_or_default();
+    let _guard = state.mutations.lock().await;
+    let ctx = capture_context(&app, &selection.scope).await?;
+    let report = download_into(
+        &http_client()?,
+        &state,
+        &ctx,
+        &selection,
+        &items,
+        resolution.as_ref(),
+    )
+    .await?;
+    if report.added + report.updated > 0 {
+        // Refresh goal titles and the mistake index for the same library. Non-fatal.
+        let _ = run_blocking(move || {
+            crate::data_sync::synchronize_library(&app, Some(&ctx.dirs.quizzes))
+        })
+        .await;
+    }
+    Ok(report)
+}
+
+async fn download_into(
+    client: &reqwest::Client,
+    state: &HubState,
+    ctx: &LocalContext,
+    selection: &HubSelection,
+    items: &[HubItemRef],
+    resolution: Option<&HubResolution>,
+) -> Result<HubDownloadReport, String> {
+    let manifest = selected_manifest(client, state, ctx, selection).await?;
+    let mut workspace_entries = ctx.entries(Some(&selection.locale))?;
 
     let mut report = HubDownloadReport::default();
-    let mut new_entries: Vec<(String, Option<LockEntry>)> = Vec::new();
 
-    for requested in &items {
+    for requested in items {
         let Some(item) = manifest.items.iter().find(|candidate| {
             candidate.id == requested.id && HubKind::parse(&candidate.kind) == Some(requested.kind)
         }) else {
@@ -876,12 +1100,14 @@ pub(crate) async fn hub_download(
         let key = lock_key(kind, &item.id);
         let remote_sha = item.sha256.to_ascii_lowercase();
         let lock_entry = workspace_entries.get(&key);
-        let local = local_sha256(&path);
-        let current = compute_state(
-            Some(&remote_sha),
-            lock_entry.map(|entry| entry.sha256.as_str()),
-            local.as_deref(),
-        );
+        let existing = match read_target(&path) {
+            Ok(existing) => existing,
+            Err(error) => {
+                report.push(item, kind, "failed", Some(error));
+                continue;
+            }
+        };
+        let local = existing.as_deref().map(sha256_hex);
 
         let lock_record = LockEntry {
             kind,
@@ -893,69 +1119,144 @@ pub(crate) async fn hub_download(
             remote_updated: item.updated.clone(),
             installed_at: now_secs(),
             base_url: ctx.base_url.clone(),
+            locale: Some(selection.locale.clone()),
         };
 
-        match current {
-            HubItemState::Installed => {
-                // Also adopts a local file that already matches the hub byte for byte.
-                if lock_entry.map(|entry| entry.sha256.as_str()) != Some(remote_sha.as_str()) {
-                    new_entries.push((key, Some(lock_record)));
-                }
-                report.push(item, kind, "unchanged", None);
-                continue;
+        // Adopting matching bytes also repairs provenance after a successful write whose
+        // lock update failed.
+        if local.as_deref() == Some(&remote_sha) {
+            if lock_entry.map(|entry| entry.sha256.as_str()) != Some(remote_sha.as_str()) {
+                save_install(ctx, &mut workspace_entries, key, lock_record).await?;
             }
-            HubItemState::ModifiedLocally if !force => {
-                report.push(
-                    item,
-                    kind,
-                    "skipped",
-                    Some("Edited locally; your version was kept.".to_string()),
-                );
-                continue;
-            }
-            HubItemState::NameTaken if !force => {
-                report.push(
-                    item,
-                    kind,
-                    "skipped",
-                    Some(format!("A local file named {file_name} already exists.")),
-                );
-                continue;
-            }
-            _ => {}
+            report.push(item, kind, "unchanged", None);
+            continue;
         }
 
-        match download_item(&client, &ctx.base_url, item).await {
-            Ok(bytes) => {
-                let target = path.clone();
-                let overwrite = local.is_some();
-                let written = run_blocking(move || atomic_write(&target, &bytes, overwrite)).await;
-                match written {
-                    Ok(()) => {
-                        new_entries.push((key, Some(lock_record)));
-                        let result = if local.is_some() { "updated" } else { "added" };
-                        report.push(item, kind, result, None);
+        let conflict = existing
+            .as_ref()
+            .filter(|_| lock_entry.map(|entry| &entry.sha256) != local.as_ref());
+        let approved = resolution.filter(|decision| {
+            decision.item.kind == kind
+                && decision.item.id == item.id
+                && Some(&decision.existing_sha) == local.as_ref()
+                && decision.remote_sha == remote_sha
+        });
+        if let Some(bytes) = conflict {
+            if approved.is_none() {
+                report.conflicts.push(HubConflict {
+                    kind,
+                    id: item.id.clone(),
+                    title: item.title.clone(),
+                    file_name,
+                    suggested_name: rename_candidate(kind, bytes).then(|| suggested_name(&path)),
+                    existing_sha: local.expect("existing bytes have a hash"),
+                    remote_sha,
+                    message: None,
+                });
+                continue;
+            }
+        }
+
+        let bytes = match download_item(client, &selection.manifest_url, item).await {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                report.push(item, kind, "failed", Some(error));
+                continue;
+            }
+        };
+        let overwrite = existing.is_some();
+        let rename = conflict.and_then(|_| approved?.renamed_file_name.as_deref());
+        let review = rename.is_some();
+        let transaction_context = ctx.clone();
+        let transaction_path = path.clone();
+        let transaction_key = key.clone();
+        let transaction_record = lock_record.clone();
+        let rename = rename.map(str::to_string);
+        let result = run_blocking(move || {
+            let ctx = &transaction_context;
+            let lock_path = &ctx.lock_path;
+            // Guard archive, favorite, and view-count edits through the rename transaction.
+            let _registry_guard = if review {
+                Some(
+                    crate::quiz_archive::REGISTRY_WRITE_LOCK
+                        .lock()
+                        .map_err(|_| "The library registry is unavailable.")?,
+                )
+            } else {
+                None
+            };
+            let mut changes =
+                if let (Some(name), Some(original)) = (rename.as_deref(), existing.as_deref()) {
+                    rename_changes(ctx, kind, &transaction_path, name, original)?
+                } else {
+                    Vec::new()
+                };
+            changes.push(FileChange {
+                path: transaction_path,
+                before: existing,
+                after: bytes,
+            });
+            let mut lock = read_lock_file(lock_path)?;
+            lock.workspaces
+                .entry(ctx.workspace.clone())
+                .or_default()
+                .insert(transaction_key, transaction_record);
+            changes.push(FileChange {
+                path: lock_path.clone(),
+                before: read_target(lock_path)?,
+                after: serde_json::to_vec_pretty(&lock).map_err(|e| e.to_string())?,
+            });
+            apply_changes(&changes)
+        })
+        .await;
+        match result {
+            Ok(()) => {
+                workspace_entries.insert(key, lock_record);
+                report.push(
+                    item,
+                    kind,
+                    if overwrite { "updated" } else { "added" },
+                    None,
+                );
+            }
+            Err(error) => {
+                if let Ok(Some(current)) = read_target(&path) {
+                    let current_sha = sha256_hex(&current);
+                    if review || Some(&current_sha) != local.as_ref() {
+                        report.conflicts.push(HubConflict {
+                            kind,
+                            id: item.id.clone(),
+                            title: item.title.clone(),
+                            file_name,
+                            suggested_name: rename_candidate(kind, &current)
+                                .then(|| suggested_name(&path)),
+                            existing_sha: current_sha,
+                            remote_sha,
+                            message: Some(error),
+                        });
+                        continue;
                     }
-                    Err(error) => report.push(item, kind, "failed", Some(error)),
                 }
+                report.push(item, kind, "failed", Some(error));
             }
-            Err(error) => report.push(item, kind, "failed", Some(error)),
         }
-    }
-
-    if !new_entries.is_empty() {
-        let lock_path = ctx.lock_path.clone();
-        let workspace = ctx.workspace.clone();
-        run_blocking(move || update_lock(&lock_path, &workspace, new_entries)).await?;
-    }
-
-    if report.added + report.updated > 0 {
-        // Refresh goal titles and the mistake index for changed quizzes. Non-fatal.
-        let app = app.clone();
-        let _ = run_blocking(move || crate::data_sync::synchronize_app_data(&app)).await;
     }
 
     Ok(report)
+}
+
+async fn save_install(
+    ctx: &LocalContext,
+    entries: &mut BTreeMap<String, LockEntry>,
+    key: String,
+    entry: LockEntry,
+) -> Result<(), String> {
+    let lock_path = ctx.lock_path.clone();
+    let workspace = ctx.workspace.clone();
+    let change = (key.clone(), Some(entry.clone()));
+    run_blocking(move || update_lock(&lock_path, &workspace, vec![change])).await?;
+    entries.insert(key, entry);
+    Ok(())
 }
 
 fn update_lock(
@@ -998,34 +1299,32 @@ pub(crate) struct HubPreview {
 pub(crate) async fn hub_preview_item(
     app: AppHandle,
     state: State<'_, HubState>,
+    selection: HubSelection,
     item: HubItemRef,
 ) -> Result<HubPreview, String> {
+    let ctx = capture_context(&app, &selection.scope).await?;
     let local_preview = {
-        let app = app.clone();
         let item = item.clone();
-        run_blocking(move || read_local_hub_preview(&app, &item)).await?
-    };
-    if let Some(preview) = local_preview {
-        return Ok(preview);
-    }
-
-    let base_url = {
-        let app = app.clone();
+        let locale = selection.locale.clone();
         run_blocking(move || {
-            let settings = read_settings(&app)?;
-            Ok(effective_base_url(&settings))
+            let preview = read_local_hub_preview(&ctx, &item, &locale)?;
+            Ok((ctx, preview))
         })
         .await?
     };
-    restore_manifest_cache(&app, &state, &base_url);
+    let (ctx, preview) = local_preview;
+    if let Some(preview) = preview {
+        return Ok(preview);
+    }
+
     let client = http_client()?;
-    let manifest = fetch_manifest(&client, &state, &base_url, false).await?;
+    let manifest = selected_manifest(&client, &state, &ctx, &selection).await?;
     let Some(entry) = manifest.items.iter().find(|candidate| {
         candidate.id == item.id && HubKind::parse(&candidate.kind) == Some(item.kind)
     }) else {
         return Err("This item is no longer published by quizhub.".to_string());
     };
-    let bytes = download_item(&client, &base_url, entry).await?;
+    let bytes = download_item(&client, &selection.manifest_url, entry).await?;
     let contents = String::from_utf8(bytes).map_err(|_| {
         format!(
             "{} is not valid UTF-8 text and cannot be previewed.",
@@ -1041,11 +1340,11 @@ pub(crate) async fn hub_preview_item(
 }
 
 /// Returns a preview from the installed local file when this workspace still tracks the item.
-fn read_local_hub_preview(app: &AppHandle, item: &HubItemRef) -> Result<Option<HubPreview>, String> {
-    let ctx = match local_context(app) {
-        Ok(value) => value,
-        Err(_) => return Ok(None),
-    };
+fn read_local_hub_preview(
+    ctx: &LocalContext,
+    item: &HubItemRef,
+    locale: &str,
+) -> Result<Option<HubPreview>, String> {
     let file_name = match local_file_name(item.kind, &item.id) {
         Ok(value) => value,
         Err(_) => return Ok(None),
@@ -1058,19 +1357,18 @@ fn read_local_hub_preview(app: &AppHandle, item: &HubItemRef) -> Result<Option<H
         return Ok(None);
     }
 
-    let lock = read_lock_file(&ctx.lock_path)?;
+    let entries = ctx.entries(Some(locale))?;
     let key = lock_key(item.kind, &item.id);
-    let Some(entry) = lock
-        .workspaces
-        .get(&ctx.workspace)
-        .and_then(|entries| entries.get(&key))
-    else {
+    let Some(entry) = entries.get(&key) else {
         // Local file exists but was not installed from quizhub (e.g. nameTaken).
         return Ok(None);
     };
 
     let contents = fs::read_to_string(&path).map_err(|error| {
-        format!("Unable to read the local copy of {}: {error}", entry.file_name)
+        format!(
+            "Unable to read the local copy of {}: {error}",
+            entry.file_name
+        )
     })?;
     Ok(Some(HubPreview {
         kind: entry.kind,
@@ -1085,20 +1383,18 @@ fn read_local_hub_preview(app: &AppHandle, item: &HubItemRef) -> Result<Option<H
 #[tauri::command]
 pub(crate) async fn hub_remove(
     app: AppHandle,
+    state: State<'_, HubState>,
+    selection: HubSelection,
     item: HubItemRef,
     keep_file: Option<bool>,
     force: Option<bool>,
 ) -> Result<(), String> {
+    let _guard = state.mutations.lock().await;
     run_blocking(move || {
-        let ctx = local_context(&app)?;
-        let lock = read_lock_file(&ctx.lock_path)?;
+        let ctx = LocalContext::new(&app, &selection.scope)?;
         let key = lock_key(item.kind, &item.id);
-        let Some(entry) = lock
-            .workspaces
-            .get(&ctx.workspace)
-            .and_then(|entries| entries.get(&key))
-            .cloned()
-        else {
+        let entries = ctx.entries(Some(&selection.locale))?;
+        let Some(entry) = entries.get(&key) else {
             return Err("This item was not downloaded from quizhub.".to_string());
         };
         if !keep_file.unwrap_or(false) {
@@ -1124,36 +1420,75 @@ mod tests {
     use super::*;
 
     #[test]
-    fn persisted_manifest_is_usable_without_network() {
+    fn persisted_manifests_are_isolated_by_url_and_usable_without_network() {
         let root = test_dir("manifest-cache");
-        let path = root.join("manifest.json");
         let base = "https://quizhub.invalid/";
-        let cached = CachedManifest {
-            base_url: base.to_string(),
-            etag: Some("test-etag".to_string()),
-            checked_at: 123,
-            manifest: Manifest {
-                schema_version: 1,
-                generated_at: None,
-                categories: vec![],
-                items: vec![item("quiz", "q", b"quiz")],
-            },
-        };
-        atomic_write(&path, &serde_json::to_vec(&cached).unwrap(), true).unwrap();
-        let restored: CachedManifest = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-        assert_eq!(restored.checked_at, 123);
-        assert_eq!(restored.etag.as_deref(), Some("test-etag"));
-        let state = HubState {
-            cache: Mutex::new(Some(restored)),
-        };
+        let cache = DocumentCache::default();
+        for locale in ["en", "zh"] {
+            let url = resolve_remote_url(base, &format!("{locale}/manifest.json")).unwrap();
+            let cached = CachedDocument {
+                url: url.to_string(),
+                etag: Some(format!("etag-{locale}")),
+                checked_at: 123,
+                document: Manifest {
+                    schema_version: 1,
+                    generated_at: None,
+                    domains: vec![],
+                    categories: vec![],
+                    items: vec![item("quiz", locale, b"quiz")],
+                },
+            };
+            atomic_write(
+                &cache_path(&root, url.as_str()),
+                &serde_json::to_vec(&cached).unwrap(),
+                true,
+            )
+            .unwrap();
+        }
         tauri::async_runtime::block_on(async {
-            // .invalid cannot be contacted: success requires the cache-only path.
-            let manifest = fetch_manifest(&http_client().unwrap(), &state, base, false)
+            for locale in ["en", "zh", "en"] {
+                let url = resolve_remote_url(base, &format!("{locale}/manifest.json")).unwrap();
+                let (cached, error) = fetch_document(
+                    &http_client().unwrap(),
+                    &cache,
+                    &root,
+                    &url,
+                    false,
+                    parse_manifest,
+                )
                 .await
                 .unwrap();
-            assert_eq!(manifest.items[0].id, "q");
+                assert!(error.is_none());
+                assert_eq!(cached.checked_at, 123);
+                assert_eq!(cached.etag, Some(format!("etag-{locale}")));
+                assert_eq!(cached.document.items[0].id, locale);
+            }
         });
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn uses_discovered_manifest_path_and_reports_missing_editions() {
+        let locales = parse_locales(br#"{
+            "defaultLocale":"en",
+            "locales":[{"id":"en","name":"English","feed":"feeds/atom.xml","manifest":"published/en/catalog.json"}]
+        }"#).unwrap();
+        let base = "https://example.com/quizhub/";
+        let manifest = manifest_url(base, &locales, &locales.default_locale).unwrap();
+        assert_eq!(
+            manifest.as_str(),
+            "https://example.com/quizhub/published/en/catalog.json"
+        );
+        assert_eq!(
+            resolve_remote_url(manifest.as_str(), "ai/q.json")
+                .unwrap()
+                .as_str(),
+            "https://example.com/quizhub/published/en/ai/q.json"
+        );
+        assert!(manifest_url(base, &locales, "zh")
+            .unwrap_err()
+            .contains("unavailable"));
+        assert!(resolve_remote_url(manifest.as_str(), "%2e%2e/q.json").is_err());
     }
 
     fn test_dir(name: &str) -> PathBuf {
@@ -1195,37 +1530,15 @@ mod tests {
             remote_updated: None,
             installed_at: 0,
             base_url: DEFAULT_BASE_URL.to_string(),
+            locale: Some("en".to_string()),
         }
-    }
-
-    #[test]
-    fn state_covers_every_case() {
-        use HubItemState::*;
-        assert_eq!(compute_state(Some("a"), None, None), Available);
-        assert_eq!(compute_state(Some("a"), None, Some("x")), NameTaken);
-        assert_eq!(compute_state(Some("a"), Some("a"), Some("a")), Installed);
-        assert_eq!(
-            compute_state(Some("b"), Some("a"), Some("a")),
-            UpdateAvailable
-        );
-        assert_eq!(
-            compute_state(Some("b"), Some("a"), Some("x")),
-            ModifiedLocally
-        );
-        assert_eq!(
-            compute_state(Some("a"), Some("a"), Some("x")),
-            ModifiedLocally
-        );
-        assert_eq!(compute_state(Some("b"), Some("a"), Some("b")), Installed);
-        assert_eq!(compute_state(Some("a"), Some("a"), None), Available);
-        assert_eq!(compute_state(None, Some("a"), Some("a")), RemovedRemotely);
     }
 
     #[test]
     fn rejects_newer_schema_and_ignores_unknown_fields() {
         assert!(parse_manifest(br#"{"schemaVersion":2,"items":[]}"#).is_err());
         let manifest = parse_manifest(
-            br#"{"schemaVersion":1,"extra":true,"categories":[{"id":"ai","title":"AI","feed":"ai/atom.xml"}],
+            br#"{"schemaVersion":1,"extra":true,"domains":[{"id":"tech","title":"Technology"}],"categories":[{"id":"ai","title":"AI","domain":"tech","feed":"ai/atom.xml"}],
             "items":[{"kind":"quiz","id":"q","category":"ai","title":"Q","path":"ai/q.json","sha256":"ab","size":2,"new":1}]}"#,
         )
         .unwrap();
@@ -1287,9 +1600,15 @@ mod tests {
         let manifest = Manifest {
             schema_version: 1,
             generated_at: None,
+            domains: vec![HubDomain {
+                id: "tech".to_string(),
+                title: "Technology".to_string(),
+            }],
             categories: vec![ManifestCategory {
                 id: "ai".to_string(),
                 title: "AI".to_string(),
+                domain: "tech".to_string(),
+                feed: "ai/atom.xml".to_string(),
             }],
             items: vec![
                 item("quiz", "new", b"v1"),
@@ -1317,55 +1636,300 @@ mod tests {
         assert_eq!(state("new"), HubItemState::Available);
         assert_eq!(state("fresh"), HubItemState::Installed);
         assert_eq!(state("stale"), HubItemState::UpdateAvailable);
-        assert_eq!(state("edited"), HubItemState::ModifiedLocally);
-        assert_eq!(state("mine"), HubItemState::NameTaken);
+        assert_eq!(state("edited"), HubItemState::UpdateAvailable);
+        assert_eq!(state("mine"), HubItemState::Available);
         assert_eq!(state("gone"), HubItemState::RemovedRemotely);
         assert_eq!(catalog.skipped.len(), 1);
         assert_eq!(catalog.categories[0].quiz_count, 5);
         let _ = fs::remove_dir_all(root);
     }
 
-    /// End-to-end against a served quizhub `dist/`:
-    /// `QUIZHUB_TEST_URL=http://localhost:8080/ cargo test hub_sync -- --ignored`
+    /// Exercises the native catalog and download operations against a served QuizHub build.
+    /// QUIZHUB_TEST_URL=http://localhost:8080/ cargo test live_hub_download_flow -- --ignored
     #[test]
     #[ignore]
     fn live_hub_download_flow() {
-        let Ok(base) = std::env::var("QUIZHUB_TEST_URL") else {
-            return;
-        };
-        let base = normalize_base_url(&base).unwrap();
+        let base = normalize_base_url(&std::env::var("QUIZHUB_TEST_URL").unwrap()).unwrap();
         let root = test_dir("live");
-        let dirs = dirs(&root);
         let state = HubState::default();
+        let context = || {
+            let path = root.join("library");
+            fs::create_dir_all(&path).unwrap();
+            let path = path.canonicalize().unwrap();
+            LocalContext {
+                base_url: base.clone(),
+                lock_path: root.join(LOCK_FILE),
+                workspace: normalize_stored_path(path.clone()),
+                dirs: LocalDirs::new(path).unwrap(),
+            }
+        };
+
         tauri::async_runtime::block_on(async {
             let client = http_client().unwrap();
-            let manifest = fetch_manifest(&client, &state, &base, false).await.unwrap();
-            assert!(!manifest.items.is_empty());
-            // An explicit refresh exercises the ETag path when the server supports it.
-            fetch_manifest(&client, &state, &base, true).await.unwrap();
-
-            let mut lock = BTreeMap::new();
-            for item in &manifest.items {
-                let kind = HubKind::parse(&item.kind).unwrap();
-                let bytes = download_item(&client, &base, item).await.unwrap();
-                let file_name = local_file_name(kind, &item.id).unwrap();
-                atomic_write(&dirs.path_for(kind, &file_name).unwrap(), &bytes, false).unwrap();
-                let mut entry = lock_entry(kind, &item.id, &bytes);
-                entry.file_name = file_name;
-                lock.insert(lock_key(kind, &item.id), entry);
+            let catalog = load_catalog(&client, &state, context(), None, false)
+                .await
+                .unwrap();
+            assert_eq!(catalog.active_locale, "en");
+            assert!(catalog.locales.iter().any(|locale| locale.id == "zh"));
+            let mut paths = Vec::new();
+            for (locale, domain, category) in [
+                ("en", "Computer Science", "Artificial Intelligence"),
+                ("zh", "计算机科学", "人工智能"),
+            ] {
+                let quiz = HubItemRef {
+                    kind: HubKind::Quiz,
+                    id: format!("ai-ml-basics-{locale}"),
+                };
+                let ctx = context();
+                let catalog =
+                    load_catalog(&client, &state, context(), Some(locale.to_string()), true)
+                        .await
+                        .unwrap();
+                assert!(catalog.refresh_error.is_none());
+                assert_eq!(catalog.active_locale, locale);
+                assert!(catalog
+                    .contents
+                    .domains
+                    .iter()
+                    .any(|entry| entry.title == domain));
+                let ai = catalog
+                    .contents
+                    .categories
+                    .iter()
+                    .find(|entry| entry.id == "ai")
+                    .unwrap();
+                assert_eq!(ai.title, category);
+                assert_eq!(ai.domain, "computer-science");
+                assert!(ai
+                    .feed
+                    .as_deref()
+                    .unwrap()
+                    .ends_with(&format!("/{locale}/ai/atom.xml")));
+                let selection = HubSelection {
+                    scope: HubScope {
+                        working_directory: ctx.workspace.clone(),
+                        base_url: base.clone(),
+                    },
+                    locale: locale.to_string(),
+                    manifest_url: catalog.manifest_url.unwrap(),
+                };
+                let note = catalog
+                    .contents
+                    .items
+                    .iter()
+                    .find(|item| item.kind == HubKind::Note)
+                    .unwrap();
+                let refs = [
+                    quiz.clone(),
+                    HubItemRef {
+                        kind: note.kind,
+                        id: note.id.clone(),
+                    },
+                ];
+                let manifest = selected_manifest(&client, &state, &ctx, &selection)
+                    .await
+                    .unwrap();
+                for reference in &refs {
+                    let entry = manifest
+                        .items
+                        .iter()
+                        .find(|entry| entry.id == reference.id)
+                        .unwrap();
+                    let preview = download_item(&client, &selection.manifest_url, entry)
+                        .await
+                        .unwrap();
+                    assert!(!preview.is_empty());
+                }
+                let report = download_into(&client, &state, &ctx, &selection, &refs, None)
+                    .await
+                    .unwrap();
+                assert_eq!((report.added, report.failed), (2, 0));
+                let path = ctx
+                    .dirs
+                    .path_for(quiz.kind, &format!("{}.json", quiz.id))
+                    .unwrap();
+                assert_eq!(ctx.entries(Some(locale)).unwrap().len(), 2);
+                assert!(read_local_hub_preview(&ctx, &quiz, locale)
+                    .unwrap()
+                    .is_some());
+                if locale == "en" {
+                    fs::write(&path, b"edited").unwrap();
+                    let report = download_into(&client, &state, &ctx, &selection, &refs, None)
+                        .await
+                        .unwrap();
+                    let conflict = &report.conflicts[0];
+                    assert!(conflict.suggested_name.is_none());
+                    let mut decision = HubResolution {
+                        item: quiz.clone(),
+                        existing_sha: conflict.existing_sha.clone(),
+                        remote_sha: conflict.remote_sha.clone(),
+                        renamed_file_name: None,
+                    };
+                    fs::write(&path, b"edited again").unwrap();
+                    let stale = download_into(
+                        &client,
+                        &state,
+                        &ctx,
+                        &selection,
+                        &refs[..1],
+                        Some(&decision),
+                    )
+                    .await
+                    .unwrap();
+                    assert_eq!(fs::read(&path).unwrap(), b"edited again");
+                    decision.existing_sha = stale.conflicts[0].existing_sha.clone();
+                    let overwritten = download_into(
+                        &client,
+                        &state,
+                        &ctx,
+                        &selection,
+                        &refs[..1],
+                        Some(&decision),
+                    )
+                    .await
+                    .unwrap();
+                    assert_eq!(overwritten.updated, 1);
+                    assert_eq!(local_sha256(&path).unwrap(), decision.remote_sha);
+                    fs::write(&path, b"edited").unwrap();
+                } else {
+                    assert_eq!(ctx.entries(None).unwrap().len(), 4);
+                    let note = read_local_hub_preview(&ctx, &refs[1], locale)
+                        .unwrap()
+                        .unwrap();
+                    assert!(note.contents.contains(&format!("quizId: {}", quiz.id)));
+                    let key = lock_key(quiz.kind, &quiz.id);
+                    let mut previous = ctx.entries(Some(locale)).unwrap().remove(&key).unwrap();
+                    fs::write(&path, b"older translation").unwrap();
+                    previous.sha256 = sha256_hex(b"older translation");
+                    update_lock(&ctx.lock_path, &ctx.workspace, vec![(key, Some(previous))])
+                        .unwrap();
+                    let report = download_into(&client, &state, &ctx, &selection, &refs, None)
+                        .await
+                        .unwrap();
+                    assert_eq!(report.updated, 1);
+                }
+                paths.push(path);
             }
-            let catalog = build_catalog(&base, &manifest, &lock, &dirs);
+            assert_eq!(fs::read(&paths[0]).unwrap(), b"edited");
+            assert_ne!(fs::read(&paths[1]).unwrap(), b"edited");
+            let restarted = HubState::default();
+            let catalog = load_catalog(&client, &restarted, context(), Some("zh".into()), false)
+                .await
+                .unwrap();
+            assert_eq!(catalog.active_locale, "zh");
             assert!(catalog
+                .contents
                 .items
                 .iter()
-                .all(|i| i.state == HubItemState::Installed));
-
-            let first = &catalog.items[0];
-            let path = dirs.path_for(first.kind, &first.file_name).unwrap();
-            fs::write(&path, b"edited").unwrap();
-            let catalog = build_catalog(&base, &manifest, &lock, &dirs);
-            assert_eq!(catalog.items[0].state, HubItemState::ModifiedLocally);
+                .any(|item| item.id == "ai-ml-basics-zh" && item.state == HubItemState::Installed));
+            let fallback = load_catalog(&client, &state, context(), Some("xx".into()), false)
+                .await
+                .unwrap();
+            assert_eq!(fallback.active_locale, "en");
         });
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn rename_preserves_quiz_history_and_note_links_and_rolls_back_on_failure() {
+        use crate::{goals_storage, mistake_index};
+        let root = test_dir("rename");
+        let config = root.join("config");
+        fs::create_dir_all(&config).unwrap();
+        let ctx = LocalContext {
+            workspace: root.to_string_lossy().into_owned(),
+            base_url: DEFAULT_BASE_URL.into(),
+            lock_path: config.join(LOCK_FILE),
+            dirs: LocalDirs::new(root.canonicalize().unwrap()).unwrap(),
+        };
+        let original = ctx.dirs.quizzes.join("sample.json");
+        let renamed = ctx.dirs.quizzes.join("sample-local.json");
+        let quiz = br#"{"id":"sample","title":"Local quiz","questions":[{"id":"question","type":"true_false","prompt":"Prompt","answer":true}]}"#;
+        fs::write(&original, quiz).unwrap();
+        let note = ctx.dirs.notes.join("note.md");
+        let note_bytes = b"---\nid: note\ntitle: Note\ncreatedAt: 1\nupdatedAt: 2\nlinkedQuizQuestions:\n  - quizId: sample\n    questionId: question\n---\nquizId: sample\n";
+        fs::write(&note, note_bytes).unwrap();
+        let goals = goals_storage::library_goals_root(&config, &ctx.workspace);
+        let goal: goals_storage::GoalMeta = serde_json::from_value(serde_json::json!({
+            "id": "g1", "quizId": "sample", "quizTitle": "Local quiz",
+            "description": "", "createdAt": "2026-01-01",
+        }))
+        .unwrap();
+        goals_storage::upsert_goal(&goals, goal).unwrap();
+        let attempt = serde_json::from_value(serde_json::json!({
+            "id":"a1","takenAt":"2026-01-01","score":0,"total":1,"percentage":0,
+            "questionResults":[{"questionId":"question","prompt":"Prompt","correct":false}],
+        }))
+        .unwrap();
+        goals_storage::save_goal_attempt(&goals, "g1".into(), attempt).unwrap();
+        let registry = config.join("quiz-archive.json");
+        fs::write(
+            &registry,
+            serde_json::to_vec(&serde_json::json!({
+                "directories": { &ctx.workspace: ["sample"] },
+                "favorites": { &ctx.workspace: ["sample"] },
+                "knowledgeViews": { &ctx.workspace: { "note": 7 } },
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let mut changes =
+            rename_changes(&ctx, HubKind::Quiz, &original, "sample-local.json", quiz).unwrap();
+        let failed = FileChange {
+            path: root.join("missing/remote.json"),
+            before: None,
+            after: quiz.to_vec(),
+        };
+        changes.push(failed);
+        assert!(apply_changes(&changes).is_err());
+        assert!(!renamed.exists());
+        assert_eq!(fs::read(&note).unwrap(), note_bytes);
+        assert_eq!(
+            goals_storage::list_goals(&goals).unwrap()[0].meta.quiz_id,
+            "sample"
+        );
+
+        changes.pop();
+        let remote = String::from_utf8_lossy(quiz)
+            .replace("Local quiz", "Remote quiz")
+            .into_bytes();
+        changes.push(FileChange::replace(
+            original.clone(),
+            quiz.to_vec(),
+            remote.clone(),
+        ));
+        apply_changes(&changes).unwrap();
+        assert_eq!(fs::read(&original).unwrap(), remote);
+        assert_eq!(
+            hub_install::content_id(HubKind::Quiz, &fs::read(&renamed).unwrap()).as_deref(),
+            Some("sample-local")
+        );
+        let note_text = fs::read_to_string(&note).unwrap();
+        assert!(note_text.contains("quizId: sample-local\n    questionId: question"));
+        assert!(note_text.ends_with("quizId: sample\n"));
+        assert_eq!(
+            goals_storage::list_goals(&goals).unwrap()[0].meta.quiz_id,
+            "sample-local"
+        );
+        assert_eq!(
+            mistake_index::get_mistake_index(&goals).unwrap().entries[0].quiz_id,
+            "sample-local"
+        );
+        let state: serde_json::Value =
+            serde_json::from_slice(&fs::read(&registry).unwrap()).unwrap();
+        for field in ["directories", "favorites"] {
+            assert_eq!(state[field][&ctx.workspace][0], "sample-local");
+        }
+
+        let before = fs::read(&note).unwrap();
+        let changes = rename_changes(&ctx, HubKind::Note, &note, "note-local.md", &before).unwrap();
+        apply_changes(&changes).unwrap();
+        let note_copy = fs::read_to_string(ctx.dirs.notes.join("note-local.md")).unwrap();
+        assert!(note_copy.contains("id: note-local"));
+        assert!(note_copy.contains("quizId: sample-local"));
+        let state: serde_json::Value =
+            serde_json::from_slice(&fs::read(&registry).unwrap()).unwrap();
+        assert_eq!(state["knowledgeViews"][&ctx.workspace]["note-local"], 7);
         let _ = fs::remove_dir_all(root);
     }
 

@@ -9,11 +9,9 @@ import { errorMessage, nativeApi } from "@/lib/native";
 type QuizLibrary = ParsedQuizLibrary & { favoriteQuizIds: ReadonlySet<string> };
 const EMPTY_LIBRARY: QuizLibrary = { quizzes: [], invalidReports: [], favoriteQuizIds: new Set() };
 
-const readQuizFiles = (knownVersions: Record<string, string>) =>
-  nativeApi.readWorkingDirectory(knownVersions);
-const readQuizMetadata = async () => {
+const readQuizMetadata = async (path: string) => {
   const [archivedQuizIds, favoriteQuizIds] = await Promise.all([
-    nativeApi.listArchivedQuizIds(), nativeApi.listFavoriteQuizIds(),
+    nativeApi.listArchivedQuizIds(path), nativeApi.listFavoriteQuizIds(path),
   ]);
   return { archivedQuizIds, favoriteQuizIds };
 };
@@ -30,9 +28,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
     isLoading,
     directoryPath,
     directoryAvailable,
+    session,
   } = useDirectoryLibrary({
     empty: EMPTY_LIBRARY,
-    readFiles: readQuizFiles,
+    readFiles: nativeApi.readWorkingDirectory,
     readExtras: readQuizMetadata,
     parse: parseQuizLibrary,
     label: "quiz",
@@ -64,8 +63,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   }
 
   async function setQuizArchived(quizId: string, archived: boolean) {
+    if (!session?.isCurrent()) return false;
     try {
-      await nativeApi.setQuizArchived(quizId, archived);
+      await nativeApi.setQuizArchived(session.path, quizId, archived);
+      if (!session.isCurrent()) return false;
       setQuizzes((current) =>
         current.map((source) =>
           source.quiz.id === quizId ? { ...source, archived } : source,
@@ -81,8 +82,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   }
 
   async function setQuizFavorite(quizId: string, favorite: boolean) {
+    if (!session?.isCurrent()) return false;
     try {
-      await nativeApi.setQuizFavorite(quizId, favorite);
+      await nativeApi.setQuizFavorite(session.path, quizId, favorite);
+      if (!session.isCurrent()) return false;
       setLibrary((current) => {
         const next = new Set(current.favoriteQuizIds);
         if (favorite) next.add(quizId);
@@ -97,8 +100,10 @@ export function QuizLibraryProvider({ children }: { children: ReactNode }) {
   }
 
   async function deleteQuizFile(fileName: string) {
+    if (!session?.isCurrent()) return false;
     try {
-      await nativeApi.deleteQuizFile(fileName);
+      await nativeApi.deleteQuizFile(session.path, fileName);
+      if (!session.isCurrent()) return false;
       setQuizzes((current) => current.filter((source) => source.fileName !== fileName));
       toast.success("Quiz permanently deleted.");
       return true;

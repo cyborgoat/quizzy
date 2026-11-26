@@ -4,7 +4,7 @@ export const HUB_REFRESH_INTERVAL = 15 * 60 * 1000;
 
 type Snapshot = { catalog: HubCatalog | null; error: string | null; isRefreshing: boolean };
 
-/** One store per workspace: navigation keeps the catalog and in-flight work alive. */
+/** One store per library, source, and edition: navigation keeps the catalog and in-flight work alive. */
 export function createHubCatalogCache(fetchCatalog: (force: boolean) => Promise<HubCatalog>) {
   let snapshot: Snapshot = { catalog: null, error: null, isRefreshing: false };
   let pending: Promise<void> | null = null;
@@ -19,7 +19,8 @@ export function createHubCatalogCache(fetchCatalog: (force: boolean) => Promise<
     publish({ error: null, isRefreshing: !silent });
     pending = (async () => {
       try {
-        publish({ catalog: await fetchCatalog(force) });
+        const catalog = await fetchCatalog(force);
+        publish({ catalog, error: silent ? null : catalog.refreshError });
       } catch (error) {
         // Background network failures leave cached content usable and undisturbed.
         if (!silent || !snapshot.catalog) publish({ error: errorMessage(error) });

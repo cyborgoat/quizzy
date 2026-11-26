@@ -7,9 +7,10 @@ use std::{
 use tauri::AppHandle;
 
 use crate::{
+    fs_utils::{canonical_directory, directory_from_settings, normalize_stored_path},
     goals_storage::{
-        goal_meta_relative_path, goals_storage_root, list_goals, migrate_legacy_goals_for_sync,
-        repair_attempt_summaries, update_goal_quiz_title, GOAL_META_FILE,
+        goal_meta_relative_path, goals_storage_root, list_goals, repair_attempt_summaries,
+        update_goal_quiz_title, GOAL_META_FILE,
     },
     mistake_index::rebuild_all,
 };
@@ -46,7 +47,6 @@ pub struct SyncReport {
     pub goal_titles_updated: u32,
     pub mistake_index_rebuilt: bool,
     pub mistake_index_entries: u32,
-    pub legacy_goals_migrated: bool,
     pub changes: Vec<SyncChange>,
     pub changes_truncated: bool,
     pub warnings: Vec<SyncWarning>,
@@ -134,18 +134,16 @@ fn load_quiz_catalog(directory: &Path) -> (u32, HashMap<String, String>) {
     (scanned, catalog)
 }
 
-fn working_directory_from_settings(app: &AppHandle) -> Option<std::path::PathBuf> {
-    let settings = crate::read_settings_for_sync(app).ok()?;
-    let path = settings.working_directory?;
-    let directory = std::path::PathBuf::from(path);
-    if directory.is_dir() {
-        Some(directory)
-    } else {
-        None
-    }
+pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
+    let settings = crate::settings::read_settings(app)?;
+    let directory = directory_from_settings(&settings).ok();
+    synchronize_library(app, directory.as_deref())
 }
 
-pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
+pub(crate) fn synchronize_library(
+    app: &AppHandle,
+    directory: Option<&Path>,
+) -> Result<SyncReport, String> {
     let mut report = SyncReport {
         quizzes_scanned: 0,
         knowledge_notes_scanned: 0,
@@ -157,7 +155,6 @@ pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
         goal_titles_updated: 0,
         mistake_index_rebuilt: false,
         mistake_index_entries: 0,
-        legacy_goals_migrated: false,
         changes: Vec::new(),
         changes_truncated: false,
         warnings: Vec::new(),
@@ -165,37 +162,21 @@ pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
 
     let mut written_paths = HashSet::new();
 
-    report.legacy_goals_migrated = migrate_legacy_goals_for_sync(app)?;
-    if report.legacy_goals_migrated {
-        push_change(
-            &mut report,
-            "legacy_goals_migrated",
-            Some("goals.json".to_string()),
-            "Archived legacy goals.json and migrated goals into per-goal storage.".to_string(),
-        );
-        written_paths.insert("goals.json.bak".to_string());
-    }
-
-    let quiz_catalog = match working_directory_from_settings(app) {
-        Some(directory) => {
-            let (scanned, catalog) = load_quiz_catalog(&directory);
-            report.quizzes_scanned = scanned;
-            report.knowledge_notes_scanned = count_knowledge_notes(&directory);
-            catalog
-        }
-        None => {
-            report.warnings.push(SyncWarning {
-                kind: "working_directory_unavailable".to_string(),
-                detail:
-                    "Working directory unavailable — quiz and knowledge folders were not rescanned."
-                        .to_string(),
-            });
-            HashMap::new()
-        }
+    let Some(directory) = directory else {
+        report.warnings.push(SyncWarning {
+            kind: "working_directory_unavailable".to_string(),
+            detail:
+                "Working directory unavailable — quiz and knowledge folders were not rescanned."
+                    .to_string(),
+        });
+        return Ok(report);
     };
-
-    let goals_root = goals_storage_root(app)?;
-    let goals = list_goals(app)?;
+    let directory = canonical_directory(directory)?;
+    let (scanned, quiz_catalog) = load_quiz_catalog(&directory);
+    report.quizzes_scanned = scanned;
+    report.knowledge_notes_scanned = count_knowledge_notes(&directory);
+    let goals_root = goals_storage_root(app, &normalize_stored_path(directory))?;
+    let goals = list_goals(&goals_root)?;
     report.goals_checked = goals.len() as u32;
 
     for goal in goals {
@@ -274,7 +255,7 @@ pub fn synchronize_app_data(app: &AppHandle) -> Result<SyncReport, String> {
         }
     }
 
-    let (rebuilt_index, changed_paths) = rebuild_all(app)?;
+    let (rebuilt_index, changed_paths) = rebuild_all(&goals_root)?;
     let mistake_entry_count = rebuilt_index.entries.len() as u32;
     report.mistake_index_entries = mistake_entry_count;
     if !changed_paths.is_empty() {

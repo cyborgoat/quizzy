@@ -14,7 +14,6 @@ function emptyReport(overrides: Partial<SyncReport> = {}): SyncReport {
     goalTitlesUpdated: 0,
     mistakeIndexRebuilt: false,
     mistakeIndexEntries: 0,
-    legacyGoalsMigrated: false,
     changes: [],
     changesTruncated: false,
     warnings: [],

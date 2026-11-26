@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { nativeApi, type HubInstalledItem } from "@/lib/native";
+import { nativeApi, type HubInstalledItem, type HubScope } from "@/lib/native";
 import { installedFileNames, QUIZHUB_CHANGED_EVENT } from "@/lib/quizhub";
 
-/**
- * File names of items downloaded from quizhub in the current working directory.
- * Reads only the local lock file; refreshes when quizhub content changes or the folder changes.
- */
-export function useQuizhubInstalled(directoryPath: string | null) {
-  const [items, setItems] = useState<HubInstalledItem[]>([]);
+const EMPTY_ITEMS: HubInstalledItem[] = [];
+
+/** Reads provenance for the current library without touching the network. */
+export function useQuizhubInstalled(scope: HubScope | null) {
+  const [snapshot, setSnapshot] = useState<{ scope: HubScope; items: HubInstalledItem[] } | null>(null);
 
   useEffect(() => {
+    if (!scope) return;
     let cancelled = false;
     const load = () => {
       nativeApi
-        .hubListInstalled()
-        .then((next) => {
-          if (!cancelled) setItems(next);
+        .hubListInstalled(scope)
+        .then((items) => {
+          if (!cancelled) setSnapshot({ scope, items });
         })
         .catch(() => {
-          if (!cancelled) setItems([]);
+          if (!cancelled) setSnapshot({ scope, items: EMPTY_ITEMS });
         });
     };
     load();
@@ -27,7 +27,8 @@ export function useQuizhubInstalled(directoryPath: string | null) {
       cancelled = true;
       window.removeEventListener(QUIZHUB_CHANGED_EVENT, load);
     };
-  }, [directoryPath]);
+  }, [scope]);
 
+  const items = snapshot?.scope === scope ? snapshot.items : EMPTY_ITEMS;
   return useMemo(() => installedFileNames(items), [items]);
 }

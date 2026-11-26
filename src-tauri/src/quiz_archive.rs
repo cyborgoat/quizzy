@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
+    sync::Mutex,
 };
 use tauri::{AppHandle, Manager};
 
 const ARCHIVE_REGISTRY_FILE: &str = "quiz-archive.json";
 const ARCHIVE_REGISTRY_VERSION: u32 = 1;
+pub(crate) static REGISTRY_WRITE_LOCK: Mutex<()> = Mutex::new(());
 
 fn registry_version() -> u32 {
     ARCHIVE_REGISTRY_VERSION
@@ -71,14 +73,6 @@ fn write_registry(app: &AppHandle, registry: &ArchiveRegistry) -> Result<(), Str
     crate::fs_utils::atomic_write(&registry_path(app)?, &contents, true)
 }
 
-fn current_directory_key(app: &AppHandle) -> Result<String, String> {
-    let directory = crate::fs_utils::configured_directory(app)?;
-    let canonical = directory
-        .canonicalize()
-        .map_err(|error| format!("Unable to resolve the working directory: {error}"))?;
-    Ok(crate::fs_utils::normalize_stored_path(canonical))
-}
-
 fn update_entry(
     directories: &mut BTreeMap<String, BTreeSet<String>>,
     directory_key: &str,
@@ -101,43 +95,55 @@ fn update_entry(
     }
 }
 
-pub fn list_archived_quiz_ids(app: &AppHandle) -> Result<Vec<String>, String> {
+pub fn list_archived_quiz_ids(app: &AppHandle, directory_key: &str) -> Result<Vec<String>, String> {
     let registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
     Ok(registry
         .directories
-        .get(&directory_key)
+        .get(directory_key)
         .map(|ids| ids.iter().cloned().collect())
         .unwrap_or_default())
 }
 
-pub fn set_quiz_archived(app: &AppHandle, quiz_id: &str, archived: bool) -> Result<(), String> {
+pub fn set_quiz_archived(
+    app: &AppHandle,
+    directory_key: &str,
+    quiz_id: &str,
+    archived: bool,
+) -> Result<(), String> {
     if quiz_id.trim().is_empty() {
         return Err("The quiz ID is required.".to_string());
     }
+    let _guard = REGISTRY_WRITE_LOCK
+        .lock()
+        .map_err(|_| "The library registry is unavailable.")?;
     let mut registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
-    update_entry(&mut registry.directories, &directory_key, quiz_id, archived);
+    update_entry(&mut registry.directories, directory_key, quiz_id, archived);
     write_registry(app, &registry)
 }
 
-pub fn list_favorite_quiz_ids(app: &AppHandle) -> Result<Vec<String>, String> {
+pub fn list_favorite_quiz_ids(app: &AppHandle, directory_key: &str) -> Result<Vec<String>, String> {
     let registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
     Ok(registry
         .favorites
-        .get(&directory_key)
+        .get(directory_key)
         .map(|ids| ids.iter().cloned().collect())
         .unwrap_or_default())
 }
 
-pub fn set_quiz_favorite(app: &AppHandle, quiz_id: &str, favorite: bool) -> Result<(), String> {
+pub fn set_quiz_favorite(
+    app: &AppHandle,
+    directory_key: &str,
+    quiz_id: &str,
+    favorite: bool,
+) -> Result<(), String> {
     if quiz_id.trim().is_empty() {
         return Err("The quiz ID is required.".to_string());
     }
+    let _guard = REGISTRY_WRITE_LOCK
+        .lock()
+        .map_err(|_| "The library registry is unavailable.")?;
     let mut registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
-    update_entry(&mut registry.favorites, &directory_key, quiz_id, favorite);
+    update_entry(&mut registry.favorites, directory_key, quiz_id, favorite);
     write_registry(app, &registry)
 }
 
@@ -155,25 +161,79 @@ fn increment_view(
     *count
 }
 
-pub fn list_knowledge_view_counts(app: &AppHandle) -> Result<BTreeMap<String, u32>, String> {
+pub fn list_knowledge_view_counts(
+    app: &AppHandle,
+    directory_key: &str,
+) -> Result<BTreeMap<String, u32>, String> {
     let registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
     Ok(registry
         .knowledge_views
-        .get(&directory_key)
+        .get(directory_key)
         .cloned()
         .unwrap_or_default())
 }
 
-pub fn record_knowledge_view(app: &AppHandle, note_id: &str) -> Result<u32, String> {
+pub fn record_knowledge_view(
+    app: &AppHandle,
+    directory_key: &str,
+    note_id: &str,
+) -> Result<u32, String> {
     if note_id.trim().is_empty() {
         return Err("The knowledge note ID is required.".to_string());
     }
+    let _guard = REGISTRY_WRITE_LOCK
+        .lock()
+        .map_err(|_| "The library registry is unavailable.")?;
     let mut registry = read_registry(app)?;
-    let directory_key = current_directory_key(app)?;
-    let count = increment_view(&mut registry.knowledge_views, &directory_key, note_id);
+    let count = increment_view(&mut registry.knowledge_views, directory_key, note_id);
     write_registry(app, &registry)?;
     Ok(count)
+}
+
+pub(crate) fn rename_registry_update(
+    config: &Path,
+    directory_key: &str,
+    quiz: bool,
+    old_id: &str,
+    new_id: &str,
+) -> Result<Option<(PathBuf, Vec<u8>, Vec<u8>)>, String> {
+    let path = config.join(ARCHIVE_REGISTRY_FILE);
+    let before = match fs::read(&path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        result => result.map_err(|e| e.to_string())?,
+    };
+    let mut registry: ArchiveRegistry =
+        serde_json::from_slice(&before).map_err(|e| e.to_string())?;
+    if registry.version != ARCHIVE_REGISTRY_VERSION {
+        return Err("The library registry version is unsupported.".into());
+    }
+    let mut changed = false;
+    if quiz {
+        for index in [&mut registry.directories, &mut registry.favorites] {
+            if let Some(ids) = index.get_mut(directory_key) {
+                if ids.contains(new_id) {
+                    return Err("Library state already uses that quiz ID.".into());
+                }
+                if ids.remove(old_id) {
+                    ids.insert(new_id.to_string());
+                    changed = true;
+                }
+            }
+        }
+    } else if let Some(views) = registry.knowledge_views.get_mut(directory_key) {
+        if views.contains_key(new_id) {
+            return Err("Library state already uses that note ID.".into());
+        }
+        if let Some(count) = views.remove(old_id) {
+            views.insert(new_id.to_string(), count);
+            changed = true;
+        }
+    }
+    if changed {
+        let after = serde_json::to_vec_pretty(&registry).map_err(|e| e.to_string())?;
+        return Ok(Some((path, before, after)));
+    }
+    Ok(None)
 }
 
 #[cfg(test)]

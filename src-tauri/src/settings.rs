@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -243,10 +244,6 @@ pub(crate) fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(directory.join(SETTINGS_FILE))
 }
 
-pub(crate) fn read_settings_for_sync(app: &AppHandle) -> Result<Settings, String> {
-    read_settings(app)
-}
-
 pub(crate) fn read_settings(app: &AppHandle) -> Result<Settings, String> {
     let path = settings_path(app)?;
     if !path.exists() {
@@ -303,10 +300,26 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
     })
 }
 
+static SETTINGS_WRITE_LOCK: Mutex<()> = Mutex::new(());
+
+pub(crate) fn update_settings(
+    app: &AppHandle,
+    update: impl FnOnce(&mut Settings) -> Result<(), String>,
+) -> Result<(), String> {
+    let _guard = SETTINGS_WRITE_LOCK
+        .lock()
+        .map_err(|_| "Settings are unavailable.")?;
+    let mut settings = read_settings(app)?;
+    update(&mut settings)?;
+    write_settings(app, &settings)
+}
+
 #[tauri::command]
 pub(crate) fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Result<(), String> {
-    let mut settings = read_settings(&app)?;
+    update_settings(&app, |settings| apply_settings(settings, request))
+}
 
+fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Result<(), String> {
     if let Some(profile_name) = request.profile_name {
         settings.profile_name = profile_name;
     }
@@ -403,7 +416,7 @@ pub(crate) fn save_settings(app: AppHandle, request: SaveSettingsRequest) -> Res
         settings.working_directory = Some(normalize_stored_path(canonical));
     }
 
-    write_settings(&app, &settings)
+    Ok(())
 }
 
 #[cfg(test)]

@@ -8,7 +8,6 @@ use tauri::{AppHandle, Manager};
 
 pub const GOALS_DIR: &str = "goals";
 pub const GOAL_META_FILE: &str = "goal.json";
-const LEGACY_GOALS_FILE: &str = "goals.json";
 const ATTEMPTS_DIR: &str = "attempts";
 const ATTEMPTS_INDEX_FILE: &str = "index.json";
 
@@ -88,53 +87,19 @@ pub struct GoalListItem {
     pub attempts: Vec<AttemptSummary>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LegacyGoal {
-    id: String,
-    quiz_id: String,
-    quiz_title: String,
-    description: String,
-    #[serde(default)]
-    target_score: Option<u32>,
-    created_at: String,
-    #[serde(default)]
-    attempts: Vec<GoalAttempt>,
-}
-
-impl LegacyGoal {
-    fn meta(&self) -> GoalMeta {
-        GoalMeta {
-            id: self.id.clone(),
-            quiz_id: self.quiz_id.clone(),
-            quiz_title: self.quiz_title.clone(),
-            description: self.description.clone(),
-            target_score: self.target_score,
-            created_at: self.created_at.clone(),
-        }
-    }
-}
-
-pub fn goals_storage_root(app: &AppHandle) -> Result<PathBuf, String> {
-    goals_root(app)
-}
-
-fn goals_root(app: &AppHandle) -> Result<PathBuf, String> {
+pub(crate) fn goals_storage_root(app: &AppHandle, library_key: &str) -> Result<PathBuf, String> {
     let directory = app
         .path()
         .app_config_dir()
         .map_err(|error| format!("Unable to locate the app configuration directory: {error}"))?;
-    fs::create_dir_all(&directory)
-        .map_err(|error| format!("Unable to create the app configuration directory: {error}"))?;
-    Ok(directory.join(GOALS_DIR))
+    Ok(library_goals_root(&directory, library_key))
 }
 
-fn legacy_goals_path(app: &AppHandle) -> Result<PathBuf, String> {
-    let directory = app
-        .path()
-        .app_config_dir()
-        .map_err(|error| format!("Unable to locate the app configuration directory: {error}"))?;
-    Ok(directory.join(LEGACY_GOALS_FILE))
+pub(crate) fn library_goals_root(config: &Path, library_key: &str) -> PathBuf {
+    config
+        .join("libraries")
+        .join(crate::fs_utils::sha256_hex(library_key.as_bytes()))
+        .join(GOALS_DIR)
 }
 
 pub fn validate_storage_id(id: &str) -> Result<(), String> {
@@ -357,52 +322,14 @@ pub fn goal_meta_relative_path(goal_id: &str) -> String {
     format!("{GOALS_DIR}/{goal_id}/{GOAL_META_FILE}")
 }
 
-pub fn migrate_legacy_goals_for_sync(app: &AppHandle) -> Result<bool, String> {
-    migrate_legacy_goals(app)
-}
-
-fn migrate_legacy_goals(app: &AppHandle) -> Result<bool, String> {
-    let legacy_path = legacy_goals_path(app)?;
-    if !legacy_path.exists() {
-        return Ok(false);
-    }
-
-    let legacy_goals: Vec<LegacyGoal> = read_json(&legacy_path)?;
-    let root = goals_root(app)?;
-
-    for legacy_goal in legacy_goals {
-        let goal_dir = goal_directory(&root, &legacy_goal.id)?;
-        if goal_dir.exists() {
-            continue;
-        }
-        fs::create_dir_all(&goal_dir)
-            .map_err(|error| format!("Unable to create {}: {error}", goal_dir.display()))?;
-        write_goal_meta(&goal_dir, &legacy_goal.meta())?;
-        for attempt in legacy_goal.attempts {
-            persist_attempt(&goal_dir, &attempt)?;
-        }
-    }
-
-    let backup_path = legacy_path.with_extension("json.bak");
-    if backup_path.exists() {
-        fs::remove_file(&backup_path)
-            .map_err(|error| format!("Unable to remove an existing goals backup file: {error}"))?;
-    }
-    fs::rename(&legacy_path, &backup_path)
-        .map_err(|error| format!("Unable to archive legacy goals.json: {error}"))?;
-    Ok(true)
-}
-
-pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
-    let _ = migrate_legacy_goals(app)?;
-    let root = goals_root(app)?;
+pub fn list_goals(root: &Path) -> Result<Vec<GoalListItem>, String> {
     if !root.exists() {
         return Ok(Vec::new());
     }
 
     let mut goals = Vec::new();
     for entry in
-        fs::read_dir(&root).map_err(|error| format!("Unable to read goals directory: {error}"))?
+        fs::read_dir(root).map_err(|error| format!("Unable to read goals directory: {error}"))?
     {
         let entry =
             entry.map_err(|error| format!("Unable to inspect a goals directory entry: {error}"))?;
@@ -429,11 +356,9 @@ pub fn list_goals(app: &AppHandle) -> Result<Vec<GoalListItem>, String> {
     Ok(goals)
 }
 
-pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
-    let _ = migrate_legacy_goals(app)?;
-    let root = goals_root(app)?;
-    ensure_unique_quiz_goal(&root, &meta)?;
-    let goal_dir = goal_directory(&root, &meta.id)?;
+pub fn upsert_goal(root: &Path, meta: GoalMeta) -> Result<(), String> {
+    ensure_unique_quiz_goal(root, &meta)?;
+    let goal_dir = goal_directory(root, &meta.id)?;
     fs::create_dir_all(&goal_dir)
         .map_err(|error| format!("Unable to create {}: {error}", goal_dir.display()))?;
     fs::create_dir_all(attempts_directory(&goal_dir))
@@ -442,13 +367,13 @@ pub fn upsert_goal(app: &AppHandle, meta: GoalMeta) -> Result<(), String> {
 }
 
 /// Resolves (and validates) the storage directory of a goal without touching the disk.
-pub fn goal_directory_path(app: &AppHandle, goal_id: &str) -> Result<PathBuf, String> {
-    goal_directory(&goals_root(app)?, goal_id)
+pub fn goal_directory_path(root: &Path, goal_id: &str) -> Result<PathBuf, String> {
+    goal_directory(root, goal_id)
 }
 
-pub fn load_goal_attempts(app: &AppHandle, goal_id: &str) -> Result<Vec<GoalAttempt>, String> {
+pub fn load_goal_attempts(root: &Path, goal_id: &str) -> Result<Vec<GoalAttempt>, String> {
     validate_storage_id(goal_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, goal_id)?;
+    let goal_dir = goal_directory(root, goal_id)?;
     if !goal_dir.join(GOAL_META_FILE).exists() {
         return Err(format!("Goal {goal_id} was not found."));
     }
@@ -465,9 +390,9 @@ pub fn load_goal_attempts(app: &AppHandle, goal_id: &str) -> Result<Vec<GoalAtte
     Ok(attempts)
 }
 
-pub fn delete_goal(app: &AppHandle, goal_id: String) -> Result<(), String> {
+pub fn delete_goal(root: &Path, goal_id: String) -> Result<(), String> {
     validate_storage_id(&goal_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
+    let goal_dir = goal_directory(root, &goal_id)?;
     if !goal_dir.exists() {
         return Ok(());
     }
@@ -475,13 +400,9 @@ pub fn delete_goal(app: &AppHandle, goal_id: String) -> Result<(), String> {
         .map_err(|error| format!("Unable to delete goal {}: {error}", goal_id))
 }
 
-pub fn save_goal_attempt(
-    app: &AppHandle,
-    goal_id: String,
-    attempt: GoalAttempt,
-) -> Result<(), String> {
+pub fn save_goal_attempt(root: &Path, goal_id: String, attempt: GoalAttempt) -> Result<(), String> {
     validate_storage_id(&goal_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
+    let goal_dir = goal_directory(root, &goal_id)?;
     if !goal_dir.join(GOAL_META_FILE).exists() {
         return Err(format!("Goal {goal_id} was not found."));
     }
@@ -491,13 +412,13 @@ pub fn save_goal_attempt(
 }
 
 pub fn get_goal_attempt(
-    app: &AppHandle,
+    root: &Path,
     goal_id: String,
     attempt_id: String,
 ) -> Result<GoalAttempt, String> {
     validate_storage_id(&goal_id)?;
     validate_storage_id(&attempt_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
+    let goal_dir = goal_directory(root, &goal_id)?;
     let attempt_path = attempts_directory(&goal_dir).join(format!("{attempt_id}.json"));
     if !attempt_path.exists() {
         return Err(format!("Attempt {attempt_id} was not found."));
@@ -505,14 +426,10 @@ pub fn get_goal_attempt(
     read_json(&attempt_path)
 }
 
-pub fn delete_goal_attempt(
-    app: &AppHandle,
-    goal_id: String,
-    attempt_id: String,
-) -> Result<(), String> {
+pub fn delete_goal_attempt(root: &Path, goal_id: String, attempt_id: String) -> Result<(), String> {
     validate_storage_id(&goal_id)?;
     validate_storage_id(&attempt_id)?;
-    let goal_dir = goal_directory(&goals_root(app)?, &goal_id)?;
+    let goal_dir = goal_directory(root, &goal_id)?;
     if !goal_dir.join(GOAL_META_FILE).exists() {
         return Err(format!("Goal {goal_id} was not found."));
     }
@@ -632,6 +549,54 @@ mod tests {
             target_score: None,
             created_at: "2026-06-09T00:00:00.000Z".into(),
         }
+    }
+
+    #[test]
+    fn same_quiz_id_has_independent_goals_attempts_and_mistakes_by_library() {
+        use super::{
+            library_goals_root, list_goals, load_goal_attempts, save_goal_attempt, upsert_goal,
+        };
+        use crate::mistake_index::{get_mistake_index, record_attempt};
+
+        let config =
+            std::env::temp_dir().join(format!("quizzy-study-libraries-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&config);
+        let english = library_goals_root(&config, "/libraries/en");
+        let chinese = library_goals_root(&config, "/libraries/zh");
+        let goal = goal_meta("goal-1", "ai-ml-basics");
+        upsert_goal(&english, goal.clone()).unwrap();
+        assert!(list_goals(&chinese).unwrap().is_empty());
+        upsert_goal(&chinese, goal).unwrap();
+        let attempt = GoalAttempt {
+            id: "attempt-1".into(),
+            taken_at: "2026-06-09T01:00:00.000Z".into(),
+            score: 0,
+            total: 1,
+            percentage: 0,
+            question_results: vec![QuestionResult {
+                question_id: "q-1".into(),
+                prompt: "Question".into(),
+                correct: false,
+                answer: None,
+                options: None,
+                flagged: None,
+            }],
+        };
+        save_goal_attempt(&english, "goal-1".into(), attempt.clone()).unwrap();
+        record_attempt(&english, "goal-1", &attempt).unwrap();
+        assert!(load_goal_attempts(&chinese, "goal-1").unwrap().is_empty());
+        assert!(get_mistake_index(&chinese).unwrap().entries.is_empty());
+        let reopened = library_goals_root(&config, "/libraries/en");
+        assert_eq!(list_goals(&reopened).unwrap()[0].attempts.len(), 1);
+        assert_eq!(
+            load_goal_attempts(&reopened, "goal-1").unwrap()[0].id,
+            attempt.id
+        );
+        assert_eq!(
+            get_mistake_index(&reopened).unwrap().entries[0].mistake_count,
+            1
+        );
+        let _ = fs::remove_dir_all(&config);
     }
 
     #[test]

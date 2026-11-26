@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { quizSchema } from "@/data/quizSchema";
 import { splitFrontMatter } from "@/lib/frontMatter";
-import { errorMessage, nativeApi, type HubItem, type HubPreview } from "@/lib/native";
+import { errorMessage, nativeApi, type HubItem, type HubPreview, type HubSelection } from "@/lib/native";
 import { isDownloadable, isFromHub } from "@/lib/quizhub";
 import type { Quiz, QuizQuestion } from "@/types/quiz";
 
@@ -22,6 +22,7 @@ const questionTypeLabel: Record<QuizQuestion["type"], string> = {
 
 export function QuizhubPreviewDialog({
   item,
+  selection,
   onOpenChange,
   onDownload,
   onStartQuiz,
@@ -30,6 +31,7 @@ export function QuizhubPreviewDialog({
   isWorking = false,
 }: {
   item: HubItem | null;
+  selection: HubSelection | null;
   onOpenChange: (open: boolean) => void;
   onDownload?: (item: HubItem) => void;
   onStartQuiz?: (item: HubItem) => void;
@@ -38,50 +40,42 @@ export function QuizhubPreviewDialog({
   isWorking?: boolean;
 }) {
   const open = item !== null;
-  const [preview, setPreview] = useState<HubPreview | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [snapshot, setSnapshot] = useState<{
+    item: HubItem;
+    selection: HubSelection;
+    reloadKey: number;
+    preview?: HubPreview;
+    error?: string;
+  } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const current = snapshot?.item === item && snapshot.selection === selection &&
+    snapshot.reloadKey === reloadKey ? snapshot : null;
+  const preview = current?.preview;
+  const error = current?.error;
+  const isLoading = Boolean(item && selection && !current);
 
   useEffect(() => {
-    if (!item) {
-      setPreview(null);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
-
+    if (!item || !selection) return;
     let active = true;
-    setIsLoading(true);
-    setPreview(null);
-    setError(null);
-
-    void nativeApi
-      .hubPreviewItem({ kind: item.kind, id: item.id })
-      .then((result) => {
-        if (!active) return;
-        setPreview(result);
-      })
-      .catch((cause) => {
-        if (!active) return;
-        setError(errorMessage(cause));
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [item, reloadKey]);
+    const request = { item, selection, reloadKey };
+    void nativeApi.hubPreviewItem(selection, { kind: item.kind, id: item.id }).then(
+      (preview) => {
+        if (active) setSnapshot({ ...request, preview });
+      },
+      (cause) => {
+        if (active) setSnapshot({ ...request, error: errorMessage(cause) });
+      },
+    );
+    return () => { active = false; };
+  }, [item, selection, reloadKey]);
 
   if (!item) return null;
 
-  const canDownload = Boolean(isDownloadable(item.state) && onDownload);
+  const canDownload = Boolean((isDownloadable(item.state) || item.state === "installed") && onDownload);
   const canRemove = Boolean(isFromHub(item.state) && onRemove);
   const canStartQuiz = Boolean(item.kind === "quiz" && isFromHub(item.state) && onStartQuiz);
   const fromLocal = isFromHub(item.state);
-  const downloadLabel = item.state === "updateAvailable" ? "Update" : "Download";
+  const downloadLabel = item.state === "updateAvailable" ? "Update" : item.state === "installed" ? "Download again" : "Download";
   const description =
     item.kind === "quiz"
       ? fromLocal

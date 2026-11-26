@@ -7,18 +7,20 @@ use std::{
 use tauri::AppHandle;
 
 use crate::fs_utils::{
-    atomic_write, configured_directory, is_json_extension, open_directory_in_file_manager,
-    read_library_files, read_text_file, resolve_quiz_path, QuizFile,
+    atomic_write, checked_directory, configured_directory, is_json_extension,
+    open_directory_in_file_manager, read_library_files, read_text_file, resolve_quiz_path,
+    QuizFile,
 };
 use crate::{goals_storage, quiz_archive};
 
 #[tauri::command]
 pub(crate) async fn read_working_directory(
     app: AppHandle,
+    working_directory: String,
     known_versions: Option<HashMap<String, String>>,
 ) -> Result<Vec<QuizFile>, String> {
     crate::app_data_commands::run_blocking(move || {
-        let directory = configured_directory(&app)?;
+        let directory = checked_directory(&app, &working_directory)?;
         read_library_files(
             &directory,
             "working directory",
@@ -109,31 +111,43 @@ pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResul
 }
 
 #[tauri::command]
-pub(crate) fn list_archived_quiz_ids(app: AppHandle) -> Result<Vec<String>, String> {
-    quiz_archive::list_archived_quiz_ids(&app)
+pub(crate) fn list_archived_quiz_ids(
+    app: AppHandle,
+    working_directory: String,
+) -> Result<Vec<String>, String> {
+    checked_directory(&app, &working_directory)?;
+    quiz_archive::list_archived_quiz_ids(&app, &working_directory)
 }
 
 #[tauri::command]
 pub(crate) fn set_quiz_archived(
     app: AppHandle,
+    working_directory: String,
     quiz_id: String,
     archived: bool,
 ) -> Result<(), String> {
-    quiz_archive::set_quiz_archived(&app, &quiz_id, archived)
+    checked_directory(&app, &working_directory)?;
+    quiz_archive::set_quiz_archived(&app, &working_directory, &quiz_id, archived)
 }
 
 #[tauri::command]
-pub(crate) fn list_favorite_quiz_ids(app: AppHandle) -> Result<Vec<String>, String> {
-    quiz_archive::list_favorite_quiz_ids(&app)
+pub(crate) fn list_favorite_quiz_ids(
+    app: AppHandle,
+    working_directory: String,
+) -> Result<Vec<String>, String> {
+    checked_directory(&app, &working_directory)?;
+    quiz_archive::list_favorite_quiz_ids(&app, &working_directory)
 }
 
 #[tauri::command]
 pub(crate) fn set_quiz_favorite(
     app: AppHandle,
+    working_directory: String,
     quiz_id: String,
     favorite: bool,
 ) -> Result<(), String> {
-    quiz_archive::set_quiz_favorite(&app, &quiz_id, favorite)
+    checked_directory(&app, &working_directory)?;
+    quiz_archive::set_quiz_favorite(&app, &working_directory, &quiz_id, favorite)
 }
 
 #[derive(Deserialize)]
@@ -142,8 +156,13 @@ pub(crate) struct QuizIdentity {
 }
 
 #[tauri::command]
-pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), String> {
-    let directory = configured_directory(&app)?;
+pub(crate) fn delete_quiz_file(
+    app: AppHandle,
+    working_directory: String,
+    file_name: String,
+) -> Result<(), String> {
+    let directory = checked_directory(&app, &working_directory)?;
+    let goals_root = goals_storage::goals_storage_root(&app, &working_directory)?;
     let path = resolve_quiz_path(&directory, &file_name)?;
     if !path.is_file() {
         return Err(format!("{} does not exist.", path.display()));
@@ -160,11 +179,11 @@ pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), 
         .map_err(|error| format!("Unable to delete {}: {error}", path.display()))?;
 
     let mut cleanup_errors = Vec::new();
-    match goals_storage::list_goals(&app) {
+    match goals_storage::list_goals(&goals_root) {
         Ok(goals) => {
             for goal in goals {
                 if goal.meta.quiz_id == identity.id {
-                    if let Err(error) = goals_storage::delete_goal(&app, goal.meta.id) {
+                    if let Err(error) = goals_storage::delete_goal(&goals_root, goal.meta.id) {
                         cleanup_errors.push(error);
                     }
                 }
@@ -172,11 +191,15 @@ pub(crate) fn delete_quiz_file(app: AppHandle, file_name: String) -> Result<(), 
         }
         Err(error) => cleanup_errors.push(error),
     }
-    if let Err(error) = quiz_archive::set_quiz_archived(&app, &identity.id, false) {
+    if let Err(error) =
+        quiz_archive::set_quiz_archived(&app, &working_directory, &identity.id, false)
+    {
         cleanup_errors.push(error);
     }
 
-    if let Err(error) = quiz_archive::set_quiz_favorite(&app, &identity.id, false) {
+    if let Err(error) =
+        quiz_archive::set_quiz_favorite(&app, &working_directory, &identity.id, false)
+    {
         cleanup_errors.push(error);
     }
 

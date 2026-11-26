@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { HubItem } from "@/lib/native";
 import {
   filterHubItems,
-  groupHubItems,
+  groupHubDomains,
+  REMOVED_HUB_CATEGORY,
   installedFileNames,
   isDownloadable,
   summarizeHubReport,
@@ -24,10 +25,14 @@ function item(overrides: Partial<HubItem>): HubItem {
 
 describe("quizhub helpers", () => {
   it("groups items by category in manifest order with counts", () => {
-    const groups = groupHubItems(
+    const grouped = groupHubDomains(
       [
-        { id: "psychology", title: "Psychology" },
-        { id: "ai", title: "AI" },
+        { id: "social", title: "行为科学" },
+        { id: "cs", title: "计算机科学" },
+      ],
+      [
+        { id: "ai", title: "人工智能", domain: "cs" },
+        { id: "psychology", title: "心理学", domain: "social" },
       ],
       [
         item({ id: "n", kind: "note", title: "A note", state: "installed" }),
@@ -36,18 +41,19 @@ describe("quizhub helpers", () => {
         item({ id: "x", category: "legacy", state: "removedRemotely" }),
       ],
     );
-    expect(groups.map((group) => group.id)).toEqual(["psychology", "ai", "legacy"]);
-    const ai = groups[1];
+    expect(grouped.domains.map((group) => group.title)).toEqual(["行为科学", "计算机科学"]);
+    const ai = grouped.domains[1].categories[0];
+    expect(ai.title).toBe("人工智能");
     expect(ai.items.map((entry) => entry.id)).toEqual(["a", "b", "n"]);
     expect(ai).toMatchObject({ quizCount: 2, noteCount: 1, downloadedCount: 2, updateCount: 1 });
-    expect(groups[0].items).toEqual([]);
+    expect(grouped.domains[0].categories[0].items).toEqual([]);
+    expect(grouped.removed?.id).toBe(REMOVED_HUB_CATEGORY);
+    expect(grouped.removed?.items.map((entry) => entry.id)).toEqual(["x"]);
   });
 
   it("only treats safe states as downloadable", () => {
     expect(isDownloadable("available")).toBe(true);
     expect(isDownloadable("updateAvailable")).toBe(true);
-    expect(isDownloadable("modifiedLocally")).toBe(false);
-    expect(isDownloadable("nameTaken")).toBe(false);
     expect(isDownloadable("installed")).toBe(false);
   });
 

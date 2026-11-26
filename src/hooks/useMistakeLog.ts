@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGoals } from "@/hooks/useGoals";
 import { useMistakeLogSettings } from "@/hooks/useMistakeLogSettings";
 import {
@@ -6,43 +6,41 @@ import {
   detectEmptyReason,
   summarizeMistakeEntries,
 } from "@/lib/mistakeLog";
-import { nativeApi } from "@/lib/native";
+import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
+import type { LibrarySession } from "@/contexts/working-directory-context";
+import { errorMessage, nativeApi, type MistakeIndex } from "@/lib/native";
 import type { MistakeEntry, MistakeLogEmptyReason, MistakeLogSummary } from "@/types/mistakeLog";
+
+const EMPTY_ENTRIES: MistakeEntry[] = [];
 
 export function useMistakeLog() {
   const { isLoading: goalsLoading, goalsVersion } = useGoals();
   const { minMistakes, minFlags, maxCorrectnessPercentage } = useMistakeLogSettings();
-  const [rawEntries, setRawEntries] = useState<MistakeEntry[]>([]);
-  const [scoredAttemptCount, setScoredAttemptCount] = useState(0);
-  const [isLoadingIndex, setIsLoadingIndex] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const hasLoadedIndexRef = useRef(false);
+  const { session } = useWorkingDirectory();
+  const [snapshot, setSnapshot] = useState<{
+    session: LibrarySession;
+    index?: MistakeIndex;
+    error?: string;
+  } | null>(null);
+  const [loadingSession, setLoadingSession] = useState<LibrarySession | null>(null);
+  const current = snapshot?.session === session ? snapshot : null;
+  const rawEntries = current?.index?.entries ?? EMPTY_ENTRIES;
+  const scoredAttemptCount = current?.index?.scoredAttemptCount ?? 0;
 
-  const loadIndex = useCallback(async (background = false) => {
-    if (!background) {
-      setIsLoadingIndex(true);
-    }
-    setError(null);
-
-    try {
-      const index = await nativeApi.getMistakeIndex();
-      setRawEntries(index.entries);
-      setScoredAttemptCount(index.scoredAttemptCount);
-      hasLoadedIndexRef.current = true;
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : String(loadError));
-      setRawEntries([]);
-      setScoredAttemptCount(0);
-    } finally {
-      if (!background) {
-        setIsLoadingIndex(false);
-      }
-    }
-  }, []);
+  const loadIndex = useCallback(() => {
+    if (!session?.isCurrent()) return;
+    return nativeApi.getMistakeIndex(session.path).then(
+      (index) => {
+        if (session.isCurrent()) setSnapshot({ session, index });
+      },
+      (loadError) => {
+        if (session.isCurrent()) setSnapshot({ session, error: errorMessage(loadError) });
+      },
+    );
+  }, [session]);
 
   useEffect(() => {
-    if (goalsLoading) return;
-    void loadIndex(hasLoadedIndexRef.current);
+    if (!goalsLoading) void loadIndex();
   }, [goalsLoading, goalsVersion, loadIndex]);
 
   const thresholds = useMemo(
@@ -88,8 +86,16 @@ export function useMistakeLog() {
     emptyReason,
     quizzesWithMistakes,
     thresholds,
-    isLoading: goalsLoading || isLoadingIndex,
-    error,
-    refetch: () => loadIndex(false),
+    isLoading: Boolean(session) && (goalsLoading || !current || loadingSession === session),
+    error: current?.error ?? null,
+    refetch: async () => {
+      if (!session?.isCurrent()) return;
+      setLoadingSession(session);
+      try {
+        await loadIndex();
+      } finally {
+        if (session.isCurrent()) setLoadingSession(null);
+      }
+    },
   };
 }

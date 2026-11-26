@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { LibrarySession } from "@/contexts/working-directory-context";
 import { useBackgroundDataLoader } from "@/hooks/useBackgroundDataLoader";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import {
@@ -10,62 +11,60 @@ import {
 import { errorMessage } from "@/lib/native";
 
 type LibraryOptions<T extends { invalidReports: unknown[] }, E> = {
-  /** Value used before the first load and whenever the directory is unavailable. */
   empty: T;
-  /** Reads the directory natively; unchanged files carry no contents. */
-  readFiles: (knownVersions: Record<string, string>) => Promise<NativeLibraryFile[]>;
-  /** Optional extra data loaded alongside the files (e.g. archived quiz ids). */
-  readExtras?: () => Promise<E>;
+  readFiles: (path: string, knownVersions: Record<string, string>) => Promise<NativeLibraryFile[]>;
+  readExtras?: (path: string) => Promise<E>;
   parse: (files: ResolvedLibraryFile[], extras: E) => T;
-  /** Used in the dev-only warning about skipped files. */
   label: string;
 };
 
-/**
- * Shared loader for libraries backed by files in the working directory:
- * handles directory changes, the file-version cache, parse results,
- * background refreshes and error reporting.
- *
- * Pass module-level (stable) functions in `options`.
- */
+/** Shares file and metadata loading for libraries backed by the working directory. */
 export function useDirectoryLibrary<T extends { invalidReports: unknown[] }, E = undefined>(
   options: LibraryOptions<T, E>,
 ) {
   const { empty, readFiles, readExtras, parse, label } = options;
-  const { directoryPath, directoryAvailable } = useWorkingDirectory();
-  const [library, setLibrary] = useState<T>(empty);
-  const fileCache = useRef(createFileVersionCache());
-  const cachedDirectory = useRef<string | null>(null);
+  const { directoryPath, directoryAvailable, session } = useWorkingDirectory();
+  const [snapshot, setSnapshot] = useState<{ session: LibrarySession; library: T } | null>(null);
+  const current = snapshot?.session === session ? snapshot : null;
+  const fileCache = useMemo(() => session && createFileVersionCache(), [session]);
+
+  const setLibrary = useCallback((update: (current: T) => T) => {
+    if (!session?.isCurrent()) return;
+    setSnapshot((previous) => ({
+      session,
+      library: update(previous?.session === session ? previous.library : empty),
+    }));
+  }, [empty, session]);
 
   const load = useCallback(async () => {
+    if (!fileCache || !session?.isCurrent()) return;
     try {
-      if (!directoryAvailable || !directoryPath) {
-        fileCache.current.clear();
-        setLibrary(empty);
-        return;
-      }
-      if (cachedDirectory.current !== directoryPath) {
-        fileCache.current.clear();
-        cachedDirectory.current = directoryPath;
-      }
       const [nativeFiles, extras] = await Promise.all([
-        readFiles(fileCache.current.knownVersions()),
-        readExtras ? readExtras() : (undefined as E),
+        readFiles(session.path, fileCache.knownVersions()),
+        readExtras ? readExtras(session.path) : (undefined as E),
       ]);
-      const parsed = parse(fileCache.current.resolve(nativeFiles), extras);
-      setLibrary(parsed);
-      if (import.meta.env.DEV && parsed.invalidReports.length > 0) {
-        console.warn(`Quizzy skipped invalid ${label} files:`, parsed.invalidReports);
+      if (!session.isCurrent()) return;
+      const library = parse(fileCache.resolve(nativeFiles), extras);
+      setSnapshot({ session, library });
+      if (import.meta.env.DEV && library.invalidReports.length > 0) {
+        console.warn(`Quizzy skipped invalid ${label} files:`, library.invalidReports);
       }
     } catch (error) {
-      fileCache.current.clear();
-      setLibrary(empty);
+      if (!session.isCurrent()) return;
+      fileCache.clear();
+      setSnapshot({ session, library: empty });
       toast.error(errorMessage(error));
     }
-  }, [directoryAvailable, directoryPath, empty, readFiles, readExtras, parse, label]);
+  }, [session, fileCache, empty, readFiles, readExtras, parse, label]);
 
-  // useBackgroundDataLoader reloads whenever `load` changes (directory switch), so no extra effect.
   const { refresh, isLoading } = useBackgroundDataLoader(load);
-
-  return { library, setLibrary, refresh, isLoading, directoryPath, directoryAvailable };
+  return {
+    library: current?.library ?? empty,
+    setLibrary,
+    refresh,
+    isLoading: Boolean(session) && (isLoading || !current),
+    directoryPath,
+    directoryAvailable,
+    session,
+  };
 }

@@ -61,7 +61,6 @@ export type MistakeIndex = {
 };
 
 export type SyncChangeKind =
-  | "legacy_goals_migrated"
   | "attempt_index_rebuilt"
   | "goal_title_updated"
   | "mistake_index_rebuilt";
@@ -90,7 +89,6 @@ export type SyncReport = {
   goalTitlesUpdated: number;
   mistakeIndexRebuilt: boolean;
   mistakeIndexEntries: number;
-  legacyGoalsMigrated: boolean;
   changes: SyncChange[];
   changesTruncated: boolean;
   warnings: SyncWarning[];
@@ -100,15 +98,29 @@ export type HubKind = "quiz" | "note";
 
 export type HubItemState =
   | "available"
-  | "nameTaken"
   | "installed"
   | "updateAvailable"
-  | "modifiedLocally"
   | "removedRemotely";
+
+export type HubScope = {
+  workingDirectory: string;
+  baseUrl: string;
+};
+
+export type HubSelection = {
+  scope: HubScope;
+  locale: string;
+  manifestUrl: string;
+};
+
+export type HubLocale = { id: string; name: string; feed: string; manifest: string };
+export type HubDomain = { id: string; title: string };
 
 export type HubCategory = {
   id: string;
   title: string;
+  domain: string;
+  feed: string | null;
   quizCount: number;
   noteCount: number;
 };
@@ -129,6 +141,13 @@ export type HubCatalog = {
   checkedAt: number;
   baseUrl: string;
   generatedAt?: string;
+  locales: HubLocale[];
+  defaultLocale: string;
+  activeLocale: string;
+  manifestUrl: string | null;
+  editionError: string | null;
+  refreshError: string | null;
+  domains: HubDomain[];
   categories: HubCategory[];
   items: HubItem[];
   skipped: string[];
@@ -144,6 +163,22 @@ export type HubItemOutcome = HubItemRef & {
   detail?: string;
 };
 
+export type HubConflict = HubItemRef & {
+  title: string;
+  fileName: string;
+  suggestedName: string | null;
+  existingSha: string;
+  remoteSha: string;
+  message: string | null;
+};
+
+export type HubResolution = {
+  item: HubItemRef;
+  existingSha: string;
+  remoteSha: string;
+  renamedFileName?: string;
+};
+
 export type HubDownloadReport = {
   added: number;
   updated: number;
@@ -151,6 +186,7 @@ export type HubDownloadReport = {
   skipped: number;
   failed: number;
   outcomes: HubItemOutcome[];
+  conflicts: HubConflict[];
 };
 
 export type HubPreview = {
@@ -167,55 +203,55 @@ const saveSettings = createSettingsSaveQueue((request: SaveSettingsRequest) =>
 export const nativeApi = {
   getSettings: () => invoke<AppSettings>("get_settings"),
   saveSettings,
-  readWorkingDirectory: (knownVersions?: Record<string, string>) =>
-    invoke<NativeQuizFile[]>("read_working_directory", { knownVersions }),
+  readWorkingDirectory: (workingDirectory: string, knownVersions?: Record<string, string>) =>
+    invoke<NativeQuizFile[]>("read_working_directory", { workingDirectory, knownVersions }),
   importQuizFile: (sourcePath: string) =>
     invoke<string>("import_quiz_file", { sourcePath }),
   addSampleQuizzes: () =>
     invoke<{ added: string[]; skipped: string[] }>("add_sample_quizzes"),
-  listFavoriteQuizIds: () => invoke<string[]>("list_favorite_quiz_ids"),
-  setQuizFavorite: (quizId: string, favorite: boolean) =>
-    invoke<void>("set_quiz_favorite", { quizId, favorite }),
-  listArchivedQuizIds: () => invoke<string[]>("list_archived_quiz_ids"),
-  setQuizArchived: (quizId: string, archived: boolean) =>
-    invoke<void>("set_quiz_archived", { quizId, archived }),
-  deleteQuizFile: (fileName: string) =>
-    invoke<void>("delete_quiz_file", { fileName }),
-  readKnowledgeDirectory: (knownVersions?: Record<string, string>) =>
-    invoke<NativeKnowledgeFile[]>("read_knowledge_directory", { knownVersions }),
-  writeKnowledgeFile: (request: WriteKnowledgeFileRequest) =>
-    invoke<void>("write_knowledge_file", { request }),
-  deleteKnowledgeFile: (fileName: string) =>
-    invoke<void>("delete_knowledge_file", { fileName }),
-  listKnowledgeViewCounts: () =>
-    invoke<Record<string, number>>("list_knowledge_view_counts"),
-  recordKnowledgeView: (noteId: string) =>
-    invoke<number>("record_knowledge_view", { noteId }),
+  listFavoriteQuizIds: (workingDirectory: string) => invoke<string[]>("list_favorite_quiz_ids", { workingDirectory }),
+  setQuizFavorite: (workingDirectory: string, quizId: string, favorite: boolean) =>
+    invoke<void>("set_quiz_favorite", { workingDirectory, quizId, favorite }),
+  listArchivedQuizIds: (workingDirectory: string) => invoke<string[]>("list_archived_quiz_ids", { workingDirectory }),
+  setQuizArchived: (workingDirectory: string, quizId: string, archived: boolean) =>
+    invoke<void>("set_quiz_archived", { workingDirectory, quizId, archived }),
+  deleteQuizFile: (workingDirectory: string, fileName: string) =>
+    invoke<void>("delete_quiz_file", { workingDirectory, fileName }),
+  readKnowledgeDirectory: (workingDirectory: string, knownVersions?: Record<string, string>) =>
+    invoke<NativeKnowledgeFile[]>("read_knowledge_directory", { workingDirectory, knownVersions }),
+  writeKnowledgeFile: (workingDirectory: string, request: WriteKnowledgeFileRequest) =>
+    invoke<void>("write_knowledge_file", { workingDirectory, request }),
+  deleteKnowledgeFile: (workingDirectory: string, fileName: string) =>
+    invoke<void>("delete_knowledge_file", { workingDirectory, fileName }),
+  listKnowledgeViewCounts: (workingDirectory: string) =>
+    invoke<Record<string, number>>("list_knowledge_view_counts", { workingDirectory }),
+  recordKnowledgeView: (workingDirectory: string, noteId: string) =>
+    invoke<number>("record_knowledge_view", { workingDirectory, noteId }),
   openQuizFolder: () => invoke<void>("open_quiz_folder"),
   openKnowledgeFolder: () => invoke<void>("open_knowledge_folder"),
-  listGoals: () =>
-    invoke<Goal[]>("list_goals"),
-  upsertGoal: (goal: GoalMeta) =>
-    invoke<void>("upsert_goal", { goal }),
-  deleteGoal: (goalId: string) =>
-    invoke<void>("delete_goal", { goalId }),
-  saveGoalAttempt: (goalId: string, attempt: GoalAttempt) =>
-    invoke<void>("save_goal_attempt", { goalId, attempt }),
-  getGoalAttempt: (goalId: string, attemptId: string) =>
-    invoke<GoalAttempt>("get_goal_attempt", { goalId, attemptId }),
-  deleteGoalAttempt: (goalId: string, attemptId: string) =>
-    invoke<void>("delete_goal_attempt", { goalId, attemptId }),
-  getMistakeIndex: () => invoke<MistakeIndex>("get_mistake_index"),
+  listGoals: (workingDirectory: string) =>
+    invoke<Goal[]>("list_goals", { workingDirectory }),
+  upsertGoal: (workingDirectory: string, goal: GoalMeta) =>
+    invoke<void>("upsert_goal", { workingDirectory, goal }),
+  deleteGoal: (workingDirectory: string, goalId: string) =>
+    invoke<void>("delete_goal", { workingDirectory, goalId }),
+  saveGoalAttempt: (workingDirectory: string, goalId: string, attempt: GoalAttempt) =>
+    invoke<void>("save_goal_attempt", { workingDirectory, goalId, attempt }),
+  getGoalAttempt: (workingDirectory: string, goalId: string, attemptId: string) =>
+    invoke<GoalAttempt>("get_goal_attempt", { workingDirectory, goalId, attemptId }),
+  deleteGoalAttempt: (workingDirectory: string, goalId: string, attemptId: string) =>
+    invoke<void>("delete_goal_attempt", { workingDirectory, goalId, attemptId }),
+  getMistakeIndex: (workingDirectory: string) => invoke<MistakeIndex>("get_mistake_index", { workingDirectory }),
   synchronizeAppData: () => invoke<SyncReport>("synchronize_app_data"),
-  hubFetchCatalog: (force = false) =>
-    invoke<HubCatalog>("hub_fetch_catalog", { force }),
-  hubListInstalled: () => invoke<HubInstalledItem[]>("hub_list_installed"),
-  hubDownload: (items: HubItemRef[], force = false) =>
-    invoke<HubDownloadReport>("hub_download", { items, force }),
-  hubPreviewItem: (item: HubItemRef) =>
-    invoke<HubPreview>("hub_preview_item", { item }),
-  hubRemove: (item: HubItemRef, options: { keepFile?: boolean; force?: boolean } = {}) =>
-    invoke<void>("hub_remove", { item, keepFile: options.keepFile, force: options.force }),
+  hubFetchCatalog: (scope: HubScope, locale: string | null, force: boolean) =>
+    invoke<HubCatalog>("hub_fetch_catalog", { scope, locale, force }),
+  hubListInstalled: (scope: HubScope) => invoke<HubInstalledItem[]>("hub_list_installed", { scope }),
+  hubDownload: (selection: HubSelection, items: HubItemRef[], resolution?: HubResolution) =>
+    invoke<HubDownloadReport>("hub_download", { selection, items, resolution }),
+  hubPreviewItem: (selection: HubSelection, item: HubItemRef) =>
+    invoke<HubPreview>("hub_preview_item", { selection, item }),
+  hubRemove: (selection: HubSelection, item: HubItemRef, options: { keepFile?: boolean; force?: boolean } = {}) =>
+    invoke<void>("hub_remove", { selection, item, keepFile: options.keepFile, force: options.force }),
 };
 
 export function errorMessage(error: unknown) {

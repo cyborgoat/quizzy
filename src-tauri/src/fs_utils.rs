@@ -1,4 +1,5 @@
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs,
@@ -7,7 +8,7 @@ use std::{
 };
 use tauri::AppHandle;
 
-use crate::settings::read_settings;
+use crate::settings::{read_settings, Settings};
 
 pub(crate) const KNOWLEDGE_BASE_FOLDER: &str = "knowledge-base";
 
@@ -64,7 +65,10 @@ pub(crate) fn is_safe_knowledge_file_name(file_name: &str) -> bool {
 }
 
 pub(crate) fn knowledge_base_directory(app: &AppHandle) -> Result<PathBuf, String> {
-    let root = configured_directory(app)?;
+    knowledge_base_for(&configured_directory(app)?)
+}
+
+pub(crate) fn knowledge_base_for(root: &Path) -> Result<PathBuf, String> {
     let path = root.join(KNOWLEDGE_BASE_FOLDER);
     if !path.exists() {
         fs::create_dir_all(&path)
@@ -116,15 +120,39 @@ pub(crate) fn normalize_stored_path(path: PathBuf) -> String {
 }
 
 pub(crate) fn configured_directory(app: &AppHandle) -> Result<PathBuf, String> {
-    let settings = read_settings(app)?;
+    directory_from_settings(&read_settings(app)?)
+}
+
+pub(crate) fn directory_from_settings(settings: &Settings) -> Result<PathBuf, String> {
     let path = settings
         .working_directory
+        .as_ref()
         .ok_or_else(|| "No working directory has been configured.".to_string())?;
     let directory = PathBuf::from(path);
     if !directory.is_dir() {
         return Err("The configured working directory is unavailable.".to_string());
     }
     Ok(directory)
+}
+
+pub(crate) fn canonical_directory(path: &Path) -> Result<PathBuf, String> {
+    path.canonicalize()
+        .map_err(|error| format!("Unable to resolve the working directory: {error}"))
+}
+
+pub(crate) fn checked_directory(app: &AppHandle, expected: &str) -> Result<PathBuf, String> {
+    let directory = canonical_directory(&configured_directory(app)?)?;
+    if normalize_stored_path(directory.clone()) != expected {
+        return Err("The working directory changed. Try again in the current library.".to_string());
+    }
+    Ok(directory)
+}
+
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 pub(crate) fn read_text_file(path: &Path) -> Result<String, String> {

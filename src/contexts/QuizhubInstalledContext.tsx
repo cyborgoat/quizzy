@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import { QuizhubInstalledContext } from "@/contexts/quizhub-installed-context";
-import { useQuizLibrary } from "@/hooks/useQuizLibrary";
+import { useQuizhubScope } from "@/hooks/useQuizhubScope";
 import { useQuizhubInstalled } from "@/hooks/useQuizhubInstalled";
 
 export function QuizhubInstalledProvider({ children }: { children: ReactNode }) {
-  const { directoryPath } = useQuizLibrary();
-  const installed = useQuizhubInstalled(directoryPath);
+  const installed = useQuizhubInstalled(useQuizhubScope());
   return (
     <QuizhubInstalledContext.Provider value={installed}>{children}</QuizhubInstalledContext.Provider>
   );

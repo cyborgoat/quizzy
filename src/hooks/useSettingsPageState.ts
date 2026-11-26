@@ -261,7 +261,7 @@ export function useSettingsPageState() {
     updateDraft({ quizhubBaseUrl: value });
   }
 
-  function commitQuizhubBaseUrl() {
+  async function commitQuizhubBaseUrl() {
     if (savingFieldsRef.current.has("quizhubBaseUrl")) return;
     const next = draft.quizhubBaseUrl.trim();
     const previous = quizhubBaseUrl;
@@ -273,15 +273,18 @@ export function useSettingsPageState() {
       updateDraft({ quizhubBaseUrl: previous });
       return;
     }
-    void persistSetting(
-      "quizhubBaseUrl",
-      { quizhubBaseUrl: next },
-      () => setQuizhubBaseUrl(next),
-      () => {
-        setQuizhubBaseUrl(previous);
-        updateDraft({ quizhubBaseUrl: previous });
-      },
-    );
+    setSaving("quizhubBaseUrl", true);
+    try {
+      await nativeApi.saveSettings({ quizhubBaseUrl: next });
+      const settings = await nativeApi.getSettings();
+      setQuizhubBaseUrl(settings.quizhubBaseUrl);
+      updateDraft({ quizhubBaseUrl: settings.quizhubBaseUrl });
+    } catch (error) {
+      updateDraft({ quizhubBaseUrl: previous });
+      toast.error(errorMessage(error));
+    } finally {
+      setSaving("quizhubBaseUrl", false);
+    }
   }
 
   function resetQuizhubBaseUrl() {

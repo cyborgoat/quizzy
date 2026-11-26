@@ -1,4 +1,5 @@
 import type {
+  HubDomain,
   HubDownloadReport,
   HubInstalledItem,
   HubItem,
@@ -22,23 +23,19 @@ export function hubItemKey(item: HubItemRef) {
 
 export const hubStateLabel: Record<HubItemState, string> = {
   available: "Not downloaded",
-  nameTaken: "Name in use",
   installed: "Downloaded",
   updateAvailable: "Update available",
-  modifiedLocally: "Edited locally",
   removedRemotely: "Removed from hub",
 };
 
 export const hubStateDescription: Record<HubItemState, string> = {
   available: "Available to download.",
-  nameTaken: "A local file with the same name already exists. It will not be replaced unless you choose to.",
-  installed: "Your copy matches quizhub.",
-  updateAvailable: "A newer version is published. Your copy has not been edited, so it can be updated safely.",
-  modifiedLocally: "You edited this file after downloading it. Updates are skipped to keep your changes.",
+  installed: "This item is recorded as downloaded.",
+  updateAvailable: "A newer version is available. QuizHub checks your local file when you update.",
   removedRemotely: "Quizhub no longer publishes this item. Your copy is kept.",
 };
 
-/** States a plain "Download" can act on without overwriting anything the user owns. */
+/** Items eligible for row and bulk downloads. */
 export function isDownloadable(state: HubItemState) {
   return state === "available" || state === "updateAvailable";
 }
@@ -48,7 +45,6 @@ export function isFromHub(state: HubItemState) {
   return (
     state === "installed" ||
     state === "updateAvailable" ||
-    state === "modifiedLocally" ||
     state === "removedRemotely"
   );
 }
@@ -63,23 +59,29 @@ export type HubCategoryView = {
   updateCount: number;
 };
 
-/** Groups catalog items by category, keeping manifest category order; unknown categories go last. */
+type HubCategoryInfo = Pick<HubCategoryView, "id" | "title"> & { domain: string };
+export type HubDomainView = HubDomain & { categories: HubCategoryView[] };
+
+export const REMOVED_HUB_CATEGORY = "__removed_from_quizhub__";
+
 export function groupHubItems(
-  categories: { id: string; title: string }[],
+  categories: HubCategoryInfo[],
   items: HubItem[],
 ): HubCategoryView[] {
   const views = new Map<string, HubCategoryView>();
-  const ensure = (id: string, title: string) => {
-    let view = views.get(id);
-    if (!view) {
-      view = { id, title, items: [], quizCount: 0, noteCount: 0, downloadedCount: 0, updateCount: 0 };
-      views.set(id, view);
-    }
+  const addCategory = (id: string, title: string) => {
+    const view = { id, title, items: [], quizCount: 0, noteCount: 0, downloadedCount: 0, updateCount: 0 };
+    views.set(id, view);
     return view;
   };
-  for (const category of categories) ensure(category.id, category.title);
+  for (const category of categories) addCategory(category.id, category.title);
   for (const item of items) {
-    const view = ensure(item.category, item.category);
+    let view = views.get(item.category);
+    if (!view && item.state === "removedRemotely") {
+      view = views.get(REMOVED_HUB_CATEGORY) ?? addCategory(REMOVED_HUB_CATEGORY, "Removed from QuizHub");
+    }
+    if (!view) continue;
+
     view.items.push(item);
     if (item.kind === "quiz") view.quizCount += 1;
     else view.noteCount += 1;
@@ -92,6 +94,26 @@ export function groupHubItems(
     );
   }
   return [...views.values()];
+}
+
+export function groupHubDomains(
+  domains: HubDomain[],
+  categories: HubCategoryInfo[],
+  items: HubItem[],
+) {
+  const domainViews = new Map<string, HubDomainView>(
+    domains.map((domain) => [domain.id, { ...domain, categories: [] }]),
+  );
+  const categoryDomains = new Map(categories.map((category) => [category.id, category.domain]));
+  const categoryViews = groupHubItems(categories, items);
+  for (const category of categoryViews) {
+    const domainId = categoryDomains.get(category.id);
+    if (domainId) domainViews.get(domainId)?.categories.push(category);
+  }
+  return {
+    domains: [...domainViews.values()].filter((domain) => domain.categories.length > 0),
+    removed: categoryViews.find((category) => category.id === REMOVED_HUB_CATEGORY),
+  };
 }
 
 function kindOrder(kind: HubKind) {
@@ -109,7 +131,7 @@ export function filterHubItems(items: HubItem[], query: string) {
   );
 }
 
-export function summarizeHubReport(report: HubDownloadReport) {
+export function summarizeHubReport(report: Omit<HubDownloadReport, "conflicts">) {
   const parts: string[] = [];
   if (report.added) parts.push(`${report.added} added`);
   if (report.updated) parts.push(`${report.updated} updated`);

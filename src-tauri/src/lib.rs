@@ -12,8 +12,6 @@ mod quiz_archive;
 mod quiz_files;
 mod settings;
 
-pub(crate) use settings::read_settings_for_sync;
-
 fn focus_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();

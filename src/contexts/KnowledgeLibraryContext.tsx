@@ -5,19 +5,20 @@ import {
   KnowledgeLibraryContext,
 } from "@/contexts/knowledge-library-context";
 import type { CreateKnowledgeDraft } from "@/contexts/knowledge-library-context";
+import type { LibrarySession } from "@/contexts/working-directory-context";
 import { parseKnowledgeFiles, type ParsedKnowledgeLibrary } from "@/data/knowledgeRepository";
 import { useDirectoryLibrary } from "@/hooks/useDirectoryLibrary";
 import { serializeKnowledgeFile } from "@/lib/frontMatter";
 import { validateKnowledgeNote } from "@/lib/knowledgeDraft";
 import { buildKnowledgeIndex, getKnowledgeForQuestion } from "@/lib/knowledgeIndex";
 import { resolveUniqueFileName, slugifyTitle } from "@/lib/knowledgeLinks";
+import { QUIZHUB_CHANGED_EVENT } from "@/lib/quizhub";
 import { errorMessage, nativeApi } from "@/lib/native";
 import type { KnowledgeItem } from "@/types/knowledge";
 
 const EMPTY_LIBRARY: ParsedKnowledgeLibrary = { items: [], invalidReports: [] };
 
-const readKnowledgeFiles = (knownVersions: Record<string, string>) =>
-  nativeApi.readKnowledgeDirectory(knownVersions);
+const EMPTY_COUNTS: Record<string, number> = {};
 
 export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) {
   const {
@@ -27,9 +28,10 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     isLoading,
     directoryPath,
     directoryAvailable,
+    session,
   } = useDirectoryLibrary({
     empty: EMPTY_LIBRARY,
-    readFiles: readKnowledgeFiles,
+    readFiles: nativeApi.readKnowledgeDirectory,
     parse: parseKnowledgeFiles,
     label: "knowledge",
   });
@@ -38,29 +40,35 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     ? `${directoryPath}/${KNOWLEDGE_BASE_FOLDER}`
     : null;
 
-  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const [views, setViews] = useState<{ session: LibrarySession; counts: Record<string, number> } | null>(null);
+  const viewCounts = views?.session === session ? views.counts : EMPTY_COUNTS;
 
   useEffect(() => {
-    let cancelled = false;
-    nativeApi
-      .listKnowledgeViewCounts()
-      .then((counts) => {
-        if (!cancelled) setViewCounts(counts);
-      })
-      .catch(() => {
-        if (!cancelled) setViewCounts({});
-      });
+    if (!session) return;
+    let latestRequest = 0;
+    function loadCounts() {
+      if (!session?.isCurrent()) return;
+      const request = ++latestRequest;
+      void nativeApi.listKnowledgeViewCounts(session.path).then((counts) => {
+        if (session.isCurrent() && request === latestRequest) setViews({ session, counts });
+      }).catch(() => {});
+    }
+    loadCounts();
+    window.addEventListener(QUIZHUB_CHANGED_EVENT, loadCounts);
     return () => {
-      cancelled = true;
+      latestRequest += 1;
+      window.removeEventListener(QUIZHUB_CHANGED_EVENT, loadCounts);
     };
-  }, [directoryPath]);
+  }, [session]);
 
   const recordView = useCallback((noteId: string) => {
-    setViewCounts((current) => ({ ...current, [noteId]: (current[noteId] ?? 0) + 1 }));
-    nativeApi.recordKnowledgeView(noteId).catch(() => {
-      // View counts are best-effort; ignore persistence failures.
+    if (!session?.isCurrent()) return;
+    setViews((current) => {
+      const counts = current?.session === session ? current.counts : EMPTY_COUNTS;
+      return { session, counts: { ...counts, [noteId]: (counts[noteId] ?? 0) + 1 } };
     });
-  }, []);
+    void nativeApi.recordKnowledgeView(session.path, noteId).catch(() => {});
+  }, [session]);
 
   const knowledgeIndex = useMemo(() => buildKnowledgeIndex(items), [items]);
 
@@ -75,6 +83,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   );
 
   async function createItem(draft: CreateKnowledgeDraft) {
+    if (!session?.isCurrent()) throw new Error("The working directory changed.");
     const title = draft.title.trim();
     const content = draft.content?.trim() ?? "";
     const validationError = validateKnowledgeNote({ title, content });
@@ -96,7 +105,7 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
       content,
     };
     const contents = serializeKnowledgeFile(item, item.content);
-    await nativeApi.writeKnowledgeFile({ fileName, contents, overwrite: false });
+    await nativeApi.writeKnowledgeFile(session.path, { fileName, contents, overwrite: false });
     setItems((current) => [...current, item].sort((a, b) => a.title.localeCompare(b.title)));
     void refresh({ background: true });
     return item;
@@ -106,23 +115,18 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
     item: KnowledgeItem,
     options?: { preserveUpdatedAt?: boolean },
   ) {
-    const draft = { updated: undefined as KnowledgeItem | undefined };
-    setItems((current) => {
-      draft.updated = {
-        ...item,
-        updatedAt: options?.preserveUpdatedAt ? item.updatedAt : new Date().toISOString(),
-      };
-      return current
-        .map((entry) => (entry.id === draft.updated!.id ? draft.updated! : entry))
-        .sort((a, b) => a.title.localeCompare(b.title));
-    });
-    const updated = draft.updated;
-    if (!updated) {
-      return;
-    }
+    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    const updated = {
+      ...item,
+      updatedAt: options?.preserveUpdatedAt ? item.updatedAt : new Date().toISOString(),
+    };
+    setItems((current) =>
+      current.map((entry) => entry.id === updated.id ? updated : entry)
+        .sort((a, b) => a.title.localeCompare(b.title)),
+    );
 
     const contents = serializeKnowledgeFile(updated, updated.content);
-    await nativeApi.writeKnowledgeFile({
+    await nativeApi.writeKnowledgeFile(session.path, {
       fileName: updated.fileName,
       contents,
       overwrite: true,
@@ -135,7 +139,8 @@ export function KnowledgeLibraryProvider({ children }: { children: ReactNode }) 
   }
 
   async function deleteItem(fileName: string) {
-    await nativeApi.deleteKnowledgeFile(fileName);
+    if (!session?.isCurrent()) throw new Error("The working directory changed.");
+    await nativeApi.deleteKnowledgeFile(session.path, fileName);
     await refresh({ background: true });
   }
 

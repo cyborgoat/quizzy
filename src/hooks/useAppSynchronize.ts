@@ -6,7 +6,7 @@ import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { errorMessage, nativeApi, type SyncReport } from "@/lib/native";
 
 export function useAppSynchronize() {
-  const { refresh: refreshWorkingDirectory } = useWorkingDirectory();
+  const { refresh: refreshWorkingDirectory, session } = useWorkingDirectory();
   const quizLibrary = useQuizLibrary();
   const knowledgeLibrary = useKnowledgeLibrary();
   const { refreshAfterSync } = useGoals();
@@ -16,12 +16,14 @@ export function useAppSynchronize() {
     setIsSyncing(true);
     try {
       const report = await nativeApi.synchronizeAppData();
-      await Promise.all([
-        refreshWorkingDirectory(),
-        quizLibrary.refresh({ background: true }),
-        knowledgeLibrary.refresh({ background: true }),
-        refreshAfterSync(),
-      ]);
+      await refreshWorkingDirectory();
+      if (session?.isCurrent()) {
+        await Promise.all([
+          quizLibrary.refresh({ background: true }),
+          knowledgeLibrary.refresh({ background: true }),
+          refreshAfterSync(),
+        ]);
+      }
       return report;
     } catch (error) {
       throw new Error(errorMessage(error), { cause: error });
@@ -30,6 +32,7 @@ export function useAppSynchronize() {
     }
   }, [
     refreshWorkingDirectory,
+    session,
     quizLibrary,
     knowledgeLibrary,
     refreshAfterSync,
