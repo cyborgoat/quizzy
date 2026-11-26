@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { IconActionButton } from "@/components/ui/icon-action-button";
 import { SearchField } from "@/components/ui/search-field";
 import { FilterSortMenu } from "@/components/ui/filter-sort-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   pageDescriptionClassName,
   pageTitleClassName,
@@ -18,12 +19,15 @@ import { EmptyState } from "@/components/quiz/EmptyState";
 import { InvalidFileReportsAlert } from "@/components/quiz/InvalidFileReportsAlert";
 import { QuizList } from "@/components/quiz/QuizList";
 import { WorkingDirectoryGate } from "@/components/quiz/WorkingDirectoryGate";
+import { useAppLocale } from "@/hooks/useAppLocale";
 import { useGoals } from "@/hooks/useGoals";
 import { useLibraryRefresh } from "@/hooks/useLibraryRefresh";
 import { usePickWorkingDirectory } from "@/hooks/usePickWorkingDirectory";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
 import { useQuizLibrarySort } from "@/hooks/useQuizLibrarySort";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useI18n } from "@/lib/i18n";
+import { APP_LOCALES, localeDisplayName, type AppLocale } from "@/lib/locale";
 import { errorMessage } from "@/lib/native";
 import {
   filterQuizSources,
@@ -43,9 +47,12 @@ export function HomePage() {
   const library = useQuizLibrary();
   const { userName } = useUserProfile();
   const { goals } = useGoals();
+  const { locale, setAppLocale } = useAppLocale();
+  const { t } = useI18n();
   const { pickWorkingDirectory, isPicking } = usePickWorkingDirectory();
   const navigate = useNavigate();
   const router = useRouter();
+  const [isSavingLocale, setIsSavingLocale] = useState(false);
   const { details: detailsQuizId } = Route.useSearch();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const detailsTrigger = useRef<{ quizId: string; element: HTMLButtonElement } | null>(null);
@@ -114,13 +121,28 @@ export function HomePage() {
     try {
       const { added, skipped } = await library.addSampleQuizzes();
       if (added.length > 0) {
-        toast.success("Added Welcome to Quizzy.");
+        toast.success(t("toast.welcomeAdded"));
       } else if (skipped.length > 0) {
-        toast.info("Welcome to Quizzy is already in your folder.");
+        toast.info(t("toast.welcomeExists"));
       }
     } catch (error) {
       toast.error(errorMessage(error));
     }
+  }
+
+  async function handleLocaleChange(next: AppLocale) {
+    if (next === locale || isSavingLocale) return;
+    setIsSavingLocale(true);
+    try {
+      await setAppLocale(next);
+    } finally {
+      setIsSavingLocale(false);
+    }
+  }
+
+  async function handleChooseDirectory() {
+    await setAppLocale(locale);
+    await pickWorkingDirectory();
   }
 
   return (
@@ -133,10 +155,10 @@ export function HomePage() {
         />
         <div>
           <h1 ref={headingRef} tabIndex={-1} className={pageTitleClassName}>
-            Hello, {userName || "there"}
+            {t("home.greeting", { name: userName || t("home.greetingFallback") })}
           </h1>
           <p className={pageDescriptionClassName}>
-            Ready to practice? Pick a quiz below and get started.
+            {t("home.subtitle")}
           </p>
         </div>
       </div>
@@ -146,14 +168,46 @@ export function HomePage() {
         directoryPath={library.directoryPath}
         directoryAvailable={library.directoryAvailable}
         loadingMessage="Loading Quizzy…"
-        noDirectoryTitle="Welcome to Quizzy"
-        noDirectoryDescription="Choose a folder for your quizzes and notes to get started. Quizzy will add a short Welcome to Quizzy quiz and knowledge note so you can learn the app right away."
-        unavailableTitle="Working directory unavailable"
-        unavailableDescription="Quizzy could not access the configured directory. Choose a different folder or update it in Settings."
+        noDirectoryTitle={t("home.welcomeTitle")}
+        noDirectoryDescription={t("home.welcomeDescription")}
+        unavailableTitle={t("home.unavailableTitle")}
+        unavailableDescription={t("home.unavailableDescription")}
         onOpenSettings={() => navigate({ to: "/settings" })}
-        onChooseDirectory={() => void pickWorkingDirectory()}
-        chooseDirectoryLabel="Choose working directory"
-        chooseDirectoryBusy={isPicking}
+        chooseDirectoryBusy={isPicking || isSavingLocale}
+        action={
+          <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-stretch gap-4">
+            <div className="space-y-2 text-left">
+              <label htmlFor="home-app-locale" className="block text-sm font-medium text-zinc-800">
+                {t("home.languageLabel")}
+              </label>
+              <Select
+                value={locale}
+                disabled={isSavingLocale || isPicking}
+                onValueChange={(value) => void handleLocaleChange(value as AppLocale)}
+              >
+                <SelectTrigger id="home-app-locale" className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {APP_LOCALES.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {localeDisplayName(id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs leading-5 text-zinc-500">{t("home.languageHint")}</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button disabled={isPicking || isSavingLocale} onClick={() => void handleChooseDirectory()}>
+                {isPicking ? t("home.choosingDirectory") : t("home.chooseDirectory")}
+              </Button>
+              <Button variant="outline" onClick={() => navigate({ to: "/settings" })}>
+                {t("home.openSettings")}
+              </Button>
+            </div>
+          </div>
+        }
       >
         <>
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

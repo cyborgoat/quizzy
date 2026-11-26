@@ -1,0 +1,74 @@
+{
+  "id": "welcome-to-quizzy",
+  "title": "欢迎使用 Quizzy",
+  "description": "快速了解 Quizzy：工作目录、练习流程、知识笔记、目标与导入方式。",
+  "tags": ["welcome", "getting-started", "入门"],
+  "questions": [
+    {
+      "id": "working-directory",
+      "type": "single_choice",
+      "prompt": "Quizzy 会从哪里读取你的测验 `.json` 文件？",
+      "options": [
+        "只在应用安装目录里",
+        "你在设置中选择的工作目录",
+        "固定的云端账号",
+        "仅浏览器的下载文件夹"
+      ],
+      "answerIndex": 1,
+      "explanation": "Quizzy 会在你选定的工作目录中读写测验文件，之后也可以在设置里更换。"
+    },
+    {
+      "id": "start-quiz",
+      "type": "single_choice",
+      "prompt": "如何开始一次计分练习？",
+      "options": [
+        "在题库中打开测验，然后选择开始",
+        "只能通过导入文件",
+        "每次都必须先改设置",
+        "只能通过新建知识笔记"
+      ],
+      "answerIndex": 0,
+      "explanation": "在首页打开测验卡片并开始作答，提交后会显示得分。"
+    },
+    {
+      "id": "knowledge-notes",
+      "type": "true_false",
+      "prompt": "知识笔记存放在测验旁的 `knowledge-base` 文件夹中，并且可以链接到具体题目。",
+      "answer": true,
+      "explanation": "Quizzy 把 Markdown 笔记放在 `knowledge-base/`。你可以把笔记关联到题目，并在复习时打开。"
+    },
+    {
+      "id": "mistake-log",
+      "type": "multiple_choice",
+      "prompt": "练习之后，哪些功能能帮你继续提高？",
+      "options": [
+        "错题本（Mistake Log）查看常错题",
+        "为目标测验设置目标分数",
+        "删除工作目录",
+        "在历史记录中回顾以往作答"
+      ],
+      "answerIndices": [0, 1, 3],
+      "explanation": "错题本、目标和历史记录都是为复习准备的。请保持工作目录可用，以便 Quizzy 加载题库。"
+    },
+    {
+      "id": "import-more",
+      "type": "single_choice",
+      "prompt": "除了这份欢迎测验，还可以怎样添加更多测验？",
+      "options": [
+        "只能重装 Quizzy",
+        "导入 `.json` 测验、使用「如何导入」/ AI 提示词，或启用 QuizHub 浏览下载",
+        "只能重命名这份欢迎测验",
+        "之后不能再添加测验"
+      ],
+      "answerIndex": 1,
+      "explanation": "可在首页使用「导入测验文件」、导入帮助中的 AI 提示词，或在设置中启用 QuizHub。把文件放进工作目录后刷新即可看到。"
+    },
+    {
+      "id": "folder-safe",
+      "type": "true_false",
+      "prompt": "应该把工作目录当作你的题库：在其中保存测验 JSON 与知识笔记，并避免在 Quizzy 使用时删除该文件夹。",
+      "answer": true,
+      "explanation": "Quizzy 需要该文件夹保持可读。若内容重要，请像备份其他文档一样备份它。"
+    }
+  ]
+}

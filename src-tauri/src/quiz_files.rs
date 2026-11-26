@@ -65,15 +65,35 @@ pub(crate) fn import_quiz_file(app: AppHandle, source_path: String) -> Result<St
     Ok(file_name)
 }
 
-pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 1] = [(
-    "welcome-to-quizzy.json",
-    include_str!("../../sample-quizzes/welcome-to-quizzy.json"),
-)];
+const WELCOME_QUIZ_EN: &str = include_str!("../../sample-quizzes/welcome-to-quizzy.json");
+const WELCOME_QUIZ_ZH: &str = include_str!("../../sample-quizzes/welcome-to-quizzy.zh.json");
+const WELCOME_NOTE_EN: &str =
+    include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.md");
+const WELCOME_NOTE_ZH: &str =
+    include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.zh.md");
 
-pub(crate) const SAMPLE_KNOWLEDGE_NOTES: [(&str, &str); 1] = [(
-    "welcome-to-quizzy.md",
-    include_str!("../../sample-quizzes/knowledge-base/welcome-to-quizzy.md"),
-)];
+fn welcome_quiz_for_locale(locale: &str) -> &'static str {
+    if locale.eq_ignore_ascii_case("zh") {
+        WELCOME_QUIZ_ZH
+    } else {
+        WELCOME_QUIZ_EN
+    }
+}
+
+fn welcome_note_for_locale(locale: &str) -> &'static str {
+    if locale.eq_ignore_ascii_case("zh") {
+        WELCOME_NOTE_ZH
+    } else {
+        WELCOME_NOTE_EN
+    }
+}
+
+/// Bundled quiz payloads used by tests and locale seeding.
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) const SAMPLE_QUIZZES: [(&str, &str); 2] = [
+    ("welcome-to-quizzy.json", WELCOME_QUIZ_EN),
+    ("welcome-to-quizzy.zh.json", WELCOME_QUIZ_ZH),
+];
 
 #[derive(Serialize)]
 pub(crate) struct AddSampleQuizzesResult {
@@ -81,36 +101,39 @@ pub(crate) struct AddSampleQuizzesResult {
     skipped: Vec<String>,
 }
 
-fn write_missing_samples(directory: &Path) -> Result<AddSampleQuizzesResult, String> {
+fn write_missing_samples(directory: &Path, locale: &str) -> Result<AddSampleQuizzesResult, String> {
     let mut added = Vec::new();
     let mut skipped = Vec::new();
-    for (file_name, contents) in SAMPLE_QUIZZES {
-        let destination = directory.join(file_name);
-        if destination.exists() {
-            skipped.push(file_name.to_string());
-            continue;
-        }
-        atomic_write(&destination, contents.as_bytes(), false)?;
-        added.push(file_name.to_string());
+    let quiz_name = "welcome-to-quizzy.json";
+    let quiz_path = directory.join(quiz_name);
+    if quiz_path.exists() {
+        skipped.push(quiz_name.to_string());
+    } else {
+        atomic_write(&quiz_path, welcome_quiz_for_locale(locale).as_bytes(), false)?;
+        added.push(quiz_name.to_string());
     }
     let notes = knowledge_base_for(directory)?;
-    for (file_name, contents) in SAMPLE_KNOWLEDGE_NOTES {
-        let destination = resolve_knowledge_path(&notes, file_name)?;
-        if destination.exists() {
-            skipped.push(format!("knowledge-base/{file_name}"));
-            continue;
-        }
-        atomic_write(&destination, contents.as_bytes(), false)?;
-        added.push(format!("knowledge-base/{file_name}"));
+    let note_name = "welcome-to-quizzy.md";
+    let note_path = resolve_knowledge_path(&notes, note_name)?;
+    if note_path.exists() {
+        skipped.push(format!("knowledge-base/{note_name}"));
+    } else {
+        atomic_write(&note_path, welcome_note_for_locale(locale).as_bytes(), false)?;
+        added.push(format!("knowledge-base/{note_name}"));
     }
     Ok(AddSampleQuizzesResult { added, skipped })
 }
 
-/// Writes the Welcome to Quizzy quiz and note when missing. Safe to call after the
-/// working directory is first configured.
+/// Writes the Welcome to Quizzy quiz and note when missing, using the saved app locale.
 #[tauri::command]
 pub(crate) fn add_sample_quizzes(app: AppHandle) -> Result<AddSampleQuizzesResult, String> {
-    write_missing_samples(&configured_directory(&app)?)
+    let settings = crate::settings::read_settings(&app)?;
+    let locale = if settings.app_locale.trim().is_empty() {
+        "en"
+    } else {
+        settings.app_locale.trim()
+    };
+    write_missing_samples(&configured_directory(&app)?, locale)
 }
 
 #[tauri::command]
@@ -257,16 +280,17 @@ mod tests {
         let dir = test_directory("samples");
         fs::write(dir.join("welcome-to-quizzy.json"), "custom").expect("write existing");
 
-        let first = write_missing_samples(&dir).expect("first run");
+        let first = write_missing_samples(&dir, "zh").expect("first run");
         assert_eq!(first.added, ["knowledge-base/welcome-to-quizzy.md"]);
         assert_eq!(first.skipped, ["welcome-to-quizzy.json"]);
         assert_eq!(
             fs::read_to_string(dir.join("welcome-to-quizzy.json")).expect("read"),
             "custom"
         );
-        assert!(dir.join("knowledge-base/welcome-to-quizzy.md").is_file());
+        let note = fs::read_to_string(dir.join("knowledge-base/welcome-to-quizzy.md")).expect("note");
+        assert!(note.contains("欢迎使用 Quizzy"));
 
-        let second = write_missing_samples(&dir).expect("second run");
+        let second = write_missing_samples(&dir, "en").expect("second run");
         assert!(second.added.is_empty());
         assert_eq!(
             second.skipped,

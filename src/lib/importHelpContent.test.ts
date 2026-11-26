@@ -8,8 +8,11 @@ describe("import help content", () => {
     expect(quizSchema.safeParse(JSON.parse(EXAMPLE_QUIZ_JSON)).success).toBe(true);
   });
 
-  it("bundled welcome sample is valid", () => {
-    const raw = readFileSync("sample-quizzes/welcome-to-quizzy.json", "utf8");
-    expect(quizSchema.safeParse(JSON.parse(raw)).success).toBe(true);
-  });
+  it.each(["welcome-to-quizzy.json", "welcome-to-quizzy.zh.json"])(
+    "bundled welcome sample %s is valid",
+    (name) => {
+      const raw = readFileSync(`sample-quizzes/${name}`, "utf8");
+      expect(quizSchema.safeParse(JSON.parse(raw)).success).toBe(true);
+    },
+  );
 });

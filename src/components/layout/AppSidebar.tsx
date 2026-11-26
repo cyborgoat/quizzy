@@ -17,9 +17,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
+import { useI18n } from "@/lib/i18n";
 
 function AppSidebarHeader() {
   const { toggleSidebar } = useSidebar();
+  const { t } = useI18n();
 
   return (
     <SidebarHeader className="h-[4.5rem] gap-0 border-b border-zinc-200 p-0">
@@ -29,7 +31,7 @@ function AppSidebarHeader() {
             <button
               type="button"
               onClick={toggleSidebar}
-              aria-label="Toggle sidebar"
+              aria-label={t("nav.toggleSidebar")}
               className="inline-flex size-8 shrink-0 items-center justify-center rounded-md p-1 hover:bg-zinc-200"
             >
               <img
@@ -39,7 +41,7 @@ function AppSidebarHeader() {
               />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">Toggle sidebar</TooltipContent>
+          <TooltipContent side="right">{t("nav.toggleSidebar")}</TooltipContent>
         </Tooltip>
 
         <span className="truncate text-sm font-semibold text-zinc-950 group-data-[collapsible=icon]:hidden">
@@ -53,6 +55,7 @@ function AppSidebarHeader() {
 export function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { quizhubEnabled } = useQuizhubPreferences();
+  const { t } = useI18n();
 
   return (
     <Sidebar collapsible="icon">
@@ -68,7 +71,7 @@ export function AppSidebar() {
             >
               <Link to="/">
                 <Home className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Home</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t("nav.home")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -81,7 +84,7 @@ export function AppSidebar() {
             >
               <Link to="/mistakes">
                 <ClipboardList className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Mistake Log</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t("nav.mistakes")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -94,7 +97,7 @@ export function AppSidebar() {
             >
               <Link to="/knowledge">
                 <BookOpen className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Knowledge</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t("nav.knowledge")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -107,7 +110,7 @@ export function AppSidebar() {
             >
               <Link to="/history">
                 <History className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">History</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t("nav.history")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -121,7 +124,7 @@ export function AppSidebar() {
               >
                 <Link to="/hub">
                   <PackagePlus className="size-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">Quizhub</span>
+                  <span className="group-data-[collapsible=icon]:hidden">{t("nav.quizhub")}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -139,7 +142,7 @@ export function AppSidebar() {
             >
               <Link to="/settings">
                 <Settings className="size-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                <span className="group-data-[collapsible=icon]:hidden">{t("nav.settings")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

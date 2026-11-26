@@ -28,6 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SearchField } from "@/components/ui/search-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { useAppLocale } from "@/hooks/useAppLocale";
 import { useGoals } from "@/hooks/useGoals";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
@@ -133,7 +134,8 @@ export function QuizhubPage() {
 
 function QuizhubWorkspace({ scope }: { scope: HubScope }) {
   const preference = "quizzy:quizhub-language:" + scope.baseUrl;
-  const [locale, setLocale] = useState<string | null>(() => localStorage.getItem(preference));
+  const { locale: appLocale, setAppLocale } = useAppLocale();
+  const [locale, setLocale] = useState<string | null>(() => localStorage.getItem(preference) ?? appLocale);
   const [knownLocales, setKnownLocales] = useState<HubLocale[]>([]);
   const snapshot = useQuizhubCatalog(scope, locale);
   const { catalog } = snapshot;
@@ -143,6 +145,7 @@ function QuizhubWorkspace({ scope }: { scope: HubScope }) {
     setKnownLocales(catalog?.locales ?? knownLocales);
     localStorage.setItem(preference, id);
     setLocale(id);
+    if (id === "en" || id === "zh") void setAppLocale(id);
   }
   return (
     <QuizhubBrowser

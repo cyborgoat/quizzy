@@ -16,6 +16,7 @@ export function WorkingDirectoryGate({
   onChooseDirectory,
   chooseDirectoryLabel = "Choose folder",
   chooseDirectoryBusy = false,
+  action,
   children,
 }: {
   isLoading: boolean;
@@ -30,6 +31,7 @@ export function WorkingDirectoryGate({
   onChooseDirectory?: () => void;
   chooseDirectoryLabel?: string;
   chooseDirectoryBusy?: boolean;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   if (isLoading && !directoryPath) {
@@ -43,7 +45,8 @@ export function WorkingDirectoryGate({
         title={needsSetup ? noDirectoryTitle : unavailableTitle}
         description={needsSetup ? noDirectoryDescription : unavailableDescription}
         action={
-          onChooseDirectory ? (
+          action ??
+          (onChooseDirectory ? (
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button disabled={chooseDirectoryBusy} onClick={onChooseDirectory}>
                 {chooseDirectoryBusy ? "Choosing…" : chooseDirectoryLabel}
@@ -52,10 +55,10 @@ export function WorkingDirectoryGate({
                 Open Settings
               </Button>
             </div>
-          ) : undefined
+          ) : undefined)
         }
-        actionLabel={onChooseDirectory ? undefined : "Settings"}
-        onAction={onChooseDirectory ? undefined : onOpenSettings}
+        actionLabel={action || onChooseDirectory ? undefined : "Settings"}
+        onAction={action || onChooseDirectory ? undefined : onOpenSettings}
       />
     );
   }

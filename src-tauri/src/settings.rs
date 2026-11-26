@@ -191,6 +191,9 @@ pub(crate) struct Settings {
     pub(crate) quizhub_enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(crate) quizhub_base_url: Option<String>,
+    /// App / QuizHub / welcome-sample locale (`en`, `zh`). Empty until the user chooses.
+    #[serde(default)]
+    pub(crate) app_locale: String,
 }
 
 #[derive(Serialize)]
@@ -212,6 +215,7 @@ pub(crate) struct AppSettings {
     toggle_sidebar_shortcut_key: String,
     quizhub_enabled: bool,
     quizhub_base_url: String,
+    app_locale: String,
 }
 
 #[derive(Deserialize)]
@@ -232,6 +236,7 @@ pub(crate) struct SaveSettingsRequest {
     toggle_sidebar_shortcut_key: Option<String>,
     quizhub_enabled: Option<bool>,
     quizhub_base_url: Option<String>,
+    app_locale: Option<String>,
 }
 
 pub(crate) fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -297,7 +302,16 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         toggle_sidebar_shortcut_key: settings.toggle_sidebar_shortcut_key.clone(),
         quizhub_enabled: settings.quizhub_enabled,
         quizhub_base_url,
+        app_locale: settings.app_locale,
     })
+}
+
+fn normalize_app_locale(raw: &str) -> Result<String, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "en" => Ok("en".to_string()),
+        "zh" => Ok("zh".to_string()),
+        other => Err(format!("Unsupported language \"{other}\". Use en or zh.")),
+    }
 }
 
 static SETTINGS_WRITE_LOCK: Mutex<()> = Mutex::new(());
@@ -403,6 +417,10 @@ fn apply_settings(settings: &mut Settings, request: SaveSettingsRequest) -> Resu
         } else {
             Some(crate::hub_sync::normalize_base_url(trimmed)?)
         };
+    }
+
+    if let Some(app_locale) = request.app_locale {
+        settings.app_locale = normalize_app_locale(&app_locale)?;
     }
 
     if let Some(path) = request.working_directory {

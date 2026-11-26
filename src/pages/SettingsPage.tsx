@@ -2,15 +2,21 @@ import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SettingsAboutSection } from "@/components/settings/SettingsAboutSection";
 import { SettingsDirectorySection } from "@/components/settings/SettingsDirectorySection";
+import { SettingsLanguageSection } from "@/components/settings/SettingsLanguageSection";
 import { SettingsMistakeLogSection } from "@/components/settings/SettingsMistakeLogSection";
 import { SettingsProfileSection } from "@/components/settings/SettingsProfileSection";
 import { SettingsQuizPreferencesSection } from "@/components/settings/SettingsQuizPreferencesSection";
 import { SettingsQuizhubSection } from "@/components/settings/SettingsQuizhubSection";
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
+import { useAppLocale } from "@/hooks/useAppLocale";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
+import { useI18n } from "@/lib/i18n";
+import type { AppLocale } from "@/lib/locale";
 
 export function SettingsPage() {
+  const { locale, setAppLocale } = useAppLocale();
+  const { t } = useI18n();
   const {
     draft,
     errors,
@@ -39,7 +45,7 @@ export function SettingsPage() {
   return (
     <PageShell className="space-y-6">
       <PageHeader
-        title="Settings"
+        title={t("nav.settings")}
         description="Configure your profile, shortcuts, and directory."
       />
 
@@ -48,6 +54,14 @@ export function SettingsPage() {
         disabled={savingFields.has("name")}
         onNameChange={handleNameChange}
         onNameCommit={commitName}
+      />
+
+      <SettingsLanguageSection
+        locale={locale}
+        disabled={false}
+        onLocaleChange={(next: AppLocale) => {
+          void setAppLocale(next);
+        }}
       />
 
       <SettingsDirectorySection

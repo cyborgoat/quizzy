@@ -21,6 +21,8 @@ export type AppSettings = {
   toggleSidebarShortcutKey: string;
   quizhubEnabled: boolean;
   quizhubBaseUrl: string;
+  /** Empty until the user chooses a language on first launch. */
+  appLocale: string;
 };
 
 export type SaveSettingsRequest = {
@@ -40,6 +42,7 @@ export type SaveSettingsRequest = {
   quizhubEnabled?: boolean;
   /** Empty string resets to the default quizhub URL. */
   quizhubBaseUrl?: string;
+  appLocale?: string;
 };
 
 export type NativeQuizFile = NativeLibraryFile;

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AppShortcutsContext } from "@/contexts/app-shortcuts-context";
+import { LocaleContext } from "@/contexts/locale-context";
 import { MistakeLogSettingsContext } from "@/contexts/mistake-log-settings-context";
 import { QuizPreferencesContext } from "@/contexts/quiz-preferences-context";
 import { QuizhubPreferencesContext } from "@/contexts/quizhub-preferences-context";
 import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { UserProfileContext } from "@/contexts/user-profile-context";
 import { loadAppSettings } from "@/lib/appSettings";
+import { I18nProvider } from "@/lib/i18n";
+import { detectSystemAppLocale, isAppLocale, type AppLocale } from "@/lib/locale";
 import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import {
@@ -37,6 +40,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [shuffleOptions, setShuffleOptionsState] = useState(false);
   const [quizhubEnabled, setQuizhubEnabledState] = useState(false);
   const [quizhubBaseUrl, setQuizhubBaseUrlState] = useState(QUIZHUB_DEFAULT_BASE_URL);
+  const [appLocale, setAppLocaleState] = useState<AppLocale | "">("");
+  const [settingsReady, setSettingsReady] = useState(false);
   const [fontSize, setFontSizeState] = useState(UI_FONT_SIZE_DEFAULT);
   const [minMistakes, setMinMistakesState] = useState(1);
   const [minFlags, setMinFlagsState] = useState(1);
@@ -100,6 +105,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setShuffleOptionsState(settings.shuffleOptions);
       setQuizhubEnabledState(settings.quizhubEnabled);
       setQuizhubBaseUrlState(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+      setAppLocaleState(isAppLocale(settings.appLocale) ? settings.appLocale : "");
       setFontSizeState(nextFontSize);
       setMinMistakesState(settings.mistakeLogMinMistakes);
       setMinFlagsState(settings.mistakeLogMinFlags);
@@ -110,8 +116,28 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setZoomOutShortcutState(settings.zoomOutShortcutKey);
       setToggleSidebarShortcutState(settings.toggleSidebarShortcutKey);
       applyUiPreferences(nextFontSize);
+      setSettingsReady(true);
     });
   }, []);
+
+  const localeConfigured = isAppLocale(appLocale);
+  const effectiveLocale: AppLocale = localeConfigured ? appLocale : detectSystemAppLocale();
+
+  useEffect(() => {
+    document.documentElement.lang = effectiveLocale === "zh" ? "zh-CN" : "en";
+  }, [effectiveLocale]);
+
+  const setAppLocale = useCallback(async (locale: AppLocale) => {
+    const previous = appLocale;
+    setAppLocaleState(locale);
+    try {
+      await nativeApi.saveSettings({ appLocale: locale });
+    } catch (error) {
+      setAppLocaleState(previous);
+      toast.error(errorMessage(error));
+      throw error;
+    }
+  }, [appLocale]);
 
   useEffect(() => {
     applyUiPreferences(fontSize);
@@ -177,60 +203,74 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     };
   }, [adjustFontSize]);
 
+  const localeValue = useMemo(
+    () => ({
+      locale: effectiveLocale,
+      localeConfigured,
+      setAppLocale,
+      settingsReady,
+    }),
+    [effectiveLocale, localeConfigured, setAppLocale, settingsReady],
+  );
+
   return (
-    <UserProfileContext.Provider
-      value={{
-        userName,
-        setUserName: setUserNameState,
-      }}
-    >
-      <UiPreferencesContext.Provider
-        value={{
-          fontSize,
-        }}
-      >
-        <QuizPreferencesContext.Provider
+    <LocaleContext.Provider value={localeValue}>
+      <I18nProvider locale={effectiveLocale}>
+        <UserProfileContext.Provider
           value={{
-            shuffleQuestions,
-            shuffleOptions,
-            setShuffleQuestions: setShuffleQuestionsState,
-            setShuffleOptions: setShuffleOptionsState,
+            userName,
+            setUserName: setUserNameState,
           }}
         >
-          <QuizhubPreferencesContext.Provider
+          <UiPreferencesContext.Provider
             value={{
-              quizhubEnabled,
-              setQuizhubEnabled: setQuizhubEnabledState,
-              quizhubBaseUrl,
-              setQuizhubBaseUrl: setQuizhubBaseUrlState,
+              fontSize,
             }}
           >
-            <AppShortcutsContext.Provider
+            <QuizPreferencesContext.Provider
               value={{
-                ...parsedShortcuts,
-                setKnowledgeLink: setKnowledgeLinkShortcutState,
-                setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
-                setZoomIn: setZoomInShortcutState,
-                setZoomOut: setZoomOutShortcutState,
-                setToggleSidebar: setToggleSidebarShortcutState,
+                shuffleQuestions,
+                shuffleOptions,
+                setShuffleQuestions: setShuffleQuestionsState,
+                setShuffleOptions: setShuffleOptionsState,
               }}
             >
-              <MistakeLogSettingsContext.Provider
+              <QuizhubPreferencesContext.Provider
                 value={{
-                  minMistakes,
-                  minFlags,
-                  maxCorrectnessPercentage,
-                  setMinMistakes: setMinMistakesState,
-                  setMinFlags: setMinFlagsState,
-                  setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+                  quizhubEnabled,
+                  setQuizhubEnabled: setQuizhubEnabledState,
+                  quizhubBaseUrl,
+                  setQuizhubBaseUrl: setQuizhubBaseUrlState,
                 }}
               >
-                {children}
-              </MistakeLogSettingsContext.Provider>
-            </AppShortcutsContext.Provider>
-          </QuizhubPreferencesContext.Provider>
-        </QuizPreferencesContext.Provider>
-      </UiPreferencesContext.Provider>
-    </UserProfileContext.Provider>
+                <AppShortcutsContext.Provider
+                  value={{
+                    ...parsedShortcuts,
+                    setKnowledgeLink: setKnowledgeLinkShortcutState,
+                    setKnowledgeNewNote: setKnowledgeNewNoteShortcutState,
+                    setZoomIn: setZoomInShortcutState,
+                    setZoomOut: setZoomOutShortcutState,
+                    setToggleSidebar: setToggleSidebarShortcutState,
+                  }}
+                >
+                  <MistakeLogSettingsContext.Provider
+                    value={{
+                      minMistakes,
+                      minFlags,
+                      maxCorrectnessPercentage,
+                      setMinMistakes: setMinMistakesState,
+                      setMinFlags: setMinFlagsState,
+                      setMaxCorrectnessPercentage: setMaxCorrectnessPercentageState,
+                    }}
+                  >
+                    {children}
+                  </MistakeLogSettingsContext.Provider>
+                </AppShortcutsContext.Provider>
+              </QuizhubPreferencesContext.Provider>
+            </QuizPreferencesContext.Provider>
+          </UiPreferencesContext.Provider>
+        </UserProfileContext.Provider>
+      </I18nProvider>
+    </LocaleContext.Provider>
   );
 }

@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useAppSynchronize } from "@/hooks/useAppSynchronize";
 import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
+import { useI18n } from "@/lib/i18n";
 import { errorMessage, nativeApi, type SyncReport } from "@/lib/native";
 
 type PickOptions = {
@@ -24,6 +25,7 @@ export type PickWorkingDirectoryResult = {
 export function usePickWorkingDirectory() {
   const { directoryPath, refresh: refreshWorkingDirectory } = useWorkingDirectory();
   const { synchronizeAll } = useAppSynchronize();
+  const { t } = useI18n();
   const [isPicking, setIsPicking] = useState(false);
 
   const pickWorkingDirectory = useCallback(
@@ -57,13 +59,13 @@ export function usePickWorkingDirectory() {
 
         if (options?.notify !== false) {
           if (wasFirstSetup && seededWelcome) {
-            toast.success("Working directory ready. Added Welcome to Quizzy to get you started.");
+            toast.success(t("toast.directoryReadyWelcome"));
           } else if (wasFirstSetup) {
-            toast.success("Working directory ready.");
+            toast.success(t("toast.directoryReady"));
           } else if (seededWelcome) {
-            toast.success("Working directory updated. Added Welcome to Quizzy.");
+            toast.success(t("toast.directoryUpdatedWelcome"));
           } else {
-            toast.success("Working directory updated.");
+            toast.success(t("toast.directoryUpdated"));
           }
         }
 
@@ -76,7 +78,7 @@ export function usePickWorkingDirectory() {
         setIsPicking(false);
       }
     },
-    [directoryPath, isPicking, refreshWorkingDirectory, synchronizeAll],
+    [directoryPath, isPicking, refreshWorkingDirectory, synchronizeAll, t],
   );
 
   return { pickWorkingDirectory, isPicking };
