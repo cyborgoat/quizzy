@@ -1,12 +1,12 @@
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Link } from "@tanstack/react-router";
 import {
+  BookPlus,
   ChevronRight,
   Languages,
   BookOpen,
   Check,
   Download,
-  FolderOpen,
   PackagePlus,
   RefreshCw,
   SquareLetterQ,
@@ -607,10 +607,18 @@ function DomainGrid({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {domains.map((domain) => (
-        <button key={domain.id} type="button" onClick={() => onOpen(domain.id)} className={catalogTileClass}>
-          <ChevronRight className={tileArrowClass} aria-hidden="true" />
+        <button key={domain.id} type="button" onClick={() => onOpen(domain.id)} className={domainTileClass}>
+          <ChevronRight className={cn(tileArrowClass, "group-hover:text-blue-700")} aria-hidden="true" />
           <span className="flex items-center gap-2 text-base font-semibold text-zinc-950">
-            <FolderOpen className="size-4 text-zinc-500" aria-hidden="true" />
+            <BookPlus
+              className={cn(
+                "size-4 shrink-0 text-blue-700/80 transition-[color,filter] duration-300 ease-out",
+                "group-hover:animate-cloud-float group-hover:text-blue-800",
+                "group-hover:drop-shadow-[0_0_6px_rgba(29,78,216,0.4)]",
+                "motion-reduce:transition-colors motion-reduce:group-hover:animate-none",
+              )}
+              aria-hidden="true"
+            />
             {domain.title}
           </span>
           <span className="text-xs text-zinc-500">
@@ -635,10 +643,14 @@ function DomainGrid({
   );
 }
 
-const tileArrowClass = "absolute right-4 top-4 size-4 text-zinc-500 transition-transform group-hover:translate-x-0.5";
+const tileArrowClass =
+  "absolute right-4 top-4 size-4 text-zinc-500 transition-[color,transform] duration-300 group-hover:translate-x-0.5";
 
 const catalogTileClass =
   "group relative flex min-h-24 flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 pr-10 text-left shadow-sm transition-colors hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-sky-600";
+
+const domainTileClass =
+  "group relative flex min-h-24 flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 pr-10 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-300 hover:border-blue-300 hover:bg-gradient-to-br hover:from-blue-50/90 hover:to-indigo-50/40 hover:shadow-md hover:shadow-blue-100/80 focus-visible:outline-2 focus-visible:outline-blue-700";
 
 function CategoryGrid({
   categories,
