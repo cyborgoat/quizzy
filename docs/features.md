@@ -271,8 +271,9 @@ knowledge files are never deleted:
 ## QuizHub
 
 When enabled, **QuizHub** in the sidebar browses a remote catalog of quizzes and
-knowledge notes. You can switch edition language, preview items, download into
-the working folder, update when a newer version is published, and remove the
+knowledge notes. The catalog edition defaults to the current app language until
+you pick a different edition on the QuizHub page. You can preview items, download
+into the working folder, update when a newer version is published, and remove the
 QuizHub link (optionally keeping the local file). Browse position is kept across
 downloads and language switches. File-name conflicts are resolved in a dialog
 before writing. Install provenance is stored in `quizhub-lock.json` under the

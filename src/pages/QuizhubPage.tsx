@@ -29,7 +29,6 @@ import { SearchField } from "@/components/ui/search-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppLocale } from "@/hooks/useAppLocale";
-import { isAppLocale } from "@/lib/locale";
 import { useGoals } from "@/hooks/useGoals";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
 import { useQuizLibrary } from "@/hooks/useQuizLibrary";
@@ -143,8 +142,10 @@ export function QuizhubPage() {
 
 function QuizhubWorkspace({ scope }: { scope: HubScope }) {
   const preference = "quizzy:quizhub-language:" + scope.baseUrl;
-  const { locale: appLocale, setAppLocale } = useAppLocale();
-  const [locale, setLocale] = useState<string | null>(() => localStorage.getItem(preference) ?? appLocale);
+  const { locale: appLocale } = useAppLocale();
+  // Only persist an override after the user picks an edition in QuizHub.
+  const [explicitLocale, setExplicitLocale] = useState<string | null>(() => localStorage.getItem(preference));
+  const locale = explicitLocale ?? appLocale;
   const [knownLocales, setKnownLocales] = useState<HubLocale[]>([]);
   const snapshot = useQuizhubCatalog(scope, locale);
   const { catalog } = snapshot;
@@ -153,14 +154,13 @@ function QuizhubWorkspace({ scope }: { scope: HubScope }) {
     if (id === (catalog?.activeLocale ?? locale)) return;
     setKnownLocales(catalog?.locales ?? knownLocales);
     localStorage.setItem(preference, id);
-    setLocale(id);
-    if (isAppLocale(id)) void setAppLocale(id);
+    setExplicitLocale(id);
   }
   return (
     <QuizhubBrowser
       scope={scope}
       languages={catalog?.locales ?? knownLocales}
-      language={catalog?.activeLocale ?? locale ?? undefined}
+      language={catalog?.activeLocale ?? locale}
       onSelectLocale={selectLanguage}
       {...snapshot}
     />
@@ -413,38 +413,56 @@ function QuizhubBrowser({
       />
 
       <div className="mt-5">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <nav aria-label={t("hub.breadcrumb.aria")} className="min-w-0 text-sm">
-            <ol className="flex flex-wrap items-center gap-2">
-              <li>
-                {activeDomain || activeCategory ? (
-                  <button className="font-medium text-zinc-700 hover:underline" onClick={() => {
-                    setDomainId(null);
-                    setCategoryId(null);
-                    setQuery("");
-                    setSelected(new Set());
-                  }}>QuizHub</button>
-                ) : <span aria-current="location" className="font-semibold text-zinc-950">{t("hub.domains")}</span>}
-              </li>
-              {activeDomain && (
-                <li className="flex items-center gap-2">
-                  <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
-                  {activeCategory ? (
-                    <button className="font-medium text-zinc-700 hover:underline" onClick={() => {
+            {activeDomain || activeCategory ? (
+              <ol className="flex flex-wrap items-center gap-2">
+                <li>
+                  <button
+                    type="button"
+                    className="font-medium text-zinc-700 hover:underline"
+                    onClick={() => {
+                      setDomainId(null);
                       setCategoryId(null);
                       setQuery("");
                       setSelected(new Set());
-                    }}>{activeDomain.title}</button>
-                  ) : <span aria-current="location" className="font-semibold text-zinc-950">{activeDomain.title}</span>}
+                    }}
+                  >
+                    QuizHub
+                  </button>
                 </li>
-              )}
-              {activeCategory && (
-                <li aria-current="location" className="flex items-center gap-2 font-semibold text-zinc-950">
-                  <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
-                  {categoryTitle(activeCategory, t)}
-                </li>
-              )}
-            </ol>
+                {activeDomain && (
+                  <li className="flex items-center gap-2">
+                    <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                    {activeCategory ? (
+                      <button
+                        type="button"
+                        className="font-medium text-zinc-700 hover:underline"
+                        onClick={() => {
+                          setCategoryId(null);
+                          setQuery("");
+                          setSelected(new Set());
+                        }}
+                      >
+                        {activeDomain.title}
+                      </button>
+                    ) : (
+                      <span aria-current="location" className="font-semibold text-zinc-950">
+                        {activeDomain.title}
+                      </span>
+                    )}
+                  </li>
+                )}
+                {activeCategory && (
+                  <li aria-current="location" className="flex items-center gap-2 font-semibold text-zinc-950">
+                    <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                    {categoryTitle(activeCategory, t)}
+                  </li>
+                )}
+              </ol>
+            ) : (
+              <p className="font-medium text-zinc-700">{t("hub.chooseDomain")}</p>
+            )}
           </nav>
           {languages.length > 0 && (
             <div className="flex items-center gap-2">
