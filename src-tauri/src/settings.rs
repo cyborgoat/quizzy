@@ -257,6 +257,8 @@ pub(crate) struct AppSettings {
     toggle_sidebar_shortcut_key: String,
     quizhub_enabled: bool,
     quizhub_base_url: String,
+    /// Compile-time default catalog URL (from `QUIZHUB_DEFAULT_BASE_URL`).
+    quizhub_default_base_url: String,
     app_locale: String,
     onboarding_completed: bool,
 }
@@ -349,6 +351,7 @@ pub(crate) fn get_settings(app: AppHandle) -> Result<AppSettings, String> {
         toggle_sidebar_shortcut_key: settings.toggle_sidebar_shortcut_key.clone(),
         quizhub_enabled: settings.quizhub_enabled,
         quizhub_base_url,
+        quizhub_default_base_url: crate::hub_sync::DEFAULT_BASE_URL.to_string(),
         app_locale: settings.app_locale,
         onboarding_completed,
     })

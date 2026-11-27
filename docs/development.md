@@ -1,5 +1,15 @@
 # Development and Testing
 
+## Environment
+
+Copy `.env.example` to `.env` and set `QUIZHUB_DEFAULT_BASE_URL` to the default
+QuizHub catalog URL. The Rust build injects this value at compile time; it is not
+hardcoded in source. Release builds fail if it is missing. Dev and `cargo test`
+builds use a local placeholder when unset.
+
+GitHub Releases set the same variable from the `QUIZHUB_DEFAULT_BASE_URL`
+repository secret.
+
 ## npm scripts
 
 | Command | Purpose |

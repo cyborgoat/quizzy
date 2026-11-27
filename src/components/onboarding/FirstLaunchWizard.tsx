@@ -13,7 +13,6 @@ import { useWorkingDirectory } from "@/hooks/useWorkingDirectory";
 import { useI18n } from "@/lib/i18n";
 import type { AppLocale } from "@/lib/locale";
 import { errorMessage, nativeApi } from "@/lib/native";
-import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { cn } from "@/lib/utils";
 
 const TOTAL_STEPS = 4;
@@ -40,6 +39,7 @@ export function FirstLaunchWizard() {
     setQuizhubEnabled,
     quizhubBaseUrl,
     setQuizhubBaseUrl,
+    quizhubDefaultBaseUrl,
   } = useQuizhubPreferences();
 
   const hasDirectory = Boolean(directoryPath && directoryAvailable);
@@ -48,14 +48,14 @@ export function FirstLaunchWizard() {
   const [savingLocale, setSavingLocale] = useState(false);
   const [savingQuizhub, setSavingQuizhub] = useState(false);
   const [finishing, setFinishing] = useState(false);
-  const [draftUrl, setDraftUrl] = useState(quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+  const [draftUrl, setDraftUrl] = useState(quizhubBaseUrl || quizhubDefaultBaseUrl);
   const [draftEnabled, setDraftEnabled] = useState(quizhubEnabled);
 
   useEffect(() => {
     if (!settingsReady || stepReady) return;
     setStep(initialStep(localeConfigured, hasDirectory));
     setDraftEnabled(quizhubEnabled);
-    setDraftUrl(quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+    setDraftUrl(quizhubBaseUrl || quizhubDefaultBaseUrl);
     setStepReady(true);
   }, [
     settingsReady,
@@ -64,6 +64,7 @@ export function FirstLaunchWizard() {
     hasDirectory,
     quizhubEnabled,
     quizhubBaseUrl,
+    quizhubDefaultBaseUrl,
   ]);
 
   async function handleLocaleChange(next: AppLocale) {
@@ -105,7 +106,7 @@ export function FirstLaunchWizard() {
       if (!result) return;
     }
     setDraftEnabled(quizhubEnabled);
-    setDraftUrl(quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+    setDraftUrl(quizhubBaseUrl || quizhubDefaultBaseUrl);
     setStep(3);
   }
 
@@ -117,16 +118,17 @@ export function FirstLaunchWizard() {
         await nativeApi.saveSettings({
           quizhubEnabled: true,
           quizhubBaseUrl:
-            !trimmed || trimmed === QUIZHUB_DEFAULT_BASE_URL ? "" : trimmed,
+            !trimmed || trimmed === quizhubDefaultBaseUrl ? "" : trimmed,
         });
       } else {
         await nativeApi.saveSettings({ quizhubEnabled: false });
       }
       const settings = await nativeApi.getSettings();
+      const defaultUrl = settings.quizhubDefaultBaseUrl || quizhubDefaultBaseUrl;
       setQuizhubEnabled(settings.quizhubEnabled);
-      setQuizhubBaseUrl(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+      setQuizhubBaseUrl(settings.quizhubBaseUrl || defaultUrl);
       setDraftEnabled(settings.quizhubEnabled);
-      setDraftUrl(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+      setDraftUrl(settings.quizhubBaseUrl || defaultUrl);
       setStep(4);
     } catch (error) {
       toast.error(errorMessage(error));
@@ -225,10 +227,11 @@ export function FirstLaunchWizard() {
             <OnboardingQuizhubStep
               enabled={draftEnabled}
               baseUrl={draftUrl}
+              defaultBaseUrl={quizhubDefaultBaseUrl}
               saving={savingQuizhub}
               onEnabledChange={setDraftEnabled}
               onBaseUrlChange={setDraftUrl}
-              onBaseUrlReset={() => setDraftUrl(QUIZHUB_DEFAULT_BASE_URL)}
+              onBaseUrlReset={() => setDraftUrl(quizhubDefaultBaseUrl)}
             />
           )}
           {step === 4 && <OnboardingCompleteStep quizhubEnabled={draftEnabled} />}

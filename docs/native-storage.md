@@ -28,7 +28,8 @@ Quizzy stores application data in the Tauri app-config directory:
 `settings.json` holds the working-directory path, quiz preferences (such as
 `shuffleQuestions` and `shuffleOptions`), Mistake Log thresholds
 (`mistakeLogMinMistakes` and `mistakeLogMaxCorrectnessPercentage`), keyboard
-shortcuts, UI font size, `quizhubEnabled`, optional `quizhubBaseUrl`,
+shortcuts, UI font size, `quizhubEnabled`, optional `quizhubBaseUrl` (empty
+means the build-time default from `QUIZHUB_DEFAULT_BASE_URL`),
 `appLocale` (`en` / `es` / `zh`), and `onboardingCompleted`.
 
 Study data is sharded per working-directory path under `libraries/`. Each quiz

@@ -9,7 +9,6 @@ import { UiPreferencesContext } from "@/contexts/ui-preferences-context";
 import { loadAppSettings } from "@/lib/appSettings";
 import { I18nProvider } from "@/components/I18nProvider";
 import { detectSystemAppLocale, isAppLocale, localeToBcp47, type AppLocale } from "@/lib/locale";
-import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import { isEditableKeyboardTarget } from "@/lib/keyboard";
 import {
   DEFAULT_KEYBINDS,
@@ -37,7 +36,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [shuffleQuestions, setShuffleQuestionsState] = useState(false);
   const [shuffleOptions, setShuffleOptionsState] = useState(false);
   const [quizhubEnabled, setQuizhubEnabledState] = useState(false);
-  const [quizhubBaseUrl, setQuizhubBaseUrlState] = useState(QUIZHUB_DEFAULT_BASE_URL);
+  const [quizhubBaseUrl, setQuizhubBaseUrlState] = useState("");
+  const [quizhubDefaultBaseUrl, setQuizhubDefaultBaseUrlState] = useState("");
   const [appLocale, setAppLocaleState] = useState<AppLocale | "">("");
   const [onboardingCompleted, setOnboardingCompleted] = useState(true);
   const [settingsReady, setSettingsReady] = useState(false);
@@ -102,7 +102,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       setShuffleQuestionsState(settings.shuffleQuestions);
       setShuffleOptionsState(settings.shuffleOptions);
       setQuizhubEnabledState(settings.quizhubEnabled);
-      setQuizhubBaseUrlState(settings.quizhubBaseUrl || QUIZHUB_DEFAULT_BASE_URL);
+      setQuizhubDefaultBaseUrlState(settings.quizhubDefaultBaseUrl);
+      setQuizhubBaseUrlState(settings.quizhubBaseUrl || settings.quizhubDefaultBaseUrl);
       setAppLocaleState(isAppLocale(settings.appLocale) ? settings.appLocale : "");
       setOnboardingCompleted(settings.onboardingCompleted);
       setFontSizeState(nextFontSize);
@@ -254,6 +255,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
                 setQuizhubEnabled: setQuizhubEnabledState,
                 quizhubBaseUrl,
                 setQuizhubBaseUrl: setQuizhubBaseUrlState,
+                quizhubDefaultBaseUrl,
               }}
             >
               <AppShortcutsContext.Provider

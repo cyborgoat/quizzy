@@ -27,7 +27,8 @@ use crate::{
     settings::{read_settings, Settings},
 };
 
-pub(crate) const DEFAULT_BASE_URL: &str = "https://quizhub.cyborgoat.com/";
+/// Injected at build time from `QUIZHUB_DEFAULT_BASE_URL` (env or repo-root `.env`).
+pub(crate) const DEFAULT_BASE_URL: &str = env!("QUIZHUB_DEFAULT_BASE_URL");
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
 const LOCK_FILE: &str = "quizhub-lock.json";
 const LOCK_VERSION: u32 = 1;

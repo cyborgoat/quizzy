@@ -16,6 +16,7 @@ permissions:
 
 env:
   RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+  QUIZHUB_DEFAULT_BASE_URL: ${{ secrets.QUIZHUB_DEFAULT_BASE_URL }}
 
 jobs:
   validate:

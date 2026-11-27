@@ -133,10 +133,15 @@ Requirements:
 ```bash
 git clone https://github.com/cyborgoat/quizzy.git
 cd quizzy
+cp .env.example .env   # set QUIZHUB_DEFAULT_BASE_URL for the default catalog
 npm install
 npm run tauri dev      # run the desktop app with hot reload
 npm run tauri build    # create installers for your platform
 ```
+
+Release builds require `QUIZHUB_DEFAULT_BASE_URL` (repo-root `.env` or environment /
+GitHub Actions secret). Dev and test builds fall back to a local placeholder when it
+is unset.
 
 Checks to run before opening a pull request:
 

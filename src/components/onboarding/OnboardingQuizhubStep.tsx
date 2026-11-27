@@ -6,11 +6,11 @@ import { IconActionButton } from "@/components/ui/icon-action-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n";
-import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 
 export function OnboardingQuizhubStep({
   enabled,
   baseUrl,
+  defaultBaseUrl,
   saving,
   onEnabledChange,
   onBaseUrlChange,
@@ -18,6 +18,7 @@ export function OnboardingQuizhubStep({
 }: {
   enabled: boolean;
   baseUrl: string;
+  defaultBaseUrl: string;
   saving: boolean;
   onEnabledChange: (enabled: boolean) => void;
   onBaseUrlChange: (url: string) => void;
@@ -25,7 +26,7 @@ export function OnboardingQuizhubStep({
 }) {
   const { t } = useI18n();
   const [helpOpen, setHelpOpen] = useState(false);
-  const isDefault = baseUrl.trim() === QUIZHUB_DEFAULT_BASE_URL;
+  const isDefault = baseUrl.trim() === defaultBaseUrl;
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
@@ -65,7 +66,7 @@ export function OnboardingQuizhubStep({
             value={baseUrl}
             disabled={saving || !enabled}
             onChange={(event) => onBaseUrlChange(event.target.value)}
-            placeholder={QUIZHUB_DEFAULT_BASE_URL}
+            placeholder={defaultBaseUrl}
             className="h-8 min-w-0 flex-1 font-mono text-xs"
           />
           <Button

@@ -20,6 +20,8 @@ export type AppSettings = {
   toggleSidebarShortcutKey: string;
   quizhubEnabled: boolean;
   quizhubBaseUrl: string;
+  /** Compile-time default catalog URL from QUIZHUB_DEFAULT_BASE_URL. */
+  quizhubDefaultBaseUrl: string;
   /** Empty until the user chooses a language on first launch. */
   appLocale: string;
   onboardingCompleted: boolean;

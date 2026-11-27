@@ -10,6 +10,7 @@ import { SettingsResetSection } from "@/components/settings/SettingsResetSection
 import { SettingsShortcutsSection } from "@/components/settings/SettingsShortcutsSection";
 import { SettingsSyncSection } from "@/components/settings/SettingsSyncSection";
 import { useAppLocale } from "@/hooks/useAppLocale";
+import { useQuizhubPreferences } from "@/hooks/useQuizhubPreferences";
 import { useSettingsPageState } from "@/hooks/useSettingsPageState";
 import { useSettingsReset } from "@/hooks/useSettingsReset";
 import { useI18n } from "@/lib/i18n";
@@ -17,6 +18,7 @@ import type { AppLocale } from "@/lib/locale";
 
 export function SettingsPage() {
   const { locale, setAppLocale } = useAppLocale();
+  const { quizhubDefaultBaseUrl } = useQuizhubPreferences();
   const { t } = useI18n();
   const {
     draft,
@@ -76,6 +78,7 @@ export function SettingsPage() {
       <SettingsQuizhubSection
         draft={draft}
         savingFields={savingFields}
+        defaultBaseUrl={quizhubDefaultBaseUrl}
         onQuizhubEnabledChange={handleQuizhubEnabledChange}
         onQuizhubBaseUrlChange={handleQuizhubBaseUrlChange}
         onQuizhubBaseUrlCommit={commitQuizhubBaseUrl}

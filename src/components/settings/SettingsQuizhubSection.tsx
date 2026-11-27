@@ -10,13 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { QUIZHUB_DEFAULT_BASE_URL } from "@/lib/quizhub";
 import type { SettingsDraft } from "@/lib/settingsDraft";
 import { useI18n } from "@/lib/i18n";
 
 export function SettingsQuizhubSection({
   draft,
   savingFields,
+  defaultBaseUrl,
   onQuizhubEnabledChange,
   onQuizhubBaseUrlChange,
   onQuizhubBaseUrlCommit,
@@ -24,6 +24,7 @@ export function SettingsQuizhubSection({
 }: {
   draft: SettingsDraft;
   savingFields: ReadonlySet<keyof SettingsDraft | "workingDirectory">;
+  defaultBaseUrl: string;
   onQuizhubEnabledChange: (value: boolean) => void;
   onQuizhubBaseUrlChange: (value: string) => void;
   onQuizhubBaseUrlCommit: () => void;
@@ -32,7 +33,7 @@ export function SettingsQuizhubSection({
   const { t } = useI18n();
 
   const savingUrl = savingFields.has("quizhubBaseUrl");
-  const isDefaultSource = draft.quizhubBaseUrl.trim() === QUIZHUB_DEFAULT_BASE_URL;
+  const isDefaultSource = draft.quizhubBaseUrl.trim() === defaultBaseUrl;
 
   return (
     <SettingsSection icon={PackagePlus} title={t("settings.quizhub.title")}>
@@ -72,7 +73,7 @@ export function SettingsQuizhubSection({
                   }
                 }}
                 aria-label={t("settings.quizhub.sourceUrlAria")}
-                placeholder={QUIZHUB_DEFAULT_BASE_URL}
+                placeholder={defaultBaseUrl}
                 className="h-8 min-w-0 flex-1 font-mono text-xs"
               />
               <Button
