@@ -10,7 +10,7 @@ import type {
 import type { MessageKey, TFunction } from "@/lib/i18n-messages";
 
 /** Matches the Rust `DEFAULT_BASE_URL` in hub_sync. Empty settings reset to this. */
-export const QUIZHUB_DEFAULT_BASE_URL = "https://cyborgoat.github.io/quizhub/";
+export const QUIZHUB_DEFAULT_BASE_URL = "https://quizhub.cyborgoat.com/";
 
 export const QUIZHUB_CHANGED_EVENT = "quizzy:quizhub-changed";
 
