@@ -4,6 +4,7 @@ import {
   clampDialogSize,
   getDefaultDialogSize,
   getKnowledgeNoteDialogSizeConstraints,
+  resizeDeltaForEdge,
 } from "@/lib/resizableDialogFrame";
 
 const constraints = {
@@ -44,6 +45,15 @@ describe("resizableDialogFrame", () => {
       width: 480,
       height: 360,
     });
+  });
+
+  it("maps pointer deltas to the active resize edge", () => {
+    expect(resizeDeltaForEdge("e", 40, -20)).toEqual({ deltaWidth: 40, deltaHeight: 0 });
+    expect(resizeDeltaForEdge("w", 40, -20)).toEqual({ deltaWidth: -40, deltaHeight: 0 });
+    expect(resizeDeltaForEdge("s", 40, 30)).toEqual({ deltaWidth: 0, deltaHeight: 30 });
+    expect(resizeDeltaForEdge("n", 40, 30)).toEqual({ deltaWidth: 0, deltaHeight: -30 });
+    expect(resizeDeltaForEdge("se", 40, 30)).toEqual({ deltaWidth: 40, deltaHeight: 30 });
+    expect(resizeDeltaForEdge("nw", 40, 30)).toEqual({ deltaWidth: -40, deltaHeight: -30 });
   });
 
   it("clamps resize deltas to minimum dimensions", () => {

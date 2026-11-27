@@ -66,6 +66,24 @@ export function clampDialogSize(
   };
 }
 
+export type DialogResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
+export function resizeDeltaForEdge(
+  edge: DialogResizeEdge,
+  deltaX: number,
+  deltaY: number,
+): { deltaWidth: number; deltaHeight: number } {
+  const resizeEast = edge.includes("e");
+  const resizeWest = edge.includes("w");
+  const resizeSouth = edge.includes("s");
+  const resizeNorth = edge.includes("n");
+
+  return {
+    deltaWidth: resizeEast ? deltaX : resizeWest ? -deltaX : 0,
+    deltaHeight: resizeSouth ? deltaY : resizeNorth ? -deltaY : 0,
+  };
+}
+
 export function applyDialogResizeDelta(
   size: DialogSize,
   deltaWidth: number,

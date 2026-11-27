@@ -1,10 +1,17 @@
-import { Download, Play, Trash2 } from "lucide-react";
+import { Download, MoreHorizontal, Play, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
 import { ErrorState } from "@/components/quiz/ErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { IconActionButton } from "@/components/ui/icon-action-button";
 import { ResizableDialogShell } from "@/components/ui/resizable-dialog-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -73,16 +80,12 @@ export function QuizhubPreviewDialog({
   const activeItem = item ?? shown.current;
   if (!activeItem) return null;
 
-  const canDownload = Boolean((isDownloadable(activeItem.state) || activeItem.state === "installed") && onDownload);
+  const canDownload = Boolean(isDownloadable(activeItem.state) && onDownload);
   const canRemove = Boolean(isFromHub(activeItem.state) && onRemove);
   const canStartQuiz = Boolean(activeItem.kind === "quiz" && isFromHub(activeItem.state) && onStartQuiz);
   const fromLocal = isFromHub(activeItem.state);
   const downloadLabel =
-    activeItem.state === "updateAvailable"
-      ? t("hub.update")
-      : activeItem.state === "installed"
-        ? t("hub.downloadAgain")
-        : t("hub.download");
+    activeItem.state === "updateAvailable" ? t("hub.update") : t("hub.download");
   const description =
     activeItem.kind === "quiz"
       ? fromLocal
@@ -98,54 +101,70 @@ export function QuizhubPreviewDialog({
       onOpenChange={onOpenChange}
       title={activeItem.title}
       description={description}
-      footer={
-        <div className="flex w-full items-center gap-2">
+      headerActions={
+        <>
           {canRemove && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconActionButton
+                  icon={MoreHorizontal}
+                  label={t("details.manage")}
+                  showTooltip={false}
+                  className="text-zinc-500 aria-expanded:bg-zinc-100"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="bottom" align="end" className="z-60">
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={isWorking}
+                  onSelect={() => onRemove?.(activeItem)}
+                >
+                  <Trash2 aria-hidden="true" />
+                  {t("hub.preview.remove")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <IconActionButton
+            icon={X}
+            label={t("common.close")}
+            showTooltip={false}
+            className="text-zinc-500 hover:bg-zinc-100"
+            onClick={() => onOpenChange(false)}
+          />
+        </>
+      }
+      footer={
+        <div className="ml-auto flex items-center gap-2">
+          {canStartQuiz && (
             <Button
               size="sm"
-              variant="ghost"
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+              variant={canDownload ? "outline" : "default"}
               disabled={isWorking}
-              onClick={() => onRemove?.(activeItem)}
+              onClick={() => onStartQuiz?.(activeItem)}
             >
-              <Trash2 className="size-3.5" />
-              {t("hub.preview.remove")}
+              <Play className="size-3.5 fill-current" />
+              {t("details.start")}
             </Button>
           )}
-          <div className="ml-auto flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
-              {t("common.close")}
+          {canDownload && (
+            <Button
+              size="sm"
+              disabled={isDownloading}
+              onClick={() => onDownload?.(activeItem)}
+            >
+              {isDownloading ? (
+                <Spinner className="size-3.5" />
+              ) : (
+                <Download className="size-3.5" />
+              )}
+              {isDownloading
+                ? activeItem.state === "updateAvailable"
+                  ? t("hub.updating")
+                  : t("hub.downloading")
+                : downloadLabel}
             </Button>
-            {canStartQuiz && (
-              <Button
-                size="sm"
-                variant={canDownload ? "outline" : "default"}
-                disabled={isWorking}
-                onClick={() => onStartQuiz?.(activeItem)}
-              >
-                <Play className="size-3.5 fill-current" />
-                {t("details.start")}
-              </Button>
-            )}
-            {canDownload && (
-              <Button
-                size="sm"
-                disabled={isDownloading}
-                onClick={() => onDownload?.(activeItem)}
-              >
-                {isDownloading ? (
-                  <Spinner className="size-3.5" />
-                ) : (
-                  <Download className="size-3.5" />
-                )}
-                {isDownloading
-                  ? activeItem.state === "updateAvailable"
-                    ? t("hub.updating")
-                    : t("hub.downloading")
-                  : downloadLabel}
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       }
     >

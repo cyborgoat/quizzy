@@ -1,16 +1,14 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { MoveDiagonal } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { useResizableDialogSize } from "@/hooks/useResizableDialogSize";
 import {
   DEFAULT_RESIZABLE_DIALOG_SIZE_CONSTRAINTS,
+  type DialogResizeEdge,
   type DialogSizeConstraints,
 } from "@/lib/resizableDialogFrame";
 import { dialogOverlayClassName } from "@/components/ui/dialog-overlay";
 import { dialogContentMotionClassName } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/lib/i18n";
 
 export type DialogStackLayer = "default" | "stacked" | "elevated";
 
@@ -20,6 +18,21 @@ const layerClassNames: Record<DialogStackLayer, { overlay: string; content: stri
   elevated: { overlay: "z-80", content: "z-80" },
 };
 
+const RESIZE_HANDLES: {
+  edge: DialogResizeEdge;
+  className: string;
+  cursor: string;
+}[] = [
+  { edge: "n", className: "left-3 right-3 top-0 h-1.5", cursor: "cursor-n-resize" },
+  { edge: "s", className: "left-3 right-3 bottom-0 h-1.5", cursor: "cursor-s-resize" },
+  { edge: "e", className: "top-3 bottom-3 right-0 w-1.5", cursor: "cursor-e-resize" },
+  { edge: "w", className: "top-3 bottom-3 left-0 w-1.5", cursor: "cursor-w-resize" },
+  { edge: "ne", className: "right-0 top-0 size-3", cursor: "cursor-ne-resize" },
+  { edge: "nw", className: "left-0 top-0 size-3", cursor: "cursor-nw-resize" },
+  { edge: "se", className: "right-0 bottom-0 size-3", cursor: "cursor-se-resize" },
+  { edge: "sw", className: "left-0 bottom-0 size-3", cursor: "cursor-sw-resize" },
+];
+
 export function ResizableDialogShell({
   open,
   onOpenChange,
@@ -27,6 +40,7 @@ export function ResizableDialogShell({
   description,
   children,
   footer,
+  headerActions,
   layer = "default",
   resizeDisabled = false,
   constraints = DEFAULT_RESIZABLE_DIALOG_SIZE_CONSTRAINTS,
@@ -38,13 +52,12 @@ export function ResizableDialogShell({
   description?: ReactNode;
   children: ReactNode;
   footer: ReactNode;
+  headerActions?: ReactNode;
   layer?: DialogStackLayer;
   resizeDisabled?: boolean;
   constraints?: DialogSizeConstraints;
   bodyClassName?: string;
 }) {
-  const { t } = useI18n();
-
   const { size, startResizeDrag } = useResizableDialogSize({
     enabled: open,
     constraints,
@@ -68,7 +81,12 @@ export function ResizableDialogShell({
             height: size.height,
           }}
         >
-          <div className="relative shrink-0 border-b border-zinc-100 px-6 py-3 pr-14">
+          <div
+            className={cn(
+              "relative shrink-0 border-b border-zinc-100 px-6 py-3",
+              headerActions ? "pr-24" : "pr-6",
+            )}
+          >
             <Dialog.Title className="text-base font-semibold text-zinc-950">
               {title}
             </Dialog.Title>
@@ -77,17 +95,11 @@ export function ResizableDialogShell({
                 {description}
               </Dialog.Description>
             ) : null}
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              aria-label={t("ui.resizeDialog")}
-              className="absolute right-4 top-3 size-8 cursor-nwse-resize text-zinc-900 hover:bg-zinc-100/60 active:cursor-nwse-resize"
-              disabled={resizeDisabled}
-              onPointerDown={startResizeDrag}
-            >
-              <MoveDiagonal className="size-4" />
-            </Button>
+            {headerActions ? (
+              <div className="absolute right-4 top-3 flex items-center gap-1">
+                {headerActions}
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -102,6 +114,21 @@ export function ResizableDialogShell({
           <div className="flex shrink-0 justify-end gap-1 border-t border-zinc-100 px-6 py-3">
             {footer}
           </div>
+
+          {!resizeDisabled
+            ? RESIZE_HANDLES.map(({ edge, className, cursor }) => (
+                <div
+                  key={edge}
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute z-10 touch-none",
+                    cursor,
+                    className,
+                  )}
+                  onPointerDown={(event) => startResizeDrag(edge, event)}
+                />
+              ))
+            : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -9,11 +9,14 @@ import {
   applyDialogResizeDelta,
   clampDialogSize,
   getDefaultDialogSize,
+  resizeDeltaForEdge,
+  type DialogResizeEdge,
   type DialogSize,
   type DialogSizeConstraints,
 } from "@/lib/resizableDialogFrame";
 
 type ResizeInteraction = {
+  edge: DialogResizeEdge;
   startPointer: { x: number; y: number };
   startSize: DialogSize;
 };
@@ -59,13 +62,18 @@ export function useResizableDialogSize({
       if (!interaction) return;
 
       const deltaX = event.clientX - interaction.startPointer.x;
-      const deltaY = interaction.startPointer.y - event.clientY;
+      const deltaY = event.clientY - interaction.startPointer.y;
+      const { deltaWidth, deltaHeight } = resizeDeltaForEdge(
+        interaction.edge,
+        deltaX,
+        deltaY,
+      );
 
       setSize(
         applyDialogResizeDelta(
           interaction.startSize,
-          deltaX,
-          deltaY,
+          deltaWidth,
+          deltaHeight,
           constraintsRef.current,
         ),
       );
@@ -89,13 +97,14 @@ export function useResizableDialogSize({
   }, []);
 
   const startResizeDrag = useCallback(
-    (event: ReactPointerEvent<HTMLElement>) => {
+    (edge: DialogResizeEdge, event: ReactPointerEvent<HTMLElement>) => {
       if (event.button !== 0) return;
 
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       document.body.style.userSelect = "none";
       interactionRef.current = {
+        edge,
         startPointer: { x: event.clientX, y: event.clientY },
         startSize: size,
       };
