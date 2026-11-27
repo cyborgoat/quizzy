@@ -217,14 +217,21 @@ function QuizhubBrowser({
   const deferredQuery = useDeferredValue(query);
   const isSearchPending = query !== deferredQuery;
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [selecting, setSelecting] = useState(false);
   const [previewItem, setPreviewItem] = useState<HubItem | null>(null);
   const previousLanguage = useRef(language);
+
+  function clearSelectionMode() {
+    setSelecting(false);
+    setSelected(new Set());
+  }
 
   // Keep domain/category when switching editions; drop locale-specific UI only.
   useLayoutEffect(() => {
     if (previousLanguage.current === language) return;
     previousLanguage.current = language;
     setQuery("");
+    setSelecting(false);
     setSelected(new Set());
     setPreviewItem(null);
     const resolve = resolveConflict.current;
@@ -400,7 +407,7 @@ function QuizhubBrowser({
   }
 
   function navigateSuggestion(suggestion: HubSearchSuggestion) {
-    setSelected(new Set());
+    clearSelectionMode();
     setQuery("");
     if (suggestion.kind === "domain") {
       setDomainId(suggestion.domainId);
@@ -480,7 +487,7 @@ function QuizhubBrowser({
                         setDomainId(null);
                         setCategoryId(null);
                         setQuery("");
-                        setSelected(new Set());
+                        clearSelectionMode();
                       }}
                     >
                       QuizHub
@@ -496,7 +503,7 @@ function QuizhubBrowser({
                           onClick={() => {
                             setCategoryId(null);
                             setQuery("");
-                            setSelected(new Set());
+                            clearSelectionMode();
                           }}
                         >
                           {activeDomain.title}
@@ -571,10 +578,13 @@ function QuizhubBrowser({
             category={activeCategory}
             canInstall={canInstall}
             query={deferredQuery}
+            selecting={selecting}
             selected={selected}
             isWorking={isWorking}
             downloadingKeys={downloadingKeys}
             onToggle={toggle}
+            onStartSelecting={() => setSelecting(true)}
+            onCancelSelecting={clearSelectionMode}
             onSelectAll={(items) =>
               setSelected(new Set(items.filter((item) => isDownloadable(item.state)).map(hubItemKey)))
             }
@@ -632,7 +642,7 @@ function QuizhubBrowser({
         }
       />
 
-      {selectedRefs.length > 0 && (
+      {selecting && selectedRefs.length > 0 && (
         <div className="sticky bottom-4 mt-4 flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2 shadow-md">
           <span className="text-sm text-zinc-700">{t("hub.selectedCount", { count: selectedRefs.length })}</span>
           <div className="flex gap-2">
@@ -774,10 +784,13 @@ function CategoryView({
   category,
   canInstall,
   query,
+  selecting,
   selected,
   isWorking,
   downloadingKeys,
   onToggle,
+  onStartSelecting,
+  onCancelSelecting,
   onSelectAll,
   onPreview,
   onDownload,
@@ -786,10 +799,13 @@ function CategoryView({
   category: HubCategoryView;
   canInstall: boolean;
   query: string;
+  selecting: boolean;
   selected: ReadonlySet<string>;
   isWorking: boolean;
   downloadingKeys: ReadonlySet<string>;
   onToggle: (item: HubItem) => void;
+  onStartSelecting: () => void;
+  onCancelSelecting: () => void;
   onSelectAll: (items: HubItem[]) => void;
   onPreview: (item: HubItem) => void;
   onDownload: (item: HubItem) => void;
@@ -806,9 +822,20 @@ function CategoryView({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-zinc-950">{categoryTitle(category, t)}</h2>
         {selectable.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => onSelectAll(selectable)}>
-            {t("hub.selectAll", { count: selectable.length })}
-          </Button>
+          selecting ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => onSelectAll(selectable)}>
+                {t("hub.selectAll", { count: selectable.length })}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onCancelSelecting}>
+                {t("common.cancel")}
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" onClick={onStartSelecting}>
+              {t("hub.select")}
+            </Button>
+          )
         )}
       </div>
 
@@ -822,6 +849,7 @@ function CategoryView({
               icon={SquareLetterQ}
               items={quizzes}
               canInstall={canInstall}
+              selecting={selecting}
               selected={selected}
               isWorking={isWorking}
               downloadingKeys={downloadingKeys}
@@ -837,6 +865,7 @@ function CategoryView({
               icon={BookOpen}
               items={notes}
               canInstall={canInstall}
+              selecting={selecting}
               selected={selected}
               isWorking={isWorking}
               downloadingKeys={downloadingKeys}
@@ -857,6 +886,7 @@ function HubItemSection({
   icon: Icon,
   items,
   canInstall,
+  selecting,
   selected,
   isWorking,
   downloadingKeys,
@@ -869,6 +899,7 @@ function HubItemSection({
   icon: LucideIcon;
   items: HubItem[];
   canInstall: boolean;
+  selecting: boolean;
   selected: ReadonlySet<string>;
   isWorking: boolean;
   downloadingKeys: ReadonlySet<string>;
@@ -888,7 +919,7 @@ function HubItemSection({
       <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-white">
         {items.map((item) => {
           const key = hubItemKey(item);
-          const canSelect = canInstall && isDownloadable(item.state);
+          const canSelect = selecting && canInstall && isDownloadable(item.state);
           const meta = [
             item.size > 0 ? formatBytes(item.size) : null,
             item.updated ? t("hub.updated", { date: formatShortDate(item.updated) }) : null,
@@ -896,30 +927,41 @@ function HubItemSection({
           ].filter(Boolean);
 
           const showStateBadge = item.state !== "available" && item.state !== "installed";
+          const showInstalledMark = !selecting && item.state === "installed";
 
           return (
             <li key={key} className="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-50">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={selected.has(key)}
-                aria-label={t("hub.selectItem", { title: item.title })}
-                disabled={!canSelect}
-                onClick={() => onToggle(item)}
-                className="disabled:cursor-default"
-              >
-                {canSelect ? (
-                  <Checkbox checked={selected.has(key)} />
-                ) : (
-                  <span
-                    className="flex size-5 items-center justify-center text-emerald-600"
-                    title={item.state === "installed" ? t(hubStateDescriptionKey.installed) : undefined}
-                    aria-label={item.state === "installed" ? t("hub.state.installed") : undefined}
-                  >
-                    {item.state === "installed" && <Check className="size-4" />}
-                  </span>
-                )}
-              </button>
+              {selecting ? (
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={selected.has(key)}
+                  aria-label={t("hub.selectItem", { title: item.title })}
+                  disabled={!canSelect}
+                  onClick={() => onToggle(item)}
+                  className="disabled:cursor-default"
+                >
+                  {canSelect ? (
+                    <Checkbox checked={selected.has(key)} />
+                  ) : (
+                    <span
+                      className="flex size-5 items-center justify-center text-emerald-600"
+                      title={item.state === "installed" ? t(hubStateDescriptionKey.installed) : undefined}
+                      aria-label={item.state === "installed" ? t("hub.state.installed") : undefined}
+                    >
+                      {item.state === "installed" && <Check className="size-4" />}
+                    </span>
+                  )}
+                </button>
+              ) : showInstalledMark ? (
+                <span
+                  className="flex size-5 items-center justify-center text-emerald-600"
+                  title={t(hubStateDescriptionKey.installed)}
+                  aria-label={t("hub.state.installed")}
+                >
+                  <Check className="size-4" />
+                </span>
+              ) : null}
               <button
                 type="button"
                 className="min-w-0 flex-1 cursor-pointer rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
