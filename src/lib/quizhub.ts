@@ -132,6 +132,149 @@ export function filterHubItems(items: HubItem[], query: string) {
   );
 }
 
+function matchesHubNeedle(value: string, needle: string) {
+  return value.toLowerCase().includes(needle);
+}
+
+export function filterHubCategories(categories: HubCategoryView[], query: string) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return categories;
+  return categories.filter(
+    (category) =>
+      matchesHubNeedle(category.title, needle) ||
+      matchesHubNeedle(category.id, needle) ||
+      filterHubItems(category.items, needle).length > 0,
+  );
+}
+
+export function filterHubDomains(domains: HubDomainView[], query: string) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return domains;
+  return domains.filter((domain) => {
+    if (matchesHubNeedle(domain.title, needle) || matchesHubNeedle(domain.id, needle)) {
+      return true;
+    }
+    return filterHubCategories(domain.categories, needle).length > 0;
+  });
+}
+
+export type HubSearchSuggestion =
+  | {
+      kind: "domain";
+      id: string;
+      domainId: string;
+      title: string;
+    }
+  | {
+      kind: "category";
+      id: string;
+      domainId: string;
+      categoryId: string;
+      title: string;
+      subtitle: string;
+    }
+  | {
+      kind: "item";
+      id: string;
+      domainId: string | null;
+      categoryId: string;
+      item: HubItem;
+      title: string;
+      subtitle: string;
+    };
+
+export function searchHubSuggestions(
+  domains: HubDomainView[],
+  query: string,
+  options?: { limit?: number; removed?: HubCategoryView },
+): HubSearchSuggestion[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+
+  const limit = options?.limit ?? 10;
+  const suggestions: HubSearchSuggestion[] = [];
+
+  const push = (suggestion: HubSearchSuggestion) => {
+    if (suggestions.length >= limit) return false;
+    suggestions.push(suggestion);
+    return true;
+  };
+
+  for (const domain of domains) {
+    if (matchesHubNeedle(domain.title, needle) || matchesHubNeedle(domain.id, needle)) {
+      if (
+        !push({
+          kind: "domain",
+          id: `domain:${domain.id}`,
+          domainId: domain.id,
+          title: domain.title,
+        })
+      ) {
+        return suggestions;
+      }
+    }
+  }
+
+  for (const domain of domains) {
+    for (const category of domain.categories) {
+      if (matchesHubNeedle(category.title, needle) || matchesHubNeedle(category.id, needle)) {
+        if (
+          !push({
+            kind: "category",
+            id: `category:${category.id}`,
+            domainId: domain.id,
+            categoryId: category.id,
+            title: category.title,
+            subtitle: domain.title,
+          })
+        ) {
+          return suggestions;
+        }
+      }
+    }
+  }
+
+  const catalogs: Array<{ domainId: string | null; domainTitle: string; category: HubCategoryView }> = [
+    ...domains.flatMap((domain) =>
+      domain.categories.map((category) => ({
+        domainId: domain.id,
+        domainTitle: domain.title,
+        category,
+      })),
+    ),
+  ];
+  if (options?.removed) {
+    catalogs.push({
+      domainId: null,
+      domainTitle: "",
+      category: options.removed,
+    });
+  }
+
+  for (const entry of catalogs) {
+    for (const item of filterHubItems(entry.category.items, needle)) {
+      const subtitle = entry.domainTitle
+        ? `${entry.domainTitle} · ${entry.category.title}`
+        : entry.category.title;
+      if (
+        !push({
+          kind: "item",
+          id: `item:${hubItemKey(item)}`,
+          domainId: entry.domainId,
+          categoryId: entry.category.id,
+          item,
+          title: item.title,
+          subtitle,
+        })
+      ) {
+        return suggestions;
+      }
+    }
+  }
+
+  return suggestions;
+}
+
 export function summarizeHubReport(
   report: Omit<HubDownloadReport, "conflicts">,
   t: TFunction,

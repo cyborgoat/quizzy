@@ -12,7 +12,7 @@ import {
   SquareLetterQ,
   type LucideIcon,
 } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
@@ -21,11 +21,11 @@ import { ErrorState } from "@/components/quiz/ErrorState";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { QuizhubConflictDialog } from "@/components/quizhub/QuizhubConflictDialog";
 import { QuizhubPreviewDialog } from "@/components/quizhub/QuizhubPreviewDialog";
+import { QuizhubSearchBar } from "@/components/quizhub/QuizhubSearchBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-styles";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SearchField } from "@/components/ui/search-field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppLocale } from "@/hooks/useAppLocale";
@@ -49,6 +49,8 @@ import {
   type HubLocale,
 } from "@/lib/native";
 import {
+  filterHubCategories,
+  filterHubDomains,
   filterHubItems,
   formatBytes,
   groupHubDomains,
@@ -62,6 +64,7 @@ import {
   summarizeHubReport,
   type HubCategoryView,
   type HubDomainView,
+  type HubSearchSuggestion,
 } from "@/lib/quizhub";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -211,6 +214,8 @@ function QuizhubBrowser({
   const [domainId, setDomainId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  const isSearchPending = query !== deferredQuery;
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [previewItem, setPreviewItem] = useState<HubItem | null>(null);
   const previousLanguage = useRef(language);
@@ -240,9 +245,21 @@ function QuizhubBrowser({
     [catalog],
   );
   const domains = grouped?.domains ?? [];
+  const visibleDomains = useMemo(
+    () => filterHubDomains(domains, deferredQuery),
+    [domains, deferredQuery],
+  );
   const activeDomain = domains.find((domain) => domain.id === domainId);
+  const visibleCategories = useMemo(
+    () => (activeDomain ? filterHubCategories(activeDomain.categories, deferredQuery) : []),
+    [activeDomain, deferredQuery],
+  );
   const activeCategory = activeDomain?.categories.find((category) => category.id === categoryId) ??
     (grouped?.removed?.id === categoryId ? grouped?.removed : null);
+  const visibleRemoved =
+    grouped?.removed && filterHubCategories([grouped.removed], deferredQuery).length > 0
+      ? grouped.removed
+      : undefined;
 
   // Drop browse position when the active edition no longer has that domain/category.
   useLayoutEffect(() => {
@@ -382,6 +399,26 @@ function QuizhubBrowser({
     });
   }
 
+  function navigateSuggestion(suggestion: HubSearchSuggestion) {
+    setSelected(new Set());
+    setQuery("");
+    if (suggestion.kind === "domain") {
+      setDomainId(suggestion.domainId);
+      setCategoryId(null);
+      setPreviewItem(null);
+      return;
+    }
+    if (suggestion.kind === "category") {
+      setDomainId(suggestion.domainId);
+      setCategoryId(suggestion.categoryId);
+      setPreviewItem(null);
+      return;
+    }
+    setDomainId(suggestion.domainId);
+    setCategoryId(suggestion.categoryId);
+    setPreviewItem(suggestion.item);
+  }
+
   const selectedRefs: HubItemRef[] =
     catalog?.items
       .filter((item) => selected.has(hubItemKey(item)) && isDownloadable(item.state))
@@ -430,70 +467,82 @@ function QuizhubBrowser({
       />
 
       <div className="mt-5">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <nav aria-label={t("hub.breadcrumb.aria")} className="min-w-0 text-sm">
-            {activeDomain || activeCategory ? (
-              <ol className="flex flex-wrap items-center gap-2">
-                <li>
-                  <button
-                    type="button"
-                    className="font-medium text-zinc-700 hover:underline"
-                    onClick={() => {
-                      setDomainId(null);
-                      setCategoryId(null);
-                      setQuery("");
-                      setSelected(new Set());
-                    }}
-                  >
-                    QuizHub
-                  </button>
-                </li>
-                {activeDomain && (
-                  <li className="flex items-center gap-2">
-                    <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
-                    {activeCategory ? (
-                      <button
-                        type="button"
-                        className="font-medium text-zinc-700 hover:underline"
-                        onClick={() => {
-                          setCategoryId(null);
-                          setQuery("");
-                          setSelected(new Set());
-                        }}
-                      >
-                        {activeDomain.title}
-                      </button>
-                    ) : (
-                      <span aria-current="location" className="font-semibold text-zinc-950">
-                        {activeDomain.title}
-                      </span>
-                    )}
+        <div className="mb-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+            <nav aria-label={t("hub.breadcrumb.aria")} className="min-w-0 text-sm">
+              {activeDomain || activeCategory ? (
+                <ol className="flex flex-wrap items-center gap-2">
+                  <li>
+                    <button
+                      type="button"
+                      className="font-medium text-zinc-700 hover:underline"
+                      onClick={() => {
+                        setDomainId(null);
+                        setCategoryId(null);
+                        setQuery("");
+                        setSelected(new Set());
+                      }}
+                    >
+                      QuizHub
+                    </button>
                   </li>
-                )}
-                {activeCategory && (
-                  <li aria-current="location" className="flex items-center gap-2 font-semibold text-zinc-950">
-                    <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
-                    {categoryTitle(activeCategory, t)}
-                  </li>
-                )}
-              </ol>
-            ) : (
-              <p className="font-medium text-zinc-700">{t("hub.chooseDomain")}</p>
+                  {activeDomain && (
+                    <li className="flex items-center gap-2">
+                      <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                      {activeCategory ? (
+                        <button
+                          type="button"
+                          className="font-medium text-zinc-700 hover:underline"
+                          onClick={() => {
+                            setCategoryId(null);
+                            setQuery("");
+                            setSelected(new Set());
+                          }}
+                        >
+                          {activeDomain.title}
+                        </button>
+                      ) : (
+                        <span aria-current="location" className="font-semibold text-zinc-950">
+                          {activeDomain.title}
+                        </span>
+                      )}
+                    </li>
+                  )}
+                  {activeCategory && (
+                    <li aria-current="location" className="flex items-center gap-2 font-semibold text-zinc-950">
+                      <ChevronRight className="size-4 text-zinc-400" aria-hidden="true" />
+                      {categoryTitle(activeCategory, t)}
+                    </li>
+                  )}
+                </ol>
+              ) : (
+                <p className="font-medium text-zinc-700">{t("hub.chooseDomain")}</p>
+              )}
+            </nav>
+            {languages.length > 0 && (
+              <div className="flex shrink-0 items-center gap-2">
+                <Languages className="size-4 text-zinc-600" aria-hidden="true" />
+                <label htmlFor="quizhub-language" className="text-sm font-medium text-zinc-800">{t("home.languageLabel")}</label>
+                <Select value={language} onValueChange={onSelectLocale} disabled={isWorking}>
+                  <SelectTrigger id="quizhub-language" className="w-36 bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {languages.map((edition) => (
+                      <SelectItem key={edition.id} value={edition.id}>{edition.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
-          </nav>
-          {languages.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Languages className="size-4 text-zinc-600" aria-hidden="true" />
-              <label htmlFor="quizhub-language" className="text-sm font-medium text-zinc-800">{t("home.languageLabel")}</label>
-              <Select value={language} onValueChange={onSelectLocale} disabled={isWorking}>
-                <SelectTrigger id="quizhub-language" className="w-36 bg-white"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {languages.map((edition) => (
-                    <SelectItem key={edition.id} value={edition.id}>{edition.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          </div>
+          {catalog && !catalog.editionError && (
+            <QuizhubSearchBar
+              value={query}
+              onChange={setQuery}
+              pending={isSearchPending}
+              domains={domains}
+              removed={grouped?.removed}
+              onSelect={navigateSuggestion}
+            />
           )}
         </div>
         {loadError && catalog && (
@@ -521,8 +570,7 @@ function QuizhubBrowser({
           <CategoryView
             category={activeCategory}
             canInstall={canInstall}
-            query={query}
-            onQueryChange={setQuery}
+            query={deferredQuery}
             selected={selected}
             isWorking={isWorking}
             downloadingKeys={downloadingKeys}
@@ -534,17 +582,21 @@ function QuizhubBrowser({
             onDownload={(item) => void download([item])}
             onKeepAsLocal={(item) => void remove(item, true)}
           />
-        ) : (
-          activeDomain ? (
-            <CategoryGrid categories={activeDomain.categories} onOpen={setCategoryId} />
+        ) : activeDomain ? (
+          deferredQuery.trim() && visibleCategories.length === 0 ? (
+            <p className="py-10 text-center text-sm text-zinc-500">{t("hub.noMatch")}</p>
           ) : (
-            <DomainGrid
-              domains={domains}
-              removed={grouped?.removed}
-              onOpen={setDomainId}
-              onOpenRemoved={setCategoryId}
-            />
+            <CategoryGrid categories={visibleCategories} onOpen={setCategoryId} />
           )
+        ) : deferredQuery.trim() && visibleDomains.length === 0 && !visibleRemoved ? (
+          <p className="py-10 text-center text-sm text-zinc-500">{t("hub.noMatch")}</p>
+        ) : (
+          <DomainGrid
+            domains={visibleDomains}
+            removed={visibleRemoved}
+            onOpen={setDomainId}
+            onOpenRemoved={setCategoryId}
+          />
         )}
         {catalog && catalog.skipped.length > 0 && (
           <p className="mt-4 text-xs text-zinc-500">
@@ -722,7 +774,6 @@ function CategoryView({
   category,
   canInstall,
   query,
-  onQueryChange,
   selected,
   isWorking,
   downloadingKeys,
@@ -735,7 +786,6 @@ function CategoryView({
   category: HubCategoryView;
   canInstall: boolean;
   query: string;
-  onQueryChange: (value: string) => void;
   selected: ReadonlySet<string>;
   isWorking: boolean;
   downloadingKeys: ReadonlySet<string>;
@@ -755,19 +805,11 @@ function CategoryView({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-zinc-950">{categoryTitle(category, t)}</h2>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <SearchField
-            value={query}
-            onChange={onQueryChange}
-            placeholder={t("hub.searchCategory")}
-            className="w-full sm:w-64"
-          />
-          {selectable.length > 0 && (
-            <Button size="sm" variant="outline" onClick={() => onSelectAll(selectable)}>
-              {t("hub.selectAll", { count: selectable.length })}
-            </Button>
-          )}
-        </div>
+        {selectable.length > 0 && (
+          <Button size="sm" variant="outline" onClick={() => onSelectAll(selectable)}>
+            {t("hub.selectAll", { count: selectable.length })}
+          </Button>
+        )}
       </div>
 
       {items.length === 0 ? (

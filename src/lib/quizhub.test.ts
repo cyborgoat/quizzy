@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import { createTranslator } from "@/lib/i18n-messages";
 import type { HubItem } from "@/lib/native";
 import {
+  filterHubCategories,
+  filterHubDomains,
   filterHubItems,
   groupHubDomains,
   REMOVED_HUB_CATEGORY,
   installedFileNames,
   isDownloadable,
+  searchHubSuggestions,
   summarizeHubReport,
 } from "@/lib/quizhub";
 
@@ -67,6 +70,60 @@ describe("quizhub helpers", () => {
     expect(filterHubItems(items, "FUND").map((entry) => entry.id)).toEqual(["ml"]);
     expect(filterHubItems(items, "cog").map((entry) => entry.id)).toEqual(["cog"]);
     expect(filterHubItems(items, " ")).toHaveLength(2);
+  });
+
+  it("filters domains and categories by topic text", () => {
+    const grouped = groupHubDomains(
+      [
+        { id: "cs", title: "Computer Science" },
+        { id: "social", title: "Social Science" },
+      ],
+      [
+        { id: "ai", title: "Artificial Intelligence", domain: "cs" },
+        { id: "psych", title: "Psychology", domain: "social" },
+      ],
+      [
+        item({ id: "ml", category: "ai", title: "Neural Nets", tags: ["deep-learning"] }),
+        item({ id: "memory", category: "psych", title: "Working Memory" }),
+      ],
+    );
+
+    expect(filterHubDomains(grouped.domains, "computer").map((domain) => domain.id)).toEqual(["cs"]);
+    expect(filterHubDomains(grouped.domains, "psych").map((domain) => domain.id)).toEqual(["social"]);
+    expect(filterHubDomains(grouped.domains, "neural").map((domain) => domain.id)).toEqual(["cs"]);
+    expect(
+      filterHubCategories(grouped.domains[0].categories, "deep").map((category) => category.id),
+    ).toEqual(["ai"]);
+  });
+
+  it("builds navigable search suggestions by topic", () => {
+    const grouped = groupHubDomains(
+      [
+        { id: "cs", title: "Computer Science" },
+        { id: "social", title: "Social Science" },
+      ],
+      [
+        { id: "ai", title: "Artificial Intelligence", domain: "cs" },
+        { id: "psych", title: "Psychology", domain: "social" },
+      ],
+      [
+        item({ id: "ml", category: "ai", title: "Neural Nets", tags: ["deep-learning"] }),
+        item({ id: "memory", category: "psych", title: "Working Memory" }),
+      ],
+    );
+
+    expect(searchHubSuggestions(grouped.domains, "computer").map((entry) => entry.id)).toEqual([
+      "domain:cs",
+    ]);
+    expect(searchHubSuggestions(grouped.domains, "artificial").map((entry) => entry.kind)).toEqual([
+      "category",
+    ]);
+    expect(searchHubSuggestions(grouped.domains, "neural")[0]).toMatchObject({
+      kind: "item",
+      domainId: "cs",
+      categoryId: "ai",
+      title: "Neural Nets",
+    });
   });
 
   it("summarizes download reports", () => {
