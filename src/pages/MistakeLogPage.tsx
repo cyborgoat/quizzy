@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
-import { Settings } from "lucide-react";
+import { AlertTriangle, Settings } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyMistakeLog } from "@/components/mistake-log/EmptyMistakeLog";
@@ -107,21 +107,24 @@ export function MistakeLogPage() {
       {error && (
         <Alert
           variant="destructive"
-          className="max-h-[20dvh] shrink-0 overflow-auto"
+          className="flex max-h-[20dvh] shrink-0 gap-3 overflow-auto"
         >
-          <AlertTitle>{t("mistakes.loadError")}</AlertTitle>
-          <AlertDescription>
-            <div className="flex flex-wrap items-center gap-3">
-              <span>{error}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void refetch()}
-              >
-                {t("common.retry")}
-              </Button>
-            </div>
-          </AlertDescription>
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-600" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <AlertTitle>{t("mistakes.loadError")}</AlertTitle>
+            <AlertDescription>
+              <div className="flex flex-wrap items-center gap-3">
+                <span>{error}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                >
+                  {t("common.retry")}
+                </Button>
+              </div>
+            </AlertDescription>
+          </div>
         </Alert>
       )}
 

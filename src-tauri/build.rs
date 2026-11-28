@@ -4,20 +4,21 @@ use std::{
 };
 
 fn main() {
-    let url = resolve_default_base_url();
-    println!("cargo:rustc-env=QUIZHUB_DEFAULT_BASE_URL={url}");
+    let dotenv = dotenv_path();
+    // Always watch the path so creating `.env` later retriggers this script.
+    println!("cargo:rerun-if-changed={}", dotenv.display());
     println!("cargo:rerun-if-env-changed=QUIZHUB_DEFAULT_BASE_URL");
-    if let Some(dotenv) = dotenv_path() {
-        println!("cargo:rerun-if-changed={}", dotenv.display());
-    }
+
+    let url = resolve_default_base_url(&dotenv);
+    println!("cargo:rustc-env=QUIZHUB_DEFAULT_BASE_URL={url}");
     tauri_build::build();
 }
 
-fn resolve_default_base_url() -> String {
+fn resolve_default_base_url(dotenv: &Path) -> String {
     if let Some(url) = env_value("QUIZHUB_DEFAULT_BASE_URL") {
         return ensure_trailing_slash(url);
     }
-    if let Some(url) = read_dotenv_value("QUIZHUB_DEFAULT_BASE_URL") {
+    if let Some(url) = read_dotenv_value(dotenv, "QUIZHUB_DEFAULT_BASE_URL") {
         return ensure_trailing_slash(url);
     }
 
@@ -44,14 +45,12 @@ fn env_value(key: &str) -> Option<String> {
     })
 }
 
-fn dotenv_path() -> Option<PathBuf> {
-    let manifest_dir = env::var_os("CARGO_MANIFEST_DIR")?;
-    let path = Path::new(&manifest_dir).join("../.env");
-    path.exists().then_some(path)
+fn dotenv_path() -> PathBuf {
+    let manifest_dir = env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
+    Path::new(&manifest_dir).join("../.env")
 }
 
-fn read_dotenv_value(key: &str) -> Option<String> {
-    let path = dotenv_path()?;
+fn read_dotenv_value(path: &Path, key: &str) -> Option<String> {
     let contents = fs::read_to_string(path).ok()?;
     for line in contents.lines() {
         let line = line.trim();

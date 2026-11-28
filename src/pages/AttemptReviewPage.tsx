@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AttemptReviewView } from "@/components/goals/AttemptReviewView";
 import { PageShell } from "@/components/layout/PageShell";
-import { ErrorState } from "@/components/quiz/ErrorState";
+import { ErrorState, ErrorStateAction } from "@/components/quiz/ErrorState";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { useGoals } from "@/hooks/useGoals";
@@ -60,8 +60,13 @@ function AttemptReviewLoader({
         <ErrorState
           title={t("review.attemptUnavailableTitle")}
           description={error ?? t("review.attemptUnavailableDescription")}
-          actionLabel={t("review.quizDashboard")}
-          onAction={() => navigate({ to: "/", search: { details: goal.quizId } })}
+          actions={
+            <ErrorStateAction
+              onClick={() => navigate({ to: "/", search: { details: goal.quizId } })}
+            >
+              {t("review.quizDashboard")}
+            </ErrorStateAction>
+          }
         />
       </PageShell>
     );
@@ -97,8 +102,11 @@ export function AttemptReviewPage() {
         <ErrorState
           title={t("review.invalidLinkTitle")}
           description={t("review.invalidLinkDescription")}
-          actionLabel={t("review.quizDashboard")}
-          onAction={() => navigate({ to: "/", search: {} })}
+          actions={
+            <ErrorStateAction onClick={() => navigate({ to: "/", search: {} })}>
+              {t("review.quizDashboard")}
+            </ErrorStateAction>
+          }
         />
       </PageShell>
     );
@@ -110,8 +118,11 @@ export function AttemptReviewPage() {
         <ErrorState
           title={t("review.notFoundTitle")}
           description={t("review.notFoundDescription")}
-          actionLabel={t("review.quizDashboard")}
-          onAction={() => navigate({ to: "/", search: {} })}
+          actions={
+            <ErrorStateAction onClick={() => navigate({ to: "/", search: {} })}>
+              {t("review.quizDashboard")}
+            </ErrorStateAction>
+          }
         />
       </PageShell>
     );

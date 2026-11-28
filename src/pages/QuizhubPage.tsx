@@ -17,15 +17,16 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { EmptyState } from "@/components/quiz/EmptyState";
-import { ErrorState } from "@/components/quiz/ErrorState";
-import { LoadingState } from "@/components/quiz/LoadingState";
+import { ErrorState, ErrorStateAction } from "@/components/quiz/ErrorState";
 import { QuizhubConflictDialog } from "@/components/quizhub/QuizhubConflictDialog";
 import { QuizhubPreviewDialog } from "@/components/quizhub/QuizhubPreviewDialog";
 import { QuizhubSearchBar } from "@/components/quizhub/QuizhubSearchBar";
+import { QuizhubSourceUrlDialog } from "@/components/quizhub/QuizhubSourceUrlDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buttonClassName } from "@/components/ui/button-styles";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RichText } from "@/components/ui/rich-text";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppLocale } from "@/hooks/useAppLocale";
@@ -190,8 +191,15 @@ function QuizhubBrowser({
   const knowledgeLibrary = useKnowledgeLibrary();
   const { refreshAfterSync } = useGoals();
   const { openQuizStart } = useQuizStartDialog();
+  const {
+    quizhubBaseUrl,
+    setQuizhubBaseUrl,
+    quizhubDefaultBaseUrl,
+  } = useQuizhubPreferences();
   const isActive = useRef(false);
   const [conflict, setConflict] = useState<HubConflict | null>(null);
+  const [sourceUrlDialogOpen, setSourceUrlDialogOpen] = useState(false);
+  const [savingSourceUrl, setSavingSourceUrl] = useState(false);
   const resolveConflict = useRef<((decision: HubResolution | null) => void) | null>(null);
   function finishConflict(decision: HubResolution | null) {
     const resolve = resolveConflict.current;
@@ -199,6 +207,27 @@ function QuizhubBrowser({
     resolveConflict.current = null;
     setConflict(null);
     resolve(decision);
+  }
+
+  async function saveSourceUrl(nextUrl: string) {
+    if (savingSourceUrl) return;
+    const trimmed = nextUrl.trim();
+    const previous = quizhubBaseUrl;
+    setSavingSourceUrl(true);
+    try {
+      await nativeApi.saveSettings({
+        quizhubBaseUrl:
+          !trimmed || trimmed === quizhubDefaultBaseUrl ? "" : trimmed,
+      });
+      const settings = await nativeApi.getSettings();
+      setQuizhubBaseUrl(settings.quizhubBaseUrl || settings.quizhubDefaultBaseUrl);
+      setSourceUrlDialogOpen(false);
+    } catch (error) {
+      setQuizhubBaseUrl(previous);
+      toast.error(errorMessage(error));
+    } finally {
+      setSavingSourceUrl(false);
+    }
   }
   useLayoutEffect(() => {
     isActive.current = true;
@@ -561,17 +590,43 @@ function QuizhubBrowser({
           <ErrorState
             title={t("hub.loadFailedTitle")}
             description={loadError}
-            actionLabel={t("hub.tryAgain")}
-            onAction={() => void load(true)}
+            actions={
+              <RichText
+                text={t("hub.loadFailedActions")}
+                slots={{
+                  retry: (
+                    <ErrorStateAction onClick={() => void load(true)}>
+                      {t("hub.tryAgain")}
+                    </ErrorStateAction>
+                  ),
+                  changeSource: (
+                    <ErrorStateAction onClick={() => setSourceUrlDialogOpen(true)}>
+                      {t("hub.changeSourceUrl")}
+                    </ErrorStateAction>
+                  ),
+                }}
+              />
+            }
           />
         ) : !catalog ? (
-          <LoadingState message={t("hub.loading")} />
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-20"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <Spinner className="size-6 text-zinc-500" />
+            <p className="text-sm text-zinc-500">{t("hub.loading")}</p>
+          </div>
         ) : catalog.editionError ? (
           <ErrorState
             title={t("hub.editionFailedTitle")}
             description={catalog.editionError}
-            actionLabel={t("hub.tryAgain")}
-            onAction={() => void load(true)}
+            actions={
+              <ErrorStateAction onClick={() => void load(true)}>
+                {t("hub.tryAgain")}
+              </ErrorStateAction>
+            }
           />
         ) : activeCategory ? (
           <CategoryView
@@ -619,6 +674,15 @@ function QuizhubBrowser({
       </div>
 
       <QuizhubConflictDialog conflict={conflict} onResolve={finishConflict} />
+
+      <QuizhubSourceUrlDialog
+        open={sourceUrlDialogOpen}
+        onOpenChange={setSourceUrlDialogOpen}
+        initialUrl={quizhubBaseUrl || quizhubDefaultBaseUrl}
+        defaultUrl={quizhubDefaultBaseUrl}
+        saving={savingSourceUrl}
+        onSave={saveSourceUrl}
+      />
 
       <QuizhubPreviewDialog
         item={previewItem}

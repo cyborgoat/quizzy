@@ -2,7 +2,7 @@ import { Download, MoreHorizontal, Play, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { KnowledgeProse } from "@/components/knowledge/KnowledgeProse";
 import { MarkdownContent } from "@/components/quiz/MarkdownContent";
-import { ErrorState } from "@/components/quiz/ErrorState";
+import { ErrorState, ErrorStateAction } from "@/components/quiz/ErrorState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,8 +174,11 @@ export function QuizhubPreviewDialog({
         <ErrorState
           title={t("hub.preview.loadFailed")}
           description={error}
-          actionLabel={t("hub.tryAgain")}
-          onAction={() => setReloadKey((current) => current + 1)}
+          actions={
+            <ErrorStateAction onClick={() => setReloadKey((current) => current + 1)}>
+              {t("hub.tryAgain")}
+            </ErrorStateAction>
+          }
         />
       ) : preview ? (
         preview.kind === "quiz" ? (

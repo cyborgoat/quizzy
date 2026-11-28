@@ -5,7 +5,7 @@ import { Route } from "@/routes/quiz_.$quizId";
 import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
 import { QuizReviewView } from "@/components/goals/QuizReviewView";
 import { completedQuizReview } from "@/lib/completedQuizReview";
-import { ErrorState } from "@/components/quiz/ErrorState";
+import { ErrorState, ErrorStateAction } from "@/components/quiz/ErrorState";
 import { InlineEmptyMessage } from "@/components/quiz/InlineEmptyMessage";
 import { LoadingState } from "@/components/quiz/LoadingState";
 import { ExitQuizDialog } from "@/components/quiz/ExitQuizDialog";
@@ -262,8 +262,11 @@ export function QuizPage() {
         <ErrorState
           title={t("quiz.notFoundTitle")}
           description={t("quiz.notFoundDescription")}
-          actionLabel={t("nav.home")}
-          onAction={() => navigate({ to: "/" })}
+          actions={
+            <ErrorStateAction onClick={() => navigate({ to: "/" })}>
+              {t("nav.home")}
+            </ErrorStateAction>
+          }
         />
       </PageShell>
     );
@@ -275,8 +278,11 @@ export function QuizPage() {
         <ErrorState
           title={t("quiz.archivedTitle")}
           description={t("quiz.archivedDescription")}
-          actionLabel={t("nav.home")}
-          onAction={() => navigate({ to: "/" })}
+          actions={
+            <ErrorStateAction onClick={() => navigate({ to: "/" })}>
+              {t("nav.home")}
+            </ErrorStateAction>
+          }
         />
       </PageShell>
     );
