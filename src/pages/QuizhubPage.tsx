@@ -29,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RichText } from "@/components/ui/rich-text";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppLocale } from "@/hooks/useAppLocale";
 import { useGoals } from "@/hooks/useGoals";
 import { useKnowledgeLibrary } from "@/hooks/useKnowledgeLibrary";
@@ -991,11 +992,10 @@ function HubItemSection({
           ].filter(Boolean);
 
           const showStateBadge = item.state !== "available" && item.state !== "installed";
-          const showInstalledMark = !selecting && item.state === "installed";
 
           return (
             <li key={key} className="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-50">
-              {selecting ? (
+              {selecting && (
                 <button
                   type="button"
                   role="checkbox"
@@ -1008,24 +1008,10 @@ function HubItemSection({
                   {canSelect ? (
                     <Checkbox checked={selected.has(key)} />
                   ) : (
-                    <span
-                      className="flex size-5 items-center justify-center text-emerald-600"
-                      title={item.state === "installed" ? t(hubStateDescriptionKey.installed) : undefined}
-                      aria-label={item.state === "installed" ? t("hub.state.installed") : undefined}
-                    >
-                      {item.state === "installed" && <Check className="size-4" />}
-                    </span>
+                    <span className="block size-5" aria-hidden="true" />
                   )}
                 </button>
-              ) : showInstalledMark ? (
-                <span
-                  className="flex size-5 items-center justify-center text-emerald-600"
-                  title={t(hubStateDescriptionKey.installed)}
-                  aria-label={t("hub.state.installed")}
-                >
-                  <Check className="size-4" />
-                </span>
-              ) : null}
+              )}
               <button
                 type="button"
                 className="min-w-0 flex-1 cursor-pointer rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
@@ -1087,23 +1073,56 @@ function ItemActions({
   if (item.state === "removedRemotely") {
     return <Button size="sm" variant="ghost" disabled={disabled} onClick={() => onKeepAsLocal(item)}>{t("hub.keepAsLocal")}</Button>;
   }
-  if (item.state === "installed") return null;
+
+  if (item.state === "installed") {
+    const installedLabel = t("hub.state.installed");
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            role="img"
+            aria-label={installedLabel}
+            tabIndex={0}
+            className="inline-flex size-8 items-center justify-center text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+          >
+            <Check className="size-4" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="border-zinc-200 bg-zinc-50 text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+        >
+          {installedLabel}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   const label = item.state === "updateAvailable" ? t("hub.update") : t("hub.download");
+  const ariaLabel = t(item.state === "updateAvailable" ? "hub.updateItem" : "hub.downloadItem", {
+    title: item.title,
+  });
+
   return (
-    <Button
-      size="sm"
-      className="min-w-9 justify-center sm:min-w-28"
-      variant={item.state === "updateAvailable" ? "default" : "outline"}
-      aria-label={t(item.state === "updateAvailable" ? "hub.updateItem" : "hub.downloadItem", {
-        title: item.title,
-      })}
-      title={label}
-      disabled={disabled}
-      onClick={() => onDownload(item)}
-    >
-      {downloadIcon}
-      <span className="hidden sm:inline">{label}</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="icon"
+          className="size-8"
+          variant={item.state === "updateAvailable" ? "default" : "outline"}
+          aria-label={ariaLabel}
+          disabled={disabled}
+          onClick={() => onDownload(item)}
+        >
+          {downloadIcon}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        className="border-zinc-200 bg-zinc-50 text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+      >
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }
